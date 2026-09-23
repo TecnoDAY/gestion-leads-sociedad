@@ -129,6 +129,10 @@
           <i data-lucide="line-chart" class="w-4 h-4"></i>
           <span>Gráficos Históricos</span>
           <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono font-semibold">2026</span>
+          <span id="tabTotalDatabaseBadge" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800/90 border border-slate-700/80 text-xs font-mono font-semibold text-slate-200" title="Cantidad total de leads en la Base de Datos">
+            <span class="text-[9px] uppercase tracking-wider text-slate-400 font-sans font-medium hidden sm:inline">Total BD:</span>
+            <span id="tabTotalDatabaseCount" class="text-indigo-400 font-bold tabular-nums">0</span>
+          </span>
         </button>
       </nav>
 
@@ -147,17 +151,17 @@
 
     <!-- KPI CARDS -->
     <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <!-- Total Leads -->
+      <!-- Total Leads Filtrados -->
       <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
         <div class="flex items-center justify-between text-slate-400">
-          <span class="text-xs font-semibold uppercase tracking-wider">Total Leads</span>
+          <span class="text-xs font-semibold uppercase tracking-wider">Total Leads Filtrados</span>
           <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400">
             <i data-lucide="users" class="w-4 h-4"></i>
           </div>
         </div>
         <div class="mt-2 flex items-baseline gap-2">
           <span id="kpiTotalLeads" class="text-2xl sm:text-3xl font-bold font-mono text-white tabular-nums">0</span>
-          <span class="text-xs text-slate-400 font-medium" id="kpiTotalSubtitle">filtrados</span>
+          <span class="text-xs text-slate-400 font-medium" id="kpiTotalSubtitle">filtrados del mes</span>
         </div>
       </div>
 
@@ -1003,17 +1007,20 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const btnHist = document.getElementById('tabBtnHistorico');
       const viewDash = document.getElementById('viewDashboard');
       const viewHist = document.getElementById('viewHistorico');
+      const tabBadge = document.getElementById('tabTotalDatabaseBadge');
 
       if (!btnDash || !btnHist || !viewDash || !viewHist) return;
 
       if (tab === 'dashboard') {
         btnDash.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
         btnHist.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer border border-transparent";
+        if (tabBadge) tabBadge.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800/90 border border-slate-700/80 text-xs font-mono font-semibold text-slate-200";
         viewDash.classList.remove('hidden');
         viewHist.classList.add('hidden');
       } else {
         btnDash.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer border border-transparent";
         btnHist.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
+        if (tabBadge) tabBadge.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-900/90 border border-indigo-400/40 text-xs font-mono font-bold text-white";
         viewDash.classList.add('hidden');
         viewHist.classList.remove('hidden');
         // Renderizar inmediatamente las analíticas históricas
@@ -1281,6 +1288,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // -------------------------------------------------------------
     function updateKpis() {
       const total = filteredLeads.length;
+      const totalDatabase = allLeads.length;
+
+      // Actualizar contador total de la Base de Datos junto a la pestaña Gráficos Históricos 2026
+      const tabTotalEl = document.getElementById('tabTotalDatabaseCount');
+      if (tabTotalEl) {
+        tabTotalEl.innerText = totalDatabase.toLocaleString();
+      }
 
       // Agendados: contiene "Agendad"
       const agendados = filteredLeads.filter(l => {
@@ -1299,6 +1313,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const agendadosPct = total > 0 ? ((agendados / total) * 100).toFixed(1) : "0.0";
 
       document.getElementById('kpiTotalLeads').innerText = total.toLocaleString();
+      const kpiTotalSubtitle = document.getElementById('kpiTotalSubtitle');
+      if (kpiTotalSubtitle) {
+        kpiTotalSubtitle.innerText = `de ${totalDatabase.toLocaleString()} en BD`;
+      }
       document.getElementById('kpiAgendados').innerText = agendados.toLocaleString();
       document.getElementById('kpiAgendadosPct').innerText = `${agendadosPct}%`;
       document.getElementById('kpiInscritos').innerText = inscritos.toLocaleString();

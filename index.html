@@ -95,12 +95,12 @@
         </div>
 
         <!-- Refresh Button -->
-        <button id="btnRefresh" onclick="refreshLeadsData()" title="Refrescar datos de Supabase" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors">
+        <button id="btnRefresh" onclick="refreshLeadsData()" title="Refrescar datos de Supabase" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer">
           <i data-lucide="refresh-cw" id="refreshIcon" class="w-4 h-4"></i>
         </button>
 
         <!-- View Security / RLS Schema -->
-        <button onclick="openRlsModal()" title="Ver políticas de seguridad y esquema SQL" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors">
+        <button onclick="openRlsModal()" title="Ver políticas de seguridad y esquema SQL" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
           <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
           <span>SQL & RLS</span>
         </button>
@@ -324,7 +324,7 @@
           </div>
 
           <!-- Export CSV -->
-          <button onclick="exportCurrentLeadsCSV()" class="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-300 hover:text-white transition-colors">
+          <button onclick="exportCurrentLeadsCSV()" class="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-300 hover:text-white transition-colors cursor-pointer">
             <i data-lucide="download" class="w-3.5 h-3.5"></i>
             <span class="hidden sm:inline">Exportar</span>
           </button>
@@ -605,7 +605,7 @@
       <div class="flex items-center gap-4 text-slate-400">
         <span>Miami — Weston — Doral</span>
         <span>•</span>
-        <button onclick="openRlsModal()" class="hover:text-indigo-400 transition-colors">Seguridad Supabase RLS</button>
+        <button onclick="openRlsModal()" class="hover:text-indigo-400 transition-colors cursor-pointer">Seguridad Supabase RLS</button>
       </div>
     </div>
   </footer>
@@ -620,7 +620,7 @@
           </div>
           <h3 class="font-bold text-white text-base">Registrar Nuevo Lead</h3>
         </div>
-        <button onclick="closeNewLeadModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700">
+        <button onclick="closeNewLeadModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -727,8 +727,8 @@
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/80">
-          <button type="button" onclick="closeNewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium">Cancelar</button>
-          <button type="submit" id="btnSubmitNewLead" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center gap-2">
+          <button type="button" onclick="closeNewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium cursor-pointer">Cancelar</button>
+          <button type="submit" id="btnSubmitNewLead" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center gap-2 cursor-pointer">
             <i data-lucide="check" class="w-4 h-4"></i>
             <span>Guardar en Supabase</span>
           </button>
@@ -750,7 +750,7 @@
             <p id="editLeadLeadInfo" class="text-xs text-slate-400">ID: -</p>
           </div>
         </div>
-        <button onclick="closeEditLeadModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700">
+        <button onclick="closeEditLeadModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -819,8 +819,8 @@
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/80">
-          <button type="button" onclick="closeEditLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium">Cancelar</button>
-          <button type="submit" id="btnSubmitEditLead" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-2">
+          <button type="button" onclick="closeEditLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium cursor-pointer">Cancelar</button>
+          <button type="submit" id="btnSubmitEditLead" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-2 cursor-pointer">
             <i data-lucide="save" class="w-4 h-4"></i>
             <span>Actualizar en Supabase</span>
           </button>
@@ -839,7 +839,7 @@
           </div>
           <h3 class="font-bold text-white text-base">Ficha Integral del Lead</h3>
         </div>
-        <button onclick="closeViewLeadModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700">
+        <button onclick="closeViewLeadModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -849,7 +849,7 @@
       </div>
 
       <div class="px-6 py-3 border-t border-slate-700/80 bg-slate-900/50 flex justify-end">
-        <button onclick="closeViewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200">Cerrar</button>
+        <button onclick="closeViewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Cerrar</button>
       </div>
     </div>
   </div>
@@ -867,7 +867,7 @@
             <p class="text-xs text-slate-400">Políticas de seguridad de fila, autenticación y sincronización en tiempo real</p>
           </div>
         </div>
-        <button onclick="closeRlsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700">
+        <button onclick="closeRlsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -914,13 +914,11 @@ ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
 -- =======================================================
 -- 3. POLÍTICAS DE ACCESO ESTRICTAS (POLICIES)
 -- =======================================================
--- Política 1: Lectura para anon y autenticados
 CREATE POLICY "Permitir lectura para usuarios de plataforma"
 ON public.leads FOR SELECT
 TO anon, authenticated
 USING (true);
 
--- Política 2: Inserción validando nombre no vacío
 CREATE POLICY "Permitir insercion con validacion de nombre"
 ON public.leads FOR INSERT
 TO anon, authenticated
@@ -928,14 +926,12 @@ WITH CHECK (
     "Nombre" IS NOT NULL AND length(trim("Nombre")) > 0
 );
 
--- Política 3: Actualización de estatus y seguimiento
 CREATE POLICY "Permitir actualizacion para asesores autorizados"
 ON public.leads FOR UPDATE
 TO anon, authenticated
 USING (true)
 WITH CHECK (true);
 
--- Política 4: Eliminación restringida a autenticados
 CREATE POLICY "Permitir borrado seguro solo para autenticados"
 ON public.leads FOR DELETE
 TO authenticated
@@ -946,7 +942,7 @@ USING (true);
 -- =======================================================
 ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           </pre>
-          <button onclick="copyRlsCode()" class="absolute top-3 right-3 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 flex items-center gap-1">
+          <button onclick="copyRlsCode()" class="absolute top-3 right-3 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 flex items-center gap-1 cursor-pointer">
             <i data-lucide="copy" class="w-3.5 h-3.5"></i>
             <span id="copyRlsBtnText">Copiar SQL</span>
           </button>
@@ -963,7 +959,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       </div>
 
       <div class="px-6 py-3 border-t border-slate-700/80 bg-slate-900/50 flex justify-end shrink-0">
-        <button onclick="closeRlsModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200">Entendido</button>
+        <button onclick="closeRlsModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Entendido</button>
       </div>
     </div>
   </div>
@@ -971,7 +967,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
   <!-- ================= TOAST NOTIFICATION CONTAINER ================= -->
   <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- ================= LÓGICA DE JAVASCRIPT ================= -->
+  <!-- ================= LÓGICA DE JAVASCRIPT (CORREGIDA PARA LEER SUPABASE) ================= -->
   <script>
     // -------------------------------------------------------------
     // 1. CONFIGURACIÓN E INICIALIZACIÓN DE SUPABASE
@@ -998,9 +994,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     let currentPage = 1;
     let pageSize = 20;
     let currentMainTab = 'dashboard';
-    const histCharts = {};      // Registro de instancias de Chart.js para evitar memory leaks
+    const histCharts = {};      // Registro de instancias de Chart.js
 
-    // Función para alternar entre la pestaña de Panel Operativo y Gráficos Históricos
+    // Función para alternar pestañas
     function switchTab(tab) {
       currentMainTab = tab;
       const btnDash = document.getElementById('tabBtnDashboard');
@@ -1023,14 +1019,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         if (tabBadge) tabBadge.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-900/90 border border-indigo-400/40 text-xs font-mono font-bold text-white";
         viewDash.classList.add('hidden');
         viewHist.classList.remove('hidden');
-        // Renderizar inmediatamente las analíticas históricas
         renderHistoricalAnalytics();
       }
 
       if (window.lucide) lucide.createIcons();
     }
 
-    // Helper para acceder a campos con posibles espacios al final (ej: "Agente ", "OBSERVACIONES ")
+    // Helper para acceder a campos con posibles espacios al final
     function getField(lead, key) {
       if (!lead) return '';
       if (lead[key] !== undefined && lead[key] !== null) return String(lead[key]);
@@ -1041,48 +1036,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     // -------------------------------------------------------------
-    // 3. DATASET INICIAL EMBEBIDO (SEED / FALLBACK RESILIENTE)
-    // -------------------------------------------------------------
-    // Permite que la app arranque al 100% de manera inmediata con métricas reales
-    const INITIAL_SEED_LEADS = [
-      { id: 1, "Mes": "ENERO", "Fecha": "1/01/2026", "Nombre": "Ilones Camargo", "Telefono": "1 (786) 555-0101", "Campaña": "Actuacion Adultos", "Medio": "Instagram", "GESTION": "Información ", "Ciudad": "Doral", "Agente ": "Nina", "Odoo": "SI N.", "Fecha de Atencion": "2/01/2026", "OBSERVACIONES ": "Esperando respuesta" },
-      { id: 2, "Mes": "ENERO", "Fecha": "1/01/2026", "Nombre": "Dayana", "Telefono": "1 (786) 763-7471", "Campaña": "Actuacion Adultos", "Medio": "Whatsapp", "GESTION": "Repetido ", "Ciudad": "Doral", "Agente ": "AGENTE", "Odoo": "SI N.", "Fecha de Atencion": "2/01/2026", "OBSERVACIONES ": "Escribió por el Bootcamp, se le invitó a la clase gratis." },
-      { id: 3, "Mes": "ENERO", "Fecha": "2/01/2026", "Nombre": "Walter Monge", "Telefono": "1 (786) 212-2072", "Campaña": "Actuacion Adultos", "Medio": "Whatsapp", "GESTION": "Agendado", "Ciudad": "Coral Gables", "Agente ": "AGENTE", "Odoo": "SI N.", "Fecha de Atencion": "2/01/2026", "OBSERVACIONES ": "Participó en el Bootcamp, coordinó visita al conservatorio." },
-      { id: 4, "Mes": "ENERO", "Fecha": "2/01/2026", "Nombre": "Paula Zelaya", "Telefono": "1 (954) 682-4036", "Campaña": "Actuacion Kids", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Nina", "Odoo": "SI N.", "Fecha de Atencion": "2/01/2026", "OBSERVACIONES ": "Isabella tiene 10 años, quiere hacer teatro Musical." },
-      { id: 5, "Mes": "ENERO", "Fecha": "5/01/2026", "Nombre": "Mabel Montero", "Telefono": "1 (786) 379-1622", "Campaña": "Actuacion Kids", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Hialeah", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "5/01/2026", "OBSERVACIONES ": "Alisson Lopez Perez, 8 años inscrita el sábado 17/01" },
-      { id: 6, "Mes": "ENERO", "Fecha": "6/01/2026", "Nombre": "Natalia", "Telefono": "1 (561) 978-5228", "Campaña": "Actuacion Adultos", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Brickell", "Agente ": "Jessi", "Odoo": "SI N.", "Fecha de Atencion": "6/01/2026", "OBSERVACIONES ": "Inscrita al programa regular de adultos." },
-      { id: 7, "Mes": "ENERO", "Fecha": "7/01/2026", "Nombre": "Yani", "Telefono": "1 (786) 906-4003", "Campaña": "Actuacion Kids", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Homestead", "Agente ": "Nina", "Odoo": "SI N.", "Fecha de Atencion": "7/01/2026", "OBSERVACIONES ": "Niña 9 años Ashley Sanchez, teatro musical." },
-      { id: 8, "Mes": "ENERO", "Fecha": "8/01/2026", "Nombre": "Lilia K Indriago", "Telefono": "1 (786) 427-7443", "Campaña": "Actuacion Kids", "Medio": "Instagram", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI N.", "Fecha de Atencion": "8/01/2026", "OBSERVACIONES ": "Zoe Bolivar, 8 años, matriculada en Doral." },
-      { id: 9, "Mes": "ENERO", "Fecha": "9/01/2026", "Nombre": "Angel Delgado", "Telefono": "1 (786) 538-0615", "Campaña": "Actuacion Adultos", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "9/01/2026", "OBSERVACIONES ": "Inscrito para el cuatrimestre regular." },
-      { id: 10, "Mes": "ENERO", "Fecha": "13/01/2026", "Nombre": "Valeria", "Telefono": "1 (305) 250-8770", "Campaña": "Actuacion Kids", "Medio": "Referidos Andres", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "13/01/2026", "OBSERVACIONES ": "Sofía Abello, referida por Corina Kassis." },
-      { id: 11, "Mes": "ENERO", "Fecha": "13/01/2026", "Nombre": "Aylen", "Telefono": "1 (954) 508-5030", "Campaña": "Actuacion Kids", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Weston", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "13/01/2026", "OBSERVACIONES ": "Pago realizado exitosamente para las clases." },
-      { id: 12, "Mes": "ENERO", "Fecha": "14/01/2026", "Nombre": "Milena Gutierrez", "Telefono": "1 (954) 842-1797", "Campaña": "Actuacion Adultos", "Medio": "Instagram", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI N.", "Fecha de Atencion": "15/01/2026", "OBSERVACIONES ": "Inscrita el 22/01 junto con su hija." },
-      { id: 13, "Mes": "ENERO", "Fecha": "15/01/2026", "Nombre": "Ana Arango", "Telefono": "1 (954) 648-9653", "Campaña": "Actuacion Kids", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Weston", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "16/01/2026", "OBSERVACIONES ": "Sarah Gomez - 10 años, inscrita sede Weston." },
-      { id: 14, "Mes": "FEBRERO", "Fecha": "5/02/2026", "Nombre": "luisa Jimenez", "Telefono": "1 (954) 990-3024", "Campaña": "Weston", "Medio": "Whatsapp", "GESTION": "Agendado", "Ciudad": "Weston", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "5/02/2026", "OBSERVACIONES ": "Bailar cantar y actuar, niña de 12 años." },
-      { id: 15, "Mes": "FEBRERO", "Fecha": "9/02/2026", "Nombre": "Brigette", "Telefono": "1 (305) 609-3641", "Campaña": "Summer Camp", "Medio": "Referidos Andres", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI N.", "Fecha de Atencion": "9/02/2026", "OBSERVACIONES ": "12 años, confirmada para campamento de verano." },
-      { id: 16, "Mes": "FEBRERO", "Fecha": "10/02/2026", "Nombre": "Andrea", "Telefono": "1 (786) 488-1469", "Campaña": "Actuacion Kids", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "10/02/2026", "OBSERVACIONES ": "Camila 10 años, le gusta actuar." },
-      { id: 17, "Mes": "FEBRERO", "Fecha": "21/02/2026", "Nombre": "Yaneth", "Telefono": "1 (645) 216-4894", "Campaña": "CASTING BOOTCAMP", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Nina", "Odoo": "SI N.", "Fecha de Atencion": "21/02/2026", "OBSERVACIONES ": "Estudió en NYC Latin Media, link de pago generado." },
-      { id: 18, "Mes": "MARZO", "Fecha": "2/03/2026", "Nombre": "Isis Carranza", "Telefono": "1 (786) 612-7265", "Campaña": "CASTING BOOTCAMP", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "2/03/2026", "OBSERVACIONES ": "Comprobante de abono enviado para casting." },
-      { id: 19, "Mes": "MARZO", "Fecha": "4/03/2026", "Nombre": "Odalis Diaz", "Telefono": "1 (786) 817-3972", "Campaña": "Summer Camp", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI N.", "Fecha de Atencion": "4/03/2026", "OBSERVACIONES ": "Nieta de 9 años, reservó para campamento Moana." },
-      { id: 20, "Mes": "MARZO", "Fecha": "13/03/2026", "Nombre": "Lavinia", "Telefono": "1 (305) 833-9179", "Campaña": "Summer Camp", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "13/03/2026", "OBSERVACIONES ": "7 años, reservado cupo para la primera sesión." },
-      { id: 21, "Mes": "MARZO", "Fecha": "20/03/2026", "Nombre": "Cassandra Lang", "Telefono": "1 (786) 587-3042", "Campaña": "Summer Camp", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "20/03/2026", "OBSERVACIONES ": "2 niñas de 9 y 12 años, inscritas para Julio." },
-      { id: 22, "Mes": "ABRIL", "Fecha": "14/04/2026", "Nombre": "Yasney", "Telefono": "1 (305) 283-6079", "Campaña": "Summer Camp", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Ana", "Odoo": "SI A.", "Fecha de Atencion": "14/04/2026", "OBSERVACIONES ": "Mia Espinosa, 8 años, cupo de campamento confirmado." },
-      { id: 23, "Mes": "ABRIL", "Fecha": "15/04/2026", "Nombre": "Zulma Heras", "Telefono": "1 (917) 306-3507", "Campaña": "Summer Camp", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Ana", "Odoo": "SI A.", "Fecha de Atencion": "15/04/2026", "OBSERVACIONES ": "Arianna Rivera, 12 años, sesión de verano." },
-      { id: 24, "Mes": "MAYO", "Fecha": "2/05/2026", "Nombre": "Elio Saavedra", "Telefono": "1 (786) 226-4119", "Campaña": "Summer Camp", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Homestead", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "2/05/2026", "OBSERVACIONES ": "Niña de 7 años, confirmada." },
-      { id: 25, "Mes": "MAYO", "Fecha": "18/05/2026", "Nombre": "Catalina P.", "Telefono": "1 (305) 912-3344", "Campaña": "Actuacion Adultos", "Medio": "Instagram", "GESTION": "Agendado", "Ciudad": "Coral Gables", "Agente ": "Nina", "Odoo": "SI N.", "Fecha de Atencion": "18/05/2026", "OBSERVACIONES ": "Agendada para clase de prueba." },
-      { id: 26, "Mes": "JUNIO", "Fecha": "5/06/2026", "Nombre": "Sebastian Morales", "Telefono": "1 (954) 332-9011", "Campaña": "Summer Camp", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Weston", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "5/06/2026", "OBSERVACIONES ": "Inscrito en módulo intensivo de junio." },
-      { id: 27, "Mes": "JUNIO", "Fecha": "12/06/2026", "Nombre": "Lorena Mendez", "Telefono": "1 (786) 441-8890", "Campaña": "Actuacion Kids", "Medio": "Referidos Andres", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "12/06/2026", "OBSERVACIONES ": "Hijo de 9 años, teatro musical." },
-      { id: 28, "Mes": "JUNIO", "Fecha": "20/06/2026", "Nombre": "Carlos V.", "Telefono": "1 (305) 554-1122", "Campaña": "Voz y Diccion", "Medio": "Lead Directo", "GESTION": "Información ", "Ciudad": "Brickell", "Agente ": "Ana", "Odoo": "SI A.", "Fecha de Atencion": "21/06/2026", "OBSERVACIONES ": "Solicitó información de horarios." },
-      { id: 29, "Mes": "JULIO", "Fecha": "2/07/2026", "Nombre": "Francia", "Telefono": "1 (786) 616-3996", "Campaña": "Taller Camara ", "Medio": "Whatsapp nuevo", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "2/07/2026", "OBSERVACIONES ": "Hija de 20 años, matriculada en Taller ante Cámara." },
-      { id: 30, "Mes": "JULIO", "Fecha": "15/07/2026", "Nombre": "Mariana R.", "Telefono": "1 (786) 880-4521", "Campaña": "Locos Adams", "Medio": "Instagram", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Nina", "Odoo": "SI N.", "Fecha de Atencion": "16/07/2026", "OBSERVACIONES ": "Matriculada en montaje teatral." },
-      { id: 31, "Mes": "AGOSTO", "Fecha": "3/08/2026", "Nombre": "Raul", "Telefono": "1 (786) 973-5886", "Campaña": "Actuacion Adultos", "Medio": "Whatsapp nuevo", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "3/08/2026", "OBSERVACIONES ": "Inscrito en Taller Septiembre Adultos." },
-      { id: 32, "Mes": "AGOSTO", "Fecha": "19/08/2026", "Nombre": "Giselle D.", "Telefono": "1 (954) 701-8833", "Campaña": "Weston", "Medio": "Whatsapp", "GESTION": "Agendado", "Ciudad": "Weston", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "20/08/2026", "OBSERVACIONES ": "Cita para audición presencial." },
-      { id: 33, "Mes": "SEPTIEMBRE", "Fecha": "8/09/2026", "Nombre": "Cinthia", "Telefono": "1 (786) 474-5970", "Campaña": "Actuacion Kids", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "8/09/2026", "OBSERVACIONES ": "Confirmación definitiva de matrícula." },
-      { id: 34, "Mes": "SEPTIEMBRE", "Fecha": "14/09/2026", "Nombre": "Eduardo S.", "Telefono": "1 (305) 670-2211", "Campaña": "Actuacion Adultos", "Medio": "Instagram", "GESTION": "INSCRITO", "Ciudad": "Coral Gables", "Agente ": "Nina", "Odoo": "SI N.", "Fecha de Atencion": "14/09/2026", "OBSERVACIONES ": "Inscrito para inicio de otoño." }
-    ];
-
-    // -------------------------------------------------------------
-    // 4. CARGA DE DATOS (SUPABASE CON FALLBACK A SEED)
+    // 3. CARGA DE DATOS ESTRICTAMENTE DESDE SUPABASE
     // -------------------------------------------------------------
     async function loadLeadsData() {
       showLoadingState(true);
@@ -1095,25 +1049,27 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             .select('*')
             .order('id', { ascending: false });
 
-          if (!error && Array.isArray(data) && data.length > 0) {
-            allLeads = data;
-            isSupabaseLive = true;
-            updateConnectionStatus("online");
-            console.log("Datos cargados desde Supabase:", allLeads.length);
+          if (error) {
+            console.error("Error consultando Supabase:", error);
+            showToast("Error al conectar con Supabase: " + error.message, "error");
+            updateConnectionStatus("offline");
+            allLeads = [];
           } else {
-            // Tabla vacía o error de tabla
-            console.warn("Supabase respondió sin registros o error:", error);
-            loadLocalSeedData();
-            updateConnectionStatus(error ? "offline" : "online_empty");
+            allLeads = data || [];
+            isSupabaseLive = true;
+            updateConnectionStatus(allLeads.length > 0 ? "online" : "online_empty");
+            console.log("Datos cargados correctamente desde Supabase:", allLeads.length);
           }
         } catch (err) {
-          console.error("Error conectando con Supabase:", err);
-          loadLocalSeedData();
+          console.error("Excepción conectando con Supabase:", err);
+          showToast("Excepción de red al conectar con Supabase", "error");
           updateConnectionStatus("offline");
+          allLeads = [];
         }
       } else {
-        loadLocalSeedData();
+        console.warn("Cliente Supabase no inicializado.");
         updateConnectionStatus("offline");
+        allLeads = [];
       }
 
       populateFilterOptions();
@@ -1124,11 +1080,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       showLoadingState(false);
     }
 
-    function loadLocalSeedData() {
-      // Usar seed data inicial enriquecida
-      allLeads = JSON.parse(JSON.stringify(INITIAL_SEED_LEADS));
-    }
-
     function updateConnectionStatus(status) {
       const dot = document.getElementById('statusDot');
       const text = document.getElementById('statusText');
@@ -1136,20 +1087,20 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
       if (status === "online") {
         dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-        text.innerText = "Supabase en vivo (" + allLeads.length + " leads)";
+        text.innerText = "Supabase en vivo (" + allLeads.length.toLocaleString() + " leads)";
         text.className = "hidden md:inline text-emerald-400 font-semibold";
       } else if (status === "online_empty") {
         dot.className = "w-2 h-2 rounded-full bg-blue-400";
-        text.innerText = "Supabase listo (Tabla vacía)";
+        text.innerText = "Supabase listo (0 leads en tabla)";
         text.className = "hidden md:inline text-blue-400";
       } else if (status === "connecting") {
         dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-ping";
         text.innerText = "Conectando...";
         text.className = "hidden md:inline text-amber-400";
       } else {
-        dot.className = "w-2 h-2 rounded-full bg-slate-400";
-        text.innerText = "Modo Local (" + allLeads.length + " leads)";
-        text.className = "hidden md:inline text-slate-400";
+        dot.className = "w-2 h-2 rounded-full bg-rose-500";
+        text.innerText = "Sin conexión (" + allLeads.length + " leads)";
+        text.className = "hidden md:inline text-rose-400";
       }
     }
 
@@ -1190,7 +1141,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     // -------------------------------------------------------------
-    // 5. FILTROS Y BÚSQUEDA
+    // 4. FILTROS Y BÚSQUEDA
     // -------------------------------------------------------------
     function populateFilterOptions() {
       const getUniqueValues = (key) => {
@@ -1233,7 +1184,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const gestion = document.getElementById('filterGestion')?.value || '';
 
       filteredLeads = allLeads.filter(lead => {
-        // Texto libre: Nombre o Teléfono
         if (search) {
           const nombre = getField(lead, 'Nombre').toLowerCase();
           const telefono = getField(lead, 'Telefono').toLowerCase();
@@ -1242,29 +1192,19 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             return false;
           }
         }
-
-        // Mes
         if (mes && getField(lead, 'Mes').trim() !== mes) return false;
-
-        // Campaña
         if (campana && getField(lead, 'Campaña').trim() !== campana) return false;
-
-        // Medio
         if (medio && getField(lead, 'Medio').trim() !== medio) return false;
-
-        // Gestión
         if (gestion && getField(lead, 'GESTION').trim() !== gestion) return false;
-
         return true;
       });
 
-      // Update counters
       const activeCount = [mes, campana, medio, gestion, search].filter(Boolean).length;
       const activeFiltersCountEl = document.getElementById('activeFiltersCount');
       if (activeFiltersCountEl) {
         activeFiltersCountEl.innerText = activeCount > 0 
-          ? `${filteredLeads.length} de ${allLeads.length} (${activeCount} filtro${activeCount > 1 ? 's' : ''})`
-          : `${filteredLeads.length} leads en total`;
+          ? `${filteredLeads.length.toLocaleString()} de ${allLeads.length.toLocaleString()} (${activeCount} filtro${activeCount > 1 ? 's' : ''})`
+          : `${filteredLeads.length.toLocaleString()} leads en total`;
       }
 
       currentPage = 1;
@@ -1284,31 +1224,27 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     // -------------------------------------------------------------
-    // 6. CÁLCULO DE KPIS
+    // 5. CÁLCULO DE KPIS
     // -------------------------------------------------------------
     function updateKpis() {
       const total = filteredLeads.length;
       const totalDatabase = allLeads.length;
 
-      // Actualizar contador total de la Base de Datos junto a la pestaña Gráficos Históricos 2026
       const tabTotalEl = document.getElementById('tabTotalDatabaseCount');
       if (tabTotalEl) {
         tabTotalEl.innerText = totalDatabase.toLocaleString();
       }
 
-      // Agendados: contiene "Agendad"
       const agendados = filteredLeads.filter(l => {
         const g = getField(l, 'GESTION').toLowerCase();
         return g.includes('agendad');
       }).length;
 
-      // Inscritos: contiene "inscrit"
       const inscritos = filteredLeads.filter(l => {
         const g = getField(l, 'GESTION').toLowerCase();
         return g.includes('inscrit');
       }).length;
 
-      // Conversión: Inscritos / Total * 100
       const conversion = total > 0 ? ((inscritos / total) * 100).toFixed(1) : "0.0";
       const agendadosPct = total > 0 ? ((agendados / total) * 100).toFixed(1) : "0.0";
 
@@ -1321,11 +1257,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       document.getElementById('kpiAgendadosPct').innerText = `${agendadosPct}%`;
       document.getElementById('kpiInscritos').innerText = inscritos.toLocaleString();
       document.getElementById('kpiConversionRate').innerText = `${conversion}%`;
-      document.getElementById('leadsTableCount').innerText = `(${total})`;
+      document.getElementById('leadsTableCount').innerText = `(${total.toLocaleString()})`;
     }
 
     // -------------------------------------------------------------
-    // 7. DASHBOARD ANALÍTICO: MATRIZ CRUZADA (GESTIÓN VS CAMPAÑAS)
+    // 6. MATRIZ CRUZADA ANALÍTICA
     // -------------------------------------------------------------
     function renderMatrix() {
       const thead = document.getElementById('matrixThead');
@@ -1333,7 +1269,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const tfoot = document.getElementById('matrixTfoot');
       if (!thead || !tbody || !tfoot) return;
 
-      // Extract unique statuses and top campaigns
       const gestionesMap = new Map();
       const campanasMap = new Map();
 
@@ -1344,7 +1279,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         campanasMap.set(c, (campanasMap.get(c) || 0) + 1);
       });
 
-      // Ordenar gestiones: INSCRITO primero, luego Agendado, Información, etc.
       const priorityOrder = ['INSCRITO', 'Agendado', 'Información ', 'Información', 'Interesado', 'No Contesta', 'Vive Lejos', 'No Procede', 'No puede costearlo'];
       const sortedGestiones = Array.from(gestionesMap.keys()).sort((a, b) => {
         const idxA = priorityOrder.indexOf(a);
@@ -1355,12 +1289,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         return (gestionesMap.get(b) || 0) - (gestionesMap.get(a) || 0);
       });
 
-      // Tomar las campañas más relevantes
       const sortedCampanas = Array.from(campanasMap.keys())
         .filter(c => c !== '')
         .sort((a, b) => (campanasMap.get(b) || 0) - (campanasMap.get(a) || 0));
 
-      // 1. Build Header
       let headerHtml = `<tr>
         <th class="px-4 py-3 bg-slate-950 font-bold text-slate-200 border-r border-slate-800">Estatus (GESTIÓN)</th>`;
       sortedCampanas.forEach(camp => {
@@ -1369,7 +1301,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       headerHtml += `<th class="px-4 py-3 text-right bg-slate-950 font-bold text-slate-100 border-l border-slate-800">Total Fila</th></tr>`;
       thead.innerHTML = headerHtml;
 
-      // Matrix computation
       const matrixCounts = {};
       const colTotals = {};
       sortedCampanas.forEach(c => colTotals[c] = 0);
@@ -1379,12 +1310,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         const c = getField(l, 'Campaña').trim() || 'General';
         const cellKey = `${g}:::${c}`;
         matrixCounts[cellKey] = (matrixCounts[cellKey] || 0) + 1;
-        if (colTotals[c] !== undefined) {
-          colTotals[c]++;
-        }
+        if (colTotals[c] !== undefined) colTotals[c]++;
       });
 
-      // 2. Build Body Rows
       let bodyHtml = '';
       sortedGestiones.forEach(gestionName => {
         let rowTotal = 0;
@@ -1413,32 +1341,30 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           }
 
           bodyHtml += `<td class="${cellClass}" onclick="filterFromMatrix('${escapeAttr(gestionName)}', '${escapeAttr(campName)}')">
-            ${count > 0 ? count : '-'}
+            ${count > 0 ? count.toLocaleString() : '-'}
           </td>`;
         });
 
         bodyHtml += `<td class="px-4 py-2.5 text-right font-mono font-bold border-l border-slate-800 text-slate-100 tabular-nums">
-          ${rowTotal}
+          ${rowTotal.toLocaleString()}
         </td></tr>`;
       });
       tbody.innerHTML = bodyHtml;
 
-      // 3. Build Footer
       let grandTotal = 0;
       let footHtml = `<tr>
         <td class="px-4 py-3 font-bold text-slate-100 border-r border-slate-800 uppercase tracking-wider">Total Campaña</td>`;
       sortedCampanas.forEach(campName => {
         const colSum = colTotals[campName] || 0;
         grandTotal += colSum;
-        footHtml += `<td class="px-3 py-3 text-center font-mono font-bold text-slate-100 tabular-nums">${colSum}</td>`;
+        footHtml += `<td class="px-3 py-3 text-center font-mono font-bold text-slate-100 tabular-nums">${colSum.toLocaleString()}</td>`;
       });
       footHtml += `<td class="px-4 py-3 text-right font-mono font-extrabold text-indigo-400 bg-indigo-500/10 border-l border-slate-800 tabular-nums text-sm">
-        ${grandTotal}
+        ${grandTotal.toLocaleString()}
       </td></tr>`;
       tfoot.innerHTML = footHtml;
     }
 
-    // Al hacer clic en una celda de la matriz cruzada, filtra inmediatamente la tabla principal
     function filterFromMatrix(gestion, campana) {
       const filterGestion = document.getElementById('filterGestion');
       const filterCampana = document.getElementById('filterCampana');
@@ -1446,12 +1372,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (filterCampana && campana) filterCampana.value = campana;
       applyFilters();
       showToast(`Filtrado por: ${gestion} en ${campana}`, "info");
-      // Scroll to table smoothly
       document.querySelector('#leadsTableBody')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     // -------------------------------------------------------------
-    // 8. RENDERIZADO DE LA TABLA PRINCIPAL DE LEADS
+    // 7. TABLA PRINCIPAL DE LEADS
     // -------------------------------------------------------------
     function renderTable() {
       const tbody = document.getElementById('leadsTableBody');
@@ -1470,7 +1395,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           <td colspan="9" class="text-center py-12 text-slate-500">
             <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
             <p class="font-medium text-slate-400">No se encontraron leads con los filtros actuales</p>
-            <button onclick="resetAllFilters()" class="mt-2 text-indigo-400 hover:underline text-xs">Limpiar filtros de búsqueda</button>
+            <button onclick="resetAllFilters()" class="mt-2 text-indigo-400 hover:underline text-xs cursor-pointer">Limpiar filtros de búsqueda</button>
           </td>
         </tr>`;
         updatePaginationUI(0, 0, 0, 1);
@@ -1490,10 +1415,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         const gestion = getField(lead, 'GESTION') || 'Información';
         const agente = getField(lead, 'Agente ') || getField(lead, 'Agente') || '-';
 
-        // Badge de Gestión inteligente
         const badgeHtml = renderGestionBadge(gestion);
-
-        // Link de WhatsApp sanitizado
         const cleanPhone = telefono.replace(/\D/g, '');
         const waLink = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent('Hola ' + nombre + ', te escribimos de Sociedad Actoral Hispanoamericana.')}` : '#';
 
@@ -1540,7 +1462,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (window.lucide) lucide.createIcons();
     }
 
-    // Badge inteligente de gestión
     function renderGestionBadge(gestion) {
       const g = (gestion || '').trim();
       const lower = g.toLowerCase();
@@ -1571,35 +1492,31 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       </span>`;
     }
 
-    // Controles de Paginación
     function updatePaginationUI(start, end, total, totalPages) {
       const infoEl = document.getElementById('paginationInfo');
       const controlsEl = document.getElementById('paginationControls');
       if (infoEl) {
-        infoEl.innerText = total > 0 ? `Mostrando ${start} a ${end} de ${total} registros` : "Sin registros";
+        infoEl.innerText = total > 0 ? `Mostrando ${start.toLocaleString()} a ${end.toLocaleString()} de ${total.toLocaleString()} registros` : "Sin registros";
       }
       if (!controlsEl) return;
 
       let html = '';
-      // Botón Anterior
       html += `<button onclick="goToPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled class="px-2 py-1 rounded bg-slate-800 text-slate-600 cursor-not-allowed"' : 'class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer"'}>
         <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
       </button>`;
 
-      // Números de páginas con elipsis
       const pagesToShow = getPaginationRange(currentPage, totalPages);
       pagesToShow.forEach(p => {
         if (p === '...') {
           html += `<span class="px-2 py-1 text-slate-500">...</span>`;
         } else {
           const isActive = p === currentPage;
-          html += `<button onclick="goToPage(${p})" class="px-2.5 py-1 rounded text-xs font-mono font-semibold transition-colors ${isActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}">
+          html += `<button onclick="goToPage(${p})" class="px-2.5 py-1 rounded text-xs font-mono font-semibold transition-colors cursor-pointer ${isActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}">
             ${p}
           </button>`;
         }
       });
 
-      // Botón Siguiente
       html += `<button onclick="goToPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled class="px-2 py-1 rounded bg-slate-800 text-slate-600 cursor-not-allowed"' : 'class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer"'}>
         <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
       </button>`;
@@ -1630,7 +1547,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     // -------------------------------------------------------------
-    // 9. OPERACIONES: CREAR LEAD (INSERT)
+    // 8. CREAR LEAD (INSERT)
     // -------------------------------------------------------------
     function openNewLeadModal() {
       const modal = document.getElementById('modalNewLead');
@@ -1681,22 +1598,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
           if (error) {
             console.error("Error al insertar en Supabase:", error);
-            showToast("Guardado localmente (aviso Supabase: " + error.message + ")", "warning");
-            newLeadData.id = Date.now();
-            allLeads.unshift(newLeadData);
+            showToast("Error Supabase: " + error.message, "error");
           } else if (data && data.length > 0) {
             allLeads.unshift(data[0]);
             showToast("Lead registrado con éxito en Supabase", "success");
+            closeNewLeadModal();
+            populateFilterOptions();
+            applyFilters();
           }
-        } else {
-          newLeadData.id = Date.now();
-          allLeads.unshift(newLeadData);
-          showToast("Lead guardado localmente", "info");
         }
-
-        closeNewLeadModal();
-        populateFilterOptions();
-        applyFilters();
       } catch (err) {
         console.error("Excepción al crear lead:", err);
         showToast("Error inesperado al guardar", "error");
@@ -1706,7 +1616,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     // -------------------------------------------------------------
-    // 10. OPERACIONES: EDITAR / SEGUIMIENTO LEAD (UPDATE)
+    // 9. EDITAR / SEGUIMIENTO LEAD (UPDATE)
     // -------------------------------------------------------------
     function openEditLeadModal(leadId) {
       const lead = allLeads.find(l => String(l.id) === String(leadId));
@@ -1718,7 +1628,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const gestionSelect = document.getElementById('editGestion');
       const currentGestion = getField(lead, 'GESTION').trim();
       if (gestionSelect) {
-        // Find matching option
         let found = false;
         for (let opt of gestionSelect.options) {
           if (opt.value.trim().toLowerCase() === currentGestion.toLowerCase()) {
@@ -1792,23 +1701,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
           if (error) {
             console.error("Error al actualizar en Supabase:", error);
-            showToast("Aviso Supabase: " + error.message, "warning");
+            showToast("Error Supabase: " + error.message, "error");
           } else {
             showToast("Lead #" + leadId + " actualizado en Supabase", "success");
+            const idx = allLeads.findIndex(l => String(l.id) === String(leadId));
+            if (idx !== -1) {
+              allLeads[idx] = { ...allLeads[idx], ...updatedFields };
+            }
+            closeEditLeadModal();
+            populateFilterOptions();
+            applyFilters();
           }
-        } else {
-          showToast("Actualizado en memoria local", "info");
         }
-
-        // Actualizar el estado local
-        const idx = allLeads.findIndex(l => String(l.id) === String(leadId));
-        if (idx !== -1) {
-          allLeads[idx] = { ...allLeads[idx], ...updatedFields };
-        }
-
-        closeEditLeadModal();
-        populateFilterOptions();
-        applyFilters();
       } catch (err) {
         console.error("Excepción al actualizar:", err);
         showToast("Error inesperado al actualizar", "error");
@@ -1818,7 +1722,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     // -------------------------------------------------------------
-    // 11. MODAL DE FICHA DETALLE DE LEAD
+    // 10. FICHA DETALLE LEAD
     // -------------------------------------------------------------
     function openViewLeadModal(leadId) {
       const lead = allLeads.find(l => String(l.id) === String(leadId));
@@ -1886,7 +1790,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         </div>
 
         <div class="flex justify-end pt-2">
-          <button onclick="closeViewLeadModal(); openEditLeadModal('${escapeAttr(lead.id)}')" class="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-1.5 text-xs">
+          <button onclick="closeViewLeadModal(); openEditLeadModal('${escapeAttr(lead.id)}')" class="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-1.5 text-xs cursor-pointer">
             <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
             <span>Editar este Lead</span>
           </button>
@@ -1910,7 +1814,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     // -------------------------------------------------------------
-    // 12. MODAL RLS Y REFRESH
+    // 11. MODAL RLS Y REFRESH
     // -------------------------------------------------------------
     function openRlsModal() {
       const modal = document.getElementById('modalRls');
@@ -1951,7 +1855,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }, 600);
     }
 
-    // Exportar leads filtrados a CSV
     function exportCurrentLeadsCSV() {
       if (filteredLeads.length === 0) {
         showToast("No hay registros para exportar", "warning");
@@ -1980,11 +1883,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      showToast(`${filteredLeads.length} leads exportados a CSV`, "success");
+      showToast(`${filteredLeads.length.toLocaleString()} leads exportados a CSV`, "success");
     }
 
     // -------------------------------------------------------------
-    // 13. SISTEMA DE TOASTS & HELPERS
+    // 12. TOASTS & HELPERS
     // -------------------------------------------------------------
     function showToast(message, type = 'info') {
       const container = document.getElementById('toastContainer');
@@ -2011,11 +1914,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       container.appendChild(toast);
       if (window.lucide) lucide.createIcons();
 
-      // Trigger animation
-      setTimeout(() => {
-        toast.classList.remove('translate-y-2', 'opacity-0');
-      }, 20);
-
+      setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 20);
       setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-y-2');
         setTimeout(() => toast.remove(), 250);
@@ -2028,7 +1927,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         tbody.innerHTML = `<tr>
           <td colspan="9" class="text-center py-12 text-slate-400">
             <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-            <p class="font-medium text-xs">Cargando base de datos de leads...</p>
+            <p class="font-medium text-xs">Cargando base de datos desde Supabase (5.810 registros)...</p>
           </td>
         </tr>`;
       }
@@ -2052,7 +1951,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     // -------------------------------------------------------------
-    // 14. ANÁLISIS Y RENDERIZADO DE GRÁFICOS HISTÓRICOS 2026
+    // 13. ANÁLISIS Y GRÁFICOS HISTÓRICOS 2026
     // -------------------------------------------------------------
     const MONTH_CHRONO = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
 
@@ -2074,14 +1973,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         if (a) agentes.add(a);
       });
 
-      // Update Campaña options
       const campOptions = ['<option value="">Todas las Campañas</option>'];
       Array.from(campanas).sort().forEach(c => {
         campOptions.push(`<option value="${escapeAttr(c)}" ${c === currentCamp ? 'selected' : ''}>${escapeHtml(c)}</option>`);
       });
       campanaSelect.innerHTML = campOptions.join('');
 
-      // Update Agente options
       const agentOptions = ['<option value="">Todos los Asesores</option>'];
       Array.from(agentes).sort().forEach(a => {
         agentOptions.push(`<option value="${escapeAttr(a)}" ${a === currentAgent ? 'selected' : ''}>${escapeHtml(a)}</option>`);
@@ -2090,17 +1987,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     function renderHistoricalAnalytics() {
-      if (!window.Chart) {
-        console.warn("Chart.js aún no está cargado");
-        return;
-      }
+      if (!window.Chart) return;
 
       populateHistoricalFilterOptions();
 
       const selectedCampana = document.getElementById('histFilterCampana')?.value || '';
       const selectedAgente = document.getElementById('histFilterAgente')?.value || '';
 
-      // Filtrar el conjunto a analizar según los filtros de la pestaña histórica
       let data = allLeads;
       if (selectedCampana) {
         data = data.filter(l => getField(l, 'Campaña').trim() === selectedCampana);
@@ -2109,34 +2002,22 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         data = data.filter(l => getField(l, 'Agente ').trim() === selectedAgente);
       }
 
-      // 1. CÁLCULO DE KPIS GLOBALES
       const totalLeads = data.length;
       const totalInscritos = data.filter(l => getField(l, 'GESTION').toUpperCase().includes('INSCRIT')).length;
       const convRate = totalLeads > 0 ? ((totalInscritos / totalLeads) * 100).toFixed(1) : '0.0';
 
-      const elTotal = document.getElementById('histKpiTotalLeads');
-      const elInsc = document.getElementById('histKpiInscritos');
-      const elConv = document.getElementById('histKpiConversion');
-      if (elTotal) elTotal.textContent = totalLeads.toLocaleString();
-      if (elInsc) elInsc.textContent = totalInscritos.toLocaleString();
-      if (elConv) elConv.textContent = convRate + '%';
+      document.getElementById('histKpiTotalLeads').textContent = totalLeads.toLocaleString();
+      document.getElementById('histKpiInscritos').textContent = totalInscritos.toLocaleString();
+      document.getElementById('histKpiConversion').textContent = convRate + '%';
 
-      // 2. AGRUPACIÓN MENSUAL
       const monthlyStats = {};
       MONTH_CHRONO.forEach(m => {
-        monthlyStats[m] = {
-          total: 0,
-          inscritos: 0,
-          agendados: 0,
-          campanas: {},
-          agentes: {}
-        };
+        monthlyStats[m] = { total: 0, inscritos: 0, agendados: 0, campanas: {}, agentes: {} };
       });
 
       data.forEach(l => {
         let mes = getField(l, 'Mes').trim().toUpperCase();
         if (!monthlyStats[mes]) {
-          // Mapeo flexible para variaciones
           const found = MONTH_CHRONO.find(m => mes.includes(m));
           mes = found || 'OTRO';
           if (!monthlyStats[mes]) monthlyStats[mes] = { total: 0, inscritos: 0, agendados: 0, campanas: {}, agentes: {} };
@@ -2158,13 +2039,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         }
       });
 
-      // Determinar meses activos
       const activeMonths = MONTH_CHRONO.filter(m => monthlyStats[m] && monthlyStats[m].total > 0);
       if (activeMonths.length === 0 && monthlyStats['OTRO']?.total > 0) {
         activeMonths.push('OTRO');
       }
 
-      // Encontrar Mes Récord
       let recordMonth = '-';
       let recordCount = 0;
       activeMonths.forEach(m => {
@@ -2174,12 +2053,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         }
       });
 
-      const elRecordMonth = document.getElementById('histKpiRecordMonth');
-      const elRecordCount = document.getElementById('histKpiRecordCount');
-      if (elRecordMonth) elRecordMonth.textContent = recordMonth;
-      if (elRecordCount) elRecordCount.textContent = recordCount + ' leads';
+      document.getElementById('histKpiRecordMonth').textContent = recordMonth;
+      document.getElementById('histKpiRecordCount').textContent = recordCount.toLocaleString() + ' leads';
 
-      // 3. TABLA MENSUAL CONSOLIDADA
       const tableBody = document.getElementById('histMonthlyTableBody');
       if (tableBody) {
         if (activeMonths.length === 0) {
@@ -2190,14 +2066,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             const mConv = st.total > 0 ? ((st.inscritos / st.total) * 100).toFixed(1) : '0.0';
             const mYearPct = totalLeads > 0 ? ((st.total / totalLeads) * 100).toFixed(1) : '0.0';
 
-            // Campaña más fuerte
             let topCamp = '-';
             let topCampCount = 0;
             Object.entries(st.campanas).forEach(([c, cnt]) => {
               if (cnt > topCampCount) { topCampCount = cnt; topCamp = c; }
             });
 
-            // Agente con más cierres
             let topAg = '-';
             let topAgCount = 0;
             Object.entries(st.agentes).forEach(([a, cnt]) => {
@@ -2207,9 +2081,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             return `
               <tr class="hover:bg-slate-800/40 transition-colors">
                 <td class="px-4 py-3 font-semibold text-slate-200">${escapeHtml(m)}</td>
-                <td class="px-4 py-3 text-right text-white font-bold tabular-nums">${st.total}</td>
-                <td class="px-4 py-3 text-right text-amber-400 tabular-nums">${st.agendados}</td>
-                <td class="px-4 py-3 text-right text-emerald-400 font-bold tabular-nums">${st.inscritos}</td>
+                <td class="px-4 py-3 text-right text-white font-bold tabular-nums">${st.total.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right text-amber-400 tabular-nums">${st.agendados.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right text-emerald-400 font-bold tabular-nums">${st.inscritos.toLocaleString()}</td>
                 <td class="px-4 py-3 text-right tabular-nums">
                   <span class="px-2 py-0.5 rounded text-xs font-semibold ${Number(mConv) >= 15 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}">
                     ${mConv}%
@@ -2224,30 +2098,19 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         }
       }
 
-      // 4. CONFIGURACIÓN VISUAL GENERAL DE CHART.JS (Dark Mode)
       Chart.defaults.color = '#94a3b8';
       Chart.defaults.font.family = '"Plus Jakarta Sans", sans-serif';
 
       const commonScales = {
-        x: {
-          grid: { color: 'rgba(51, 65, 85, 0.35)' },
-          ticks: { color: '#94a3b8', font: { size: 11 } }
-        },
-        y: {
-          grid: { color: 'rgba(51, 65, 85, 0.35)' },
-          ticks: { color: '#94a3b8', font: { size: 11 } },
-          beginAtZero: true
-        }
+        x: { grid: { color: 'rgba(51, 65, 85, 0.35)' }, ticks: { color: '#94a3b8', font: { size: 11 } } },
+        y: { grid: { color: 'rgba(51, 65, 85, 0.35)' }, ticks: { color: '#94a3b8', font: { size: 11 } }, beginAtZero: true }
       };
 
-      // GRÁFICO 1: EVOLUCIÓN MENSUAL (BAR & LINE)
+      // GRÁFICO 1
       const ctxMonthly = document.getElementById('chartMonthlyEvolution');
       if (ctxMonthly) {
         if (histCharts.monthly) histCharts.monthly.destroy();
         const labels = activeMonths;
-        const totalData = labels.map(m => monthlyStats[m].total);
-        const inscritosData = labels.map(m => monthlyStats[m].inscritos);
-
         histCharts.monthly = new Chart(ctxMonthly, {
           data: {
             labels: labels,
@@ -2255,102 +2118,60 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
               {
                 type: 'line',
                 label: 'Inscritos Matriculados',
-                data: inscritosData,
+                data: labels.map(m => monthlyStats[m].inscritos),
                 borderColor: '#10b981',
                 backgroundColor: 'rgba(16, 185, 129, 0.15)',
                 borderWidth: 3,
-                pointBackgroundColor: '#10b981',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 1.5,
                 pointRadius: 5,
-                pointHoverRadius: 7,
                 tension: 0.3,
                 order: 1
               },
               {
                 type: 'bar',
                 label: 'Total Leads Captados',
-                data: totalData,
+                data: labels.map(m => monthlyStats[m].total),
                 backgroundColor: 'rgba(99, 102, 241, 0.75)',
-                hoverBackgroundColor: '#6366f1',
                 borderRadius: 6,
-                borderSkipped: false,
                 order: 2
               }
             ]
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                labels: { color: '#cbd5e1', font: { weight: '600', size: 12 } }
-              },
-              tooltip: {
-                backgroundColor: '#0f172a',
-                titleColor: '#ffffff',
-                bodyColor: '#cbd5e1',
-                borderColor: '#334155',
-                borderWidth: 1,
-                padding: 10
-              }
-            },
-            scales: commonScales
-          }
+          options: { responsive: true, maintainAspectRatio: false, scales: commonScales }
         });
       }
 
-      // GRÁFICO 2: TENDENCIA DE CONVERSIÓN MENSUAL (%)
+      // GRÁFICO 2
       const ctxConv = document.getElementById('chartConversionTrend');
       if (ctxConv) {
         if (histCharts.conversion) histCharts.conversion.destroy();
         const labels = activeMonths;
-        const convData = labels.map(m => {
-          const st = monthlyStats[m];
-          return st.total > 0 ? Number(((st.inscritos / st.total) * 100).toFixed(1)) : 0;
-        });
-
         histCharts.conversion = new Chart(ctxConv, {
           type: 'line',
           data: {
             labels: labels,
             datasets: [{
               label: 'Tasa de Conversión (%)',
-              data: convData,
+              data: labels.map(m => {
+                const st = monthlyStats[m];
+                return st.total > 0 ? Number(((st.inscritos / st.total) * 100).toFixed(1)) : 0;
+              }),
               borderColor: '#818cf8',
               backgroundColor: 'rgba(129, 140, 248, 0.12)',
               fill: true,
               borderWidth: 2.5,
-              pointBackgroundColor: '#6366f1',
-              pointRadius: 4,
-              pointHoverRadius: 6,
               tension: 0.35
             }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: { label: (ctx) => ` Conversión: ${ctx.parsed.y}%` }
-              }
-            },
-            scales: {
-              ...commonScales,
-              y: {
-                ...commonScales.y,
-                ticks: {
-                  ...commonScales.y.ticks,
-                  callback: (val) => val + '%'
-                }
-              }
-            }
+            plugins: { legend: { display: false } },
+            scales: { ...commonScales, y: { ...commonScales.y, ticks: { callback: (val) => val + '%' } } }
           }
         });
       }
 
-      // GRÁFICO 3: RENDIMIENTO POR CAMPAÑA (TOP 6)
+      // GRÁFICO 3
       const ctxCamp = document.getElementById('chartCampaignPerformance');
       if (ctxCamp) {
         if (histCharts.campaign) histCharts.campaign.destroy();
@@ -2359,47 +2180,23 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           const c = getField(l, 'Campaña').trim() || 'Sin Campaña';
           if (!campMap[c]) campMap[c] = { total: 0, inscritos: 0 };
           campMap[c].total++;
-          if (getField(l, 'GESTION').toUpperCase().includes('INSCRIT')) {
-            campMap[c].inscritos++;
-          }
+          if (getField(l, 'GESTION').toUpperCase().includes('INSCRIT')) campMap[c].inscritos++;
         });
-
-        const sortedCamps = Object.entries(campMap)
-          .sort((a, b) => b[1].total - a[1].total)
-          .slice(0, 6);
-
+        const sortedCamps = Object.entries(campMap).sort((a, b) => b[1].total - a[1].total).slice(0, 6);
         histCharts.campaign = new Chart(ctxCamp, {
           type: 'bar',
           data: {
             labels: sortedCamps.map(c => c[0]),
             datasets: [
-              {
-                label: 'Total Leads',
-                data: sortedCamps.map(c => c[1].total),
-                backgroundColor: 'rgba(59, 130, 246, 0.65)',
-                borderRadius: 4
-              },
-              {
-                label: 'Inscritos',
-                data: sortedCamps.map(c => c[1].inscritos),
-                backgroundColor: 'rgba(16, 185, 129, 0.85)',
-                borderRadius: 4
-              }
+              { label: 'Total Leads', data: sortedCamps.map(c => c[1].total), backgroundColor: 'rgba(59, 130, 246, 0.65)', borderRadius: 4 },
+              { label: 'Inscritos', data: sortedCamps.map(c => c[1].inscritos), backgroundColor: 'rgba(16, 185, 129, 0.85)', borderRadius: 4 }
             ]
           },
-          options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { labels: { color: '#cbd5e1' } }
-            },
-            scales: commonScales
-          }
+          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: commonScales }
         });
       }
 
-      // GRÁFICO 4: MEDIOS DE ENTRADA (DONA)
+      // GRÁFICO 4
       const ctxMedio = document.getElementById('chartMedioDistribution');
       if (ctxMedio) {
         if (histCharts.medio) histCharts.medio.destroy();
@@ -2408,44 +2205,23 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           const m = getField(l, 'Medio').trim() || 'Directo/Otro';
           medioCounts[m] = (medioCounts[m] || 0) + 1;
         });
-
-        const sortedMedios = Object.entries(medioCounts)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 6);
-
+        const sortedMedios = Object.entries(medioCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
         histCharts.medio = new Chart(ctxMedio, {
           type: 'doughnut',
           data: {
             labels: sortedMedios.map(m => m[0]),
             datasets: [{
               data: sortedMedios.map(m => m[1]),
-              backgroundColor: [
-                '#10b981', // Verde WhatsApp
-                '#8b5cf6', // Violeta Instagram
-                '#3b82f6', // Azul Lead Directo
-                '#f59e0b', // Ámbar Referidos
-                '#ec4899', // Rosa GCP
-                '#06b6d4'  // Cyan Otros
-              ],
+              backgroundColor: ['#10b981', '#8b5cf6', '#3b82f6', '#f59e0b', '#ec4899', '#06b6d4'],
               borderColor: '#1e293b',
               borderWidth: 2
             }]
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                position: 'right',
-                labels: { color: '#cbd5e1', font: { size: 11 }, boxWidth: 12 }
-              }
-            },
-            cutout: '65%'
-          }
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } }, cutout: '65%' }
         });
       }
 
-      // GRÁFICO 5: CIERRES POR ASESOR / AGENTE
+      // GRÁFICO 5
       const ctxAgent = document.getElementById('chartAgentPerformance');
       if (ctxAgent) {
         if (histCharts.agent) histCharts.agent.destroy();
@@ -2454,43 +2230,19 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           const a = getField(l, 'Agente ').trim() || 'Sin Asignar';
           if (!agentMap[a]) agentMap[a] = { total: 0, inscritos: 0 };
           agentMap[a].total++;
-          if (getField(l, 'GESTION').toUpperCase().includes('INSCRIT')) {
-            agentMap[a].inscritos++;
-          }
+          if (getField(l, 'GESTION').toUpperCase().includes('INSCRIT')) agentMap[a].inscritos++;
         });
-
-        const sortedAgents = Object.entries(agentMap)
-          .filter(a => a[0] !== 'Sin Asignar' || a[1].total > 2)
-          .sort((a, b) => b[1].inscritos - a[1].inscritos)
-          .slice(0, 6);
-
+        const sortedAgents = Object.entries(agentMap).filter(a => a[0] !== 'Sin Asignar' || a[1].total > 2).sort((a, b) => b[1].inscritos - a[1].inscritos).slice(0, 6);
         histCharts.agent = new Chart(ctxAgent, {
           type: 'bar',
           data: {
             labels: sortedAgents.map(a => a[0]),
             datasets: [
-              {
-                label: 'Leads Atendidos',
-                data: sortedAgents.map(a => a[1].total),
-                backgroundColor: 'rgba(148, 163, 184, 0.4)',
-                borderRadius: 4
-              },
-              {
-                label: 'Inscripciones Logradas',
-                data: sortedAgents.map(a => a[1].inscritos),
-                backgroundColor: '#10b981',
-                borderRadius: 4
-              }
+              { label: 'Leads Atendidos', data: sortedAgents.map(a => a[1].total), backgroundColor: 'rgba(148, 163, 184, 0.4)', borderRadius: 4 },
+              { label: 'Inscripciones Logradas', data: sortedAgents.map(a => a[1].inscritos), backgroundColor: '#10b981', borderRadius: 4 }
             ]
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { labels: { color: '#cbd5e1' } }
-            },
-            scales: commonScales
-          }
+          options: { responsive: true, maintainAspectRatio: false, scales: commonScales }
         });
       }
 
@@ -2498,7 +2250,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     // -------------------------------------------------------------
-    // 15. INICIALIZACIÓN AL CARGAR LA PÁGINA
+    // 14. INICIALIZACIÓN
     // -------------------------------------------------------------
     document.addEventListener('DOMContentLoaded', () => {
       loadLeadsData();

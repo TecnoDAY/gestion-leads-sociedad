@@ -953,7 +953,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             <i data-lucide="info" class="w-4 h-4 text-indigo-400"></i>
             <span>Credenciales en uso</span>
           </div>
-          <p class="font-mono text-[11px] text-slate-400 truncate">URL: https://hkkuomlcqyxtzblowle.supabase.co</p>
+          <p class="font-mono text-[11px] text-slate-400 truncate">URL: https://hkkuyomlcqyxtzblowle.supabase.co</p>
           <p class="font-mono text-[11px] text-slate-400 truncate">Key: sb_publishable_bcFmG6jsAW6lo2WJn3L7BA_BKtiIsmR</p>
         </div>
       </div>
@@ -990,6 +990,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // 2. ESTADO GLOBAL DE LA APLICACIÓN
     // -------------------------------------------------------------
     let allLeads = [];          // Todos los leads cargados
+    let totalDatabaseCount = 0; // Conteo exacto de leads en la base de datos
     let filteredLeads = [];     // Leads filtrados actualmente
     let currentPage = 1;
     let pageSize = 20;
@@ -1044,10 +1045,22 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
       if (supabaseClient) {
         try {
-          const { data, error } = await supabaseClient
-            .from('leads')
-            .select('*')
-            .order('id', { ascending: false });
+          const [{ data, error }, { count, error: countError }] = await Promise.all([
+            supabaseClient
+              .from('leads')
+              .select('*')
+              .order('id', { ascending: false }),
+            supabaseClient
+              .from('leads')
+              .select('*', { count: 'exact', head: true })
+          ]);
+
+          if (countError) {
+            console.error("Error contando registros en Supabase:", countError);
+            totalDatabaseCount = 0;
+          } else {
+            totalDatabaseCount = count || 0;
+          }
 
           if (error) {
             console.error("Error consultando Supabase:", error);
@@ -1087,7 +1100,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
       if (status === "online") {
         dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-        text.innerText = "Supabase en vivo (" + allLeads.length.toLocaleString() + " leads)";
+        text.innerText = "Supabase en vivo (" + totalDatabaseCount.toLocaleString() + " leads)";
         text.className = "hidden md:inline text-emerald-400 font-semibold";
       } else if (status === "online_empty") {
         dot.className = "w-2 h-2 rounded-full bg-blue-400";
@@ -1228,7 +1241,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // -------------------------------------------------------------
     function updateKpis() {
       const total = filteredLeads.length;
-      const totalDatabase = allLeads.length;
+      const totalDatabase = totalDatabaseCount;
 
       const tabTotalEl = document.getElementById('tabTotalDatabaseCount');
       if (tabTotalEl) {

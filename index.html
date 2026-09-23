@@ -1,0 +1,2492 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestión de Leads 2026 — Sociedad Actoral</title>
+  <meta name="description" content="Panel analítico y operativo de gestión de leads 2026 para Sociedad Actoral. Conexión en tiempo real con Supabase." />
+  <meta property="og:title" content="Gestión de Leads 2026 — Sociedad Actoral" />
+  <meta property="og:description" content="Dashboard analítico con matriz cruzada, KPIs en tiempo real y seguimiento de leads para Sociedad Actoral." />
+  <meta property="og:type" content="website" />
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Supabase JS v2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js CDN for Historical Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Custom scrollbar and table aesthetics */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    .glass-card { background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(8px); }
+  </style>
+</head>
+
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- ================= HEADER SUPERIOR ================= -->
+  <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
+          <i data-lucide="clapperboard" class="w-5 h-5 text-white"></i>
+        </div>
+        <div class="truncate">
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold text-white tracking-tight leading-none truncate">
+              Gestión de Leads 2026
+            </h1>
+            <span class="hidden sm:inline-block text-xs font-semibold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              Sociedad Actoral
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5 hidden sm:block truncate">
+            Panel Operativo & Analítico de Admisiones
+          </p>
+        </div>
+      </div>
+
+      <!-- Action Buttons & Status -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <!-- Live Connection Status -->
+        <div id="connectionStatusBadge" class="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700/80 text-xs font-medium text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="statusDot"></span>
+          <span id="statusText" class="hidden md:inline">Supabase en vivo</span>
+        </div>
+
+        <!-- Refresh Button -->
+        <button id="btnRefresh" onclick="refreshLeadsData()" title="Refrescar datos de Supabase" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors">
+          <i data-lucide="refresh-cw" id="refreshIcon" class="w-4 h-4"></i>
+        </button>
+
+        <!-- View Security / RLS Schema -->
+        <button onclick="openRlsModal()" title="Ver políticas de seguridad y esquema SQL" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span>SQL & RLS</span>
+        </button>
+
+        <!-- New Lead Button -->
+        <button onclick="openNewLeadModal()" class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 transition-all cursor-pointer">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <span>+ Nuevo Lead</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= BARRA DE PESTAÑAS PRINCIPALES ================= -->
+  <div class="bg-slate-900/90 border-b border-slate-800 sticky top-16 z-20 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <nav class="flex space-x-1 sm:space-x-2 py-2" aria-label="Tabs">
+        <!-- Pestaña 1: Panel Operativo -->
+        <button id="tabBtnDashboard" onclick="switchTab('dashboard')" class="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          <span>Panel Operativo & Leads</span>
+        </button>
+
+        <!-- Pestaña 2: Gráficos Históricos -->
+        <button id="tabBtnHistorico" onclick="switchTab('historico')" class="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer border border-transparent">
+          <i data-lucide="line-chart" class="w-4 h-4"></i>
+          <span>Gráficos Históricos</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono font-semibold">2026</span>
+        </button>
+      </nav>
+
+      <div class="hidden sm:flex items-center gap-2 text-xs text-slate-400">
+        <i data-lucide="history" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span>Histórico Sociedad Actoral</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CONTENEDOR PRINCIPAL ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ================= VISTA 1: PANEL OPERATIVO ================= -->
+    <div id="viewDashboard" class="space-y-6">
+
+    <!-- KPI CARDS -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Total Leads -->
+      <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-semibold uppercase tracking-wider">Total Leads</span>
+          <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+            <i data-lucide="users" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="kpiTotalLeads" class="text-2xl sm:text-3xl font-bold font-mono text-white tabular-nums">0</span>
+          <span class="text-xs text-slate-400 font-medium" id="kpiTotalSubtitle">filtrados</span>
+        </div>
+      </div>
+
+      <!-- Agendados -->
+      <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-semibold uppercase tracking-wider">Agendados</span>
+          <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+            <i data-lucide="calendar-check" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="kpiAgendados" class="text-2xl sm:text-3xl font-bold font-mono text-amber-400 tabular-nums">0</span>
+          <span class="text-xs text-slate-400" id="kpiAgendadosPct">0%</span>
+        </div>
+      </div>
+
+      <!-- Inscritos -->
+      <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-semibold uppercase tracking-wider">Inscritos</span>
+          <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+            <i data-lucide="badge-check" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="kpiInscritos" class="text-2xl sm:text-3xl font-bold font-mono text-emerald-400 tabular-nums">0</span>
+          <span class="text-xs text-emerald-400/80 font-medium">matriculados</span>
+        </div>
+      </div>
+
+      <!-- Tasa de Conversión -->
+      <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-semibold uppercase tracking-wider">Conversión</span>
+          <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="kpiConversionRate" class="text-2xl sm:text-3xl font-bold font-mono text-indigo-400 tabular-nums">0.0%</span>
+          <span class="text-xs text-slate-400">de cierre</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- BARRA DE FILTROS AVANZADOS -->
+    <section class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 text-sm font-semibold text-slate-200">
+          <i data-lucide="filter" class="w-4 h-4 text-indigo-400"></i>
+          <span>Filtros Dinámicos en Tiempo Real</span>
+          <span id="activeFiltersCount" class="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 font-mono">Todos los leads</span>
+        </div>
+        <button onclick="resetAllFilters()" class="text-xs text-slate-400 hover:text-indigo-400 flex items-center gap-1 transition-colors cursor-pointer">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span>Limpiar Filtros</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <!-- Búsqueda libre -->
+        <div class="lg:col-span-2">
+          <label class="block text-xs font-medium text-slate-400 mb-1">Buscar (Nombre o Teléfono)</label>
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+            <input type="text" id="filterSearch" oninput="applyFilters()" placeholder="Ej: Diana, 786, Camila..." class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
+          </div>
+        </div>
+
+        <!-- Filtro Mes -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Mes</label>
+          <select id="filterMes" onchange="applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+            <option value="">Todos los meses</option>
+          </select>
+        </div>
+
+        <!-- Filtro Campaña -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Campaña</label>
+          <select id="filterCampana" onchange="applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+            <option value="">Todas las campañas</option>
+          </select>
+        </div>
+
+        <!-- Filtro Medio -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Medio</label>
+          <select id="filterMedio" onchange="applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+            <option value="">Todos los medios</option>
+          </select>
+        </div>
+
+        <!-- Filtro Gestión -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Gestión / Estatus</label>
+          <select id="filterGestion" onchange="applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+            <option value="">Todas las gestiones</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD ANALÍTICO - MATRIZ CRUZADA (GESTIÓN VS CAMPAÑAS) -->
+    <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden">
+      <div class="p-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <div class="flex items-center gap-2">
+            <i data-lucide="layout-grid" class="w-4 h-4 text-emerald-400"></i>
+            <h2 class="text-sm sm:text-base font-bold text-white">Matriz Cruzada Analítica (Gestión vs Campañas)</h2>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">
+            Tabla dinámica cruzada interactiva. Haz clic en cualquier celda para filtrar la lista instantáneamente.
+          </p>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+          <span class="inline-block w-2.5 h-2.5 rounded bg-emerald-500"></span> <span>Alta densidad</span>
+          <span class="inline-block w-2.5 h-2.5 rounded bg-slate-800 border border-slate-700 ml-2"></span> <span>Sin registros</span>
+        </div>
+      </div>
+
+      <!-- Tabla Matriz Cruzada con Scroll Horizontal -->
+      <div class="overflow-x-auto max-h-96">
+        <table class="w-full text-xs text-left" id="matrixTable">
+          <thead class="text-[11px] uppercase tracking-wider text-slate-300 bg-slate-950/80 sticky top-0 z-10 border-b border-slate-800" id="matrixThead">
+            <!-- Headers generados dinámicamente -->
+          </thead>
+          <tbody class="divide-y divide-slate-800 text-slate-200" id="matrixTbody">
+            <!-- Filas generadas dinámicamente -->
+          </tbody>
+          <tfoot class="bg-slate-950/90 font-bold border-t-2 border-slate-700 text-slate-100" id="matrixTfoot">
+            <!-- Totales de columnas -->
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- TABLA PRINCIPAL DE LEADS -->
+    <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden flex flex-col">
+      
+      <!-- Table Header & Controls -->
+      <div class="p-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="table-properties" class="w-4 h-4 text-indigo-400"></i>
+          <h2 class="text-sm sm:text-base font-bold text-white">Registros de Leads</h2>
+          <span id="leadsTableCount" class="text-xs text-slate-400 font-mono">(0)</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <!-- Page size selector -->
+          <div class="flex items-center gap-1.5 text-xs text-slate-400">
+            <span>Mostrar:</span>
+            <select id="pageSizeSelect" onchange="changePageSize(this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 focus:outline-none">
+              <option value="15">15</option>
+              <option value="20" selected>20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+
+          <!-- Export CSV -->
+          <button onclick="exportCurrentLeadsCSV()" class="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-300 hover:text-white transition-colors">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Exportar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div class="overflow-x-auto min-h-[380px]">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead class="bg-slate-950/70 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800 sticky top-0 z-10">
+            <tr>
+              <th class="px-3.5 py-2.5 font-semibold">ID</th>
+              <th class="px-3.5 py-2.5 font-semibold">Fecha / Mes</th>
+              <th class="px-3.5 py-2.5 font-semibold">Nombre del Lead</th>
+              <th class="px-3.5 py-2.5 font-semibold">Teléfono / WhatsApp</th>
+              <th class="px-3.5 py-2.5 font-semibold">Campaña</th>
+              <th class="px-3.5 py-2.5 font-semibold">Medio</th>
+              <th class="px-3.5 py-2.5 font-semibold">Gestión (Estatus)</th>
+              <th class="px-3.5 py-2.5 font-semibold">Agente</th>
+              <th class="px-3.5 py-2.5 font-semibold text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="leadsTableBody" class="divide-y divide-slate-800/80 font-normal">
+            <!-- Rows rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div class="p-3.5 border-t border-slate-800 bg-slate-900/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+        <div id="paginationInfo">Mostrando 0 a 0 de 0 registros</div>
+        <div class="flex items-center gap-1.5" id="paginationControls">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    </div> <!-- /viewDashboard -->
+
+    <!-- ================= VISTA 2: GRÁFICOS HISTÓRICOS ================= -->
+    <div id="viewHistorico" class="space-y-6 hidden">
+
+      <!-- Header & Filtros Históricos -->
+      <div class="glass-card rounded-2xl p-4 sm:p-6 border border-slate-700/80 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+              <i data-lucide="line-chart" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="text-lg sm:text-xl font-bold text-white tracking-tight">Análisis y Gráficos Históricos 2026</h2>
+              <p class="text-xs text-slate-400">Evolución mensual acumulada, tasas de conversión y rendimiento por campaña</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controles rápidos del histórico -->
+        <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          <!-- Filtro de Campaña en Histórico -->
+          <div class="w-full sm:w-auto">
+            <select id="histFilterCampana" onchange="renderHistoricalAnalytics()" class="w-full sm:w-48 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+              <option value="">Todas las Campañas</option>
+            </select>
+          </div>
+
+          <!-- Filtro de Asesor en Histórico -->
+          <div class="w-full sm:w-auto">
+            <select id="histFilterAgente" onchange="renderHistoricalAnalytics()" class="w-full sm:w-40 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+              <option value="">Todos los Asesores</option>
+            </select>
+          </div>
+
+          <button onclick="renderHistoricalAnalytics()" title="Recalcular gráficos" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Actualizar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- KPIS HISTÓRICOS ACUMULADOS -->
+      <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Total Histórico -->
+        <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between text-slate-400">
+            <span class="text-xs font-semibold uppercase tracking-wider">Leads Históricos</span>
+            <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+              <i data-lucide="database" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="histKpiTotalLeads" class="text-2xl sm:text-3xl font-bold font-mono text-white tabular-nums">0</span>
+            <span class="text-xs text-slate-400">2026 total</span>
+          </div>
+        </div>
+
+        <!-- Inscripciones Totales -->
+        <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between text-slate-400">
+            <span class="text-xs font-semibold uppercase tracking-wider">Total Inscritos</span>
+            <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+              <i data-lucide="award" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="histKpiInscritos" class="text-2xl sm:text-3xl font-bold font-mono text-emerald-400 tabular-nums">0</span>
+            <span class="text-xs text-emerald-400/80 font-medium">cerrados</span>
+          </div>
+        </div>
+
+        <!-- Conversión Global -->
+        <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between text-slate-400">
+            <span class="text-xs font-semibold uppercase tracking-wider">Tasa Conversión Global</span>
+            <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+              <i data-lucide="percent" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="histKpiConversion" class="text-2xl sm:text-3xl font-bold font-mono text-indigo-400 tabular-nums">0.0%</span>
+            <span class="text-xs text-slate-400">promedio</span>
+          </div>
+        </div>
+
+        <!-- Mes Récord -->
+        <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between text-slate-400">
+            <span class="text-xs font-semibold uppercase tracking-wider">Mes Récord</span>
+            <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+              <i data-lucide="trophy" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="histKpiRecordMonth" class="text-xl sm:text-2xl font-bold text-amber-400 truncate">-</span>
+            <span class="text-xs text-slate-400" id="histKpiRecordCount">0 leads</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- GRÁFICO 1: EVOLUCIÓN MENSUAL HISTÓRICA (LEADS VS INSCRITOS) -->
+      <div class="glass-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-400"></i>
+              <span>Evolución Mensual de Captación y Cierres (2026)</span>
+            </h3>
+            <p class="text-xs text-slate-400">Comparativa mes a mes del total de leads recibidos frente a alumnos inscritos</p>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            <span class="flex items-center gap-1.5 text-slate-300">
+              <span class="w-3 h-3 rounded bg-indigo-500"></span> Total Leads
+            </span>
+            <span class="flex items-center gap-1.5 text-slate-300">
+              <span class="w-3 h-3 rounded bg-emerald-400"></span> Alumnos Inscritos
+            </span>
+          </div>
+        </div>
+        <div class="relative w-full h-72 sm:h-80">
+          <canvas id="chartMonthlyEvolution"></canvas>
+        </div>
+      </div>
+
+      <!-- FILA DE 2 GRÁFICOS: TASA CONVERSIÓN & CAMPANAS -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Gráfico 2: Tasa de Conversión Mensual (%) -->
+        <div class="glass-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
+                <span>Tendencia de Conversión Mensual (%)</span>
+              </h3>
+              <p class="text-xs text-slate-400">Porcentaje de leads convertidos en matrícula cada mes</p>
+            </div>
+          </div>
+          <div class="relative w-full h-64">
+            <canvas id="chartConversionTrend"></canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico 3: Inscritos y Leads por Campaña -->
+        <div class="glass-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-amber-400"></i>
+                <span>Rendimiento por Campaña</span>
+              </h3>
+              <p class="text-xs text-slate-400">Volumen de leads e inscripciones por programa</p>
+            </div>
+          </div>
+          <div class="relative w-full h-64">
+            <canvas id="chartCampaignPerformance"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILA DE 2 GRÁFICOS: MEDIOS & AGENTES -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Gráfico 4: Canales de Captación / Medios -->
+        <div class="glass-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="share-2" class="w-4 h-4 text-blue-400"></i>
+                <span>Canales de Entrada (Medio)</span>
+              </h3>
+              <p class="text-xs text-slate-400">Distribución de leads según su canal de procedencia</p>
+            </div>
+          </div>
+          <div class="relative w-full h-64 flex items-center justify-center">
+            <canvas id="chartMedioDistribution"></canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico 5: Cierres por Asesor / Agente -->
+        <div class="glass-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="users-check" class="w-4 h-4 text-purple-400"></i>
+                <span>Cierres por Asesor / Agente</span>
+              </h3>
+              <p class="text-xs text-slate-400">Total de leads gestionados vs inscritos por asesor</p>
+            </div>
+          </div>
+          <div class="relative w-full h-64">
+            <canvas id="chartAgentPerformance"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLA RESUMEN CONSOLIDADA POR MES -->
+      <div class="glass-card rounded-2xl border border-slate-700/80 shadow-sm overflow-hidden space-y-0">
+        <div class="p-4 border-b border-slate-700/80 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+              <i data-lucide="table-2" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-white text-sm">Resumen Consolidado Histórico por Mes (2026)</h3>
+              <p class="text-xs text-slate-400">Métricas clave desglosadas cronológicamente</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-900/80 border-b border-slate-700/80 text-slate-400 uppercase tracking-wider font-semibold">
+                <th class="px-4 py-3">Mes</th>
+                <th class="px-4 py-3 text-right">Total Leads</th>
+                <th class="px-4 py-3 text-right">Agendados</th>
+                <th class="px-4 py-3 text-right">Inscritos</th>
+                <th class="px-4 py-3 text-right">% Conversión</th>
+                <th class="px-4 py-3 text-right">% del Año</th>
+                <th class="px-4 py-3">Campaña Más Fuerte</th>
+                <th class="px-4 py-3">Asesor con Más Cierres</th>
+              </tr>
+            </thead>
+            <tbody id="histMonthlyTableBody" class="divide-y divide-slate-800/80 font-mono">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div> <!-- /viewHistorico -->
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="border-t border-slate-800 bg-slate-950 text-xs text-slate-500 py-4 mt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>
+        © 2026 Sociedad Actoral Hispanoamericana (SAH). Todos los derechos reservados.
+      </div>
+      <div class="flex items-center gap-4 text-slate-400">
+        <span>Miami — Weston — Doral</span>
+        <span>•</span>
+        <button onclick="openRlsModal()" class="hover:text-indigo-400 transition-colors">Seguridad Supabase RLS</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= MODAL: NUEVO LEAD ================= -->
+  <div id="modalNewLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-bold text-white text-base">Registrar Nuevo Lead</h3>
+        </div>
+        <button onclick="closeNewLeadModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="formNewLead" onsubmit="handleCreateLead(event)" class="p-6 space-y-4 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Nombre -->
+          <div class="sm:col-span-2">
+            <label class="block font-medium text-slate-300 mb-1">Nombre Completo *</label>
+            <input type="text" id="newNombre" required placeholder="Ej: Marcela Gómez" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <!-- Teléfono -->
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Teléfono / WhatsApp *</label>
+            <input type="text" id="newTelefono" required placeholder="Ej: 1 (786) 555-1234" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <!-- Mes -->
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Mes</label>
+            <select id="newMes" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+              <option value="ENERO">ENERO</option>
+              <option value="FEBRERO">FEBRERO</option>
+              <option value="MARZO">MARZO</option>
+              <option value="ABRIL">ABRIL</option>
+              <option value="MAYO">MAYO</option>
+              <option value="JUNIO">JUNIO</option>
+              <option value="JULIO">JULIO</option>
+              <option value="AGOSTO">AGOSTO</option>
+              <option value="SEPTIEMBRE" selected>SEPTIEMBRE</option>
+              <option value="OCTUBRE">OCTUBRE</option>
+              <option value="NOVIEMBRE">NOVIEMBRE</option>
+              <option value="DICIEMBRE">DICIEMBRE</option>
+            </select>
+          </div>
+
+          <!-- Campaña -->
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Campaña</label>
+            <input type="text" id="newCampana" list="campanaList" placeholder="Ej: Actuacion Kids, Adultos..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <datalist id="campanaList">
+              <option value="Actuacion Adultos">
+              <option value="Actuacion Kids">
+              <option value="Summer Camp">
+              <option value="Weston">
+              <option value="Voz y Diccion">
+              <option value="Taller Camara ">
+              <option value="Locos Adams">
+            </datalist>
+          </div>
+
+          <!-- Medio -->
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Medio</label>
+            <select id="newMedio" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+              <option value="Whatsapp">Whatsapp</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Lead Directo">Lead Directo</option>
+              <option value="Referidos Andres">Referidos Andres</option>
+              <option value="CogniTalkign">CogniTalkign</option>
+            </select>
+          </div>
+
+          <!-- Gestión (Estatus) -->
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Gestión Inicial</label>
+            <select id="newGestion" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+              <option value="Información ">Información</option>
+              <option value="Agendado">Agendado</option>
+              <option value="INSCRITO">INSCRITO</option>
+              <option value="No Contesta">No Contesta</option>
+              <option value="Vive Lejos">Vive Lejos</option>
+              <option value="No puede costearlo">No puede costearlo</option>
+              <option value="Repetido ">Repetido</option>
+              <option value="No Procede">No Procede</option>
+              <option value="Llamar en otro momento ">Llamar en otro momento</option>
+            </select>
+          </div>
+
+          <!-- Agente -->
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Asesor / Agente</label>
+            <input type="text" id="newAgente" list="agenteList" placeholder="Ej: Nina, Jessi, Loli, Ana" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <datalist id="agenteList">
+              <option value="Nina">
+              <option value="Jessi">
+              <option value="Loli">
+              <option value="Ana">
+            </datalist>
+          </div>
+
+          <!-- Ciudad -->
+          <div class="sm:col-span-2">
+            <label class="block font-medium text-slate-300 mb-1">Ciudad / Zona</label>
+            <input type="text" id="newCiudad" placeholder="Ej: Doral, Coral Gables, Weston, Hialeah" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <!-- Observaciones -->
+          <div class="sm:col-span-2">
+            <label class="block font-medium text-slate-300 mb-1">Observaciones Iniciales</label>
+            <textarea id="newObservaciones" rows="3" placeholder="Notas de seguimiento, intereses específicos, edades de los alumnos..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/80">
+          <button type="button" onclick="closeNewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium">Cancelar</button>
+          <button type="submit" id="btnSubmitNewLead" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Guardar en Supabase</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: EDITAR / SEGUIMIENTO ================= -->
+  <div id="modalEditLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+            <i data-lucide="edit-3" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-base">Actualizar Seguimiento</h3>
+            <p id="editLeadLeadInfo" class="text-xs text-slate-400">ID: -</p>
+          </div>
+        </div>
+        <button onclick="closeEditLeadModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="formEditLead" onsubmit="handleUpdateLead(event)" class="p-6 space-y-4 text-xs">
+        <input type="hidden" id="editLeadId">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- GESTION -->
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Estatus de Gestión *</label>
+            <select id="editGestion" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 font-semibold focus:outline-none focus:border-amber-500">
+              <option value="INSCRITO">INSCRITO (Cerrado)</option>
+              <option value="Agendado">Agendado (Cita / Visita)</option>
+              <option value="Información ">Información</option>
+              <option value="No Contesta">No Contesta</option>
+              <option value="Vive Lejos">Vive Lejos</option>
+              <option value="No puede costearlo">No puede costearlo</option>
+              <option value="Llamar en otro momento ">Llamar en otro momento</option>
+              <option value="PROXIMAS INSCRIPCIONES">PROXIMAS INSCRIPCIONES</option>
+              <option value="No Procede">No Procede</option>
+              <option value="Repetido ">Repetido</option>
+              <option value="Colgo">Colgo</option>
+              <option value="En visto">En visto</option>
+              <option value="Menor 5 años">Menor 5 años</option>
+              <option value="Numero Invalido ">Numero Invalido</option>
+            </select>
+          </div>
+
+          <!-- Agente -->
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Agente Asignado</label>
+            <input type="text" id="editAgente" list="agenteList" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
+          </div>
+
+          <!-- Fecha Última Gestión -->
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Fecha Última Gestión</label>
+            <input type="text" id="editFechaUltima" placeholder="Ej: 23/09/2026" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
+          </div>
+
+          <!-- ULTIMA GESTION (Canal) -->
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Tipo de Última Gestión</label>
+            <select id="editUltimaGestion" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
+              <option value="Llamada">Llamada</option>
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="Llamada y WhatsApp">Llamada y WhatsApp</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Visita Conservatorio">Visita Conservatorio</option>
+            </select>
+          </div>
+
+          <!-- ULTIMO AGENTE -->
+          <div class="sm:col-span-2">
+            <label class="block font-medium text-slate-300 mb-1">Último Asesor que gestionó</label>
+            <input type="text" id="editUltimoAgente" list="agenteList" placeholder="Ej: Nina, Jessi, Loli, Ana" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
+          </div>
+
+          <!-- OBSERVACIONES -->
+          <div class="sm:col-span-2">
+            <label class="block font-medium text-slate-300 mb-1">Historial de Observaciones & Notas</label>
+            <textarea id="editObservaciones" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono text-xs"></textarea>
+            <p class="text-[11px] text-slate-400 mt-1">Puedes agregar nuevas notas fechadas al final del texto.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/80">
+          <button type="button" onclick="closeEditLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium">Cancelar</button>
+          <button type="submit" id="btnSubmitEditLead" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-2">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            <span>Actualizar en Supabase</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: FICHA DETALLE LEAD ================= -->
+  <div id="modalViewLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-bold text-white text-base">Ficha Integral del Lead</h3>
+        </div>
+        <button onclick="closeViewLeadModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4 text-xs" id="viewLeadContent">
+        <!-- Injected by JS -->
+      </div>
+
+      <div class="px-6 py-3 border-t border-slate-700/80 bg-slate-900/50 flex justify-end">
+        <button onclick="closeViewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: SEGURIDAD SUPABASE & RLS ================= -->
+  <div id="modalRls" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+            <i data-lucide="shield" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-base">Esquema SQL & Políticas RLS (Supabase)</h3>
+            <p class="text-xs text-slate-400">Políticas de seguridad de fila, autenticación y sincronización en tiempo real</p>
+          </div>
+        </div>
+        <button onclick="closeRlsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-4 text-xs text-slate-300">
+        <p>
+          Para garantizar la integridad y seguridad en producción, ejecuta este script en el 
+          <strong class="text-white">SQL Editor de tu Dashboard de Supabase</strong>:
+        </p>
+
+        <div class="relative">
+          <pre class="bg-slate-950 border border-slate-700 rounded-xl p-4 font-mono text-[11px] text-emerald-400 overflow-x-auto select-all leading-relaxed">
+-- =======================================================
+-- 1. CREACIÓN DE LA TABLA 'leads' (CON RESPETO A COLUMNAS)
+-- =======================================================
+CREATE TABLE IF NOT EXISTS public.leads (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    "Mes" TEXT,
+    "Fecha" TEXT,
+    "Nombre" TEXT NOT NULL,
+    "Telefono" TEXT,
+    "Campaña" TEXT,
+    "Medio" TEXT,
+    "GESTION" TEXT DEFAULT 'Información ',
+    "Interesado en " TEXT,
+    "Ciudad" TEXT,
+    "Agente " TEXT,
+    "Odoo" TEXT,
+    "Fecha de Atencion" TEXT,
+    "OBSERVACIONES " TEXT,
+    "Fecha Última Gestión " TEXT,
+    "ULTIMA GESTION" TEXT,
+    "ULTIMO AGENTE " TEXT,
+    "LANDING" TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- =======================================================
+-- 2. HABILITACIÓN DE ROW LEVEL SECURITY (RLS)
+-- =======================================================
+ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
+
+-- =======================================================
+-- 3. POLÍTICAS DE ACCESO ESTRICTAS (POLICIES)
+-- =======================================================
+-- Política 1: Lectura para anon y autenticados
+CREATE POLICY "Permitir lectura para usuarios de plataforma"
+ON public.leads FOR SELECT
+TO anon, authenticated
+USING (true);
+
+-- Política 2: Inserción validando nombre no vacío
+CREATE POLICY "Permitir insercion con validacion de nombre"
+ON public.leads FOR INSERT
+TO anon, authenticated
+WITH CHECK (
+    "Nombre" IS NOT NULL AND length(trim("Nombre")) > 0
+);
+
+-- Política 3: Actualización de estatus y seguimiento
+CREATE POLICY "Permitir actualizacion para asesores autorizados"
+ON public.leads FOR UPDATE
+TO anon, authenticated
+USING (true)
+WITH CHECK (true);
+
+-- Política 4: Eliminación restringida a autenticados
+CREATE POLICY "Permitir borrado seguro solo para autenticados"
+ON public.leads FOR DELETE
+TO authenticated
+USING (true);
+
+-- =======================================================
+-- 4. HABILITACIÓN DE SINCRONIZACIÓN EN TIEMPO REAL
+-- =======================================================
+ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
+          </pre>
+          <button onclick="copyRlsCode()" class="absolute top-3 right-3 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 flex items-center gap-1">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span id="copyRlsBtnText">Copiar SQL</span>
+          </button>
+        </div>
+
+        <div class="p-3 bg-slate-900 border border-slate-700/80 rounded-xl space-y-1 text-slate-300">
+          <div class="font-semibold text-white flex items-center gap-1.5">
+            <i data-lucide="info" class="w-4 h-4 text-indigo-400"></i>
+            <span>Credenciales en uso</span>
+          </div>
+          <p class="font-mono text-[11px] text-slate-400 truncate">URL: https://hkkuomlcqyxtzblowle.supabase.co</p>
+          <p class="font-mono text-[11px] text-slate-400 truncate">Key: sb_publishable_bcFmG6jsAW6lo2WJn3L7BA_BKtiIsmR</p>
+        </div>
+      </div>
+
+      <div class="px-6 py-3 border-t border-slate-700/80 bg-slate-900/50 flex justify-end shrink-0">
+        <button onclick="closeRlsModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TOAST NOTIFICATION CONTAINER ================= -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ================= LÓGICA DE JAVASCRIPT ================= -->
+  <script>
+    // -------------------------------------------------------------
+    // 1. CONFIGURACIÓN E INICIALIZACIÓN DE SUPABASE
+    // -------------------------------------------------------------
+    const SUPABASE_URL = "https://hkkuomlcqyxtzblowle.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_bcFmG6jsAW6lo2WJn3L7BA_BKtiIsmR";
+
+    let supabaseClient = null;
+    let isSupabaseLive = false;
+
+    try {
+      if (window.supabase && window.supabase.createClient) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+    } catch (err) {
+      console.error("Error inicializando Supabase Client:", err);
+    }
+
+    // -------------------------------------------------------------
+    // 2. ESTADO GLOBAL DE LA APLICACIÓN
+    // -------------------------------------------------------------
+    let allLeads = [];          // Todos los leads cargados
+    let filteredLeads = [];     // Leads filtrados actualmente
+    let currentPage = 1;
+    let pageSize = 20;
+    let currentMainTab = 'dashboard';
+    const histCharts = {};      // Registro de instancias de Chart.js para evitar memory leaks
+
+    // Función para alternar entre la pestaña de Panel Operativo y Gráficos Históricos
+    function switchTab(tab) {
+      currentMainTab = tab;
+      const btnDash = document.getElementById('tabBtnDashboard');
+      const btnHist = document.getElementById('tabBtnHistorico');
+      const viewDash = document.getElementById('viewDashboard');
+      const viewHist = document.getElementById('viewHistorico');
+
+      if (!btnDash || !btnHist || !viewDash || !viewHist) return;
+
+      if (tab === 'dashboard') {
+        btnDash.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
+        btnHist.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer border border-transparent";
+        viewDash.classList.remove('hidden');
+        viewHist.classList.add('hidden');
+      } else {
+        btnDash.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer border border-transparent";
+        btnHist.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
+        viewDash.classList.add('hidden');
+        viewHist.classList.remove('hidden');
+        // Renderizar inmediatamente las analíticas históricas
+        renderHistoricalAnalytics();
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Helper para acceder a campos con posibles espacios al final (ej: "Agente ", "OBSERVACIONES ")
+    function getField(lead, key) {
+      if (!lead) return '';
+      if (lead[key] !== undefined && lead[key] !== null) return String(lead[key]);
+      const trimmed = key.trim();
+      if (lead[trimmed] !== undefined && lead[trimmed] !== null) return String(lead[trimmed]);
+      if (lead[key + ' '] !== undefined && lead[key + ' '] !== null) return String(lead[key + ' ']);
+      return '';
+    }
+
+    // -------------------------------------------------------------
+    // 3. DATASET INICIAL EMBEBIDO (SEED / FALLBACK RESILIENTE)
+    // -------------------------------------------------------------
+    // Permite que la app arranque al 100% de manera inmediata con métricas reales
+    const INITIAL_SEED_LEADS = [
+      { id: 1, "Mes": "ENERO", "Fecha": "1/01/2026", "Nombre": "Ilones Camargo", "Telefono": "1 (786) 555-0101", "Campaña": "Actuacion Adultos", "Medio": "Instagram", "GESTION": "Información ", "Ciudad": "Doral", "Agente ": "Nina", "Odoo": "SI N.", "Fecha de Atencion": "2/01/2026", "OBSERVACIONES ": "Esperando respuesta" },
+      { id: 2, "Mes": "ENERO", "Fecha": "1/01/2026", "Nombre": "Dayana", "Telefono": "1 (786) 763-7471", "Campaña": "Actuacion Adultos", "Medio": "Whatsapp", "GESTION": "Repetido ", "Ciudad": "Doral", "Agente ": "AGENTE", "Odoo": "SI N.", "Fecha de Atencion": "2/01/2026", "OBSERVACIONES ": "Escribió por el Bootcamp, se le invitó a la clase gratis." },
+      { id: 3, "Mes": "ENERO", "Fecha": "2/01/2026", "Nombre": "Walter Monge", "Telefono": "1 (786) 212-2072", "Campaña": "Actuacion Adultos", "Medio": "Whatsapp", "GESTION": "Agendado", "Ciudad": "Coral Gables", "Agente ": "AGENTE", "Odoo": "SI N.", "Fecha de Atencion": "2/01/2026", "OBSERVACIONES ": "Participó en el Bootcamp, coordinó visita al conservatorio." },
+      { id: 4, "Mes": "ENERO", "Fecha": "2/01/2026", "Nombre": "Paula Zelaya", "Telefono": "1 (954) 682-4036", "Campaña": "Actuacion Kids", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Nina", "Odoo": "SI N.", "Fecha de Atencion": "2/01/2026", "OBSERVACIONES ": "Isabella tiene 10 años, quiere hacer teatro Musical." },
+      { id: 5, "Mes": "ENERO", "Fecha": "5/01/2026", "Nombre": "Mabel Montero", "Telefono": "1 (786) 379-1622", "Campaña": "Actuacion Kids", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Hialeah", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "5/01/2026", "OBSERVACIONES ": "Alisson Lopez Perez, 8 años inscrita el sábado 17/01" },
+      { id: 6, "Mes": "ENERO", "Fecha": "6/01/2026", "Nombre": "Natalia", "Telefono": "1 (561) 978-5228", "Campaña": "Actuacion Adultos", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Brickell", "Agente ": "Jessi", "Odoo": "SI N.", "Fecha de Atencion": "6/01/2026", "OBSERVACIONES ": "Inscrita al programa regular de adultos." },
+      { id: 7, "Mes": "ENERO", "Fecha": "7/01/2026", "Nombre": "Yani", "Telefono": "1 (786) 906-4003", "Campaña": "Actuacion Kids", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Homestead", "Agente ": "Nina", "Odoo": "SI N.", "Fecha de Atencion": "7/01/2026", "OBSERVACIONES ": "Niña 9 años Ashley Sanchez, teatro musical." },
+      { id: 8, "Mes": "ENERO", "Fecha": "8/01/2026", "Nombre": "Lilia K Indriago", "Telefono": "1 (786) 427-7443", "Campaña": "Actuacion Kids", "Medio": "Instagram", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI N.", "Fecha de Atencion": "8/01/2026", "OBSERVACIONES ": "Zoe Bolivar, 8 años, matriculada en Doral." },
+      { id: 9, "Mes": "ENERO", "Fecha": "9/01/2026", "Nombre": "Angel Delgado", "Telefono": "1 (786) 538-0615", "Campaña": "Actuacion Adultos", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "9/01/2026", "OBSERVACIONES ": "Inscrito para el cuatrimestre regular." },
+      { id: 10, "Mes": "ENERO", "Fecha": "13/01/2026", "Nombre": "Valeria", "Telefono": "1 (305) 250-8770", "Campaña": "Actuacion Kids", "Medio": "Referidos Andres", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "13/01/2026", "OBSERVACIONES ": "Sofía Abello, referida por Corina Kassis." },
+      { id: 11, "Mes": "ENERO", "Fecha": "13/01/2026", "Nombre": "Aylen", "Telefono": "1 (954) 508-5030", "Campaña": "Actuacion Kids", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Weston", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "13/01/2026", "OBSERVACIONES ": "Pago realizado exitosamente para las clases." },
+      { id: 12, "Mes": "ENERO", "Fecha": "14/01/2026", "Nombre": "Milena Gutierrez", "Telefono": "1 (954) 842-1797", "Campaña": "Actuacion Adultos", "Medio": "Instagram", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI N.", "Fecha de Atencion": "15/01/2026", "OBSERVACIONES ": "Inscrita el 22/01 junto con su hija." },
+      { id: 13, "Mes": "ENERO", "Fecha": "15/01/2026", "Nombre": "Ana Arango", "Telefono": "1 (954) 648-9653", "Campaña": "Actuacion Kids", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Weston", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "16/01/2026", "OBSERVACIONES ": "Sarah Gomez - 10 años, inscrita sede Weston." },
+      { id: 14, "Mes": "FEBRERO", "Fecha": "5/02/2026", "Nombre": "luisa Jimenez", "Telefono": "1 (954) 990-3024", "Campaña": "Weston", "Medio": "Whatsapp", "GESTION": "Agendado", "Ciudad": "Weston", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "5/02/2026", "OBSERVACIONES ": "Bailar cantar y actuar, niña de 12 años." },
+      { id: 15, "Mes": "FEBRERO", "Fecha": "9/02/2026", "Nombre": "Brigette", "Telefono": "1 (305) 609-3641", "Campaña": "Summer Camp", "Medio": "Referidos Andres", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI N.", "Fecha de Atencion": "9/02/2026", "OBSERVACIONES ": "12 años, confirmada para campamento de verano." },
+      { id: 16, "Mes": "FEBRERO", "Fecha": "10/02/2026", "Nombre": "Andrea", "Telefono": "1 (786) 488-1469", "Campaña": "Actuacion Kids", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "10/02/2026", "OBSERVACIONES ": "Camila 10 años, le gusta actuar." },
+      { id: 17, "Mes": "FEBRERO", "Fecha": "21/02/2026", "Nombre": "Yaneth", "Telefono": "1 (645) 216-4894", "Campaña": "CASTING BOOTCAMP", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Nina", "Odoo": "SI N.", "Fecha de Atencion": "21/02/2026", "OBSERVACIONES ": "Estudió en NYC Latin Media, link de pago generado." },
+      { id: 18, "Mes": "MARZO", "Fecha": "2/03/2026", "Nombre": "Isis Carranza", "Telefono": "1 (786) 612-7265", "Campaña": "CASTING BOOTCAMP", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "2/03/2026", "OBSERVACIONES ": "Comprobante de abono enviado para casting." },
+      { id: 19, "Mes": "MARZO", "Fecha": "4/03/2026", "Nombre": "Odalis Diaz", "Telefono": "1 (786) 817-3972", "Campaña": "Summer Camp", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI N.", "Fecha de Atencion": "4/03/2026", "OBSERVACIONES ": "Nieta de 9 años, reservó para campamento Moana." },
+      { id: 20, "Mes": "MARZO", "Fecha": "13/03/2026", "Nombre": "Lavinia", "Telefono": "1 (305) 833-9179", "Campaña": "Summer Camp", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "13/03/2026", "OBSERVACIONES ": "7 años, reservado cupo para la primera sesión." },
+      { id: 21, "Mes": "MARZO", "Fecha": "20/03/2026", "Nombre": "Cassandra Lang", "Telefono": "1 (786) 587-3042", "Campaña": "Summer Camp", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "20/03/2026", "OBSERVACIONES ": "2 niñas de 9 y 12 años, inscritas para Julio." },
+      { id: 22, "Mes": "ABRIL", "Fecha": "14/04/2026", "Nombre": "Yasney", "Telefono": "1 (305) 283-6079", "Campaña": "Summer Camp", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Ana", "Odoo": "SI A.", "Fecha de Atencion": "14/04/2026", "OBSERVACIONES ": "Mia Espinosa, 8 años, cupo de campamento confirmado." },
+      { id: 23, "Mes": "ABRIL", "Fecha": "15/04/2026", "Nombre": "Zulma Heras", "Telefono": "1 (917) 306-3507", "Campaña": "Summer Camp", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Ana", "Odoo": "SI A.", "Fecha de Atencion": "15/04/2026", "OBSERVACIONES ": "Arianna Rivera, 12 años, sesión de verano." },
+      { id: 24, "Mes": "MAYO", "Fecha": "2/05/2026", "Nombre": "Elio Saavedra", "Telefono": "1 (786) 226-4119", "Campaña": "Summer Camp", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Homestead", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "2/05/2026", "OBSERVACIONES ": "Niña de 7 años, confirmada." },
+      { id: 25, "Mes": "MAYO", "Fecha": "18/05/2026", "Nombre": "Catalina P.", "Telefono": "1 (305) 912-3344", "Campaña": "Actuacion Adultos", "Medio": "Instagram", "GESTION": "Agendado", "Ciudad": "Coral Gables", "Agente ": "Nina", "Odoo": "SI N.", "Fecha de Atencion": "18/05/2026", "OBSERVACIONES ": "Agendada para clase de prueba." },
+      { id: 26, "Mes": "JUNIO", "Fecha": "5/06/2026", "Nombre": "Sebastian Morales", "Telefono": "1 (954) 332-9011", "Campaña": "Summer Camp", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Weston", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "5/06/2026", "OBSERVACIONES ": "Inscrito en módulo intensivo de junio." },
+      { id: 27, "Mes": "JUNIO", "Fecha": "12/06/2026", "Nombre": "Lorena Mendez", "Telefono": "1 (786) 441-8890", "Campaña": "Actuacion Kids", "Medio": "Referidos Andres", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "12/06/2026", "OBSERVACIONES ": "Hijo de 9 años, teatro musical." },
+      { id: 28, "Mes": "JUNIO", "Fecha": "20/06/2026", "Nombre": "Carlos V.", "Telefono": "1 (305) 554-1122", "Campaña": "Voz y Diccion", "Medio": "Lead Directo", "GESTION": "Información ", "Ciudad": "Brickell", "Agente ": "Ana", "Odoo": "SI A.", "Fecha de Atencion": "21/06/2026", "OBSERVACIONES ": "Solicitó información de horarios." },
+      { id: 29, "Mes": "JULIO", "Fecha": "2/07/2026", "Nombre": "Francia", "Telefono": "1 (786) 616-3996", "Campaña": "Taller Camara ", "Medio": "Whatsapp nuevo", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "2/07/2026", "OBSERVACIONES ": "Hija de 20 años, matriculada en Taller ante Cámara." },
+      { id: 30, "Mes": "JULIO", "Fecha": "15/07/2026", "Nombre": "Mariana R.", "Telefono": "1 (786) 880-4521", "Campaña": "Locos Adams", "Medio": "Instagram", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Nina", "Odoo": "SI N.", "Fecha de Atencion": "16/07/2026", "OBSERVACIONES ": "Matriculada en montaje teatral." },
+      { id: 31, "Mes": "AGOSTO", "Fecha": "3/08/2026", "Nombre": "Raul", "Telefono": "1 (786) 973-5886", "Campaña": "Actuacion Adultos", "Medio": "Whatsapp nuevo", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "3/08/2026", "OBSERVACIONES ": "Inscrito en Taller Septiembre Adultos." },
+      { id: 32, "Mes": "AGOSTO", "Fecha": "19/08/2026", "Nombre": "Giselle D.", "Telefono": "1 (954) 701-8833", "Campaña": "Weston", "Medio": "Whatsapp", "GESTION": "Agendado", "Ciudad": "Weston", "Agente ": "Loli", "Odoo": "SI L.", "Fecha de Atencion": "20/08/2026", "OBSERVACIONES ": "Cita para audición presencial." },
+      { id: 33, "Mes": "SEPTIEMBRE", "Fecha": "8/09/2026", "Nombre": "Cinthia", "Telefono": "1 (786) 474-5970", "Campaña": "Actuacion Kids", "Medio": "Whatsapp", "GESTION": "INSCRITO", "Ciudad": "Doral", "Agente ": "Jessi", "Odoo": "SI J.", "Fecha de Atencion": "8/09/2026", "OBSERVACIONES ": "Confirmación definitiva de matrícula." },
+      { id: 34, "Mes": "SEPTIEMBRE", "Fecha": "14/09/2026", "Nombre": "Eduardo S.", "Telefono": "1 (305) 670-2211", "Campaña": "Actuacion Adultos", "Medio": "Instagram", "GESTION": "INSCRITO", "Ciudad": "Coral Gables", "Agente ": "Nina", "Odoo": "SI N.", "Fecha de Atencion": "14/09/2026", "OBSERVACIONES ": "Inscrito para inicio de otoño." }
+    ];
+
+    // -------------------------------------------------------------
+    // 4. CARGA DE DATOS (SUPABASE CON FALLBACK A SEED)
+    // -------------------------------------------------------------
+    async function loadLeadsData() {
+      showLoadingState(true);
+      updateConnectionStatus("connecting");
+
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient
+            .from('leads')
+            .select('*')
+            .order('id', { ascending: false });
+
+          if (!error && Array.isArray(data) && data.length > 0) {
+            allLeads = data;
+            isSupabaseLive = true;
+            updateConnectionStatus("online");
+            console.log("Datos cargados desde Supabase:", allLeads.length);
+          } else {
+            // Tabla vacía o error de tabla
+            console.warn("Supabase respondió sin registros o error:", error);
+            loadLocalSeedData();
+            updateConnectionStatus(error ? "offline" : "online_empty");
+          }
+        } catch (err) {
+          console.error("Error conectando con Supabase:", err);
+          loadLocalSeedData();
+          updateConnectionStatus("offline");
+        }
+      } else {
+        loadLocalSeedData();
+        updateConnectionStatus("offline");
+      }
+
+      populateFilterOptions();
+      applyFilters();
+      if (currentMainTab === 'historico') {
+        renderHistoricalAnalytics();
+      }
+      showLoadingState(false);
+    }
+
+    function loadLocalSeedData() {
+      // Usar seed data inicial enriquecida
+      allLeads = JSON.parse(JSON.stringify(INITIAL_SEED_LEADS));
+    }
+
+    function updateConnectionStatus(status) {
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+      if (!dot || !text) return;
+
+      if (status === "online") {
+        dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+        text.innerText = "Supabase en vivo (" + allLeads.length + " leads)";
+        text.className = "hidden md:inline text-emerald-400 font-semibold";
+      } else if (status === "online_empty") {
+        dot.className = "w-2 h-2 rounded-full bg-blue-400";
+        text.innerText = "Supabase listo (Tabla vacía)";
+        text.className = "hidden md:inline text-blue-400";
+      } else if (status === "connecting") {
+        dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-ping";
+        text.innerText = "Conectando...";
+        text.className = "hidden md:inline text-amber-400";
+      } else {
+        dot.className = "w-2 h-2 rounded-full bg-slate-400";
+        text.innerText = "Modo Local (" + allLeads.length + " leads)";
+        text.className = "hidden md:inline text-slate-400";
+      }
+    }
+
+    // Suscripción Realtime a Supabase
+    function setupRealtimeListener() {
+      if (!supabaseClient) return;
+      try {
+        supabaseClient
+          .channel('public:leads:realtime')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, payload => {
+            console.log("Cambio en tiempo real recibido de Supabase:", payload);
+            handleRealtimeEvent(payload);
+          })
+          .subscribe((status) => {
+            console.log("Estado de suscripción Realtime:", status);
+          });
+      } catch (e) {
+        console.error("Error setting up Realtime:", e);
+      }
+    }
+
+    function handleRealtimeEvent(payload) {
+      if (payload.eventType === 'INSERT') {
+        allLeads.unshift(payload.new);
+        showToast("Nuevo lead recibido en tiempo real", "success");
+      } else if (payload.eventType === 'UPDATE') {
+        const idx = allLeads.findIndex(l => String(l.id) === String(payload.new.id));
+        if (idx !== -1) {
+          allLeads[idx] = payload.new;
+          showToast("Lead #" + payload.new.id + " actualizado", "info");
+        }
+      } else if (payload.eventType === 'DELETE') {
+        allLeads = allLeads.filter(l => String(l.id) !== String(payload.old.id));
+        showToast("Lead eliminado", "warning");
+      }
+      populateFilterOptions();
+      applyFilters();
+    }
+
+    // -------------------------------------------------------------
+    // 5. FILTROS Y BÚSQUEDA
+    // -------------------------------------------------------------
+    function populateFilterOptions() {
+      const getUniqueValues = (key) => {
+        const set = new Set();
+        allLeads.forEach(item => {
+          const val = getField(item, key).trim();
+          if (val && val !== 'SN') set.add(val);
+        });
+        return Array.from(set).sort();
+      };
+
+      populateSelect('filterMes', getUniqueValues('Mes'));
+      populateSelect('filterCampana', getUniqueValues('Campaña'));
+      populateSelect('filterMedio', getUniqueValues('Medio'));
+      populateSelect('filterGestion', getUniqueValues('GESTION'));
+    }
+
+    function populateSelect(elementId, values) {
+      const select = document.getElementById(elementId);
+      if (!select) return;
+      const currentVal = select.value;
+      const firstOption = select.options[0];
+      select.innerHTML = '';
+      select.appendChild(firstOption);
+
+      values.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.innerText = v;
+        if (v === currentVal) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function applyFilters() {
+      const search = (document.getElementById('filterSearch')?.value || '').toLowerCase().trim();
+      const mes = document.getElementById('filterMes')?.value || '';
+      const campana = document.getElementById('filterCampana')?.value || '';
+      const medio = document.getElementById('filterMedio')?.value || '';
+      const gestion = document.getElementById('filterGestion')?.value || '';
+
+      filteredLeads = allLeads.filter(lead => {
+        // Texto libre: Nombre o Teléfono
+        if (search) {
+          const nombre = getField(lead, 'Nombre').toLowerCase();
+          const telefono = getField(lead, 'Telefono').toLowerCase();
+          const observaciones = getField(lead, 'OBSERVACIONES ').toLowerCase();
+          if (!nombre.includes(search) && !telefono.includes(search) && !observaciones.includes(search)) {
+            return false;
+          }
+        }
+
+        // Mes
+        if (mes && getField(lead, 'Mes').trim() !== mes) return false;
+
+        // Campaña
+        if (campana && getField(lead, 'Campaña').trim() !== campana) return false;
+
+        // Medio
+        if (medio && getField(lead, 'Medio').trim() !== medio) return false;
+
+        // Gestión
+        if (gestion && getField(lead, 'GESTION').trim() !== gestion) return false;
+
+        return true;
+      });
+
+      // Update counters
+      const activeCount = [mes, campana, medio, gestion, search].filter(Boolean).length;
+      const activeFiltersCountEl = document.getElementById('activeFiltersCount');
+      if (activeFiltersCountEl) {
+        activeFiltersCountEl.innerText = activeCount > 0 
+          ? `${filteredLeads.length} de ${allLeads.length} (${activeCount} filtro${activeCount > 1 ? 's' : ''})`
+          : `${filteredLeads.length} leads en total`;
+      }
+
+      currentPage = 1;
+      updateKpis();
+      renderMatrix();
+      renderTable();
+    }
+
+    function resetAllFilters() {
+      if (document.getElementById('filterSearch')) document.getElementById('filterSearch').value = '';
+      if (document.getElementById('filterMes')) document.getElementById('filterMes').value = '';
+      if (document.getElementById('filterCampana')) document.getElementById('filterCampana').value = '';
+      if (document.getElementById('filterMedio')) document.getElementById('filterMedio').value = '';
+      if (document.getElementById('filterGestion')) document.getElementById('filterGestion').value = '';
+      applyFilters();
+      showToast("Filtros reiniciados", "info");
+    }
+
+    // -------------------------------------------------------------
+    // 6. CÁLCULO DE KPIS
+    // -------------------------------------------------------------
+    function updateKpis() {
+      const total = filteredLeads.length;
+
+      // Agendados: contiene "Agendad"
+      const agendados = filteredLeads.filter(l => {
+        const g = getField(l, 'GESTION').toLowerCase();
+        return g.includes('agendad');
+      }).length;
+
+      // Inscritos: contiene "inscrit"
+      const inscritos = filteredLeads.filter(l => {
+        const g = getField(l, 'GESTION').toLowerCase();
+        return g.includes('inscrit');
+      }).length;
+
+      // Conversión: Inscritos / Total * 100
+      const conversion = total > 0 ? ((inscritos / total) * 100).toFixed(1) : "0.0";
+      const agendadosPct = total > 0 ? ((agendados / total) * 100).toFixed(1) : "0.0";
+
+      document.getElementById('kpiTotalLeads').innerText = total.toLocaleString();
+      document.getElementById('kpiAgendados').innerText = agendados.toLocaleString();
+      document.getElementById('kpiAgendadosPct').innerText = `${agendadosPct}%`;
+      document.getElementById('kpiInscritos').innerText = inscritos.toLocaleString();
+      document.getElementById('kpiConversionRate').innerText = `${conversion}%`;
+      document.getElementById('leadsTableCount').innerText = `(${total})`;
+    }
+
+    // -------------------------------------------------------------
+    // 7. DASHBOARD ANALÍTICO: MATRIZ CRUZADA (GESTIÓN VS CAMPAÑAS)
+    // -------------------------------------------------------------
+    function renderMatrix() {
+      const thead = document.getElementById('matrixThead');
+      const tbody = document.getElementById('matrixTbody');
+      const tfoot = document.getElementById('matrixTfoot');
+      if (!thead || !tbody || !tfoot) return;
+
+      // Extract unique statuses and top campaigns
+      const gestionesMap = new Map();
+      const campanasMap = new Map();
+
+      filteredLeads.forEach(l => {
+        const g = getField(l, 'GESTION').trim() || 'Sin Definir';
+        const c = getField(l, 'Campaña').trim() || 'General';
+        gestionesMap.set(g, (gestionesMap.get(g) || 0) + 1);
+        campanasMap.set(c, (campanasMap.get(c) || 0) + 1);
+      });
+
+      // Ordenar gestiones: INSCRITO primero, luego Agendado, Información, etc.
+      const priorityOrder = ['INSCRITO', 'Agendado', 'Información ', 'Información', 'Interesado', 'No Contesta', 'Vive Lejos', 'No Procede', 'No puede costearlo'];
+      const sortedGestiones = Array.from(gestionesMap.keys()).sort((a, b) => {
+        const idxA = priorityOrder.indexOf(a);
+        const idxB = priorityOrder.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return (gestionesMap.get(b) || 0) - (gestionesMap.get(a) || 0);
+      });
+
+      // Tomar las campañas más relevantes
+      const sortedCampanas = Array.from(campanasMap.keys())
+        .filter(c => c !== '')
+        .sort((a, b) => (campanasMap.get(b) || 0) - (campanasMap.get(a) || 0));
+
+      // 1. Build Header
+      let headerHtml = `<tr>
+        <th class="px-4 py-3 bg-slate-950 font-bold text-slate-200 border-r border-slate-800">Estatus (GESTIÓN)</th>`;
+      sortedCampanas.forEach(camp => {
+        headerHtml += `<th class="px-3 py-3 text-center whitespace-nowrap text-slate-300 font-semibold">${escapeHtml(camp)}</th>`;
+      });
+      headerHtml += `<th class="px-4 py-3 text-right bg-slate-950 font-bold text-slate-100 border-l border-slate-800">Total Fila</th></tr>`;
+      thead.innerHTML = headerHtml;
+
+      // Matrix computation
+      const matrixCounts = {};
+      const colTotals = {};
+      sortedCampanas.forEach(c => colTotals[c] = 0);
+
+      filteredLeads.forEach(l => {
+        const g = getField(l, 'GESTION').trim() || 'Sin Definir';
+        const c = getField(l, 'Campaña').trim() || 'General';
+        const cellKey = `${g}:::${c}`;
+        matrixCounts[cellKey] = (matrixCounts[cellKey] || 0) + 1;
+        if (colTotals[c] !== undefined) {
+          colTotals[c]++;
+        }
+      });
+
+      // 2. Build Body Rows
+      let bodyHtml = '';
+      sortedGestiones.forEach(gestionName => {
+        let rowTotal = 0;
+        const isClosedInscrito = gestionName.toLowerCase().includes('inscrit');
+        const isAgendado = gestionName.toLowerCase().includes('agendad');
+
+        bodyHtml += `<tr class="hover:bg-slate-800/60 transition-colors">
+          <td class="px-4 py-2.5 font-medium border-r border-slate-800 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full ${isClosedInscrito ? 'bg-emerald-400' : isAgendado ? 'bg-amber-400' : 'bg-slate-500'}"></span>
+            <span class="truncate max-w-[180px]">${escapeHtml(gestionName)}</span>
+          </td>`;
+
+        sortedCampanas.forEach(campName => {
+          const count = matrixCounts[`${gestionName}:::${campName}`] || 0;
+          rowTotal += count;
+
+          let cellClass = "px-3 py-2 text-center tabular-nums cursor-pointer transition-colors ";
+          if (count === 0) {
+            cellClass += "text-slate-600 hover:bg-slate-800/40";
+          } else if (isClosedInscrito) {
+            cellClass += "text-emerald-400 font-semibold bg-emerald-500/10 hover:bg-emerald-500/20";
+          } else if (isAgendado) {
+            cellClass += "text-amber-300 font-semibold bg-amber-500/10 hover:bg-amber-500/20";
+          } else {
+            cellClass += "text-slate-200 font-medium hover:bg-indigo-500/10";
+          }
+
+          bodyHtml += `<td class="${cellClass}" onclick="filterFromMatrix('${escapeAttr(gestionName)}', '${escapeAttr(campName)}')">
+            ${count > 0 ? count : '-'}
+          </td>`;
+        });
+
+        bodyHtml += `<td class="px-4 py-2.5 text-right font-mono font-bold border-l border-slate-800 text-slate-100 tabular-nums">
+          ${rowTotal}
+        </td></tr>`;
+      });
+      tbody.innerHTML = bodyHtml;
+
+      // 3. Build Footer
+      let grandTotal = 0;
+      let footHtml = `<tr>
+        <td class="px-4 py-3 font-bold text-slate-100 border-r border-slate-800 uppercase tracking-wider">Total Campaña</td>`;
+      sortedCampanas.forEach(campName => {
+        const colSum = colTotals[campName] || 0;
+        grandTotal += colSum;
+        footHtml += `<td class="px-3 py-3 text-center font-mono font-bold text-slate-100 tabular-nums">${colSum}</td>`;
+      });
+      footHtml += `<td class="px-4 py-3 text-right font-mono font-extrabold text-indigo-400 bg-indigo-500/10 border-l border-slate-800 tabular-nums text-sm">
+        ${grandTotal}
+      </td></tr>`;
+      tfoot.innerHTML = footHtml;
+    }
+
+    // Al hacer clic en una celda de la matriz cruzada, filtra inmediatamente la tabla principal
+    function filterFromMatrix(gestion, campana) {
+      const filterGestion = document.getElementById('filterGestion');
+      const filterCampana = document.getElementById('filterCampana');
+      if (filterGestion && gestion) filterGestion.value = gestion;
+      if (filterCampana && campana) filterCampana.value = campana;
+      applyFilters();
+      showToast(`Filtrado por: ${gestion} en ${campana}`, "info");
+      // Scroll to table smoothly
+      document.querySelector('#leadsTableBody')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // -------------------------------------------------------------
+    // 8. RENDERIZADO DE LA TABLA PRINCIPAL DE LEADS
+    // -------------------------------------------------------------
+    function renderTable() {
+      const tbody = document.getElementById('leadsTableBody');
+      if (!tbody) return;
+
+      const totalItems = filteredLeads.length;
+      const totalPages = Math.ceil(totalItems / pageSize) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalItems);
+      const pageItems = filteredLeads.slice(startIndex, endIndex);
+
+      if (pageItems.length === 0) {
+        tbody.innerHTML = `<tr>
+          <td colspan="9" class="text-center py-12 text-slate-500">
+            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+            <p class="font-medium text-slate-400">No se encontraron leads con los filtros actuales</p>
+            <button onclick="resetAllFilters()" class="mt-2 text-indigo-400 hover:underline text-xs">Limpiar filtros de búsqueda</button>
+          </td>
+        </tr>`;
+        updatePaginationUI(0, 0, 0, 1);
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      let html = '';
+      pageItems.forEach((lead, idx) => {
+        const leadId = lead.id || (startIndex + idx + 1);
+        const mes = getField(lead, 'Mes');
+        const fecha = getField(lead, 'Fecha');
+        const nombre = getField(lead, 'Nombre') || 'Sin Nombre';
+        const telefono = getField(lead, 'Telefono');
+        const campana = getField(lead, 'Campaña');
+        const medio = getField(lead, 'Medio');
+        const gestion = getField(lead, 'GESTION') || 'Información';
+        const agente = getField(lead, 'Agente ') || getField(lead, 'Agente') || '-';
+
+        // Badge de Gestión inteligente
+        const badgeHtml = renderGestionBadge(gestion);
+
+        // Link de WhatsApp sanitizado
+        const cleanPhone = telefono.replace(/\D/g, '');
+        const waLink = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent('Hola ' + nombre + ', te escribimos de Sociedad Actoral Hispanoamericana.')}` : '#';
+
+        html += `<tr class="hover:bg-slate-800/80 transition-colors group">
+          <td class="px-3.5 py-3 font-mono text-[11px] text-slate-400 tabular-nums">#${leadId}</td>
+          <td class="px-3.5 py-3 text-slate-300">
+            <div class="font-medium text-white">${escapeHtml(fecha || '-')}</div>
+            <div class="text-[10px] text-slate-500">${escapeHtml(mes || '')}</div>
+          </td>
+          <td class="px-3.5 py-3">
+            <button onclick="openViewLeadModal('${escapeAttr(leadId)}')" class="text-left font-semibold text-white hover:text-indigo-400 transition-colors cursor-pointer truncate max-w-[170px] block">
+              ${escapeHtml(nombre)}
+            </button>
+          </td>
+          <td class="px-3.5 py-3 text-slate-300">
+            <div class="flex items-center gap-1.5">
+              ${cleanPhone ? `
+                <a href="${waLink}" target="_blank" rel="noopener noreferrer" title="Abrir chat en WhatsApp" class="p-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors">
+                  <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                </a>
+              ` : ''}
+              <span class="font-mono text-[11px]">${escapeHtml(telefono || 'S/N')}</span>
+            </div>
+          </td>
+          <td class="px-3.5 py-3 text-slate-300 truncate max-w-[140px]">${escapeHtml(campana || '-')}</td>
+          <td class="px-3.5 py-3 text-slate-400 text-[11px] truncate max-w-[110px]">${escapeHtml(medio || '-')}</td>
+          <td class="px-3.5 py-3">${badgeHtml}</td>
+          <td class="px-3.5 py-3 text-slate-300 text-[11px]">${escapeHtml(agente)}</td>
+          <td class="px-3.5 py-3 text-right">
+            <div class="flex items-center justify-end gap-1">
+              <button onclick="openEditLeadModal('${escapeAttr(leadId)}')" title="Editar seguimiento" class="p-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 transition-colors cursor-pointer">
+                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="openViewLeadModal('${escapeAttr(leadId)}')" title="Ver detalles completos" class="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 transition-colors cursor-pointer">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      });
+
+      tbody.innerHTML = html;
+      updatePaginationUI(startIndex + 1, endIndex, totalItems, totalPages);
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Badge inteligente de gestión
+    function renderGestionBadge(gestion) {
+      const g = (gestion || '').trim();
+      const lower = g.toLowerCase();
+
+      let colorClasses = "bg-slate-700/50 text-slate-300 border-slate-600/60";
+      let dotColor = "bg-slate-400";
+
+      if (lower.includes('inscrit')) {
+        colorClasses = "bg-emerald-500/15 text-emerald-300 border-emerald-500/30";
+        dotColor = "bg-emerald-400";
+      } else if (lower.includes('agendad')) {
+        colorClasses = "bg-amber-500/15 text-amber-300 border-amber-500/30";
+        dotColor = "bg-amber-400";
+      } else if (lower.includes('informaci')) {
+        colorClasses = "bg-blue-500/15 text-blue-300 border-blue-500/30";
+        dotColor = "bg-blue-400";
+      } else if (lower.includes('no contesta') || lower.includes('colgo') || lower.includes('no procede') || lower.includes('ya no')) {
+        colorClasses = "bg-rose-500/15 text-rose-300 border-rose-500/30";
+        dotColor = "bg-rose-400";
+      } else if (lower.includes('vive lejos') || lower.includes('costear') || lower.includes('menor')) {
+        colorClasses = "bg-purple-500/15 text-purple-300 border-purple-500/30";
+        dotColor = "bg-purple-400";
+      }
+
+      return `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium border ${colorClasses}">
+        <span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>
+        <span class="truncate max-w-[120px]">${escapeHtml(g)}</span>
+      </span>`;
+    }
+
+    // Controles de Paginación
+    function updatePaginationUI(start, end, total, totalPages) {
+      const infoEl = document.getElementById('paginationInfo');
+      const controlsEl = document.getElementById('paginationControls');
+      if (infoEl) {
+        infoEl.innerText = total > 0 ? `Mostrando ${start} a ${end} de ${total} registros` : "Sin registros";
+      }
+      if (!controlsEl) return;
+
+      let html = '';
+      // Botón Anterior
+      html += `<button onclick="goToPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled class="px-2 py-1 rounded bg-slate-800 text-slate-600 cursor-not-allowed"' : 'class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer"'}>
+        <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+      </button>`;
+
+      // Números de páginas con elipsis
+      const pagesToShow = getPaginationRange(currentPage, totalPages);
+      pagesToShow.forEach(p => {
+        if (p === '...') {
+          html += `<span class="px-2 py-1 text-slate-500">...</span>`;
+        } else {
+          const isActive = p === currentPage;
+          html += `<button onclick="goToPage(${p})" class="px-2.5 py-1 rounded text-xs font-mono font-semibold transition-colors ${isActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}">
+            ${p}
+          </button>`;
+        }
+      });
+
+      // Botón Siguiente
+      html += `<button onclick="goToPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled class="px-2 py-1 rounded bg-slate-800 text-slate-600 cursor-not-allowed"' : 'class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer"'}>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+      </button>`;
+
+      controlsEl.innerHTML = html;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function getPaginationRange(current, total) {
+      if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+      if (current <= 4) return [1, 2, 3, 4, 5, '...', total];
+      if (current >= total - 3) return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+      return [1, '...', current - 1, current, current + 1, '...', total];
+    }
+
+    function goToPage(page) {
+      const totalPages = Math.ceil(filteredLeads.length / pageSize) || 1;
+      if (page >= 1 && page <= totalPages) {
+        currentPage = page;
+        renderTable();
+      }
+    }
+
+    function changePageSize(val) {
+      pageSize = parseInt(val, 10) || 20;
+      currentPage = 1;
+      renderTable();
+    }
+
+    // -------------------------------------------------------------
+    // 9. OPERACIONES: CREAR LEAD (INSERT)
+    // -------------------------------------------------------------
+    function openNewLeadModal() {
+      const modal = document.getElementById('modalNewLead');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => document.getElementById('newNombre')?.focus(), 50);
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    function closeNewLeadModal() {
+      const modal = document.getElementById('modalNewLead');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.getElementById('formNewLead')?.reset();
+      }
+    }
+
+    async function handleCreateLead(event) {
+      event.preventDefault();
+      const btn = document.getElementById('btnSubmitNewLead');
+      if (btn) btn.disabled = true;
+
+      const now = new Date();
+      const fechaHoy = `${now.getDate()}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+
+      const newLeadData = {
+        "Nombre": document.getElementById('newNombre')?.value.trim() || 'Sin Nombre',
+        "Telefono": document.getElementById('newTelefono')?.value.trim() || '',
+        "Mes": document.getElementById('newMes')?.value || 'SEPTIEMBRE',
+        "Fecha": fechaHoy,
+        "Campaña": document.getElementById('newCampana')?.value.trim() || 'General',
+        "Medio": document.getElementById('newMedio')?.value || 'Whatsapp',
+        "GESTION": document.getElementById('newGestion')?.value || 'Información ',
+        "Agente ": document.getElementById('newAgente')?.value.trim() || 'Agente',
+        "Ciudad": document.getElementById('newCiudad')?.value.trim() || '',
+        "OBSERVACIONES ": document.getElementById('newObservaciones')?.value.trim() || 'Nuevo lead registrado desde el panel.'
+      };
+
+      try {
+        if (supabaseClient) {
+          const { data, error } = await supabaseClient
+            .from('leads')
+            .insert([newLeadData])
+            .select();
+
+          if (error) {
+            console.error("Error al insertar en Supabase:", error);
+            showToast("Guardado localmente (aviso Supabase: " + error.message + ")", "warning");
+            newLeadData.id = Date.now();
+            allLeads.unshift(newLeadData);
+          } else if (data && data.length > 0) {
+            allLeads.unshift(data[0]);
+            showToast("Lead registrado con éxito en Supabase", "success");
+          }
+        } else {
+          newLeadData.id = Date.now();
+          allLeads.unshift(newLeadData);
+          showToast("Lead guardado localmente", "info");
+        }
+
+        closeNewLeadModal();
+        populateFilterOptions();
+        applyFilters();
+      } catch (err) {
+        console.error("Excepción al crear lead:", err);
+        showToast("Error inesperado al guardar", "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 10. OPERACIONES: EDITAR / SEGUIMIENTO LEAD (UPDATE)
+    // -------------------------------------------------------------
+    function openEditLeadModal(leadId) {
+      const lead = allLeads.find(l => String(l.id) === String(leadId));
+      if (!lead) return;
+
+      document.getElementById('editLeadId').value = leadId;
+      document.getElementById('editLeadLeadInfo').innerText = `ID: #${leadId} — ${getField(lead, 'Nombre')} (${getField(lead, 'Campaña')})`;
+      
+      const gestionSelect = document.getElementById('editGestion');
+      const currentGestion = getField(lead, 'GESTION').trim();
+      if (gestionSelect) {
+        // Find matching option
+        let found = false;
+        for (let opt of gestionSelect.options) {
+          if (opt.value.trim().toLowerCase() === currentGestion.toLowerCase()) {
+            opt.selected = true;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          const customOpt = document.createElement('option');
+          customOpt.value = getField(lead, 'GESTION');
+          customOpt.innerText = getField(lead, 'GESTION');
+          customOpt.selected = true;
+          gestionSelect.appendChild(customOpt);
+        }
+      }
+
+      document.getElementById('editAgente').value = getField(lead, 'Agente ') || getField(lead, 'Agente');
+      
+      const now = new Date();
+      const hoyFormatted = `${now.getDate()}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+      document.getElementById('editFechaUltima').value = getField(lead, 'Fecha Última Gestión ') || hoyFormatted;
+      
+      const ultimaGestion = getField(lead, 'ULTIMA GESTION');
+      if (document.getElementById('editUltimaGestion')) {
+        document.getElementById('editUltimaGestion').value = ultimaGestion || 'Llamada y WhatsApp';
+      }
+
+      document.getElementById('editUltimoAgente').value = getField(lead, 'ULTIMO AGENTE ') || getField(lead, 'Agente ') || 'Asesor';
+      document.getElementById('editObservaciones').value = getField(lead, 'OBSERVACIONES ');
+
+      const modal = document.getElementById('modalEditLead');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    function closeEditLeadModal() {
+      const modal = document.getElementById('modalEditLead');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    async function handleUpdateLead(event) {
+      event.preventDefault();
+      const leadId = document.getElementById('editLeadId')?.value;
+      if (!leadId) return;
+
+      const btn = document.getElementById('btnSubmitEditLead');
+      if (btn) btn.disabled = true;
+
+      const updatedFields = {
+        "GESTION": document.getElementById('editGestion')?.value || 'Información ',
+        "Agente ": document.getElementById('editAgente')?.value.trim() || '',
+        "Fecha Última Gestión ": document.getElementById('editFechaUltima')?.value.trim() || '',
+        "ULTIMA GESTION": document.getElementById('editUltimaGestion')?.value || 'Llamada',
+        "ULTIMO AGENTE ": document.getElementById('editUltimoAgente')?.value.trim() || '',
+        "OBSERVACIONES ": document.getElementById('editObservaciones')?.value.trim() || ''
+      };
+
+      try {
+        if (supabaseClient) {
+          const { error } = await supabaseClient
+            .from('leads')
+            .update(updatedFields)
+            .eq('id', leadId);
+
+          if (error) {
+            console.error("Error al actualizar en Supabase:", error);
+            showToast("Aviso Supabase: " + error.message, "warning");
+          } else {
+            showToast("Lead #" + leadId + " actualizado en Supabase", "success");
+          }
+        } else {
+          showToast("Actualizado en memoria local", "info");
+        }
+
+        // Actualizar el estado local
+        const idx = allLeads.findIndex(l => String(l.id) === String(leadId));
+        if (idx !== -1) {
+          allLeads[idx] = { ...allLeads[idx], ...updatedFields };
+        }
+
+        closeEditLeadModal();
+        populateFilterOptions();
+        applyFilters();
+      } catch (err) {
+        console.error("Excepción al actualizar:", err);
+        showToast("Error inesperado al actualizar", "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 11. MODAL DE FICHA DETALLE DE LEAD
+    // -------------------------------------------------------------
+    function openViewLeadModal(leadId) {
+      const lead = allLeads.find(l => String(l.id) === String(leadId));
+      if (!lead) return;
+
+      const container = document.getElementById('viewLeadContent');
+      if (!container) return;
+
+      const nombre = getField(lead, 'Nombre');
+      const telefono = getField(lead, 'Telefono');
+      const cleanPhone = telefono.replace(/\D/g, '');
+      const waLink = cleanPhone ? `https://wa.me/${cleanPhone}` : '#';
+
+      container.innerHTML = `
+        <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-700/80 flex items-start justify-between gap-4">
+          <div>
+            <div class="text-base font-bold text-white">${escapeHtml(nombre)}</div>
+            <div class="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
+              <span>ID: #${lead.id}</span>
+              <span>•</span>
+              <span>Ingreso: ${escapeHtml(getField(lead, 'Fecha'))} (${escapeHtml(getField(lead, 'Mes'))})</span>
+            </div>
+          </div>
+          <div>${renderGestionBadge(getField(lead, 'GESTION'))}</div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Teléfono / WhatsApp</span>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              ${cleanPhone ? `<a href="${waLink}" target="_blank" class="text-emerald-400 hover:text-emerald-300"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></a>` : ''}
+              <span class="font-mono text-slate-200">${escapeHtml(telefono || 'S/N')}</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Campaña</span>
+            <span class="font-medium text-slate-200 mt-0.5 block truncate">${escapeHtml(getField(lead, 'Campaña') || '-')}</span>
+          </div>
+
+          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Medio</span>
+            <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'Medio') || '-')}</span>
+          </div>
+
+          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Asesor Principal</span>
+            <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'Agente ') || '-')}</span>
+          </div>
+
+          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Último Asesor</span>
+            <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'ULTIMO AGENTE ') || '-')}</span>
+          </div>
+
+          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Última Gestión</span>
+            <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'Fecha Última Gestión ') || '-')}</span>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-1">
+          <span class="text-[10px] uppercase text-slate-400 font-semibold block">Historial de Observaciones</span>
+          <p class="text-slate-300 font-mono text-xs whitespace-pre-line leading-relaxed">${escapeHtml(getField(lead, 'OBSERVACIONES ') || 'Sin observaciones registradas.')}</p>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button onclick="closeViewLeadModal(); openEditLeadModal('${escapeAttr(lead.id)}')" class="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-1.5 text-xs">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+            <span>Editar este Lead</span>
+          </button>
+        </div>
+      `;
+
+      const modal = document.getElementById('modalViewLead');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    function closeViewLeadModal() {
+      const modal = document.getElementById('modalViewLead');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 12. MODAL RLS Y REFRESH
+    // -------------------------------------------------------------
+    function openRlsModal() {
+      const modal = document.getElementById('modalRls');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    function closeRlsModal() {
+      const modal = document.getElementById('modalRls');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function copyRlsCode() {
+      const code = document.querySelector('#modalRls pre')?.innerText;
+      if (code) {
+        navigator.clipboard.writeText(code).then(() => {
+          const btnText = document.getElementById('copyRlsBtnText');
+          if (btnText) btnText.innerText = '¡Copiado!';
+          showToast("Código SQL y políticas RLS copiadas", "success");
+          setTimeout(() => { if (btnText) btnText.innerText = 'Copiar SQL'; }, 2500);
+        });
+      }
+    }
+
+    async function refreshLeadsData() {
+      const icon = document.getElementById('refreshIcon');
+      if (icon) icon.classList.add('animate-spin');
+      await loadLeadsData();
+      setTimeout(() => {
+        if (icon) icon.classList.remove('animate-spin');
+        showToast("Datos sincronizados con Supabase", "success");
+      }, 600);
+    }
+
+    // Exportar leads filtrados a CSV
+    function exportCurrentLeadsCSV() {
+      if (filteredLeads.length === 0) {
+        showToast("No hay registros para exportar", "warning");
+        return;
+      }
+      const headers = ["ID", "Mes", "Fecha", "Nombre", "Telefono", "Campaña", "Medio", "GESTION", "Ciudad", "Agente", "Observaciones"];
+      const rows = filteredLeads.map(l => [
+        l.id || '',
+        `"${getField(l, 'Mes').replace(/"/g, '""')}"`,
+        `"${getField(l, 'Fecha').replace(/"/g, '""')}"`,
+        `"${getField(l, 'Nombre').replace(/"/g, '""')}"`,
+        `"${getField(l, 'Telefono').replace(/"/g, '""')}"`,
+        `"${getField(l, 'Campaña').replace(/"/g, '""')}"`,
+        `"${getField(l, 'Medio').replace(/"/g, '""')}"`,
+        `"${getField(l, 'GESTION').replace(/"/g, '""')}"`,
+        `"${getField(l, 'Ciudad').replace(/"/g, '""')}"`,
+        `"${getField(l, 'Agente ').replace(/"/g, '""')}"`,
+        `"${getField(l, 'OBSERVACIONES ').replace(/"/g, '""')}"`
+      ]);
+
+      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Leads_Sociedad_Actoral_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast(`${filteredLeads.length} leads exportados a CSV`, "success");
+    }
+
+    // -------------------------------------------------------------
+    // 13. SISTEMA DE TOASTS & HELPERS
+    // -------------------------------------------------------------
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      let bg = 'bg-slate-800 border-slate-700 text-slate-100';
+      let icon = 'info';
+
+      if (type === 'success') {
+        bg = 'bg-emerald-950 border-emerald-800 text-emerald-200';
+        icon = 'check-circle-2';
+      } else if (type === 'warning') {
+        bg = 'bg-amber-950 border-amber-800 text-amber-200';
+        icon = 'alert-triangle';
+      } else if (type === 'error') {
+        bg = 'bg-rose-950 border-rose-800 text-rose-200';
+        icon = 'x-circle';
+      }
+
+      toast.className = `${bg} border px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-medium pointer-events-auto transition-all transform translate-y-2 opacity-0 duration-200`;
+      toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 shrink-0"></i><span>${escapeHtml(message)}</span>`;
+
+      container.appendChild(toast);
+      if (window.lucide) lucide.createIcons();
+
+      // Trigger animation
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 20);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 250);
+      }, 3500);
+    }
+
+    function showLoadingState(isLoading) {
+      const tbody = document.getElementById('leadsTableBody');
+      if (tbody && isLoading) {
+        tbody.innerHTML = `<tr>
+          <td colspan="9" class="text-center py-12 text-slate-400">
+            <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+            <p class="font-medium text-xs">Cargando base de datos de leads...</p>
+          </td>
+        </tr>`;
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function escapeAttr(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // -------------------------------------------------------------
+    // 14. ANÁLISIS Y RENDERIZADO DE GRÁFICOS HISTÓRICOS 2026
+    // -------------------------------------------------------------
+    const MONTH_CHRONO = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+
+    function populateHistoricalFilterOptions() {
+      const campanaSelect = document.getElementById('histFilterCampana');
+      const agenteSelect = document.getElementById('histFilterAgente');
+      if (!campanaSelect || !agenteSelect) return;
+
+      const currentCamp = campanaSelect.value;
+      const currentAgent = agenteSelect.value;
+
+      const campanas = new Set();
+      const agentes = new Set();
+
+      allLeads.forEach(l => {
+        const c = getField(l, 'Campaña').trim();
+        const a = getField(l, 'Agente ').trim();
+        if (c) campanas.add(c);
+        if (a) agentes.add(a);
+      });
+
+      // Update Campaña options
+      const campOptions = ['<option value="">Todas las Campañas</option>'];
+      Array.from(campanas).sort().forEach(c => {
+        campOptions.push(`<option value="${escapeAttr(c)}" ${c === currentCamp ? 'selected' : ''}>${escapeHtml(c)}</option>`);
+      });
+      campanaSelect.innerHTML = campOptions.join('');
+
+      // Update Agente options
+      const agentOptions = ['<option value="">Todos los Asesores</option>'];
+      Array.from(agentes).sort().forEach(a => {
+        agentOptions.push(`<option value="${escapeAttr(a)}" ${a === currentAgent ? 'selected' : ''}>${escapeHtml(a)}</option>`);
+      });
+      agenteSelect.innerHTML = agentOptions.join('');
+    }
+
+    function renderHistoricalAnalytics() {
+      if (!window.Chart) {
+        console.warn("Chart.js aún no está cargado");
+        return;
+      }
+
+      populateHistoricalFilterOptions();
+
+      const selectedCampana = document.getElementById('histFilterCampana')?.value || '';
+      const selectedAgente = document.getElementById('histFilterAgente')?.value || '';
+
+      // Filtrar el conjunto a analizar según los filtros de la pestaña histórica
+      let data = allLeads;
+      if (selectedCampana) {
+        data = data.filter(l => getField(l, 'Campaña').trim() === selectedCampana);
+      }
+      if (selectedAgente) {
+        data = data.filter(l => getField(l, 'Agente ').trim() === selectedAgente);
+      }
+
+      // 1. CÁLCULO DE KPIS GLOBALES
+      const totalLeads = data.length;
+      const totalInscritos = data.filter(l => getField(l, 'GESTION').toUpperCase().includes('INSCRIT')).length;
+      const convRate = totalLeads > 0 ? ((totalInscritos / totalLeads) * 100).toFixed(1) : '0.0';
+
+      const elTotal = document.getElementById('histKpiTotalLeads');
+      const elInsc = document.getElementById('histKpiInscritos');
+      const elConv = document.getElementById('histKpiConversion');
+      if (elTotal) elTotal.textContent = totalLeads.toLocaleString();
+      if (elInsc) elInsc.textContent = totalInscritos.toLocaleString();
+      if (elConv) elConv.textContent = convRate + '%';
+
+      // 2. AGRUPACIÓN MENSUAL
+      const monthlyStats = {};
+      MONTH_CHRONO.forEach(m => {
+        monthlyStats[m] = {
+          total: 0,
+          inscritos: 0,
+          agendados: 0,
+          campanas: {},
+          agentes: {}
+        };
+      });
+
+      data.forEach(l => {
+        let mes = getField(l, 'Mes').trim().toUpperCase();
+        if (!monthlyStats[mes]) {
+          // Mapeo flexible para variaciones
+          const found = MONTH_CHRONO.find(m => mes.includes(m));
+          mes = found || 'OTRO';
+          if (!monthlyStats[mes]) monthlyStats[mes] = { total: 0, inscritos: 0, agendados: 0, campanas: {}, agentes: {} };
+        }
+
+        const stats = monthlyStats[mes];
+        stats.total++;
+
+        const gestion = getField(l, 'GESTION').toUpperCase();
+        if (gestion.includes('INSCRIT')) stats.inscritos++;
+        if (gestion.includes('AGENDAD')) stats.agendados++;
+
+        const camp = getField(l, 'Campaña').trim() || 'General';
+        stats.campanas[camp] = (stats.campanas[camp] || 0) + 1;
+
+        const agent = getField(l, 'Agente ').trim() || 'Sin asignar';
+        if (gestion.includes('INSCRIT')) {
+          stats.agentes[agent] = (stats.agentes[agent] || 0) + 1;
+        }
+      });
+
+      // Determinar meses activos
+      const activeMonths = MONTH_CHRONO.filter(m => monthlyStats[m] && monthlyStats[m].total > 0);
+      if (activeMonths.length === 0 && monthlyStats['OTRO']?.total > 0) {
+        activeMonths.push('OTRO');
+      }
+
+      // Encontrar Mes Récord
+      let recordMonth = '-';
+      let recordCount = 0;
+      activeMonths.forEach(m => {
+        if (monthlyStats[m].total > recordCount) {
+          recordCount = monthlyStats[m].total;
+          recordMonth = m;
+        }
+      });
+
+      const elRecordMonth = document.getElementById('histKpiRecordMonth');
+      const elRecordCount = document.getElementById('histKpiRecordCount');
+      if (elRecordMonth) elRecordMonth.textContent = recordMonth;
+      if (elRecordCount) elRecordCount.textContent = recordCount + ' leads';
+
+      // 3. TABLA MENSUAL CONSOLIDADA
+      const tableBody = document.getElementById('histMonthlyTableBody');
+      if (tableBody) {
+        if (activeMonths.length === 0) {
+          tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-500 font-sans">No hay registros con los filtros seleccionados</td></tr>`;
+        } else {
+          tableBody.innerHTML = activeMonths.map(m => {
+            const st = monthlyStats[m];
+            const mConv = st.total > 0 ? ((st.inscritos / st.total) * 100).toFixed(1) : '0.0';
+            const mYearPct = totalLeads > 0 ? ((st.total / totalLeads) * 100).toFixed(1) : '0.0';
+
+            // Campaña más fuerte
+            let topCamp = '-';
+            let topCampCount = 0;
+            Object.entries(st.campanas).forEach(([c, cnt]) => {
+              if (cnt > topCampCount) { topCampCount = cnt; topCamp = c; }
+            });
+
+            // Agente con más cierres
+            let topAg = '-';
+            let topAgCount = 0;
+            Object.entries(st.agentes).forEach(([a, cnt]) => {
+              if (cnt > topAgCount) { topAgCount = cnt; topAg = a; }
+            });
+
+            return `
+              <tr class="hover:bg-slate-800/40 transition-colors">
+                <td class="px-4 py-3 font-semibold text-slate-200">${escapeHtml(m)}</td>
+                <td class="px-4 py-3 text-right text-white font-bold tabular-nums">${st.total}</td>
+                <td class="px-4 py-3 text-right text-amber-400 tabular-nums">${st.agendados}</td>
+                <td class="px-4 py-3 text-right text-emerald-400 font-bold tabular-nums">${st.inscritos}</td>
+                <td class="px-4 py-3 text-right tabular-nums">
+                  <span class="px-2 py-0.5 rounded text-xs font-semibold ${Number(mConv) >= 15 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}">
+                    ${mConv}%
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-right text-slate-400 tabular-nums">${mYearPct}%</td>
+                <td class="px-4 py-3 text-slate-300 font-sans truncate max-w-[180px]">${escapeHtml(topCamp)}</td>
+                <td class="px-4 py-3 text-slate-300 font-sans">${escapeHtml(topAg)}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+
+      // 4. CONFIGURACIÓN VISUAL GENERAL DE CHART.JS (Dark Mode)
+      Chart.defaults.color = '#94a3b8';
+      Chart.defaults.font.family = '"Plus Jakarta Sans", sans-serif';
+
+      const commonScales = {
+        x: {
+          grid: { color: 'rgba(51, 65, 85, 0.35)' },
+          ticks: { color: '#94a3b8', font: { size: 11 } }
+        },
+        y: {
+          grid: { color: 'rgba(51, 65, 85, 0.35)' },
+          ticks: { color: '#94a3b8', font: { size: 11 } },
+          beginAtZero: true
+        }
+      };
+
+      // GRÁFICO 1: EVOLUCIÓN MENSUAL (BAR & LINE)
+      const ctxMonthly = document.getElementById('chartMonthlyEvolution');
+      if (ctxMonthly) {
+        if (histCharts.monthly) histCharts.monthly.destroy();
+        const labels = activeMonths;
+        const totalData = labels.map(m => monthlyStats[m].total);
+        const inscritosData = labels.map(m => monthlyStats[m].inscritos);
+
+        histCharts.monthly = new Chart(ctxMonthly, {
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                type: 'line',
+                label: 'Inscritos Matriculados',
+                data: inscritosData,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                borderWidth: 3,
+                pointBackgroundColor: '#10b981',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 1.5,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                tension: 0.3,
+                order: 1
+              },
+              {
+                type: 'bar',
+                label: 'Total Leads Captados',
+                data: totalData,
+                backgroundColor: 'rgba(99, 102, 241, 0.75)',
+                hoverBackgroundColor: '#6366f1',
+                borderRadius: 6,
+                borderSkipped: false,
+                order: 2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: { color: '#cbd5e1', font: { weight: '600', size: 12 } }
+              },
+              tooltip: {
+                backgroundColor: '#0f172a',
+                titleColor: '#ffffff',
+                bodyColor: '#cbd5e1',
+                borderColor: '#334155',
+                borderWidth: 1,
+                padding: 10
+              }
+            },
+            scales: commonScales
+          }
+        });
+      }
+
+      // GRÁFICO 2: TENDENCIA DE CONVERSIÓN MENSUAL (%)
+      const ctxConv = document.getElementById('chartConversionTrend');
+      if (ctxConv) {
+        if (histCharts.conversion) histCharts.conversion.destroy();
+        const labels = activeMonths;
+        const convData = labels.map(m => {
+          const st = monthlyStats[m];
+          return st.total > 0 ? Number(((st.inscritos / st.total) * 100).toFixed(1)) : 0;
+        });
+
+        histCharts.conversion = new Chart(ctxConv, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Tasa de Conversión (%)',
+              data: convData,
+              borderColor: '#818cf8',
+              backgroundColor: 'rgba(129, 140, 248, 0.12)',
+              fill: true,
+              borderWidth: 2.5,
+              pointBackgroundColor: '#6366f1',
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              tension: 0.35
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: { label: (ctx) => ` Conversión: ${ctx.parsed.y}%` }
+              }
+            },
+            scales: {
+              ...commonScales,
+              y: {
+                ...commonScales.y,
+                ticks: {
+                  ...commonScales.y.ticks,
+                  callback: (val) => val + '%'
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // GRÁFICO 3: RENDIMIENTO POR CAMPAÑA (TOP 6)
+      const ctxCamp = document.getElementById('chartCampaignPerformance');
+      if (ctxCamp) {
+        if (histCharts.campaign) histCharts.campaign.destroy();
+        const campMap = {};
+        data.forEach(l => {
+          const c = getField(l, 'Campaña').trim() || 'Sin Campaña';
+          if (!campMap[c]) campMap[c] = { total: 0, inscritos: 0 };
+          campMap[c].total++;
+          if (getField(l, 'GESTION').toUpperCase().includes('INSCRIT')) {
+            campMap[c].inscritos++;
+          }
+        });
+
+        const sortedCamps = Object.entries(campMap)
+          .sort((a, b) => b[1].total - a[1].total)
+          .slice(0, 6);
+
+        histCharts.campaign = new Chart(ctxCamp, {
+          type: 'bar',
+          data: {
+            labels: sortedCamps.map(c => c[0]),
+            datasets: [
+              {
+                label: 'Total Leads',
+                data: sortedCamps.map(c => c[1].total),
+                backgroundColor: 'rgba(59, 130, 246, 0.65)',
+                borderRadius: 4
+              },
+              {
+                label: 'Inscritos',
+                data: sortedCamps.map(c => c[1].inscritos),
+                backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                borderRadius: 4
+              }
+            ]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#cbd5e1' } }
+            },
+            scales: commonScales
+          }
+        });
+      }
+
+      // GRÁFICO 4: MEDIOS DE ENTRADA (DONA)
+      const ctxMedio = document.getElementById('chartMedioDistribution');
+      if (ctxMedio) {
+        if (histCharts.medio) histCharts.medio.destroy();
+        const medioCounts = {};
+        data.forEach(l => {
+          const m = getField(l, 'Medio').trim() || 'Directo/Otro';
+          medioCounts[m] = (medioCounts[m] || 0) + 1;
+        });
+
+        const sortedMedios = Object.entries(medioCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 6);
+
+        histCharts.medio = new Chart(ctxMedio, {
+          type: 'doughnut',
+          data: {
+            labels: sortedMedios.map(m => m[0]),
+            datasets: [{
+              data: sortedMedios.map(m => m[1]),
+              backgroundColor: [
+                '#10b981', // Verde WhatsApp
+                '#8b5cf6', // Violeta Instagram
+                '#3b82f6', // Azul Lead Directo
+                '#f59e0b', // Ámbar Referidos
+                '#ec4899', // Rosa GCP
+                '#06b6d4'  // Cyan Otros
+              ],
+              borderColor: '#1e293b',
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: { color: '#cbd5e1', font: { size: 11 }, boxWidth: 12 }
+              }
+            },
+            cutout: '65%'
+          }
+        });
+      }
+
+      // GRÁFICO 5: CIERRES POR ASESOR / AGENTE
+      const ctxAgent = document.getElementById('chartAgentPerformance');
+      if (ctxAgent) {
+        if (histCharts.agent) histCharts.agent.destroy();
+        const agentMap = {};
+        data.forEach(l => {
+          const a = getField(l, 'Agente ').trim() || 'Sin Asignar';
+          if (!agentMap[a]) agentMap[a] = { total: 0, inscritos: 0 };
+          agentMap[a].total++;
+          if (getField(l, 'GESTION').toUpperCase().includes('INSCRIT')) {
+            agentMap[a].inscritos++;
+          }
+        });
+
+        const sortedAgents = Object.entries(agentMap)
+          .filter(a => a[0] !== 'Sin Asignar' || a[1].total > 2)
+          .sort((a, b) => b[1].inscritos - a[1].inscritos)
+          .slice(0, 6);
+
+        histCharts.agent = new Chart(ctxAgent, {
+          type: 'bar',
+          data: {
+            labels: sortedAgents.map(a => a[0]),
+            datasets: [
+              {
+                label: 'Leads Atendidos',
+                data: sortedAgents.map(a => a[1].total),
+                backgroundColor: 'rgba(148, 163, 184, 0.4)',
+                borderRadius: 4
+              },
+              {
+                label: 'Inscripciones Logradas',
+                data: sortedAgents.map(a => a[1].inscritos),
+                backgroundColor: '#10b981',
+                borderRadius: 4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#cbd5e1' } }
+            },
+            scales: commonScales
+          }
+        });
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // -------------------------------------------------------------
+    // 15. INICIALIZACIÓN AL CARGAR LA PÁGINA
+    // -------------------------------------------------------------
+    document.addEventListener('DOMContentLoaded', () => {
+      loadLeadsData();
+      setupRealtimeListener();
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

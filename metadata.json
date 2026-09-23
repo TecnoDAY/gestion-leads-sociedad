@@ -1,0 +1,6 @@
+{
+  "name": "Gestión de Leads 2026 - Sociedad Actoral",
+  "description": "Panel analítico y operativo de gestión de leads 2026 para Sociedad Actoral conectado a Supabase con métricas en tiempo real, matriz cruzada y seguimiento.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

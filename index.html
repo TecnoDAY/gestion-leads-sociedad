@@ -407,6 +407,13 @@
             </select>
           </div>
 
+          <!-- Filtro de Mes en Histórico -->
+          <div class="w-full sm:w-auto">
+            <select id="histFilterMes" onchange="renderHistoricalAnalytics()" class="w-full sm:w-40 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+              <option value="">Todos los Meses</option>
+            </select>
+          </div>
+
           <button onclick="renderHistoricalAnalytics()" title="Recalcular gráficos" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span>Actualizar</span>
@@ -415,7 +422,7 @@
       </div>
 
       <!-- KPIS HISTÓRICOS ACUMULADOS -->
-      <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <section class="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <!-- Total Histórico -->
         <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
           <div class="flex items-center justify-between text-slate-400">
@@ -430,6 +437,20 @@
           </div>
         </div>
 
+        <!-- Agendados -->
+        <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between text-slate-400">
+            <span class="text-xs font-semibold uppercase tracking-wider">Agendados</span>
+            <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+              <i data-lucide="calendar-check" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="histKpiAgendados" class="text-2xl sm:text-3xl font-bold font-mono text-amber-400 tabular-nums">0</span>
+            <span class="text-xs text-amber-400/80 font-medium">citas</span>
+          </div>
+        </div>
+
         <!-- Inscripciones Totales -->
         <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
           <div class="flex items-center justify-between text-slate-400">
@@ -441,6 +462,20 @@
           <div class="mt-2 flex items-baseline gap-2">
             <span id="histKpiInscritos" class="text-2xl sm:text-3xl font-bold font-mono text-emerald-400 tabular-nums">0</span>
             <span class="text-xs text-emerald-400/80 font-medium">cerrados</span>
+          </div>
+        </div>
+
+        <!-- No Contesta -->
+        <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between text-slate-400">
+            <span class="text-xs font-semibold uppercase tracking-wider">No Contesta</span>
+            <div class="p-2 rounded-lg bg-rose-500/10 text-rose-400">
+              <i data-lucide="phone-off" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="histKpiNoContesta" class="text-2xl sm:text-3xl font-bold font-mono text-rose-400 tabular-nums">0</span>
+            <span class="text-xs text-rose-400/80 font-medium">sin respuesta</span>
           </div>
         </div>
 
@@ -567,6 +602,57 @@
         </div>
       </div>
 
+      <!-- FILA DE 2 GRÁFICOS: ESTADOS & CAMPAÑAS POR MES -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Gráfico 6: Estados por Mes -->
+        <div class="glass-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="list-checks" class="w-4 h-4 text-blue-400"></i>
+                <span>Estados por Mes</span>
+              </h3>
+              <p class="text-xs text-slate-400">Barras apiladas de los estados de GESTION de cada mes (top 6 estados + Otros)</p>
+            </div>
+          </div>
+          <div class="relative w-full h-64">
+            <canvas id="chartMonthlyStates"></canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico 7: Campañas por Mes -->
+        <div class="glass-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="megaphone" class="w-4 h-4 text-amber-400"></i>
+                <span>Campañas por Mes</span>
+              </h3>
+              <p class="text-xs text-slate-400">Barras apiladas con las 5 campañas de mayor volumen de leads por mes (resto en Otras)</p>
+            </div>
+          </div>
+          <div class="relative w-full h-64">
+            <canvas id="chartMonthlyCampaigns"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- GRÁFICO 8: EMBUDO DE CONVERSIÓN -->
+      <div class="glass-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i data-lucide="filter" class="w-4 h-4 text-emerald-400"></i>
+              <span>Embudo de Conversión</span>
+            </h3>
+            <p class="text-xs text-slate-400">Recibidos → Gestionados → Agendados → Inscritos con los filtros de mes, campaña y asesor aplicados</p>
+          </div>
+        </div>
+        <div class="relative w-full h-64">
+          <canvas id="chartFunnel"></canvas>
+        </div>
+      </div>
+
       <!-- TABLA RESUMEN CONSOLIDADA POR MES -->
       <div class="glass-card rounded-2xl border border-slate-700/80 shadow-sm overflow-hidden space-y-0">
         <div class="p-4 border-b border-slate-700/80 flex items-center justify-between">
@@ -579,6 +665,10 @@
               <p class="text-xs text-slate-400">Métricas clave desglosadas cronológicamente</p>
             </div>
           </div>
+          <button onclick="exportHistoricalSummaryCSV()" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            Exportar resumen
+          </button>
         </div>
 
         <div class="overflow-x-auto">
@@ -588,6 +678,7 @@
                 <th class="px-4 py-3">Mes</th>
                 <th class="px-4 py-3 text-right">Total Leads</th>
                 <th class="px-4 py-3 text-right">Agendados</th>
+                <th class="px-4 py-3 text-right">No Contesta</th>
                 <th class="px-4 py-3 text-right">Inscritos</th>
                 <th class="px-4 py-3 text-right">% Conversión</th>
                 <th class="px-4 py-3 text-right">% del Año</th>
@@ -2360,6 +2451,101 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       showToast(`${filteredLeads.length.toLocaleString()} leads exportados a CSV`, "success");
     }
 
+    function exportHistoricalSummaryCSV() {
+      const selectedCampana = document.getElementById('histFilterCampana')?.value || '';
+      const selectedAgente = document.getElementById('histFilterAgente')?.value || '';
+      const selectedMes = document.getElementById('histFilterMes')?.value || '';
+
+      let data = allLeads;
+      if (selectedCampana) {
+        data = data.filter(l => getField(l, 'Campaña').trim() === selectedCampana);
+      }
+      if (selectedAgente) {
+        data = data.filter(l => getField(l, 'Agente ').trim() === selectedAgente);
+      }
+      if (selectedMes) {
+        data = data.filter(l => normalizeLeadMonth(l) === selectedMes);
+      }
+
+      const totalLeads = data.length;
+      const monthlyStats = {};
+      MONTH_CHRONO.forEach(m => {
+        monthlyStats[m] = { total: 0, inscritos: 0, agendados: 0, noContesta: 0, campanas: {}, agentes: {} };
+      });
+
+      data.forEach(l => {
+        const mes = normalizeLeadMonth(l);
+        if (!monthlyStats[mes]) monthlyStats[mes] = { total: 0, inscritos: 0, agendados: 0, noContesta: 0, campanas: {}, agentes: {} };
+        const stats = monthlyStats[mes];
+        stats.total++;
+
+        const gestion = normalizeGestion(l);
+        if (gestion.includes('INSCRIT')) stats.inscritos++;
+        if (gestion.includes('AGENDAD')) stats.agendados++;
+        if (gestion.includes('NO CONTEST')) stats.noContesta++;
+
+        const camp = getField(l, 'Campaña').trim() || 'General';
+        stats.campanas[camp] = (stats.campanas[camp] || 0) + 1;
+
+        if (gestion.includes('INSCRIT')) {
+          const agent = getField(l, 'Agente ').trim() || 'Sin asignar';
+          stats.agentes[agent] = (stats.agentes[agent] || 0) + 1;
+        }
+      });
+
+      const activeMonths = MONTH_CHRONO.filter(m => monthlyStats[m] && monthlyStats[m].total > 0);
+      if (activeMonths.length === 0 && monthlyStats['OTRO']?.total > 0) {
+        activeMonths.push('OTRO');
+      }
+
+      if (activeMonths.length === 0) {
+        showToast("No hay registros para exportar", "warning");
+        return;
+      }
+
+      const headers = ["Mes", "Total Leads", "Agendados", "No Contesta", "Inscritos", "% Conversión", "% del Total", "Campaña Más Fuerte", "Asesor con Más Cierres"];
+      const q = v => `"${String(v).replace(/"/g, '""')}"`;
+      const rows = activeMonths.map(m => {
+        const st = monthlyStats[m];
+        const mConv = st.total > 0 ? ((st.inscritos / st.total) * 100).toFixed(1) : '0.0';
+        const mMonthPct = totalLeads > 0 ? ((st.total / totalLeads) * 100).toFixed(1) : '0.0';
+
+        let topCamp = '-';
+        let topCampCount = 0;
+        Object.entries(st.campanas).forEach(([c, cnt]) => {
+          if (cnt > topCampCount) { topCampCount = cnt; topCamp = c; }
+        });
+
+        let topAg = '-';
+        let topAgCount = 0;
+        Object.entries(st.agentes).forEach(([a, cnt]) => {
+          if (cnt > topAgCount) { topAgCount = cnt; topAg = a; }
+        });
+
+        return [
+          q(m),
+          st.total,
+          st.agendados,
+          st.noContesta,
+          st.inscritos,
+          q(mConv + '%'),
+          q(mMonthPct + '%'),
+          q(topCamp),
+          q(topAg)
+        ].join(',');
+      });
+
+      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(','), ...rows].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Historical_Summary_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast(`${activeMonths.length.toLocaleString()} meses exportados a CSV`, "success");
+    }
+
     // -------------------------------------------------------------
     // 12. TOASTS & HELPERS
     // -------------------------------------------------------------
@@ -2429,22 +2615,66 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // -------------------------------------------------------------
     const MONTH_CHRONO = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
 
+    // Normaliza el mes de un lead: 'Mes' como fuente principal, 'Fecha' (d/m/aaaa, d-m-aaaa o d/m/aa) de respaldo.
+    function normalizeLeadMonth(lead) {
+      const raw = getField(lead, 'Mes').trim().toUpperCase();
+      const fromMes = MONTH_CHRONO.find(m => raw.includes(m));
+      if (fromMes) return fromMes;
+
+      const fecha = getField(lead, 'Fecha').trim();
+      if (fecha) {
+        const parts = fecha.split(/[/-]/);
+        if (parts.length >= 2) {
+          const monthNum = Number(parts[1]);
+          if (Number.isInteger(monthNum) && monthNum >= 1 && monthNum <= 12) {
+            return MONTH_CHRONO[monthNum - 1];
+          }
+        }
+      }
+      return 'OTRO';
+    }
+
+    // Normaliza el estado de gestión: trim, colapso de espacios internos y mayúsculas.
+    function normalizeGestion(lead) {
+      return getField(lead, 'GESTION').trim().replace(/\s+/g, ' ').toUpperCase();
+    }
+
+    // Prefijos de estado reconocidos (variantes tipo 'AGENDADO 12/09' se agrupan); si no coincide, se usa el estado completo.
+    const GESTION_STATE_GROUPS = [
+      ['INSCRIT', 'INSCRITO'],
+      ['AGENDAD', 'AGENDADO'],
+      ['NO CONTEST', 'NO CONTESTA'],
+      ['INFORMACIÓN', 'INFORMACIÓN'],
+      ['INFORMACION', 'INFORMACIÓN'],
+      ['INTERESADO', 'INTERESADO']
+    ];
+
+    function groupGestionEstado(gestion) {
+      if (!gestion) return 'SIN ESTADO';
+      const hit = GESTION_STATE_GROUPS.find(([prefix]) => gestion.startsWith(prefix));
+      return hit ? hit[1] : gestion;
+    }
+
     function populateHistoricalFilterOptions() {
       const campanaSelect = document.getElementById('histFilterCampana');
       const agenteSelect = document.getElementById('histFilterAgente');
-      if (!campanaSelect || !agenteSelect) return;
+      const mesSelect = document.getElementById('histFilterMes');
+      if (!campanaSelect || !agenteSelect || !mesSelect) return;
 
       const currentCamp = campanaSelect.value;
       const currentAgent = agenteSelect.value;
+      const currentMes = mesSelect.value;
 
       const campanas = new Set();
       const agentes = new Set();
+      const meses = new Set();
 
       allLeads.forEach(l => {
         const c = getField(l, 'Campaña').trim();
         const a = getField(l, 'Agente ').trim();
         if (c) campanas.add(c);
         if (a) agentes.add(a);
+        meses.add(normalizeLeadMonth(l));
       });
 
       const campOptions = ['<option value="">Todas las Campañas</option>'];
@@ -2458,6 +2688,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         agentOptions.push(`<option value="${escapeAttr(a)}" ${a === currentAgent ? 'selected' : ''}>${escapeHtml(a)}</option>`);
       });
       agenteSelect.innerHTML = agentOptions.join('');
+
+      const mesOrder = MONTH_CHRONO.filter(m => meses.has(m));
+      if (meses.has('OTRO')) mesOrder.push('OTRO');
+      const mesOptions = ['<option value="">Todos los Meses</option>'];
+      mesOrder.forEach(m => {
+        mesOptions.push(`<option value="${escapeAttr(m)}" ${m === currentMes ? 'selected' : ''}>${escapeHtml(m)}</option>`);
+      });
+      mesSelect.innerHTML = mesOptions.join('');
     }
 
     function renderHistoricalAnalytics() {
@@ -2467,6 +2705,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
       const selectedCampana = document.getElementById('histFilterCampana')?.value || '';
       const selectedAgente = document.getElementById('histFilterAgente')?.value || '';
+      const selectedMes = document.getElementById('histFilterMes')?.value || '';
 
       let data = allLeads;
       if (selectedCampana) {
@@ -2475,37 +2714,57 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (selectedAgente) {
         data = data.filter(l => getField(l, 'Agente ').trim() === selectedAgente);
       }
+      if (selectedMes) {
+        data = data.filter(l => normalizeLeadMonth(l) === selectedMes);
+      }
 
       const totalLeads = data.length;
-      const totalInscritos = data.filter(l => getField(l, 'GESTION').toUpperCase().includes('INSCRIT')).length;
+      const totalInscritos = data.filter(l => normalizeGestion(l).includes('INSCRIT')).length;
+      const totalAgendados = data.filter(l => normalizeGestion(l).includes('AGENDAD')).length;
+      const totalNoContesta = data.filter(l => normalizeGestion(l).includes('NO CONTEST')).length;
       const convRate = totalLeads > 0 ? ((totalInscritos / totalLeads) * 100).toFixed(1) : '0.0';
 
       document.getElementById('histKpiTotalLeads').textContent = totalLeads.toLocaleString();
       document.getElementById('histKpiInscritos').textContent = totalInscritos.toLocaleString();
+      document.getElementById('histKpiAgendados').textContent = totalAgendados.toLocaleString();
+      document.getElementById('histKpiNoContesta').textContent = totalNoContesta.toLocaleString();
       document.getElementById('histKpiConversion').textContent = convRate + '%';
 
       const monthlyStats = {};
       MONTH_CHRONO.forEach(m => {
-        monthlyStats[m] = { total: 0, inscritos: 0, agendados: 0, campanas: {}, agentes: {} };
+        monthlyStats[m] = { total: 0, inscritos: 0, agendados: 0, noContesta: 0, campanas: {}, agentes: {} };
       });
 
+      // Contadores de los gráficos nuevos (estados/campañas por mes y embudo): se acumulan en este mismo recorrido mensual
+      const stateTotals = {};
+      const stateByMonth = {};
+      const campTotals = {};
+      const campByMonth = {};
+      let funnelGestionados = 0;
+
       data.forEach(l => {
-        let mes = getField(l, 'Mes').trim().toUpperCase();
-        if (!monthlyStats[mes]) {
-          const found = MONTH_CHRONO.find(m => mes.includes(m));
-          mes = found || 'OTRO';
-          if (!monthlyStats[mes]) monthlyStats[mes] = { total: 0, inscritos: 0, agendados: 0, campanas: {}, agentes: {} };
-        }
+        const mes = normalizeLeadMonth(l);
+        if (!monthlyStats[mes]) monthlyStats[mes] = { total: 0, inscritos: 0, agendados: 0, noContesta: 0, campanas: {}, agentes: {} };
 
         const stats = monthlyStats[mes];
         stats.total++;
 
-        const gestion = getField(l, 'GESTION').toUpperCase();
+        const gestion = normalizeGestion(l);
         if (gestion.includes('INSCRIT')) stats.inscritos++;
         if (gestion.includes('AGENDAD')) stats.agendados++;
+        if (gestion.includes('NO CONTEST')) stats.noContesta++;
+        if (gestion && gestion !== 'INFORMACIÓN' && gestion !== 'INTERESADO') funnelGestionados++;
+
+        const estado = groupGestionEstado(gestion);
+        stateTotals[estado] = (stateTotals[estado] || 0) + 1;
+        if (!stateByMonth[mes]) stateByMonth[mes] = {};
+        stateByMonth[mes][estado] = (stateByMonth[mes][estado] || 0) + 1;
 
         const camp = getField(l, 'Campaña').trim() || 'General';
         stats.campanas[camp] = (stats.campanas[camp] || 0) + 1;
+        campTotals[camp] = (campTotals[camp] || 0) + 1;
+        if (!campByMonth[mes]) campByMonth[mes] = {};
+        campByMonth[mes][camp] = (campByMonth[mes][camp] || 0) + 1;
 
         const agent = getField(l, 'Agente ').trim() || 'Sin asignar';
         if (gestion.includes('INSCRIT')) {
@@ -2533,7 +2792,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const tableBody = document.getElementById('histMonthlyTableBody');
       if (tableBody) {
         if (activeMonths.length === 0) {
-          tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-500 font-sans">No hay registros con los filtros seleccionados</td></tr>`;
+          tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-500 font-sans">No hay registros con los filtros seleccionados</td></tr>`;
         } else {
           tableBody.innerHTML = activeMonths.map(m => {
             const st = monthlyStats[m];
@@ -2557,6 +2816,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
                 <td class="px-4 py-3 font-semibold text-slate-200">${escapeHtml(m)}</td>
                 <td class="px-4 py-3 text-right text-white font-bold tabular-nums">${st.total.toLocaleString()}</td>
                 <td class="px-4 py-3 text-right text-amber-400 tabular-nums">${st.agendados.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right text-rose-400 tabular-nums">${st.noContesta.toLocaleString()}</td>
                 <td class="px-4 py-3 text-right text-emerald-400 font-bold tabular-nums">${st.inscritos.toLocaleString()}</td>
                 <td class="px-4 py-3 text-right tabular-nums">
                   <span class="px-2 py-0.5 rounded text-xs font-semibold ${Number(mConv) >= 15 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}">
@@ -2654,7 +2914,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           const c = getField(l, 'Campaña').trim() || 'Sin Campaña';
           if (!campMap[c]) campMap[c] = { total: 0, inscritos: 0 };
           campMap[c].total++;
-          if (getField(l, 'GESTION').toUpperCase().includes('INSCRIT')) campMap[c].inscritos++;
+          if (normalizeGestion(l).includes('INSCRIT')) campMap[c].inscritos++;
         });
         const sortedCamps = Object.entries(campMap).sort((a, b) => b[1].total - a[1].total).slice(0, 6);
         histCharts.campaign = new Chart(ctxCamp, {
@@ -2704,7 +2964,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           const a = getField(l, 'Agente ').trim() || 'Sin Asignar';
           if (!agentMap[a]) agentMap[a] = { total: 0, inscritos: 0 };
           agentMap[a].total++;
-          if (getField(l, 'GESTION').toUpperCase().includes('INSCRIT')) agentMap[a].inscritos++;
+          if (normalizeGestion(l).includes('INSCRIT')) agentMap[a].inscritos++;
         });
         const sortedAgents = Object.entries(agentMap).filter(a => a[0] !== 'Sin Asignar' || a[1].total > 2).sort((a, b) => b[1].inscritos - a[1].inscritos).slice(0, 6);
         histCharts.agent = new Chart(ctxAgent, {
@@ -2717,6 +2977,100 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             ]
           },
           options: { responsive: true, maintainAspectRatio: false, scales: commonScales }
+        });
+      }
+
+      // GRÁFICOS 6 y 7: ESTADOS Y CAMPAÑAS POR MES (barras apiladas)
+      const stackedMonthlyOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { ...commonScales.x, stacked: true },
+          y: { ...commonScales.y, stacked: true }
+        }
+      };
+
+      const ctxStates = document.getElementById('chartMonthlyStates');
+      if (ctxStates) {
+        if (histCharts.monthlyStates) histCharts.monthlyStates.destroy();
+        const statePalette = ['#3b82f6', '#10b981', '#f59e0b', '#f43f5e', '#60a5fa', '#34d399'];
+        const topStates = Object.entries(stateTotals).sort((a, b) => b[1] - a[1]).slice(0, 6).map(e => e[0]);
+        const stateDatasets = topStates.map((s, i) => ({
+          label: s,
+          data: activeMonths.map(m => (stateByMonth[m] && stateByMonth[m][s]) || 0),
+          backgroundColor: statePalette[i]
+        }));
+        if (Object.keys(stateTotals).length > topStates.length) {
+          stateDatasets.push({
+            label: 'Otros',
+            data: activeMonths.map(m => {
+              const inTop = topStates.reduce((sum, s) => sum + ((stateByMonth[m] && stateByMonth[m][s]) || 0), 0);
+              return Math.max(monthlyStats[m].total - inTop, 0);
+            }),
+            backgroundColor: 'rgba(100, 116, 139, 0.55)'
+          });
+        }
+        histCharts.monthlyStates = new Chart(ctxStates, {
+          type: 'bar',
+          data: { labels: activeMonths, datasets: stateDatasets },
+          options: stackedMonthlyOptions
+        });
+      }
+
+      const ctxCampMonth = document.getElementById('chartMonthlyCampaigns');
+      if (ctxCampMonth) {
+        if (histCharts.monthlyCampaigns) histCharts.monthlyCampaigns.destroy();
+        const campPalette = ['#3b82f6', '#f59e0b', '#10b981', '#f43f5e', '#60a5fa'];
+        const topCamps = Object.entries(campTotals).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => e[0]);
+        const campDatasets = topCamps.map((c, i) => ({
+          label: c,
+          data: activeMonths.map(m => (campByMonth[m] && campByMonth[m][c]) || 0),
+          backgroundColor: campPalette[i]
+        }));
+        if (Object.keys(campTotals).length > topCamps.length) {
+          campDatasets.push({
+            label: 'Otras',
+            data: activeMonths.map(m => {
+              const inTop = topCamps.reduce((sum, c) => sum + ((campByMonth[m] && campByMonth[m][c]) || 0), 0);
+              return Math.max(monthlyStats[m].total - inTop, 0);
+            }),
+            backgroundColor: 'rgba(100, 116, 139, 0.55)'
+          });
+        }
+        histCharts.monthlyCampaigns = new Chart(ctxCampMonth, {
+          type: 'bar',
+          data: { labels: activeMonths, datasets: campDatasets },
+          options: stackedMonthlyOptions
+        });
+      }
+
+      // GRÁFICO 8: EMBUDO DE CONVERSIÓN
+      const ctxFunnel = document.getElementById('chartFunnel');
+      if (ctxFunnel) {
+        if (histCharts.funnel) histCharts.funnel.destroy();
+        const funnelValues = [totalLeads, funnelGestionados, totalAgendados, totalInscritos];
+        const funnelStages = ['Recibidos', 'Gestionados', 'Agendados', 'Inscritos'];
+        histCharts.funnel = new Chart(ctxFunnel, {
+          type: 'bar',
+          data: {
+            labels: funnelStages.map((s, i) => `${s}: ${funnelValues[i].toLocaleString()}`),
+            datasets: [{
+              label: 'Leads',
+              data: funnelValues,
+              backgroundColor: ['#3b82f6', '#94a3b8', '#f59e0b', '#10b981'],
+              borderRadius: 4
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ...commonScales.x, beginAtZero: true },
+              y: commonScales.y
+            }
+          }
         });
       }
 

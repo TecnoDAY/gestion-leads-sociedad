@@ -57,6 +57,7 @@
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
     .tabular-nums { font-variant-numeric: tabular-nums; }
     .glass-card { background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(8px); }
+    body:not(.session-ready) > header, body:not(.session-ready) > div.sticky, body:not(.session-ready) > main, body:not(.session-ready) > footer { display: none; }
   </style>
 </head>
 
@@ -106,9 +107,18 @@
         </button>
 
         <!-- New Lead Button -->
-        <button onclick="openNewLeadModal()" class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 transition-all cursor-pointer">
+        <button id="btnNewLead" onclick="openNewLeadModal()" class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/50 transition-all cursor-pointer">
           <i data-lucide="user-plus" class="w-4 h-4"></i>
           <span>+ Nuevo Lead</span>
+        </button>
+        <span id="userBadge" class="hidden sm:inline text-xs text-slate-400"></span>
+        <button id="btnAdminUsers" onclick="document.getElementById('panelAdminUsers').classList.remove('hidden');document.getElementById('panelAdminUsers').classList.add('flex');loadAuthorizedUsers()" class="hidden items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
+          <i data-lucide="users" class="w-3.5 h-3.5"></i>
+          <span>Usuarios</span>
+        </button>
+        <button id="btnSignOut" onclick="handleSignOut()" class="hidden items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+          <span>Salir</span>
         </button>
       </div>
     </div>
@@ -610,6 +620,36 @@
     </div>
   </footer>
 
+  <!-- ================= MODAL: ACCESO OTP ================= -->
+  <div id="modalOtp" class="fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
+        <div><h2 class="font-bold text-white">Acceso autorizado</h2><p class="text-xs text-slate-400">Ingresa con el código OTP enviado a tu correo</p></div>
+      </div>
+      <form id="formOtp" onsubmit="handleOtpSubmit(event)" class="space-y-3">
+        <input id="otpEmail" type="email" autocomplete="email" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
+        <input id="otpCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Código de 6 dígitos" minlength="6" maxlength="6" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
+        <div class="flex gap-2"><button id="btnSendOtp" type="button" onclick="requestOtp()" class="flex-1 px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold">Enviar OTP</button><button type="submit" class="flex-1 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Entrar</button></div>
+      </form>
+      <p id="otpStatus" class="text-xs text-slate-400">La cuenta debe estar autorizada por un administrador.</p>
+    </div>
+  </div>
+
+  <!-- ================= PANEL: ADMINISTRACIÓN DE ACCESOS ================= -->
+  <div id="panelAdminUsers" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg p-6 space-y-4">
+      <div class="flex items-center justify-between"><h2 class="font-bold text-white">Autorizar agente</h2><button onclick="document.getElementById('panelAdminUsers').classList.add('hidden');document.getElementById('panelAdminUsers').classList.remove('flex')" class="text-slate-400 hover:text-white">×</button></div>
+      <form id="formAuthorizeUser" onsubmit="handleAuthorizeUser(event)" class="space-y-3 text-xs">
+        <input id="authorizeEmail" type="email" required placeholder="correo@ejemplo.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
+        <input id="authorizeName" type="text" required maxlength="120" placeholder="Nombre" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
+        <select id="authorizeRole" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"><option value="agente">Agente</option><option value="admin">Administrador</option></select>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Autorizar y provisionar</button>
+      </form>
+      <div id="authorizedUsers" class="text-xs text-slate-400 space-y-1"></div>
+    </div>
+  </div>
+
   <!-- ================= MODAL: NUEVO LEAD ================= -->
   <div id="modalNewLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
@@ -705,6 +745,7 @@
           <div>
             <label class="block font-medium text-slate-300 mb-1">Asesor / Agente</label>
             <input type="text" id="newAgente" list="agenteList" placeholder="Ej: Nina, Jessi, Loli, Ana" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <p id="newAgenteHint" class="text-[11px] text-slate-500 mt-1 hidden">Se asignará automáticamente con tu nombre de agente.</p>
             <datalist id="agenteList">
               <option value="Nina">
               <option value="Jessi">
@@ -818,6 +859,24 @@
           </div>
         </div>
 
+        <section id="adminLeadFields" class="hidden border-t border-slate-700/80 pt-4 space-y-3">
+          <div class="flex items-center gap-2 text-sm font-semibold text-white"><i data-lucide="settings-2" class="w-4 h-4 text-indigo-400"></i>Datos principales del lead</div>
+          <p class="text-[11px] text-slate-400">Solo el administrador puede modificar estos campos.</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="block font-medium text-slate-300 mb-1">Nombre</label><input id="editNombre" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-300 mb-1">Teléfono</label><input id="editTelefono" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-300 mb-1">Mes</label><input id="editMes" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-300 mb-1">Fecha</label><input id="editFecha" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-300 mb-1">Campaña</label><input id="editCampana" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-300 mb-1">Medio</label><input id="editMedio" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-300 mb-1">Ciudad</label><input id="editCiudad" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-300 mb-1">Agente asignado</label><input id="editAgenteAdmin" type="text" list="agenteList" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-300 mb-1">Odoo</label><input id="editOdoo" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-300 mb-1">Fecha de Atención</label><input id="editFechaAtencion" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div class="sm:col-span-2"><label class="block font-medium text-slate-300 mb-1">Landing</label><input id="editLanding" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+          </div>
+        </section>
+
         <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/80">
           <button type="button" onclick="closeEditLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium cursor-pointer">Cancelar</button>
           <button type="submit" id="btnSubmitEditLead" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-2 cursor-pointer">
@@ -914,28 +973,13 @@ ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
 -- =======================================================
 -- 3. POLÍTICAS DE ACCESO ESTRICTAS (POLICIES)
 -- =======================================================
-CREATE POLICY "Permitir lectura para usuarios de plataforma"
-ON public.leads FOR SELECT
-TO anon, authenticated
-USING (true);
+-- La política segura se instala mediante la migración versionada.
 
-CREATE POLICY "Permitir insercion con validacion de nombre"
-ON public.leads FOR INSERT
-TO anon, authenticated
-WITH CHECK (
-    "Nombre" IS NOT NULL AND length(trim("Nombre")) > 0
-);
+-- Las inserciones y actualizaciones se ejecutan mediante RPCs estrechas.
 
-CREATE POLICY "Permitir actualizacion para asesores autorizados"
-ON public.leads FOR UPDATE
-TO anon, authenticated
-USING (true)
-WITH CHECK (true);
+-- No existe política directa de escritura para el navegador.
 
-CREATE POLICY "Permitir borrado seguro solo para autenticados"
-ON public.leads FOR DELETE
-TO authenticated
-USING (true);
+-- No existe política DELETE: el archivado se hace por RPC admin.
 
 -- =======================================================
 -- 4. HABILITACIÓN DE SINCRONIZACIÓN EN TIEMPO REAL
@@ -954,7 +998,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             <span>Credenciales en uso</span>
           </div>
           <p class="font-mono text-[11px] text-slate-400 truncate">URL: https://hkkuyomlcqyxtzblowle.supabase.co</p>
-          <p class="font-mono text-[11px] text-slate-400 truncate">Key: sb_publishable_bcFmG6jsAW6lo2WJn3L7BA_BKtiIsmR</p>
+          <p class="font-mono text-[11px] text-slate-400 truncate">La clave anon se usa solo en el navegador; las operaciones sensibles requieren sesión y RPC.</p>
         </div>
       </div>
 
@@ -973,10 +1017,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // 1. CONFIGURACIÓN E INICIALIZACIÓN DE SUPABASE
     // -------------------------------------------------------------
     const SUPABASE_URL = "https://hkkuyomlcqyxtzblowle.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_bcFmG6jsAW6lo2WJn3L7BA_BKtiIsmR";
+    const SUPABASE_ANON_KEY = "sb_publishable_bcFmG6jsAW6lo2WJn3L7BA_BKtiIsmR"; // public/publishable key; never a service-role key
 
     let supabaseClient = null;
     let isSupabaseLive = false;
+    let currentUser = null;
+    let currentAccess = null;
+    let isAdmin = false;
+    let authValidationPromise = null;
+    let sessionInitializationPromise = null;
+    let sessionGeneration = 0;
 
     try {
       if (window.supabase && window.supabase.createClient) {
@@ -986,16 +1036,211 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       console.error("Error inicializando Supabase Client:", err);
     }
 
-    // -------------------------------------------------------------
-    // 2. ESTADO GLOBAL DE LA APLICACIÓN
-    // -------------------------------------------------------------
+    function clearSessionState() {
+      sessionGeneration += 1;
+      currentUser = null;
+      currentAccess = null;
+      isAdmin = false;
+      isSupabaseLive = false;
+      allLeads = [];
+      filteredLeads = [];
+      totalDatabaseCount = 0;
+      pendingRealtimeEvents = [];
+      loadLeadsPromise = null;
+      isLoadingLeads = false;
+      if (realtimeChannel && supabaseClient) {
+        supabaseClient.removeChannel(realtimeChannel);
+      }
+      realtimeChannel = null;
+      realtimeSetupPromise = null;
+      document.body?.classList.remove('session-ready');
+      document.getElementById('userBadge')?.replaceChildren();
+      document.getElementById('btnSignOut')?.classList.add('hidden');
+      document.getElementById('btnAdminUsers')?.classList.add('hidden');
+      document.querySelectorAll('[data-admin-only]').forEach(el => el.classList.add('hidden'));
+      const tbody = document.getElementById('leadsTableBody');
+      if (tbody) tbody.innerHTML = '';
+      ['matrixTbody', 'histMonthlyTableBody', 'viewLeadContent', 'authorizedUsers'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.replaceChildren();
+      });
+      ['modalNewLead', 'modalEditLead', 'modalViewLead', 'modalRls', 'panelAdminUsers'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.classList.add('hidden');
+          element.classList.remove('flex');
+        }
+      });
+      ['formNewLead', 'formEditLead', 'formAuthorizeUser'].forEach(id => {
+        document.getElementById(id)?.reset();
+      });
+      Object.values(histCharts).forEach(chart => {
+        try {
+          chart.destroy();
+        } catch (error) {
+          console.warn('No se pudo destruir un gráfico al cerrar sesión:', error);
+        }
+      });
+      Object.keys(histCharts).forEach(key => delete histCharts[key]);
+      const modal = document.getElementById('modalOtp');
+      modal?.classList.remove('hidden');
+      modal?.classList.add('flex');
+      const otpStatus = document.getElementById('otpStatus');
+      if (otpStatus) otpStatus.textContent = 'La cuenta está inactiva o no autorizada.';
+    }
+
+    async function closeInvalidSession(reason = 'La sesión expiró o la cuenta fue desactivada.') {
+      clearSessionState();
+      if (supabaseClient) {
+        try { await supabaseClient.auth.signOut(); } catch (_) { /* local cleanup already complete */ }
+      }
+      const otpStatus = document.getElementById('otpStatus');
+      if (otpStatus) otpStatus.textContent = reason;
+    }
+
+    async function validateCurrentSession() {
+      if (authValidationPromise) return authValidationPromise;
+      authValidationPromise = (async () => {
+        if (!supabaseClient) return false;
+        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+        if (sessionError || !sessionData.session?.user) {
+          if (currentUser || currentAccess || document.body.classList.contains('session-ready')) {
+            await closeInvalidSession('La sesión no está disponible. Inicia sesión de nuevo.');
+          }
+          return false;
+        }
+        const user = sessionData.session.user;
+        const access = await loadCurrentAccess(user);
+        if (!access) {
+          await closeInvalidSession('La sesión o el acceso fue desactivado. Inicia sesión de nuevo.');
+          return false;
+        }
+        const sameSession = currentUser?.id === user.id;
+        const sameAccess = currentAccess?.updated_at === access.updated_at;
+        if (sameSession && sameAccess && isSupabaseLive && realtimeChannel) return true;
+        await enterAuthenticatedSession(user, access);
+        return true;
+      })().finally(() => { authValidationPromise = null; });
+      return authValidationPromise;
+    }
+
+    function setAppAuthenticated(user, access) {
+      currentUser = user;
+      currentAccess = access;
+      isAdmin = access?.role === 'admin' && access?.activo === true;
+      const badge = document.getElementById('userBadge');
+      const signOut = document.getElementById('btnSignOut');
+      const adminButton = document.getElementById('btnAdminUsers');
+      if (badge) badge.textContent = `${access?.nombre || user.email} · ${isAdmin ? 'Admin' : 'Agente'}`;
+      if (signOut) signOut.classList.toggle('hidden', false);
+      if (adminButton) adminButton.classList.toggle('hidden', !isAdmin);
+      document.querySelectorAll('[data-admin-only]').forEach(el => el.classList.toggle('hidden', !isAdmin));
+    }
+
+    async function loadCurrentAccess(user) {
+      const { data, error } = await supabaseClient.rpc('is_active_user');
+      if (error || !data) return null;
+      const { data: access, error: accessError } = await supabaseClient
+        .from('user_access').select('user_id, email, nombre, role, activo, updated_at').eq('user_id', user.id).maybeSingle();
+      return !accessError && access?.activo ? access : null;
+    }
+
+    async function requestOtp() {
+      const email = document.getElementById('otpEmail')?.value.trim().toLowerCase();
+      const status = document.getElementById('otpStatus');
+      if (!email) return;
+      if (status) status.textContent = 'Solicitando código...';
+      const { error } = await supabaseClient.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+      if (status) status.textContent = error ? 'No se pudo enviar el código. Solicítalo a un administrador.' : 'Si el correo está autorizado, recibirás un código en unos instantes.';
+    }
+
+    async function handleOtpSubmit(event) {
+      event.preventDefault();
+      const email = document.getElementById('otpEmail')?.value.trim().toLowerCase();
+      const token = document.getElementById('otpCode')?.value.trim();
+      const status = document.getElementById('otpStatus');
+      const { data, error } = await supabaseClient.auth.verifyOtp({ email, token, type: 'email' });
+      if (error || !data.user) { if (status) status.textContent = 'Código inválido o cuenta no autorizada.'; return; }
+      await enterAuthenticatedSession(data.user);
+    }
+
+    async function enterAuthenticatedSession(user, access = null) {
+      if (sessionInitializationPromise) return sessionInitializationPromise;
+      sessionInitializationPromise = (async () => {
+        const resolvedAccess = access || await loadCurrentAccess(user);
+        if (!resolvedAccess) {
+          await closeInvalidSession('La sesión o el acceso fue desactivado. Inicia sesión de nuevo.');
+          return false;
+        }
+        setAppAuthenticated(user, resolvedAccess);
+        document.body.classList.add('session-ready');
+        document.getElementById('modalOtp')?.classList.add('hidden');
+        document.getElementById('modalOtp')?.classList.remove('flex');
+        const realtimeReady = await setupRealtimeListener();
+        if (!realtimeReady) console.warn('Realtime no disponible; se cargará el snapshot por REST.');
+        await loadLeadsData();
+        return true;
+      })().finally(() => { sessionInitializationPromise = null; });
+      return sessionInitializationPromise;
+    }
+
+    async function handleSignOut() {
+      clearSessionState();
+      if (supabaseClient) await supabaseClient.auth.signOut();
+    }
+
+    async function loadAuthorizedUsers() {
+      if (!isAdmin) return;
+      const container = document.getElementById('authorizedUsers');
+      if (container) container.innerHTML = '<p class="text-slate-500">Cargando usuarios...</p>';
+      const { data, error } = await supabaseClient.rpc('admin_manage_user_access', { p_action: 'list' });
+      if (!container) return;
+      if (error) { container.innerHTML = '<p class="text-rose-300">No se pudieron cargar los usuarios.</p>'; return; }
+      container.innerHTML = (data || []).map(item => `<div class="flex items-center justify-between gap-3 border-b border-slate-700 py-1"><span>${escapeHtml(item.email)} · ${escapeHtml(item.role)}</span><span class="flex items-center gap-2">${item.activo ? 'Activo' : 'Inactivo'}<button onclick="setUserActive('${escapeAttr(item.user_id)}', ${item.activo ? 'false' : 'true'})" class="px-2 py-1 rounded border border-slate-600 hover:border-indigo-400 text-[11px]">${item.activo ? 'Desactivar' : 'Activar'}</button></span></div>`).join('') || '<p class="text-slate-500">No hay usuarios.</p>';
+    }
+
+    async function setUserActive(userId, activo) {
+      if (!isAdmin) return;
+      const { error } = await supabaseClient.rpc('admin_manage_user_access', { p_action: 'set_active', p_user_id: userId, p_activo: activo });
+      if (error) showToast('No se pudo actualizar el usuario', 'error');
+      else { showToast(activo ? 'Usuario activado' : 'Usuario desactivado', 'success'); loadAuthorizedUsers(); }
+    }
+
+    async function handleAuthorizeUser(event) {
+      event.preventDefault();
+      const email = document.getElementById('authorizeEmail').value.trim().toLowerCase();
+      const nombre = document.getElementById('authorizeName').value.trim();
+      const role = document.getElementById('authorizeRole').value;
+      const { error } = await supabaseClient.functions.invoke('authorize-user', { body: { email, nombre, role } });
+      if (error) showToast('No se pudo autorizar el usuario', 'error');
+      else { showToast('Solicitud procesada', 'success'); event.target.reset(); loadAuthorizedUsers(); }
+    }
+
+
     let allLeads = [];          // Todos los leads cargados
     let totalDatabaseCount = 0; // Conteo exacto de leads en la base de datos
     let filteredLeads = [];     // Leads filtrados actualmente
+    let isLoadingLeads = false;
+    let pendingRealtimeEvents = [];
+    let loadLeadsPromise = null;
+    let realtimeChannel = null;
+    let realtimeSetupPromise = null;
     let currentPage = 1;
     let pageSize = 20;
     let currentMainTab = 'dashboard';
     const histCharts = {};      // Registro de instancias de Chart.js
+
+    if (supabaseClient) {
+      supabaseClient.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_OUT') {
+          clearSessionState();
+          return;
+        }
+        if (['INITIAL_SESSION', 'SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) {
+          setTimeout(() => validateCurrentSession(), 0);
+        }
+      });
+    }
 
     // Función para alternar pestañas
     function switchTab(tab) {
@@ -1039,58 +1284,168 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // -------------------------------------------------------------
     // 3. CARGA DE DATOS ESTRICTAMENTE DESDE SUPABASE
     // -------------------------------------------------------------
-    async function loadLeadsData() {
+    function compareLeadIdsDescending(a, b) {
+      const numericA = Number(a.id);
+      const numericB = Number(b.id);
+      if (Number.isFinite(numericA) && Number.isFinite(numericB)) return numericB - numericA;
+      return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
+    }
+
+    function consolidateLeadsById(leads) {
+      const leadsById = new Map();
+      leads.forEach(lead => {
+        if (!lead || lead.id === undefined || lead.id === null) {
+          throw new Error("Supabase devolvió un lead sin id");
+        }
+        const key = String(lead.id);
+        leadsById.set(key, { ...(leadsById.get(key) || {}), ...lead });
+      });
+      return Array.from(leadsById.values()).sort(compareLeadIdsDescending);
+    }
+
+    function upsertLeadInState(lead) {
+      if (!lead || lead.id === undefined || lead.id === null) return false;
+      const leadId = String(lead.id);
+      const existingLead = allLeads.find(item => String(item.id) === leadId);
+      allLeads = consolidateLeadsById([
+        ...allLeads.filter(item => String(item.id) !== leadId),
+        { ...(existingLead || {}), ...lead }
+      ]);
+      totalDatabaseCount = allLeads.length;
+      return !existingLead;
+    }
+
+    function removeLeadFromState(leadId) {
+      if (leadId === undefined || leadId === null) return false;
+      const previousLength = allLeads.length;
+      allLeads = allLeads.filter(lead => String(lead.id) !== String(leadId));
+      if (allLeads.length === previousLength) return false;
+      totalDatabaseCount = allLeads.length;
+      return true;
+    }
+
+    async function getExactLeadsCount() {
+      const { count, error } = await supabaseClient
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .is('archived_at', null);
+      if (error) throw new Error("Error contando registros en Supabase: " + error.message);
+      if (!Number.isInteger(count) || count < 0) {
+        throw new Error("Supabase no devolvió un conteo exacto válido");
+      }
+      return count;
+    }
+
+    async function fetchLeadsByIdCursor(columns = '*') {
+      const blockSize = 1000;
+      const rows = [];
+      let cursor = null;
+
+      while (true) {
+        let query = supabaseClient
+          .from('leads')
+          .select(columns)
+          .is('archived_at', null);
+        if (cursor !== null) query = query.lt('id', cursor);
+        query = query
+          .order('id', { ascending: false })
+          .range(0, blockSize - 1);
+
+        const { data, error } = await query;
+        if (error) throw new Error(`Error cargando bloque posterior a ${cursor ?? 'inicio'}: ${error.message}`);
+        if (!Array.isArray(data) || data.length > blockSize) {
+          throw new Error("Supabase devolvió un bloque inválido");
+        }
+        if (data.length === 0) break;
+
+        const nextCursor = data[data.length - 1]?.id;
+        if (nextCursor === undefined || nextCursor === null || String(nextCursor) === String(cursor)) {
+          throw new Error("La paginación por id no pudo avanzar");
+        }
+        rows.push(...data);
+        cursor = nextCursor;
+        if (data.length < blockSize) break;
+      }
+
+      return consolidateLeadsById(rows);
+    }
+
+    function haveSameLeadIds(leads, idRows) {
+      return leads.length === idRows.length
+        && leads.every((lead, index) => String(lead.id) === String(idRows[index].id));
+    }
+
+    function loadLeadsData() {
+      if (loadLeadsPromise) return loadLeadsPromise;
+      loadLeadsPromise = performLoadLeadsData().finally(() => {
+        loadLeadsPromise = null;
+      });
+      return loadLeadsPromise;
+    }
+
+    async function performLoadLeadsData() {
+      if (!currentUser || !currentAccess?.activo) return false;
+      const generation = sessionGeneration;
       showLoadingState(true);
       updateConnectionStatus("connecting");
+      isLoadingLeads = true;
+      let loadedSuccessfully = false;
 
       if (supabaseClient) {
         try {
-          const [{ data, error }, { count, error: countError }] = await Promise.all([
-            supabaseClient
-              .from('leads')
-              .select('*')
-              .order('id', { ascending: false }),
-            supabaseClient
-              .from('leads')
-              .select('*', { count: 'exact', head: true })
-          ]);
+          const maxAttempts = 2;
+          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            pendingRealtimeEvents = [];
+            const initialCount = await getExactLeadsCount();
+            const loadedLeads = await fetchLeadsByIdCursor('*');
+            const reconciledIds = await fetchLeadsByIdCursor('id');
+            const finalCount = await getExactLeadsCount();
+            const changedDuringLoad = pendingRealtimeEvents.length > 0
+              || initialCount !== finalCount
+              || loadedLeads.length !== finalCount
+              || reconciledIds.length !== finalCount
+              || !haveSameLeadIds(loadedLeads, reconciledIds);
 
-          if (countError) {
-            console.error("Error contando registros en Supabase:", countError);
-            totalDatabaseCount = 0;
-          } else {
-            totalDatabaseCount = count || 0;
-          }
+            if (changedDuringLoad) {
+              if (attempt < maxAttempts) continue;
+              throw new Error("La tabla cambió durante la carga; no se publicará una colección parcial");
+            }
 
-          if (error) {
-            console.error("Error consultando Supabase:", error);
-            showToast("Error al conectar con Supabase: " + error.message, "error");
-            updateConnectionStatus("offline");
-            allLeads = [];
-          } else {
-            allLeads = data || [];
+            if (generation !== sessionGeneration || !currentUser || !currentAccess?.activo) return false;
+            allLeads = loadedLeads;
+            totalDatabaseCount = finalCount;
             isSupabaseLive = true;
-            updateConnectionStatus(allLeads.length > 0 ? "online" : "online_empty");
+            loadedSuccessfully = true;
             console.log("Datos cargados correctamente desde Supabase:", allLeads.length);
+            break;
           }
         } catch (err) {
-          console.error("Excepción conectando con Supabase:", err);
-          showToast("Excepción de red al conectar con Supabase", "error");
-          updateConnectionStatus("offline");
+          console.error("No se pudo completar la carga desde Supabase:", err);
+          showToast("No se pudo completar la carga desde Supabase: " + err.message, "error");
           allLeads = [];
+          totalDatabaseCount = 0;
+          isSupabaseLive = false;
         }
       } else {
         console.warn("Cliente Supabase no inicializado.");
-        updateConnectionStatus("offline");
         allLeads = [];
+        totalDatabaseCount = 0;
+        isSupabaseLive = false;
       }
 
+      isLoadingLeads = false;
+      pendingRealtimeEvents = [];
+
+      updateConnectionStatus(loadedSuccessfully
+        ? (allLeads.length > 0 ? "online" : "online_empty")
+        : "offline");
       populateFilterOptions();
       applyFilters();
       if (currentMainTab === 'historico') {
         renderHistoricalAnalytics();
       }
       showLoadingState(false);
+      return loadedSuccessfully;
     }
 
     function updateConnectionStatus(status) {
@@ -1119,38 +1474,80 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     // Suscripción Realtime a Supabase
     function setupRealtimeListener() {
-      if (!supabaseClient) return;
-      try {
-        supabaseClient
-          .channel('public:leads:realtime')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, payload => {
-            console.log("Cambio en tiempo real recibido de Supabase:", payload);
-            handleRealtimeEvent(payload);
-          })
-          .subscribe((status) => {
-            console.log("Estado de suscripción Realtime:", status);
-          });
-      } catch (e) {
-        console.error("Error setting up Realtime:", e);
+      if (realtimeSetupPromise) return realtimeSetupPromise;
+      if (!supabaseClient || !currentUser) {
+        realtimeSetupPromise = Promise.resolve(false);
+        return realtimeSetupPromise;
       }
+
+      realtimeSetupPromise = new Promise(resolve => {
+        let settled = false;
+        const finish = result => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeoutId);
+          resolve(result);
+        };
+        const timeoutId = setTimeout(() => {
+          console.warn("La suscripción Realtime no respondió a tiempo; se continuará con REST.");
+          finish(false);
+        }, 3000);
+
+        try {
+          realtimeChannel = supabaseClient
+            .channel('public:leads:realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, payload => {
+              console.log("Cambio en tiempo real recibido de Supabase:", payload);
+              handleRealtimeEvent(payload);
+            })
+            .subscribe(status => {
+              console.log("Estado de suscripción Realtime:", status);
+              if (status === 'SUBSCRIBED') {
+                finish(true);
+              } else if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)) {
+                finish(false);
+              }
+            });
+        } catch (error) {
+          console.error("Error setting up Realtime:", error);
+          finish(false);
+        }
+      });
+
+      return realtimeSetupPromise;
     }
 
     function handleRealtimeEvent(payload) {
-      if (payload.eventType === 'INSERT') {
-        allLeads.unshift(payload.new);
-        showToast("Nuevo lead recibido en tiempo real", "success");
-      } else if (payload.eventType === 'UPDATE') {
-        const idx = allLeads.findIndex(l => String(l.id) === String(payload.new.id));
-        if (idx !== -1) {
-          allLeads[idx] = payload.new;
-          showToast("Lead #" + payload.new.id + " actualizado", "info");
-        }
-      } else if (payload.eventType === 'DELETE') {
-        allLeads = allLeads.filter(l => String(l.id) !== String(payload.old.id));
-        showToast("Lead eliminado", "warning");
+      if (isLoadingLeads) {
+        pendingRealtimeEvents.push(payload);
+        return;
       }
+      if (!isSupabaseLive) return;
+      if (!applyRealtimeEvent(payload)) return;
+      updateConnectionStatus(allLeads.length > 0 ? "online" : "online_empty");
       populateFilterOptions();
       applyFilters();
+    }
+
+    function applyRealtimeEvent(payload) {
+      if (payload.eventType === 'INSERT') {
+        if (!payload.new || payload.new.id === undefined || payload.new.id === null || payload.new.archived_at) return false;
+        const inserted = upsertLeadInState(payload.new);
+        if (inserted) showToast("Nuevo lead recibido en tiempo real", "success");
+        return true;
+      } else if (payload.eventType === 'UPDATE') {
+        if (payload.new && payload.new.id !== undefined && payload.new.id !== null) {
+          if (payload.new.archived_at) return removeLeadFromState(payload.new.id);
+          upsertLeadInState(payload.new);
+          showToast("Lead #" + payload.new.id + " actualizado", "info");
+          return true;
+        }
+      } else if (payload.eventType === 'DELETE') {
+        const removed = removeLeadFromState(payload.old?.id);
+        if (removed) showToast("Lead eliminado", "warning");
+        return removed;
+      }
+      return false;
     }
 
     // -------------------------------------------------------------
@@ -1197,6 +1594,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const gestion = document.getElementById('filterGestion')?.value || '';
 
       filteredLeads = allLeads.filter(lead => {
+          if (!currentUser || !currentAccess?.activo) return;
+        if (lead.archived_at) return false;
         if (search) {
           const nombre = getField(lead, 'Nombre').toLowerCase();
           const telefono = getField(lead, 'Telefono').toLowerCase();
@@ -1462,6 +1861,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
               <button onclick="openEditLeadModal('${escapeAttr(leadId)}')" title="Editar seguimiento" class="p-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 transition-colors cursor-pointer">
                 <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
               </button>
+              ${isAdmin ? `<button onclick="archiveLead('${escapeAttr(leadId)}')" title="Archivar" class="p-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-amber-300 transition-colors cursor-pointer"><i data-lucide="archive" class="w-3.5 h-3.5"></i></button>` : ''}
               <button onclick="openViewLeadModal('${escapeAttr(leadId)}')" title="Ver detalles completos" class="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 transition-colors cursor-pointer">
                 <i data-lucide="eye" class="w-3.5 h-3.5"></i>
               </button>
@@ -1563,6 +1963,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // 8. CREAR LEAD (INSERT)
     // -------------------------------------------------------------
     function openNewLeadModal() {
+      if (!currentUser || !currentAccess?.activo) return;
+      const agentInput = document.getElementById('newAgente');
+      const agentHint = document.getElementById('newAgenteHint');
+      if (agentInput) {
+        agentInput.value = isAdmin ? (agentInput.value || currentAccess.nombre || '') : (currentAccess.nombre || '');
+        agentInput.readOnly = !isAdmin;
+        agentInput.classList.toggle('opacity-70', !isAdmin);
+      }
+      agentHint?.classList.toggle('hidden', isAdmin);
       const modal = document.getElementById('modalNewLead');
       if (modal) {
         modal.classList.remove('hidden');
@@ -1583,6 +1992,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     async function handleCreateLead(event) {
       event.preventDefault();
+      if (!currentUser || !currentAccess?.activo) return;
       const btn = document.getElementById('btnSubmitNewLead');
       if (btn) btn.disabled = true;
 
@@ -1597,23 +2007,25 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         "Campaña": document.getElementById('newCampana')?.value.trim() || 'General',
         "Medio": document.getElementById('newMedio')?.value || 'Whatsapp',
         "GESTION": document.getElementById('newGestion')?.value || 'Información ',
-        "Agente ": document.getElementById('newAgente')?.value.trim() || 'Agente',
+        "Agente ": isAdmin ? (document.getElementById('newAgente')?.value.trim() || currentAccess.nombre || 'Agente') : currentAccess.nombre,
         "Ciudad": document.getElementById('newCiudad')?.value.trim() || '',
         "OBSERVACIONES ": document.getElementById('newObservaciones')?.value.trim() || 'Nuevo lead registrado desde el panel.'
       };
 
       try {
         if (supabaseClient) {
-          const { data, error } = await supabaseClient
-            .from('leads')
-            .insert([newLeadData])
-            .select();
+          const { data, error } = await supabaseClient.rpc('create_lead', { p_lead: newLeadData });
 
           if (error) {
             console.error("Error al insertar en Supabase:", error);
             showToast("Error Supabase: " + error.message, "error");
-          } else if (data && data.length > 0) {
-            allLeads.unshift(data[0]);
+          } else if (data) {
+            if (isSupabaseLive) {
+              upsertLeadInState(data);
+              updateConnectionStatus("online");
+            } else {
+              await loadLeadsData();
+            }
             showToast("Lead registrado con éxito en Supabase", "success");
             closeNewLeadModal();
             populateFilterOptions();
@@ -1633,7 +2045,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // -------------------------------------------------------------
     function openEditLeadModal(leadId) {
       const lead = allLeads.find(l => String(l.id) === String(leadId));
-      if (!lead) return;
+      if (!lead || !currentAccess) return;
 
       document.getElementById('editLeadId').value = leadId;
       document.getElementById('editLeadLeadInfo').innerText = `ID: #${leadId} — ${getField(lead, 'Nombre')} (${getField(lead, 'Campaña')})`;
@@ -1658,7 +2070,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         }
       }
 
-      document.getElementById('editAgente').value = getField(lead, 'Agente ') || getField(lead, 'Agente');
+      const editAgent = document.getElementById('editAgente');
+      if (editAgent) {
+        editAgent.value = isAdmin ? (getField(lead, 'Agente ') || getField(lead, 'Agente')) : currentAccess.nombre;
+        editAgent.readOnly = !isAdmin;
+        editAgent.classList.toggle('opacity-70', !isAdmin);
+      }
       
       const now = new Date();
       const hoyFormatted = `${now.getDate()}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
@@ -1671,6 +2088,21 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
       document.getElementById('editUltimoAgente').value = getField(lead, 'ULTIMO AGENTE ') || getField(lead, 'Agente ') || 'Asesor';
       document.getElementById('editObservaciones').value = getField(lead, 'OBSERVACIONES ');
+      const adminFields = document.getElementById('adminLeadFields');
+      adminFields?.classList.toggle('hidden', !isAdmin);
+      if (isAdmin) {
+        document.getElementById('editNombre').value = getField(lead, 'Nombre');
+        document.getElementById('editTelefono').value = getField(lead, 'Telefono');
+        document.getElementById('editMes').value = getField(lead, 'Mes');
+        document.getElementById('editFecha').value = getField(lead, 'Fecha');
+        document.getElementById('editCampana').value = getField(lead, 'Campaña');
+        document.getElementById('editMedio').value = getField(lead, 'Medio');
+        document.getElementById('editCiudad').value = getField(lead, 'Ciudad');
+        document.getElementById('editAgenteAdmin').value = getField(lead, 'Agente ') || getField(lead, 'Agente');
+        document.getElementById('editOdoo').value = getField(lead, 'Odoo');
+        document.getElementById('editFechaAtencion').value = getField(lead, 'Fecha de Atencion');
+        document.getElementById('editLanding').value = getField(lead, 'LANDING');
+      }
 
       const modal = document.getElementById('modalEditLead');
       if (modal) {
@@ -1690,6 +2122,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     async function handleUpdateLead(event) {
       event.preventDefault();
+      if (!currentUser || !currentAccess?.activo) return;
       const leadId = document.getElementById('editLeadId')?.value;
       if (!leadId) return;
 
@@ -1698,28 +2131,46 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
       const updatedFields = {
         "GESTION": document.getElementById('editGestion')?.value || 'Información ',
-        "Agente ": document.getElementById('editAgente')?.value.trim() || '',
         "Fecha Última Gestión ": document.getElementById('editFechaUltima')?.value.trim() || '',
         "ULTIMA GESTION": document.getElementById('editUltimaGestion')?.value || 'Llamada',
-        "ULTIMO AGENTE ": document.getElementById('editUltimoAgente')?.value.trim() || '',
         "OBSERVACIONES ": document.getElementById('editObservaciones')?.value.trim() || ''
       };
+      if (isAdmin) {
+        Object.assign(updatedFields, {
+          "Nombre": document.getElementById('editNombre')?.value.trim() || 'Sin Nombre',
+          "Telefono": document.getElementById('editTelefono')?.value.trim() || '',
+          "Mes": document.getElementById('editMes')?.value.trim() || '',
+          "Fecha": document.getElementById('editFecha')?.value.trim() || '',
+          "Campaña": document.getElementById('editCampana')?.value.trim() || '',
+          "Medio": document.getElementById('editMedio')?.value.trim() || '',
+          "Ciudad": document.getElementById('editCiudad')?.value.trim() || '',
+          "Agente ": document.getElementById('editAgenteAdmin')?.value.trim() || currentAccess.nombre || '',
+          "Odoo": document.getElementById('editOdoo')?.value.trim() || '',
+          "Fecha de Atencion": document.getElementById('editFechaAtencion')?.value.trim() || '',
+          "LANDING": document.getElementById('editLanding')?.value.trim() || ''
+        });
+      }
 
       try {
         if (supabaseClient) {
-          const { error } = await supabaseClient
-            .from('leads')
-            .update(updatedFields)
-            .eq('id', leadId);
+          let updated;
+          let error;
+          if (isAdmin) {
+            ({ data: updated, error } = await supabaseClient.rpc('update_lead_full', { p_id: leadId, p_lead: updatedFields }));
+          } else {
+            ({ data: updated, error } = await supabaseClient.rpc('update_lead_followup', { p_id: leadId, p_fields: updatedFields }));
+          }
 
           if (error) {
             console.error("Error al actualizar en Supabase:", error);
             showToast("Error Supabase: " + error.message, "error");
           } else {
             showToast("Lead #" + leadId + " actualizado en Supabase", "success");
-            const idx = allLeads.findIndex(l => String(l.id) === String(leadId));
-            if (idx !== -1) {
-              allLeads[idx] = { ...allLeads[idx], ...updatedFields };
+            if (isSupabaseLive) {
+              upsertLeadInState(updated);
+              updateConnectionStatus("online");
+            } else {
+              await loadLeadsData();
             }
             closeEditLeadModal();
             populateFilterOptions();
@@ -1734,8 +2185,17 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }
     }
 
-    // -------------------------------------------------------------
-    // 10. FICHA DETALLE LEAD
+    async function archiveLead(leadId) {
+      if (!isAdmin) return;
+      if (!confirm('¿Archivar este lead? No se eliminará físicamente.')) return;
+      const { error } = await supabaseClient.rpc('archive_lead', { p_id: leadId });
+      if (error) { showToast('No se pudo archivar', 'error'); return; }
+      removeLeadFromState(leadId);
+      populateFilterOptions(); applyFilters();
+      showToast('Lead archivado', 'success');
+    }
+
+
     // -------------------------------------------------------------
     function openViewLeadModal(leadId) {
       const lead = allLeads.find(l => String(l.id) === String(leadId));
@@ -1861,10 +2321,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     async function refreshLeadsData() {
       const icon = document.getElementById('refreshIcon');
       if (icon) icon.classList.add('animate-spin');
-      await loadLeadsData();
+      const loadedSuccessfully = await loadLeadsData();
       setTimeout(() => {
         if (icon) icon.classList.remove('animate-spin');
-        showToast("Datos sincronizados con Supabase", "success");
+        if (loadedSuccessfully) showToast("Datos sincronizados con Supabase", "success");
       }, 600);
     }
 
@@ -2265,11 +2725,17 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // -------------------------------------------------------------
     // 14. INICIALIZACIÓN
     // -------------------------------------------------------------
-    document.addEventListener('DOMContentLoaded', () => {
-      loadLeadsData();
-      setupRealtimeListener();
+    document.addEventListener('DOMContentLoaded', async () => {
+      const modal = document.getElementById('modalOtp');
+      modal?.classList.remove('hidden'); modal?.classList.add('flex');
+      await validateCurrentSession();
       if (window.lucide) lucide.createIcons();
     });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') validateCurrentSession();
+    });
+    window.addEventListener('focus', () => validateCurrentSession());
   </script>
 </body>
 </html>

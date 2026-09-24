@@ -1597,7 +1597,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (!currentUser || !currentAccess?.activo || !supabaseClient) return false;
       allHistorico = await fetchHistoricoByIdCursor();
       historicoLoaded = true;
-      console.log("Histórico 2025 cargado desde Supabase:", allHistorico.length);
       return true;
     }
 

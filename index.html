@@ -424,11 +424,29 @@
             </select>
           </div>
 
+          <!-- Rango de fechas (Desde/Hasta) en Histórico: tiene precedencia sobre el mes -->
+          <div class="flex items-center gap-1.5 w-full sm:w-auto">
+            <input type="date" id="histRangeFrom" aria-label="Desde" onchange="renderHistoricalAnalytics()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+            <span class="text-xs text-slate-500">a</span>
+            <input type="date" id="histRangeTo" aria-label="Hasta" onchange="renderHistoricalAnalytics()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <!-- Presets del rango -->
+          <div class="flex items-center gap-1">
+            <button onclick="setHistRangePreset('7d')" title="Últimos 7 días" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">7d</button>
+            <button onclick="setHistRangePreset('30d')" title="Últimos 30 días" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">30d</button>
+            <button onclick="setHistRangePreset('month')" title="Este mes" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">Mes</button>
+            <button onclick="setHistRangePreset('clear')" title="Limpiar rango de fechas" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">Limpiar</button>
+          </div>
+
           <button onclick="renderHistoricalAnalytics()" title="Recalcular gráficos" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span>Actualizar</span>
           </button>
         </div>
+
+        <!-- Aviso del rango activo y de registros sin fecha válida -->
+        <div id="histRangeNotice" class="hidden w-full text-[11px] text-amber-300/90 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-1.5"></div>
       </div>
 
       <!-- KPIS HISTÓRICOS ACUMULADOS -->
@@ -739,7 +757,7 @@
 
   <!-- ================= PANEL: ADMINISTRACIÓN DE ACCESOS ================= -->
   <div id="panelAdminUsers" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg p-6 space-y-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg p-6 space-y-4 max-h-[90dvh] overflow-y-auto">
       <div class="flex items-center justify-between"><h2 class="font-bold text-white">Autorizar agente</h2><button onclick="document.getElementById('panelAdminUsers').classList.add('hidden');document.getElementById('panelAdminUsers').classList.remove('flex')" class="text-slate-400 hover:text-white">×</button></div>
       <form id="formAuthorizeUser" onsubmit="handleAuthorizeUser(event)" class="space-y-3 text-xs">
         <input id="authorizeEmail" type="email" required placeholder="correo@ejemplo.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
@@ -753,8 +771,8 @@
 
   <!-- ================= MODAL: NUEVO LEAD ================= -->
   <div id="modalNewLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2">
           <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
             <i data-lucide="user-plus" class="w-4 h-4"></i>
@@ -766,7 +784,7 @@
         </button>
       </div>
 
-      <form id="formNewLead" onsubmit="handleCreateLead(event)" class="p-6 space-y-4 text-xs">
+      <form id="formNewLead" onsubmit="handleCreateLead(event)" class="p-6 space-y-4 text-xs overflow-y-auto min-h-0">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- Nombre -->
           <div class="sm:col-span-2">
@@ -881,8 +899,8 @@
 
   <!-- ================= MODAL: EDITAR / SEGUIMIENTO ================= -->
   <div id="modalEditLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2">
           <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
             <i data-lucide="edit-3" class="w-4 h-4"></i>
@@ -897,7 +915,7 @@
         </button>
       </div>
 
-      <form id="formEditLead" onsubmit="handleUpdateLead(event)" class="p-6 space-y-4 text-xs">
+      <form id="formEditLead" onsubmit="handleUpdateLead(event)" class="p-6 space-y-4 text-xs overflow-y-auto min-h-0">
         <input type="hidden" id="editLeadId">
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -991,8 +1009,8 @@
 
   <!-- ================= MODAL: FICHA DETALLE LEAD ================= -->
   <div id="modalViewLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col">
+      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2">
           <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400">
             <i data-lucide="file-text" class="w-4 h-4"></i>
@@ -1004,11 +1022,11 @@
         </button>
       </div>
 
-      <div class="p-6 space-y-4 text-xs" id="viewLeadContent">
+      <div class="p-6 space-y-4 text-xs overflow-y-auto min-h-0" id="viewLeadContent">
         <!-- Injected by JS -->
       </div>
 
-      <div class="px-6 py-3 border-t border-slate-700/80 bg-slate-900/50 flex justify-end">
+      <div class="px-6 py-3 border-t border-slate-700/80 bg-slate-900/50 flex justify-end shrink-0">
         <button onclick="closeViewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Cerrar</button>
       </div>
     </div>
@@ -1334,6 +1352,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     let historicoLoadPromise = null;
     let currentViewOrigin = 'actual';
     let currentViewId = null;
+    let leadNotesCache = [];
+    let editingNoteId = null;
     let currentEditOrigin = 'actual';
     let isLoadingLeads = false;
     let pendingRealtimeEvents = [];
@@ -2486,12 +2506,35 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       // un solo recorrido por array; se excluye el propio registro por par origen+id.
       const phoneKey = normalizePhone(telefono);
       let repetidosHtml = '';
+      let firstEntryHtml = '';
       if (phoneKey.length >= 7) {
         const relacionados = [];
         for (const arr of [allLeads, allHistorico]) {
           for (const l of arr) {
             if (getLeadOrigin(l) === finalOrigin && String(l.id) === String(lead.id)) continue;
             if (normalizePhone(getField(l, 'Telefono')) === phoneKey) relacionados.push(l);
+          }
+        }
+        // Primera entrada como lead: fecha mínima entre este registro y los relacionados.
+        if (relacionados.length) {
+          let firstTs = parseFechaLead(lead);
+          let firstFecha = getField(lead, 'Fecha').trim();
+          let firstIsHistorico = getLeadOrigin(lead) === 'historico';
+          [...relacionados, lead].forEach(l => {
+            const ts = parseFechaLead(l);
+            if (ts !== null && (firstTs === null || ts < firstTs)) {
+              firstTs = ts;
+              firstFecha = getField(l, 'Fecha').trim();
+              firstIsHistorico = getLeadOrigin(l) === 'historico';
+            }
+          });
+          if (firstTs !== null && firstIsHistorico) {
+            const firstYear = new Date(firstTs).getUTCFullYear();
+            firstEntryHtml = `
+        <div class="bg-indigo-500/10 border border-indigo-500/30 rounded-xl px-3.5 py-2 flex items-center gap-2">
+          <i data-lucide="calendar-clock" class="w-4 h-4 text-indigo-300 shrink-0"></i>
+          <span class="text-xs text-indigo-200">Primera entrada como lead: <span class="font-semibold">${escapeHtml(firstFecha)}</span> <span class="text-indigo-300">(${firstYear})</span></span>
+        </div>`;
           }
         }
         if (relacionados.length) {
@@ -2562,7 +2605,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             </div>
           </div>
           <div>${renderGestionBadge(getField(lead, 'GESTION'))}</div>
-        </div>
+        </div>${firstEntryHtml}
 
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
@@ -2602,7 +2645,17 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-1">
           <span class="text-[10px] uppercase text-slate-400 font-semibold block">Historial de Observaciones</span>
           <p class="text-slate-300 font-mono text-xs whitespace-pre-line leading-relaxed">${escapeHtml(getField(lead, 'OBSERVACIONES ') || 'Sin observaciones registradas.')}</p>
-        </div>
+        </div>${finalOrigin === 'historico' ? '' : `
+        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+          <span class="text-[10px] uppercase text-slate-400 font-semibold block">Notas del Equipo</span>
+          <div id="leadNotesList" class="space-y-2"><p class="text-[11px] text-slate-500">Cargando notas…</p></div>
+          <div class="flex items-start gap-2 pt-1">
+            <textarea id="leadNoteInput" rows="2" maxlength="2000" placeholder="Añadir una nota para el equipo" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 resize-y"></textarea>
+            <button onclick="addLeadNote()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition-colors shrink-0 flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Añadir</span>
+            </button>
+          </div>
+        </div>`}
 
         <div class="flex justify-end pt-2">
           ${finalOrigin === 'historico'
@@ -2620,6 +2673,125 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         modal.classList.add('flex');
         if (window.lucide) lucide.createIcons();
       }
+
+      if (finalOrigin !== 'historico') {
+        leadNotesCache = [];
+        editingNoteId = null;
+        loadLeadNotes(lead.id);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Notas de equipo (lead_notes): append-only vía RPC; editar/borrar solo admin.
+    // -------------------------------------------------------------
+    async function loadLeadNotes(leadId) {
+      const list = document.getElementById('leadNotesList');
+      if (!list) return;
+      const { data, error } = await supabaseClient
+        .from('lead_notes')
+        .select('id, lead_id, author_name, note, created_at, updated_at')
+        .eq('lead_id', leadId)
+        .order('created_at', { ascending: false });
+      // La ficha pudo cambiarse mientras esperábamos: descarta la respuesta obsoleta.
+      if (String(currentViewId) !== String(leadId)) return;
+      if (error) {
+        list.innerHTML = '<p class="text-[11px] text-rose-400">No se pudieron cargar las notas.</p>';
+        return;
+      }
+      if (!data || data.length === 0) {
+        list.innerHTML = '<p class="text-[11px] text-slate-500">Sin notas registradas.</p>';
+        leadNotesCache = [];
+        return;
+      }
+      leadNotesCache = data;
+      renderLeadNotes();
+    }
+
+    // Render del timeline desde cache. editingNoteId (solo admin) muestra el textarea inline.
+    function renderLeadNotes() {
+      const list = document.getElementById('leadNotesList');
+      if (!list) return;
+      if (!leadNotesCache.length) {
+        list.innerHTML = '<p class="text-[11px] text-slate-500">Sin notas registradas.</p>';
+        return;
+      }
+      list.innerHTML = leadNotesCache.map(n => {
+        const fecha = n.created_at ? new Date(n.created_at).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) : '';
+        const edited = n.updated_at && n.updated_at !== n.created_at ? ' · editada' : '';
+        const editing = isAdmin && editingNoteId === Number(n.id);
+        const actions = editing ? `
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button onclick="saveLeadNoteInline(${Number(n.id)})" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold cursor-pointer transition-colors">Guardar</button>
+            <button onclick="cancelLeadNoteEdit()" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium cursor-pointer transition-colors border border-slate-700">Cancelar</button>
+          </div>` : isAdmin ? `
+          <div class="flex items-center gap-1 shrink-0">
+            <button onclick="editLeadNote(${Number(n.id)})" title="Editar nota" class="p-1 rounded bg-slate-800 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-300 transition-colors cursor-pointer"><i data-lucide="pencil" class="w-3 h-3"></i></button>
+            <button onclick="deleteLeadNote(${Number(n.id)})" title="Borrar nota" class="p-1 rounded bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 transition-colors cursor-pointer"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+          </div>` : '';
+        const body = editing
+          ? `<textarea id="leadNoteEditInput" rows="3" maxlength="2000" class="w-full bg-slate-950 border border-indigo-500 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none resize-y">${escapeHtml(n.note)}</textarea>`
+          : `<p class="text-xs text-slate-300 whitespace-pre-line leading-relaxed break-words">${escapeHtml(n.note)}</p>`;
+        return `<div data-note-id="${Number(n.id)}" class="flex items-start justify-between gap-2 border-b border-slate-800 last:border-0 pb-2 last:pb-0">
+          <div class="min-w-0 flex-1 space-y-0.5">
+            <div class="flex items-center gap-2 text-[11px]">
+              <span class="text-indigo-300 font-semibold">${escapeHtml(n.author_name || 'Agente')}</span>
+              <span class="text-slate-500">${escapeHtml(fecha)}${escapeHtml(edited)}</span>
+            </div>
+            ${body}
+          </div>
+          ${actions}
+        </div>`;
+      }).join('');
+      if (window.lucide) lucide.createIcons();
+      if (editingNoteId !== null) {
+        const ta = document.getElementById('leadNoteEditInput');
+        if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+      }
+    }
+
+    async function addLeadNote() {
+      const input = document.getElementById('leadNoteInput');
+      const note = (input?.value || '').trim();
+      if (!note) { showToast('La nota no puede estar vacía', 'warning'); return; }
+      const { error } = await supabaseClient.rpc('create_lead_note', { p_lead_id: currentViewId, p_note: note });
+      if (error) { showToast('No se pudo guardar la nota', 'error'); return; }
+      if (input) input.value = '';
+      await loadLeadNotes(currentViewId);
+      showToast('Nota añadida', 'success');
+    }
+
+    // Edición inline: convierte la nota en textarea en su sitio (sin prompt()).
+    function editLeadNote(noteId) {
+      if (!isAdmin) return;
+      editingNoteId = Number(noteId);
+      renderLeadNotes();
+    }
+
+    function cancelLeadNoteEdit() {
+      editingNoteId = null;
+      renderLeadNotes();
+    }
+
+    async function saveLeadNoteInline(noteId) {
+      if (!isAdmin) return;
+      const ta = document.getElementById('leadNoteEditInput');
+      const trimmed = (ta?.value || '').trim();
+      if (!trimmed) { showToast('La nota no puede estar vacía', 'warning'); return; }
+      const { error } = await supabaseClient.rpc('update_lead_note', { p_id: noteId, p_note: trimmed });
+      if (error) { showToast('No se pudo editar la nota', 'error'); return; }
+      editingNoteId = null;
+      await loadLeadNotes(currentViewId);
+      showToast('Nota actualizada', 'success');
+    }
+
+    async function deleteLeadNote(noteId) {
+      if (!isAdmin) return;
+      if (!confirm('¿Borrar esta nota? No se puede deshacer.')) return;
+      const { error } = await supabaseClient.rpc('delete_lead_note', { p_id: noteId });
+      if (error) { showToast('No se pudo borrar la nota', 'error'); return; }
+      editingNoteId = null;
+      await loadLeadNotes(currentViewId);
+      showToast('Nota borrada', 'success');
     }
 
     function closeViewLeadModal() {
@@ -2704,51 +2876,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     function exportHistoricalSummaryCSV() {
-      const selectedCampana = document.getElementById('histFilterCampana')?.value || '';
-      const selectedAgente = document.getElementById('histFilterAgente')?.value || '';
-      const selectedMes = document.getElementById('histFilterMes')?.value || '';
-
-      let data = allLeads;
-      if (selectedCampana) {
-        data = data.filter(l => getField(l, 'Campaña').trim() === selectedCampana);
-      }
-      if (selectedAgente) {
-        data = data.filter(l => getField(l, 'Agente ').trim() === selectedAgente);
-      }
-      if (selectedMes) {
-        data = data.filter(l => normalizeLeadMonth(l) === selectedMes);
-      }
+      const { data, rangeActive, excludedNoDate } = filterHistoricalLeads();
 
       const totalLeads = data.length;
-      const monthlyStats = {};
-      MONTH_CHRONO.forEach(m => {
-        monthlyStats[m] = { total: 0, inscritos: 0, agendados: 0, noContesta: 0, campanas: {}, agentes: {} };
-      });
-
-      data.forEach(l => {
-        const mes = normalizeLeadMonth(l);
-        if (!monthlyStats[mes]) monthlyStats[mes] = { total: 0, inscritos: 0, agendados: 0, noContesta: 0, campanas: {}, agentes: {} };
-        const stats = monthlyStats[mes];
-        stats.total++;
-
-        const gestion = normalizeGestion(l);
-        if (gestion.includes('INSCRIT')) stats.inscritos++;
-        if (gestion.includes('AGENDAD')) stats.agendados++;
-        if (gestion.includes('NO CONTEST')) stats.noContesta++;
-
-        const camp = getField(l, 'Campaña').trim() || 'General';
-        stats.campanas[camp] = (stats.campanas[camp] || 0) + 1;
-
-        if (gestion.includes('INSCRIT')) {
-          const agent = getField(l, 'Agente ').trim() || 'Sin asignar';
-          stats.agentes[agent] = (stats.agentes[agent] || 0) + 1;
-        }
-      });
-
-      const activeMonths = MONTH_CHRONO.filter(m => monthlyStats[m] && monthlyStats[m].total > 0);
-      if (activeMonths.length === 0 && monthlyStats['OTRO']?.total > 0) {
-        activeMonths.push('OTRO');
-      }
+      const { monthlyStats, activeMonths } = computeHistoricalAggregates(data);
 
       if (activeMonths.length === 0) {
         showToast("No hay registros para exportar", "warning");
@@ -2795,7 +2926,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      showToast(`${activeMonths.length.toLocaleString()} meses exportados a CSV`, "success");
+      const suffix = rangeActive && excludedNoDate > 0 ? ` (${excludedNoDate.toLocaleString()} sin fecha válida excluidos)` : '';
+      showToast(`${activeMonths.length.toLocaleString()} meses exportados a CSV${suffix}`, "success");
     }
 
     // -------------------------------------------------------------
@@ -2867,6 +2999,28 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // -------------------------------------------------------------
     const MONTH_CHRONO = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
 
+    // Fecha de entrada del lead como timestamp UTC (o null si no hay fecha válida).
+    // Único punto de parseo de fechas: d/m/aaaa, d-m-aaaa, d/m/aa y aaaa-mm-dd.
+    function parseFechaLead(lead) {
+      const raw = getField(lead, 'Fecha').trim();
+      if (!raw) return null;
+      const parts = raw.split(/[/-]/);
+      if (parts.length < 2) return null;
+      let day, month, year;
+      if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+        year = Number(parts[0]); month = Number(parts[1]); day = Number(parts[2]);
+      } else {
+        day = Number(parts[0]); month = Number(parts[1]); year = Number(parts[2]);
+        if (year < 100) year += 2000;
+      }
+      if (!Number.isInteger(day) || !Number.isInteger(month) || !Number.isInteger(year)) return null;
+      if (month < 1 || month > 12 || day < 1 || year < 2000 || year > 2100) return null;
+      const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+      if (day > daysInMonth) return null;
+      const ts = Date.UTC(year, month - 1, day);
+      return Number.isNaN(ts) ? null : ts;
+    }
+
     // Normaliza el mes de un lead: 'Mes' como fuente principal, 'Fecha' (d/m/aaaa, d-m-aaaa o d/m/aa) de respaldo.
     function normalizeLeadMonth(lead) {
       const raw = getField(lead, 'Mes').trim().toUpperCase();
@@ -2905,6 +3059,91 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (!gestion) return 'SIN ESTADO';
       const hit = GESTION_STATE_GROUPS.find(([prefix]) => gestion.startsWith(prefix));
       return hit ? hit[1] : gestion;
+    }
+
+    // Rango de fechas (Desde/Hasta): se expresa en timestamps UTC de medianoche.
+    function readHistRange() {
+      const fromStr = document.getElementById('histRangeFrom')?.value || '';
+      const toStr = document.getElementById('histRangeTo')?.value || '';
+      const toTs = s => {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+        return m ? Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+      };
+      return { from: toTs(fromStr), to: toTs(toStr) };
+    }
+
+    // Presets: últimos 7/30 días, este mes o limpiar; luego recalcula el panel.
+    function setHistRangePreset(preset) {
+      const fromInput = document.getElementById('histRangeFrom');
+      const toInput = document.getElementById('histRangeTo');
+      if (!fromInput || !toInput) return;
+      const fmt = ts => new Date(ts).toISOString().slice(0, 10);
+      const today = new Date();
+      const todayTs = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+      if (preset === 'clear') {
+        fromInput.value = '';
+        toInput.value = '';
+      } else if (preset === '7d') {
+        fromInput.value = fmt(todayTs - 6 * 86400000);
+        toInput.value = fmt(todayTs);
+      } else if (preset === '30d') {
+        fromInput.value = fmt(todayTs - 29 * 86400000);
+        toInput.value = fmt(todayTs);
+      } else if (preset === 'month') {
+        fromInput.value = fmt(Date.UTC(today.getFullYear(), today.getMonth(), 1));
+        toInput.value = fmt(todayTs);
+      }
+      renderHistoricalAnalytics();
+    }
+
+    // Filtro común del panel histórico (render y export CSV).
+    // El rango Desde/Hasta tiene precedencia sobre el filtro de mes.
+    function filterHistoricalLeads() {
+      const selectedCampana = document.getElementById('histFilterCampana')?.value || '';
+      const selectedAgente = document.getElementById('histFilterAgente')?.value || '';
+      const selectedMes = document.getElementById('histFilterMes')?.value || '';
+      const range = readHistRange();
+      const rangeActive = range.from !== null || range.to !== null;
+
+      let data = allLeads;
+      if (selectedCampana) data = data.filter(l => getField(l, 'Campaña').trim() === selectedCampana);
+      if (selectedAgente) data = data.filter(l => getField(l, 'Agente ').trim() === selectedAgente);
+
+      let excludedNoDate = 0;
+      if (rangeActive) {
+        const inRange = [];
+        data.forEach(l => {
+          const ts = parseFechaLead(l);
+          if (ts === null) { excludedNoDate++; return; }
+          if (range.from !== null && ts < range.from) return;
+          if (range.to !== null && ts > range.to) return;
+          inRange.push(l);
+        });
+        data = inRange;
+      } else if (selectedMes) {
+        data = data.filter(l => normalizeLeadMonth(l) === selectedMes);
+      }
+
+      return { data, range, rangeActive, selectedMes, excludedNoDate };
+    }
+
+    // Aviso visible del rango activo y de los registros excluidos sin fecha válida.
+    function updateHistRangeNotice(filtered) {
+      const notice = document.getElementById('histRangeNotice');
+      if (!notice) return;
+      if (!filtered.rangeActive) {
+        notice.classList.add('hidden');
+        notice.textContent = '';
+        return;
+      }
+      const parts = [];
+      if (filtered.range.from !== null) parts.push('desde ' + new Date(filtered.range.from).toISOString().slice(0, 10));
+      if (filtered.range.to !== null) parts.push('hasta ' + new Date(filtered.range.to).toISOString().slice(0, 10));
+      parts.push(filtered.data.length.toLocaleString() + ' leads en rango');
+      if (filtered.selectedMes) parts.push('el filtro de mes queda anulado por el rango');
+      if (filtered.excludedNoDate > 0) parts.push(filtered.excludedNoDate.toLocaleString() + ' sin fecha válida excluidos');
+      notice.textContent = 'Rango: ' + parts.join(' · ');
+      notice.classList.remove('hidden');
     }
 
     function populateHistoricalFilterOptions() {
@@ -2950,44 +3189,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       mesSelect.innerHTML = mesOptions.join('');
     }
 
-    function renderHistoricalAnalytics() {
-      if (!window.Chart) return;
-
-      populateHistoricalFilterOptions();
-
-      const selectedCampana = document.getElementById('histFilterCampana')?.value || '';
-      const selectedAgente = document.getElementById('histFilterAgente')?.value || '';
-      const selectedMes = document.getElementById('histFilterMes')?.value || '';
-
-      let data = allLeads;
-      if (selectedCampana) {
-        data = data.filter(l => getField(l, 'Campaña').trim() === selectedCampana);
-      }
-      if (selectedAgente) {
-        data = data.filter(l => getField(l, 'Agente ').trim() === selectedAgente);
-      }
-      if (selectedMes) {
-        data = data.filter(l => normalizeLeadMonth(l) === selectedMes);
-      }
-
-      const totalLeads = data.length;
-      const totalInscritos = data.filter(l => normalizeGestion(l).includes('INSCRIT')).length;
-      const totalAgendados = data.filter(l => normalizeGestion(l).includes('AGENDAD')).length;
-      const totalNoContesta = data.filter(l => normalizeGestion(l).includes('NO CONTEST')).length;
-      const convRate = totalLeads > 0 ? ((totalInscritos / totalLeads) * 100).toFixed(1) : '0.0';
-
-      document.getElementById('histKpiTotalLeads').textContent = totalLeads.toLocaleString();
-      document.getElementById('histKpiInscritos').textContent = totalInscritos.toLocaleString();
-      document.getElementById('histKpiAgendados').textContent = totalAgendados.toLocaleString();
-      document.getElementById('histKpiNoContesta').textContent = totalNoContesta.toLocaleString();
-      document.getElementById('histKpiConversion').textContent = convRate + '%';
-
+    // Agregación mensual compartida por render y export CSV (cierra la deuda de historicos-mensuales T3).
+    // Devuelve también contadores de estados/campañas y el embudo usados por los gráficos.
+    function computeHistoricalAggregates(data) {
       const monthlyStats = {};
       MONTH_CHRONO.forEach(m => {
         monthlyStats[m] = { total: 0, inscritos: 0, agendados: 0, noContesta: 0, campanas: {}, agentes: {} };
       });
 
-      // Contadores de los gráficos nuevos (estados/campañas por mes y embudo): se acumulan en este mismo recorrido mensual
       const stateTotals = {};
       const stateByMonth = {};
       const campTotals = {};
@@ -3028,6 +3237,32 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (activeMonths.length === 0 && monthlyStats['OTRO']?.total > 0) {
         activeMonths.push('OTRO');
       }
+
+      return { monthlyStats, activeMonths, stateTotals, stateByMonth, campTotals, campByMonth, funnelGestionados };
+    }
+
+    function renderHistoricalAnalytics() {
+      if (!window.Chart) return;
+
+      populateHistoricalFilterOptions();
+
+      const filtered = filterHistoricalLeads();
+      updateHistRangeNotice(filtered);
+      const data = filtered.data;
+
+      const totalLeads = data.length;
+      const totalInscritos = data.filter(l => normalizeGestion(l).includes('INSCRIT')).length;
+      const totalAgendados = data.filter(l => normalizeGestion(l).includes('AGENDAD')).length;
+      const totalNoContesta = data.filter(l => normalizeGestion(l).includes('NO CONTEST')).length;
+      const convRate = totalLeads > 0 ? ((totalInscritos / totalLeads) * 100).toFixed(1) : '0.0';
+
+      document.getElementById('histKpiTotalLeads').textContent = totalLeads.toLocaleString();
+      document.getElementById('histKpiInscritos').textContent = totalInscritos.toLocaleString();
+      document.getElementById('histKpiAgendados').textContent = totalAgendados.toLocaleString();
+      document.getElementById('histKpiNoContesta').textContent = totalNoContesta.toLocaleString();
+      document.getElementById('histKpiConversion').textContent = convRate + '%';
+
+      const { monthlyStats, activeMonths, stateTotals, stateByMonth, campTotals, campByMonth, funnelGestionados } = computeHistoricalAggregates(data);
 
       let recordMonth = '-';
       let recordCount = 0;

@@ -620,18 +620,19 @@
     </div>
   </footer>
 
-  <!-- ================= MODAL: ACCESO POR ENLACE MÁGICO ================= -->
-  <div id="modalOtp" class="fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-sm hidden items-center justify-center p-4">
+  <!-- ================= MODAL: INICIO DE SESIÓN ================= -->
+  <div id="modalLogin" class="fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
-        <div><h2 class="font-bold text-white">Acceso autorizado</h2><p class="text-xs text-slate-400">Te enviaremos un enlace seguro a tu correo</p></div>
+        <div><h2 class="font-bold text-white">Iniciar sesión</h2><p class="text-xs text-slate-400">Accede con tu correo y contraseña</p></div>
       </div>
-      <form id="formMagicLink" onsubmit="requestMagicLink(event)" class="space-y-3">
-        <input id="otpEmail" type="email" autocomplete="email" required placeholder="correo@ejemplo.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
-        <button type="submit" class="w-full px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Enviar enlace de acceso</button>
+      <form id="formLogin" onsubmit="handleLogin(event)" class="space-y-3">
+        <input id="loginEmail" type="email" autocomplete="email" required placeholder="correo@ejemplo.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
+        <input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Contraseña" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
+        <button type="submit" class="w-full px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Ingresar</button>
       </form>
-      <p id="otpStatus" class="text-xs text-slate-400">La cuenta debe estar autorizada por un administrador.</p>
+      <p id="loginStatus" class="text-xs text-slate-400">La cuenta debe estar autorizada por un administrador.</p>
     </div>
   </div>
 
@@ -1070,7 +1071,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           element.classList.remove('flex');
         }
       });
-      ['formNewLead', 'formEditLead', 'formAuthorizeUser'].forEach(id => {
+      ['formNewLead', 'formEditLead', 'formAuthorizeUser', 'formLogin'].forEach(id => {
         document.getElementById(id)?.reset();
       });
       Object.values(histCharts).forEach(chart => {
@@ -1081,11 +1082,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         }
       });
       Object.keys(histCharts).forEach(key => delete histCharts[key]);
-      const modal = document.getElementById('modalOtp');
+      const modal = document.getElementById('modalLogin');
       modal?.classList.remove('hidden');
       modal?.classList.add('flex');
-      const otpStatus = document.getElementById('otpStatus');
-      if (otpStatus) otpStatus.textContent = 'La cuenta está inactiva o no autorizada.';
+      const loginStatus = document.getElementById('loginStatus');
+      if (loginStatus) loginStatus.textContent = 'La cuenta está inactiva o no autorizada.';
     }
 
     async function closeInvalidSession(reason = 'La sesión expiró o la cuenta fue desactivada.') {
@@ -1093,8 +1094,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (supabaseClient) {
         try { await supabaseClient.auth.signOut(); } catch (_) { /* local cleanup already complete */ }
       }
-      const otpStatus = document.getElementById('otpStatus');
-      if (otpStatus) otpStatus.textContent = reason;
+      const loginStatus = document.getElementById('loginStatus');
+      if (loginStatus) loginStatus.textContent = reason;
     }
 
     async function validateCurrentSession() {
@@ -1144,20 +1145,21 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       return !accessError && access?.activo ? access : null;
     }
 
-    async function requestMagicLink(event) {
+    async function handleLogin(event) {
       event.preventDefault();
-      const email = document.getElementById('otpEmail')?.value.trim().toLowerCase();
-      const status = document.getElementById('otpStatus');
-      if (!email) return;
-      if (status) status.textContent = 'Enviando enlace de acceso...';
-      const redirectTo = `${window.location.origin}${window.location.pathname}`;
-      const { error } = await supabaseClient.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: false, emailRedirectTo: redirectTo }
-      });
-      if (status) status.textContent = error
-        ? 'No se pudo enviar el enlace. Comprueba que la cuenta esté autorizada.'
-        : 'Si el correo está autorizado, revisa tu bandeja de entrada y pulsa el enlace para entrar.';
+      const email = document.getElementById('loginEmail')?.value.trim().toLowerCase();
+      const password = document.getElementById('loginPassword')?.value;
+      const status = document.getElementById('loginStatus');
+      if (!email || !password) return;
+      if (status) status.textContent = 'Iniciando sesión...';
+      try {
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (status) status.textContent = error
+          ? 'No se pudo iniciar sesión. Verifica tus credenciales.'
+          : 'Sesión iniciada. Verificando acceso...';
+      } catch (_) {
+        if (status) status.textContent = 'No se pudo iniciar sesión. Inténtalo de nuevo.';
+      }
     }
 
     async function enterAuthenticatedSession(user, access = null) {
@@ -1170,8 +1172,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         }
         setAppAuthenticated(user, resolvedAccess);
         document.body.classList.add('session-ready');
-        document.getElementById('modalOtp')?.classList.add('hidden');
-        document.getElementById('modalOtp')?.classList.remove('flex');
+        document.getElementById('modalLogin')?.classList.add('hidden');
+        document.getElementById('modalLogin')?.classList.remove('flex');
         const realtimeReady = await setupRealtimeListener();
         if (!realtimeReady) console.warn('Realtime no disponible; se cargará el snapshot por REST.');
         await loadLeadsData();
@@ -2722,7 +2724,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // 14. INICIALIZACIÓN
     // -------------------------------------------------------------
     document.addEventListener('DOMContentLoaded', async () => {
-      const modal = document.getElementById('modalOtp');
+      const modal = document.getElementById('modalLogin');
       modal?.classList.remove('hidden'); modal?.classList.add('flex');
       await validateCurrentSession();
       if (window.lucide) lucide.createIcons();

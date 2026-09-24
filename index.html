@@ -953,7 +953,7 @@ CREATE TABLE IF NOT EXISTS public.leads (
     "GESTION" TEXT DEFAULT 'Información ',
     "Interesado en " TEXT,
     "Ciudad" TEXT,
-    "Agente " TEXT,
+    "Agente" TEXT,
     "Odoo" TEXT,
     "Fecha de Atencion" TEXT,
     "OBSERVACIONES " TEXT,
@@ -2005,7 +2005,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         "Campaña": document.getElementById('newCampana')?.value.trim() || 'General',
         "Medio": document.getElementById('newMedio')?.value || 'Whatsapp',
         "GESTION": document.getElementById('newGestion')?.value || 'Información ',
-        "Agente ": isAdmin ? (document.getElementById('newAgente')?.value.trim() || currentAccess.nombre || 'Agente') : currentAccess.nombre,
+        "Agente": isAdmin ? (document.getElementById('newAgente')?.value.trim() || currentAccess.nombre || 'Agente') : currentAccess.nombre,
         "Ciudad": document.getElementById('newCiudad')?.value.trim() || '',
         "OBSERVACIONES ": document.getElementById('newObservaciones')?.value.trim() || 'Nuevo lead registrado desde el panel.'
       };
@@ -2142,7 +2142,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           "Campaña": document.getElementById('editCampana')?.value.trim() || '',
           "Medio": document.getElementById('editMedio')?.value.trim() || '',
           "Ciudad": document.getElementById('editCiudad')?.value.trim() || '',
-          "Agente ": document.getElementById('editAgenteAdmin')?.value.trim() || currentAccess.nombre || '',
+          "Agente": document.getElementById('editAgenteAdmin')?.value.trim() || currentAccess.nombre || '',
           "Odoo": document.getElementById('editOdoo')?.value.trim() || '',
           "Fecha de Atencion": document.getElementById('editFechaAtencion')?.value.trim() || '',
           "LANDING": document.getElementById('editLanding')?.value.trim() || ''

@@ -125,7 +125,7 @@ begin
 
   insert into public.leads (
     "Mes", "Fecha", "Nombre", "Telefono", "Campaña", "Medio", "GESTION",
-    "Ciudad", "Agente ", "OBSERVACIONES "
+    "Ciudad", "Agente", "OBSERVACIONES "
   ) values (
     left(coalesce(p_lead->>'Mes', ''), 40),
     left(coalesce(p_lead->>'Fecha', ''), 40),
@@ -135,7 +135,7 @@ begin
     left(coalesce(p_lead->>'Medio', ''), 80),
     left(coalesce(p_lead->>'GESTION', 'Información '), 80),
     left(coalesce(p_lead->>'Ciudad', ''), 120),
-    case when access.role = 'admin' then left(coalesce(p_lead->>'Agente ', access.nombre), 120) else left(access.nombre, 120) end,
+    case when access.role = 'admin' then left(coalesce(p_lead->>'Agente', p_lead->>'Agente ', access.nombre), 120) else left(access.nombre, 120) end,
     left(coalesce(p_lead->>'OBSERVACIONES ', ''), 5000)
   ) returning * into created;
 
@@ -201,7 +201,7 @@ begin
     raise exception using errcode = '22023', message = 'protected_fields';
   end if;
   if p_lead - array[
-    'Mes', 'Fecha', 'Nombre', 'Telefono', 'Campaña', 'Medio', 'Ciudad', 'Agente ',
+    'Mes', 'Fecha', 'Nombre', 'Telefono', 'Campaña', 'Medio', 'Ciudad', 'Agente', 'Agente ',
     'Odoo', 'Fecha de Atencion', 'LANDING', 'GESTION', 'Fecha Última Gestión ',
     'ULTIMA GESTION', 'OBSERVACIONES '
   ] <> '{}'::jsonb then
@@ -216,7 +216,7 @@ begin
       "Campaña" = left(coalesce(p_lead->>'Campaña', "Campaña"), 120),
       "Medio" = left(coalesce(p_lead->>'Medio', "Medio"), 80),
       "Ciudad" = left(coalesce(p_lead->>'Ciudad', "Ciudad"), 120),
-      "Agente " = left(coalesce(p_lead->>'Agente ', "Agente "), 120),
+      "Agente" = left(coalesce(p_lead->>'Agente', p_lead->>'Agente ', "Agente"), 120),
       "Odoo" = left(coalesce(p_lead->>'Odoo', "Odoo"), 80),
       "Fecha de Atencion" = left(coalesce(p_lead->>'Fecha de Atencion', "Fecha de Atencion"), 40),
       "LANDING" = left(coalesce(p_lead->>'LANDING', "LANDING"), 500),

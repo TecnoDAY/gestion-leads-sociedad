@@ -273,6 +273,16 @@
             <option value="">Todas las gestiones</option>
           </select>
         </div>
+
+        <!-- Origen de datos -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Origen</label>
+          <select id="dataSourceFilter" onchange="setDataSource(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+            <option value="actual" selected>Leads actuales</option>
+            <option value="historico">Histórico 2025</option>
+            <option value="todos">Todos</option>
+          </select>
+        </div>
       </div>
     </section>
 
@@ -1135,6 +1145,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       isSupabaseLive = false;
       allLeads = [];
       filteredLeads = [];
+      allHistorico = [];
+      dataSource = 'actual';
+      historicoLoaded = false;
+      historicoLoadPromise = null;
+      currentViewOrigin = 'actual';
+      currentViewId = null;
+      currentEditOrigin = 'actual';
       totalDatabaseCount = 0;
       pendingRealtimeEvents = [];
       loadLeadsPromise = null;
@@ -1165,6 +1182,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       ['formNewLead', 'formEditLead', 'formAuthorizeUser', 'formLogin'].forEach(id => {
         document.getElementById(id)?.reset();
       });
+      const dataSourceSelect = document.getElementById('dataSourceFilter');
+      if (dataSourceSelect) dataSourceSelect.value = 'actual';
       Object.values(histCharts).forEach(chart => {
         try {
           chart.destroy();
@@ -1309,6 +1328,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     let allLeads = [];          // Todos los leads cargados
     let totalDatabaseCount = 0; // Conteo exacto de leads en la base de datos
     let filteredLeads = [];     // Leads filtrados actualmente
+    let allHistorico = [];      // Histórico 2025 (solo lectura, tabla leads_historico)
+    let dataSource = 'actual';  // 'actual' | 'historico' | 'todos'
+    let historicoLoaded = false;
+    let historicoLoadPromise = null;
+    let currentViewOrigin = 'actual';
+    let currentViewId = null;
+    let currentEditOrigin = 'actual';
     let isLoadingLeads = false;
     let pendingRealtimeEvents = [];
     let loadLeadsPromise = null;
@@ -1437,6 +1463,47 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       return true;
     }
 
+    // Origen de cada registro: los ids numéricos colisionan entre tablas,
+    // así que todo acceso por id debe resolver con origen ('actual' | 'historico').
+    // Se guarda como propiedad no enumerable para no alterar getField/export/serialización.
+    function withOrigin(lead, origin) {
+      if (!lead || typeof lead !== 'object') return lead;
+      try {
+        Object.defineProperty(lead, '__origin', { value: origin, enumerable: false, writable: true, configurable: true });
+      } catch (_) {
+        lead.__origin = origin;
+      }
+      return lead;
+    }
+
+    function getLeadOrigin(lead) {
+      return (lead && lead.__origin === 'historico') ? 'historico' : 'actual';
+    }
+
+    function findLeadByOrigin(origin, leadId) {
+      if (leadId === undefined || leadId === null) return undefined;
+      const arr = origin === 'historico' ? allHistorico : allLeads;
+      return arr.find(l => String(l.id) === String(leadId));
+    }
+
+    function originYear(origin) {
+      return origin === 'historico' ? '2025' : '2026';
+    }
+
+    // Base visible según el selector de origen (allLeads sigue siendo solo actuales).
+    function getVisibleBaseLeads() {
+      if (dataSource === 'historico') return allHistorico;
+      if (dataSource === 'todos') return [...allLeads, ...allHistorico];
+      return allLeads;
+    }
+
+    function setDataSource(value) {
+      dataSource = value === 'historico' ? 'historico' : value === 'todos' ? 'todos' : 'actual';
+      const select = document.getElementById('dataSourceFilter');
+      if (select && select.value !== dataSource) select.value = dataSource;
+      applyFilters();
+    }
+
     async function getExactLeadsCount() {
       const { count, error } = await supabaseClient
         .from('leads')
@@ -1481,6 +1548,57 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }
 
       return consolidateLeadsById(rows);
+    }
+
+    async function fetchHistoricoByIdCursor() {
+      const blockSize = 1000;
+      const rows = [];
+      let cursor = null;
+
+      while (true) {
+        let query = supabaseClient
+          .from('leads_historico')
+          .select('*');
+        if (cursor !== null) query = query.lt('id', cursor);
+        query = query
+          .order('id', { ascending: false })
+          .range(0, blockSize - 1);
+
+        const { data, error } = await query;
+        if (error) throw new Error(`Error cargando histórico 2025 (bloque posterior a ${cursor ?? 'inicio'}): ${error.message}`);
+        if (!Array.isArray(data) || data.length > blockSize) {
+          throw new Error("Supabase devolvió un bloque inválido del histórico");
+        }
+        if (data.length === 0) break;
+
+        const nextCursor = data[data.length - 1]?.id;
+        if (nextCursor === undefined || nextCursor === null || String(nextCursor) === String(cursor)) {
+          throw new Error("La paginación del histórico no pudo avanzar");
+        }
+        rows.push(...data);
+        cursor = nextCursor;
+        if (data.length < blockSize) break;
+      }
+
+      const consolidated = consolidateLeadsById(rows);
+      consolidated.forEach(lead => withOrigin(lead, 'historico'));
+      return consolidated;
+    }
+
+    function loadHistoricoData() {
+      if (historicoLoadPromise) return historicoLoadPromise;
+      historicoLoadPromise = performLoadHistoricoData().finally(() => {
+        historicoLoadPromise = null;
+      });
+      return historicoLoadPromise;
+    }
+
+    async function performLoadHistoricoData() {
+      if (!currentUser || !currentAccess?.activo || !supabaseClient) return false;
+      allHistorico = await fetchHistoricoByIdCursor();
+      historicoLoaded = true;
+      console.log("Histórico 2025 cargado desde Supabase:", allHistorico.length);
+      return true;
     }
 
     function haveSameLeadIds(leads, idRows) {
@@ -1548,6 +1666,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
       isLoadingLeads = false;
       pendingRealtimeEvents = [];
+
+      try {
+        await loadHistoricoData();
+      } catch (err) {
+        console.warn("No se pudo cargar el histórico 2025:", err);
+        showToast("No se pudo cargar el histórico 2025; se muestran solo leads actuales", "warning");
+      }
 
       updateConnectionStatus(loadedSuccessfully
         ? (allLeads.length > 0 ? "online" : "online_empty")
@@ -1705,8 +1830,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const campana = document.getElementById('filterCampana')?.value || '';
       const medio = document.getElementById('filterMedio')?.value || '';
       const gestion = document.getElementById('filterGestion')?.value || '';
+      const baseLeads = getVisibleBaseLeads();
 
-      filteredLeads = allLeads.filter(lead => {
+      filteredLeads = baseLeads.filter(lead => {
           if (!currentUser || !currentAccess?.activo) return;
         if (lead.archived_at) return false;
         if (search) {
@@ -1728,7 +1854,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const activeFiltersCountEl = document.getElementById('activeFiltersCount');
       if (activeFiltersCountEl) {
         activeFiltersCountEl.innerText = activeCount > 0 
-          ? `${filteredLeads.length.toLocaleString()} de ${allLeads.length.toLocaleString()} (${activeCount} filtro${activeCount > 1 ? 's' : ''})`
+          ? `${filteredLeads.length.toLocaleString()} de ${baseLeads.length.toLocaleString()} (${activeCount} filtro${activeCount > 1 ? 's' : ''})`
           : `${filteredLeads.length.toLocaleString()} leads en total`;
       }
 
@@ -1931,6 +2057,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       let html = '';
       pageItems.forEach((lead, idx) => {
         const leadId = lead.id || (startIndex + idx + 1);
+        const origin = getLeadOrigin(lead);
+        const originBadge = origin === 'historico'
+          ? '<span class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold shrink-0">2025</span>'
+          : '';
         const mes = getField(lead, 'Mes');
         const fecha = getField(lead, 'Fecha');
         const nombre = getField(lead, 'Nombre') || 'Sin Nombre';
@@ -1951,9 +2081,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             <div class="text-[10px] text-slate-500">${escapeHtml(mes || '')}</div>
           </td>
           <td class="px-3.5 py-3">
-            <button onclick="openViewLeadModal('${escapeAttr(leadId)}')" class="text-left font-semibold text-white hover:text-indigo-400 transition-colors cursor-pointer truncate max-w-[170px] block">
-              ${escapeHtml(nombre)}
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button onclick="openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" class="text-left font-semibold text-white hover:text-indigo-400 transition-colors cursor-pointer truncate max-w-[170px] block">
+                ${escapeHtml(nombre)}
+              </button>
+              ${originBadge}
+            </div>
           </td>
           <td class="px-3.5 py-3 text-slate-300">
             <div class="flex items-center gap-1.5">
@@ -1971,11 +2104,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           <td class="px-3.5 py-3 text-slate-300 text-[11px]">${escapeHtml(agente)}</td>
           <td class="px-3.5 py-3 text-right">
             <div class="flex items-center justify-end gap-1">
-              <button onclick="openEditLeadModal('${escapeAttr(leadId)}')" title="Editar seguimiento" class="p-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 transition-colors cursor-pointer">
+              <button onclick="openEditLeadModal('${escapeAttr(leadId)}', '${origin}')" title="Editar seguimiento" class="p-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 transition-colors cursor-pointer">
                 <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
               </button>
-              ${isAdmin ? `<button onclick="archiveLead('${escapeAttr(leadId)}')" title="Archivar" class="p-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-amber-300 transition-colors cursor-pointer"><i data-lucide="archive" class="w-3.5 h-3.5"></i></button>` : ''}
-              <button onclick="openViewLeadModal('${escapeAttr(leadId)}')" title="Ver detalles completos" class="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 transition-colors cursor-pointer">
+              ${isAdmin && origin !== 'historico' ? `<button onclick="archiveLead('${escapeAttr(leadId)}', '${origin}')" title="Archivar" class="p-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-amber-300 transition-colors cursor-pointer"><i data-lucide="archive" class="w-3.5 h-3.5"></i></button>` : ''}
+              <button onclick="openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" title="Ver detalles completos" class="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 transition-colors cursor-pointer">
                 <i data-lucide="eye" class="w-3.5 h-3.5"></i>
               </button>
             </div>
@@ -2156,9 +2289,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // -------------------------------------------------------------
     // 9. EDITAR / SEGUIMIENTO LEAD (UPDATE)
     // -------------------------------------------------------------
-    function openEditLeadModal(leadId) {
-      const lead = allLeads.find(l => String(l.id) === String(leadId));
+    function openEditLeadModal(leadId, origin) {
+      const resolvedOrigin = origin === 'historico' ? 'historico' : 'actual';
+      if (resolvedOrigin === 'historico') {
+        showToast('El histórico 2025 es de solo lectura', 'warning');
+        return;
+      }
+      const lead = findLeadByOrigin('actual', leadId);
       if (!lead || !currentAccess) return;
+      currentEditOrigin = 'actual';
 
       document.getElementById('editLeadId').value = leadId;
       document.getElementById('editLeadLeadInfo').innerText = `ID: #${leadId} — ${getField(lead, 'Nombre')} (${getField(lead, 'Campaña')})`;
@@ -2238,6 +2377,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (!currentUser || !currentAccess?.activo) return;
       const leadId = document.getElementById('editLeadId')?.value;
       if (!leadId) return;
+      if (currentEditOrigin === 'historico') {
+        showToast('El histórico 2025 es de solo lectura', 'warning');
+        return;
+      }
 
       const btn = document.getElementById('btnSubmitEditLead');
       if (btn) btn.disabled = true;
@@ -2298,8 +2441,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }
     }
 
-    async function archiveLead(leadId) {
+    async function archiveLead(leadId, origin) {
       if (!isAdmin) return;
+      if (origin === 'historico') {
+        showToast('El histórico 2025 es de solo lectura', 'warning');
+        return;
+      }
       if (!confirm('¿Archivar este lead? No se eliminará físicamente.')) return;
       const { error } = await supabaseClient.rpc('archive_lead', { p_id: leadId });
       if (error) { showToast('No se pudo archivar', 'error'); return; }
@@ -2310,9 +2457,22 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
 
     // -------------------------------------------------------------
-    function openViewLeadModal(leadId) {
-      const lead = allLeads.find(l => String(l.id) === String(leadId));
+    function openLeadModal(origin, id) {
+      openViewLeadModal(id, origin);
+    }
+
+    function openViewLeadModal(leadId, origin) {
+      const resolvedOrigin = origin === 'historico' ? 'historico' : 'actual';
+      let lead = findLeadByOrigin(resolvedOrigin, leadId);
+      let finalOrigin = resolvedOrigin;
+      if (!lead) {
+        const other = resolvedOrigin === 'historico' ? 'actual' : 'historico';
+        lead = findLeadByOrigin(other, leadId);
+        if (lead) finalOrigin = other;
+      }
       if (!lead) return;
+      currentViewOrigin = finalOrigin;
+      currentViewId = lead.id;
 
       const container = document.getElementById('viewLeadContent');
       if (!container) return;
@@ -2323,11 +2483,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const cleanPhone = telefono.replace(/\D/g, '');
       const waLink = cleanPhone ? `https://wa.me/${cleanPhone}` : '#';
 
-      // Posible lead repetido: misma clave de teléfono (>= 7 dígitos), un solo recorrido sobre allLeads
+      // Posibles repetidos: misma clave de teléfono (>= 7 dígitos) en AMBOS años,
+      // un solo recorrido por array; se excluye el propio registro por par origen+id.
       const phoneKey = normalizePhone(telefono);
       let repetidosHtml = '';
       if (phoneKey.length >= 7) {
-        const relacionados = allLeads.filter(l => String(l.id) !== String(lead.id) && normalizePhone(getField(l, 'Telefono')) === phoneKey);
+        const relacionados = [];
+        for (const arr of [allLeads, allHistorico]) {
+          for (const l of arr) {
+            if (getLeadOrigin(l) === finalOrigin && String(l.id) === String(lead.id)) continue;
+            if (normalizePhone(getField(l, 'Telefono')) === phoneKey) relacionados.push(l);
+          }
+        }
         if (relacionados.length) {
           const sortKey = (l) => {
             const m = String(getField(l, 'Fecha') || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -2343,7 +2510,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           const items = [...relacionados, lead];
           items.sort((a, b) => sortKey(b) - sortKey(a) || compareLeadIdsDescending(a, b));
           const filas = items.map(l => {
-            const esActual = String(l.id) === String(lead.id);
+            const itemOrigin = getLeadOrigin(l);
+            const esActual = itemOrigin === finalOrigin && String(l.id) === String(lead.id);
+            const yearBadge = itemOrigin === 'historico'
+              ? '<span class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">2025</span>'
+              : '<span class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-700/60 text-slate-300 border border-slate-600/60 font-semibold">2026</span>';
             const obsRaw = (getField(l, 'OBSERVACIONES ') || '').replace(/\s+/g, ' ').trim();
             const obs = obsRaw.length > 160 ? obsRaw.slice(0, 160) + '…' : obsRaw;
             return `<li class="flex items-start justify-between gap-3 border-b border-slate-800 last:border-0 py-2">
@@ -2351,6 +2522,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
                 <div class="flex items-center gap-2 text-xs">
                   <span class="text-slate-200 font-medium">${escapeHtml(getField(l, 'Fecha') || '-')}</span>
                   <span class="text-slate-500 font-mono">#${escapeHtml(String(l.id))}</span>
+                  ${yearBadge}
                   ${esActual ? '<span class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-semibold">Este lead</span>' : ''}
                 </div>
                 <div class="text-[11px] text-slate-400 truncate">${escapeHtml(getField(l, 'Campaña') || '-')} · ${escapeHtml(getField(l, 'Medio') || '-')}</div>
@@ -2358,7 +2530,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
                 <div>${renderGestionBadge(getField(l, 'GESTION'))}</div>
                 ${obs ? `<p class="text-[11px] text-slate-500 leading-snug">${escapeHtml(obs)}</p>` : ''}
               </div>
-              ${esActual ? '' : `<button onclick="closeViewLeadModal(); openViewLeadModal('${escapeAttr(l.id)}')" class="shrink-0 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 border border-slate-700 text-[11px] font-medium cursor-pointer transition-colors">Abrir</button>`}
+              ${esActual ? '' : `<button onclick="closeViewLeadModal(); openLeadModal('${itemOrigin}', '${escapeAttr(l.id)}')" class="shrink-0 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 border border-slate-700 text-[11px] font-medium cursor-pointer transition-colors">Abrir</button>`}
             </li>`;
           }).join('');
           const total = items.length;
@@ -2380,7 +2552,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       container.innerHTML = `
         <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-700/80 flex items-start justify-between gap-4">
           <div>
-            <div class="text-base font-bold text-white">${escapeHtml(nombre)}</div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="text-base font-bold text-white">${escapeHtml(nombre)}</div>
+              ${finalOrigin === 'historico' ? '<span class="text-[10px] uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">Histórico 2025</span>' : ''}
+            </div>
             <div class="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
               <span>ID: #${lead.id}</span>
               <span>•</span>
@@ -2431,10 +2606,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         </div>
 
         <div class="flex justify-end pt-2">
-          <button onclick="closeViewLeadModal(); openEditLeadModal('${escapeAttr(lead.id)}')" class="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-1.5 text-xs cursor-pointer">
+          ${finalOrigin === 'historico'
+            ? '<span class="text-[11px] text-slate-500 italic">Registro histórico de solo lectura (2025)</span>'
+            : `<button onclick="closeViewLeadModal(); openEditLeadModal('${escapeAttr(lead.id)}', '${finalOrigin}')" class="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-1.5 text-xs cursor-pointer">
             <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
             <span>Editar este Lead</span>
-          </button>
+          </button>`}
         </div>
       `;
 

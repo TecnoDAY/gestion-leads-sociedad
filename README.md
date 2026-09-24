@@ -44,10 +44,10 @@ La tabla `leads` en Supabase utiliza la siguiente estructura exacta:
 | `AGENTE` | `TEXT` | Asesor asignado (Nina, Jessi, Loli, Ana...) |
 | `Odoo` | `TEXT` | Registro en CRM Odoo (SI N., SI J., No...) |
 | `Fecha de Atencion` | `TEXT` | Fecha de primer contacto |
-| `OBSERVACIONES` | `TEXT` | Notas de seguimiento comercial |
-| `Fecha Última Gestión` | `TEXT` | Fecha de última interacción |
+| `OBSERVACIONES ` | `TEXT` | Notas de seguimiento comercial *(espacio al final)* |
+| `Fecha Última Gestión ` | `TEXT` | Fecha de última interacción *(espacio al final)* |
 | `ULTIMA GESTION` | `TEXT` | Canal de último seguimiento (Llamada, WhatsApp...) |
-| `ULTIMO AGENTE` | `TEXT` | Asesor de último seguimiento |
+| `ULTIMO AGENTE ` | `TEXT` | Asesor de último seguimiento *(espacio al final)* |
 | `LANDING` | `TEXT` | Página o formulario de captura |
 
 ---

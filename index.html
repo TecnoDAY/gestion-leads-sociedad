@@ -1397,6 +1397,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     let currentViewOrigin = 'actual';
     let currentViewId = null;
     let leadNotesCache = [];
+    let leadGestionesCache = [];
     let editingNoteId = null;
     // Catálogo de opciones (lead_catalogs) agrupado por kind: [{id, value, active}]
     let catalogRows = { mes: [], campana: [], medio: [], gestion: [], agente: [] };
@@ -2845,8 +2846,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-1">
           <span class="text-[10px] uppercase text-slate-400 font-semibold block">Historial de Observaciones</span>
           <p class="text-slate-300 font-mono text-xs whitespace-pre-line leading-relaxed">${escapeHtml(getField(lead, 'OBSERVACIONES ') || 'Sin observaciones registradas.')}</p>
-        </div>${finalOrigin === 'historico' ? '' : `
-        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+         </div>${finalOrigin === 'historico' ? '' : `
+         <div id="leadGestionesSection" class="hidden bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+           <span class="text-[10px] uppercase text-slate-400 font-semibold block">Historial de gestiones</span>
+           <div id="leadGestionesList"><p class="text-[11px] text-slate-500">Cargando historial…</p></div>
+         </div>
+         <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
           <span class="text-[10px] uppercase text-slate-400 font-semibold block">Notas del Equipo</span>
           <div id="leadNotesList" class="space-y-2"><p class="text-[11px] text-slate-500">Cargando notas…</p></div>
           <div class="flex items-start gap-2 pt-1">
@@ -2877,7 +2882,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (finalOrigin !== 'historico') {
         leadNotesCache = [];
         editingNoteId = null;
-        loadLeadNotes(lead.id);
+         leadGestionesCache = [];
+         Promise.all([loadLeadNotes(lead.id), loadLeadGestiones(lead.id)]);
       }
     }
 
@@ -2905,6 +2911,46 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }
       leadNotesCache = data;
       renderLeadNotes();
+    }
+
+    async function loadLeadGestiones(leadId) {
+      const section = document.getElementById('leadGestionesSection');
+      const list = document.getElementById('leadGestionesList');
+      if (!section || !list) return;
+      const { data, error } = await supabaseClient
+        .from('lead_gestiones')
+        .select('fecha_gestion, gestion_anterior, gestion_nueva, canal, autor_name, created_at')
+        .eq('lead_id', leadId)
+        .order('fecha_gestion', { ascending: true })
+        .order('created_at', { ascending: true });
+      if (String(currentViewId) !== String(leadId)) return;
+      if (error) {
+        console.warn('No se pudo cargar el historial de gestiones:', error);
+        return;
+      }
+      leadGestionesCache = data || [];
+      section.classList.remove('hidden');
+      renderLeadGestiones();
+    }
+
+    function renderLeadGestiones() {
+      const list = document.getElementById('leadGestionesList');
+      if (!list) return;
+      if (!leadGestionesCache.length) {
+        list.innerHTML = '<p class="text-[11px] text-slate-500">Sin cambios registrados todavía.</p>';
+        return;
+      }
+      list.innerHTML = leadGestionesCache.map(g => {
+        const fecha = String(g.fecha_gestion || '').split('-').reverse().join('/') || '-';
+        const anterior = String(g.gestion_anterior || '').trim();
+        const estados = anterior
+          ? `${renderGestionBadge(anterior)} <span class="text-slate-500 mx-1">→</span> ${renderGestionBadge(g.gestion_nueva || '-')}`
+          : renderGestionBadge(g.gestion_nueva || '-');
+        return `<div class="border-b border-slate-800 last:border-0 pb-2 last:pb-0 space-y-1">
+          <div class="flex items-center gap-2 text-[11px]"><span class="text-slate-300 font-medium">${escapeHtml(fecha)}</span>${estados}</div>
+          <div class="text-[11px] text-slate-400">${escapeHtml(g.canal || '-')} · ${escapeHtml(g.autor_name || 'Agente')}</div>
+        </div>`;
+      }).join('');
     }
 
     // Render del timeline desde cache. editingNoteId (solo admin) muestra el textarea inline.

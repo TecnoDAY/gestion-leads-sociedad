@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es" class="dark" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -58,7 +58,68 @@
     .tabular-nums { font-variant-numeric: tabular-nums; }
     .glass-card { background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(8px); }
     body:not(.session-ready) > header, body:not(.session-ready) > div.sticky, body:not(.session-ready) > main, body:not(.session-ready) > footer { display: none; }
+    :root { color-scheme: dark; }
+    [data-theme="light"] { color-scheme: light; }
+    [data-theme="light"] .glass-card { background: rgba(255, 255, 255, 0.92); }
+    [data-theme="light"] .bg-slate-950, [data-theme="light"] .bg-slate-900, [data-theme="light"] .bg-slate-900\/95, [data-theme="light"] .bg-slate-900\/90 { background-color: #f8fafc; }
+    [data-theme="light"] .bg-slate-950\/80, [data-theme="light"] .bg-slate-950\/95 { background-color: rgba(255, 255, 255, 0.92); }
+    [data-theme="light"] .bg-slate-950\/90, [data-theme="light"] .bg-slate-900\/50 { background-color: #f1f5f9; }
+    [data-theme="light"] .bg-slate-800, [data-theme="light"] .bg-slate-800\/50 { background-color: #e2e8f0; }
+    [data-theme="light"] .bg-slate-700, [data-theme="light"] .bg-slate-700\/60 { background-color: #cbd5e1; }
+    [data-theme="light"] .bg-slate-900\/60, [data-theme="light"] .bg-slate-900\/80 { background-color: #e2e8f0; }
+    [data-theme="light"] .bg-slate-950\/70 { background-color: #f1f5f9; }
+    [data-theme="light"] .bg-slate-700\/50 { background-color: rgba(203, 213, 225, .5); }
+    [data-theme="light"] .bg-indigo-500, [data-theme="light"] .bg-indigo-600 { background-color: #4338ca; }
+    [data-theme="light"] .bg-emerald-500 { background-color: #047857; }
+    [data-theme="light"] .bg-amber-500, [data-theme="light"] .bg-amber-600 { background-color: #b45309; }
+    [data-theme="light"] .border-slate-800, [data-theme="light"] .border-slate-700, [data-theme="light"] .border-slate-700\/80 { border-color: #cbd5e1; }
+    [data-theme="light"] .text-slate-100, [data-theme="light"] .text-slate-200, [data-theme="light"] .text-white { color: #0f172a; }
+    [data-theme="light"] .text-slate-300 { color: #334155; }
+    [data-theme="light"] .text-slate-400, [data-theme="light"] .text-slate-500 { color: #475569; }
+    [data-theme="light"] .text-indigo-300, [data-theme="light"] .text-indigo-400 { color: #4338ca; }
+    [data-theme="light"] .text-indigo-200 { color: #4338ca; }
+    [data-theme="light"] .text-emerald-300, [data-theme="light"] .text-emerald-400 { color: #047857; }
+    [data-theme="light"] .text-emerald-400\/80 { color: #047857; }
+    [data-theme="light"] .text-amber-300, [data-theme="light"] .text-amber-400 { color: #b45309; }
+    [data-theme="light"] .text-amber-400\/80, [data-theme="light"] .text-amber-300\/90 { color: #b45309; }
+    [data-theme="light"] .text-rose-300, [data-theme="light"] .text-rose-400 { color: #be123c; }
+    [data-theme="light"] .text-rose-400\/80 { color: #be123c; }
+    [data-theme="light"] .text-blue-300, [data-theme="light"] .text-blue-400 { color: #1d4ed8; }
+    [data-theme="light"] .text-purple-300 { color: #7e22ce; }
+    [data-theme="light"] .bg-amber-500\/15.text-amber-300 { color: #92400e; }
+    [data-theme="light"] .bg-emerald-500\/15.text-emerald-300 { color: #065f46; }
+    [data-theme="light"] .bg-rose-500\/15.text-rose-300 { color: #be123c; }
+    [data-theme="light"] .hover\:bg-slate-700:hover { background-color: #cbd5e1; }
+    [data-theme="light"] .hover\:bg-slate-600:hover { background-color: #cbd5e1; }
+    [data-theme="light"] .hover\:bg-slate-700\/50:hover, [data-theme="light"] .hover\:bg-slate-800\/40:hover, [data-theme="light"] .hover\:bg-slate-800\/60:hover, [data-theme="light"] .hover\:bg-slate-800\/80:hover { background-color: #f1f5f9; }
+    [data-theme="light"] .hover\:bg-indigo-500:hover { background-color: #3730a3; }
+    [data-theme="light"] .hover\:bg-emerald-500:hover { background-color: #047857; }
+    [data-theme="light"] .hover\:bg-amber-500:hover { background-color: #92400e; }
+    [data-theme="light"] .hover\:text-white:hover { color: #0f172a; }
+    [data-theme="light"] .bg-indigo-600.text-white { color: #fff; }
+    [data-theme="light"] .bg-amber-600.text-white { color: #fff; }
+    [data-theme="light"] .hover\:text-slate-200:hover { color: #334155; }
+    [data-theme="light"] .hover\:text-indigo-300:hover, [data-theme="light"] .hover\:text-indigo-400:hover { color: #3730a3; }
+    [data-theme="light"] .hover\:text-amber-300:hover { color: #92400e; }
+    [data-theme="light"] .hover\:text-emerald-300:hover { color: #047857; }
+    [data-theme="light"] .hover\:text-rose-300:hover { color: #be123c; }
+    [data-theme="light"] #reporteDiario { background-color: #fff; color: #1e293b; }
+    #reporteDiario,
+    [data-theme="dark"] #reporteDiario,
+    [data-theme="light"] #reporteDiario { background-color: #fff !important; color: #0f172a !important; }
+    #reporteDiario input, #reporteDiario select, #reporteDiario textarea,
+    [data-theme="dark"] #reporteDiario input, [data-theme="dark"] #reporteDiario select, [data-theme="dark"] #reporteDiario textarea,
+    [data-theme="light"] #reporteDiario input, [data-theme="light"] #reporteDiario select, [data-theme="light"] #reporteDiario textarea {
+      background-color: #f8fafc !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important;
+    }
+    #reporteDiario input::placeholder, #reporteDiario textarea::placeholder { color: #64748b !important; opacity: 1; }
   </style>
+  <script>
+    (() => {
+      const saved = localStorage.getItem('tema-dashboard');
+      document.documentElement.dataset.theme = saved === 'light' ? 'light' : 'dark';
+    })();
+  </script>
 </head>
 
 <body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
@@ -120,6 +181,9 @@
           <i data-lucide="list" class="w-3.5 h-3.5"></i>
           <span>Catálogos</span>
         </button>
+        <button id="btnTheme" onclick="applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light')" title="Cambiar tema" aria-label="Cambiar tema" class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
+          <i data-lucide="moon" class="w-3.5 h-3.5"></i>
+        </button>
         <button id="btnSignOut" onclick="handleSignOut()" class="hidden items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
           <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
           <span>Salir</span>
@@ -130,35 +194,51 @@
 
   <!-- ================= BARRA DE PESTAÑAS PRINCIPALES ================= -->
   <div class="bg-slate-900/90 border-b border-slate-800 sticky top-16 z-20 backdrop-blur">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-      <nav class="flex space-x-1 sm:space-x-2 py-2" aria-label="Tabs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 py-3 overflow-x-auto">
+      <nav class="flex shrink-0 items-center rounded-lg border border-slate-700/80 bg-slate-800/50 p-1" aria-label="Tabs">
         <!-- Pestaña 1: Panel Operativo -->
-        <button id="tabBtnDashboard" onclick="switchTab('dashboard')" class="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
+        <button id="tabBtnDashboard" onclick="switchTab('dashboard')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
           <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
           <span>Panel Operativo & Leads</span>
         </button>
 
         <!-- Pestaña 2: Gráficos Históricos -->
-        <button id="tabBtnHistorico" onclick="switchTab('historico')" class="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer border border-transparent">
+        <button id="tabBtnHistorico" onclick="switchTab('historico')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">
           <i data-lucide="line-chart" class="w-4 h-4"></i>
           <span>Gráficos Históricos</span>
           <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono font-semibold">2026</span>
-          <span id="tabTotalDatabaseBadge" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800/90 border border-slate-700/80 text-xs font-mono font-semibold text-slate-200" title="Cantidad total de leads en la Base de Datos">
-            <span class="text-[9px] uppercase tracking-wider text-slate-400 font-sans font-medium hidden sm:inline">Total BD:</span>
-            <span id="tabTotalDatabaseCount" class="text-indigo-400 font-bold tabular-nums">0</span>
-          </span>
         </button>
+        <button id="tabBtnReporte" onclick="switchTab('reporte')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Reporte</span>
+        </button>
+        <button id="tabBtnCitas" onclick="switchTab('citas')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent"><i data-lucide="calendar-check" class="w-4 h-4"></i><span>Citas</span></button>
       </nav>
 
-      <div class="hidden sm:flex items-center gap-2 text-xs text-slate-400">
+      <div class="flex shrink-0 items-center gap-3 border-l border-slate-700/80 pl-4 text-xs text-slate-400">
         <i data-lucide="history" class="w-3.5 h-3.5 text-indigo-400"></i>
         <span>Histórico Sociedad Actoral</span>
+        <span id="tabTotalDatabaseBadge" class="inline-flex items-center gap-1 text-[11px] font-mono text-slate-400" title="Cantidad total de leads en la Base de Datos">
+          <span class="uppercase tracking-wider text-slate-500">Total BD:</span>
+          <span id="tabTotalDatabaseCount" class="text-slate-300 font-semibold tabular-nums">0</span>
+        </span>
       </div>
     </div>
   </div>
 
   <!-- ================= CONTENEDOR PRINCIPAL ================= -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <div id="reporteDiario" class="hidden max-w-5xl mx-auto bg-white text-slate-800 rounded-xl border border-slate-300 shadow-lg p-5 sm:p-7 space-y-5">
+      <div class="border-b-2 border-indigo-600 pb-3 flex flex-wrap justify-between gap-3 items-end">
+        <div><h1 class="text-2xl font-bold text-indigo-900">Reporte Diario de Trabajo</h1><p id="reporteFechaTexto" class="text-base text-slate-600"></p></div>
+        <div class="flex flex-wrap gap-2 items-center text-sm"><label>Fecha <input id="reporteFecha" type="date" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"></label><label id="reporteAgenteWrap" class="hidden">Agente <select id="reporteAgente" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"></select></label></div>
+      </div>
+       <div id="reporteAviso" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">Los comentarios manuales no se guardan: completa el reporte y toma captura.</div>
+      <div id="reporteAuto" class="grid sm:grid-cols-2 gap-3"></div>
+       <div class="border-t-2 border-indigo-200 pt-3"><h2 class="font-bold text-lg text-indigo-900 mb-3">Comentarios del asesor</h2><div class="space-y-3 text-sm">
+         <label class="block">Problemas o bloqueos<textarea class="reporte-manual w-full border rounded p-2 min-h-32" rows="5"></textarea></label><label class="block">Observaciones adicionales<textarea class="reporte-manual w-full border rounded p-2 min-h-32" rows="5"></textarea></label>
+      </div></div>
+    </div>
 
     <!-- ================= VISTA 1: PANEL OPERATIVO ================= -->
     <div id="viewDashboard" class="space-y-6">
@@ -727,6 +807,16 @@
 
     </div> <!-- /viewHistorico -->
 
+    <div id="viewCitas" class="hidden space-y-5">
+      <div class="glass-card rounded-2xl p-4 sm:p-6 border border-slate-700/80 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2"><div><h2 class="text-xl font-bold text-white">Citas</h2><p id="citasCount" class="text-xs text-slate-400">0 citas</p></div><button onclick="resetCitasFilters()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700">Limpiar</button></div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs"><label>Desde<input id="citasDesde" type="date" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></label><label>Hasta<input id="citasHasta" type="date" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></label><label>Resultado<select id="citasResultado" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"><option value="">Todos</option><option>PROGRAMADA</option><option>ASISTIO</option><option>NO_ASISTIO</option><option>CANCELADA</option><option>REPROGRAMADA</option></select></label><label>Campaña<select id="citasCampana" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label><label>Medio<select id="citasMedio" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label><label id="citasAsesorWrap" class="hidden">Asesor<select id="citasAsesor" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label></div>
+      </div>
+      <div id="citasKpis" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2"></div>
+      <div class="glass-card rounded-2xl border border-slate-700/80 overflow-x-auto"><table class="w-full min-w-[900px] text-xs"><thead class="bg-slate-800 text-slate-300"><tr><th class="p-3 text-left">Fecha/hora</th><th class="p-3 text-left">Lead</th><th class="p-3 text-left">Asesor</th><th class="p-3 text-left">Campaña</th><th class="p-3 text-left">Medio</th><th class="p-3 text-left">Mes origen</th><th class="p-3 text-left">Resultado</th><th></th></tr></thead><tbody id="citasTableBody" class="divide-y divide-slate-800"></tbody></table></div>
+      <p id="citasAviso" class="text-sm text-slate-400"></p>
+    </div>
+
   </main>
 
   <!-- ================= FOOTER ================= -->
@@ -854,6 +944,7 @@
             </select>
           </div>
 
+
           <!-- Campaña -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Campaña</label>
@@ -872,6 +963,12 @@
             <datalist id="campanaEditList"></datalist>
           </div>
 
+          <div id="newAppointmentFields" class="hidden sm:col-span-2 grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end border border-indigo-500/30 rounded-lg p-3">
+            <label class="text-[11px] text-slate-400">Fecha y hora<input id="newAppointmentDate" type="datetime-local" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
+            <label class="text-[11px] text-slate-400">Nota opcional<textarea id="newAppointmentNote" maxlength="2000" rows="1" class="block w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></textarea></label>
+            <div id="newAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="newAppointmentAdvisor" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
+          </div>
+
           <!-- Medio -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Medio</label>
@@ -887,7 +984,7 @@
           <!-- Gestión (Estatus) -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Gestión Inicial</label>
-            <select id="newGestion" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+            <select id="newGestion" onchange="toggleNewAppointmentFields()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
               <option value="Información ">Información</option>
               <option value="Agendado">Agendado</option>
               <option value="INSCRITO">INSCRITO</option>
@@ -1185,7 +1282,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     let isAdmin = false;
     let authValidationPromise = null;
     let sessionInitializationPromise = null;
-    let sessionGeneration = 0;
+     let sessionGeneration = 0;
+     let viewLeadGeneration = 0;
+     let reporteRequestGeneration = 0;
 
     try {
       if (window.supabase && window.supabase.createClient) {
@@ -1197,6 +1296,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     function clearSessionState() {
       sessionGeneration += 1;
+      viewLeadGeneration += 1;
+      newLeadRequestGeneration += 1;
+      newLeadSubmitting = false;
+      citasRequestGeneration = (citasRequestGeneration || 0) + 1;
+      reporteRequestGeneration += 1;
       currentUser = null;
       currentAccess = null;
       isAdmin = false;
@@ -1212,6 +1316,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       currentEditOrigin = 'actual';
       totalDatabaseCount = 0;
       pendingRealtimeEvents = [];
+       leadAppointmentsCache = [];
+       pendingAppointmentMutations?.clear();
+      leadAppointmentAdvisors = [];
       loadLeadsPromise = null;
       isLoadingLeads = false;
       if (realtimeChannel && supabaseClient) {
@@ -1225,6 +1332,19 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       document.getElementById('btnAdminUsers')?.classList.add('hidden');
       document.getElementById('btnCatalogs')?.classList.add('hidden');
       document.querySelectorAll('[data-admin-only]').forEach(el => el.classList.add('hidden'));
+      currentMainTab = 'dashboard';
+       setDashboardTabState();
+       resetCitasPanel();
+      document.getElementById('reporteDiario')?.classList.add('hidden');
+      document.getElementById('reporteAgenteWrap')?.classList.add('hidden');
+      document.getElementById('reporteAgente')?.replaceChildren();
+      const reporteFecha = document.getElementById('reporteFecha');
+        if (reporteFecha) reporteFecha.value = formatLocalDate(new Date());
+      const reporteAviso = document.getElementById('reporteAviso');
+       if (reporteAviso) reporteAviso.textContent = 'Los comentarios manuales no se guardan: completa el reporte y toma captura.';
+      document.getElementById('reporteFechaTexto')?.replaceChildren();
+      document.getElementById('reporteAuto')?.replaceChildren();
+      document.querySelectorAll('.reporte-manual').forEach(input => { input.value = ''; });
       const tbody = document.getElementById('leadsTableBody');
       if (tbody) tbody.innerHTML = '';
       ['matrixTbody', 'histMonthlyTableBody', 'viewLeadContent', 'authorizedUsers'].forEach(id => {
@@ -1398,6 +1518,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     let currentViewId = null;
     let leadNotesCache = [];
     let leadGestionesCache = [];
+     let leadAppointmentsCache = [];
+     let leadAppointmentAdvisors = [];
+      let pendingAppointmentMutations = new Map();
+      let newLeadSubmitting = false;
+      let newLeadRequestGeneration = 0;
+     let newLeadAdvisorGeneration = 0;
     let editingNoteId = null;
     // Catálogo de opciones (lead_catalogs) agrupado por kind: [{id, value, active}]
     let catalogRows = { mes: [], campana: [], medio: [], gestion: [], agente: [] };
@@ -1410,7 +1536,31 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     let currentPage = 1;
     let pageSize = 20;
     let currentMainTab = 'dashboard';
-    const histCharts = {};      // Registro de instancias de Chart.js
+      let citasCache = [], citasRangeKey = '', citasRequestGeneration = 0;
+      const histCharts = {};      // Registro de instancias de Chart.js
+      function updateChartTheme() {
+        if (!window.Chart) return;
+        const light = document.documentElement.dataset.theme === 'light';
+        const text = light ? '#334155' : '#94a3b8';
+        const grid = light ? 'rgba(148, 163, 184, 0.35)' : 'rgba(51, 65, 85, 0.35)';
+        Chart.defaults.color = text;
+        Object.values(histCharts).forEach(chart => {
+          Object.values(chart.options.scales || {}).forEach(scale => {
+            if (scale.ticks) scale.ticks.color = text;
+            if (scale.grid) scale.grid.color = grid;
+          });
+          chart.update();
+        });
+      }
+      function applyTheme(theme) {
+        const next = theme === 'light' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = next;
+        localStorage.setItem('tema-dashboard', next);
+        const icon = document.querySelector('#btnTheme [data-lucide]');
+        if (icon) icon.setAttribute('data-lucide', next === 'light' ? 'sun' : 'moon');
+        if (window.lucide) lucide.createIcons();
+        updateChartTheme();
+      }
 
     if (supabaseClient) {
       supabaseClient.auth.onAuthStateChange((event) => {
@@ -1424,34 +1574,68 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       });
     }
 
+    function setDashboardTabState() {
+      const btnDash = document.getElementById('tabBtnDashboard');
+      const btnHist = document.getElementById('tabBtnHistorico');
+      const btnReporte = document.getElementById('tabBtnReporte');
+      const btnCitas = document.getElementById('tabBtnCitas');
+      const viewDash = document.getElementById('viewDashboard');
+      const viewHist = document.getElementById('viewHistorico');
+      const viewReporte = document.getElementById('reporteDiario');
+      const viewCitas = document.getElementById('viewCitas');
+      if (!btnDash || !btnHist || !btnReporte || !btnCitas || !viewDash || !viewHist || !viewReporte || !viewCitas) return;
+      btnDash.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
+      btnHist.className = btnReporte.className = btnCitas.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent";
+      viewDash.classList.remove('hidden');
+      viewHist.classList.add('hidden');
+      viewReporte.classList.add('hidden');
+      viewCitas.classList.add('hidden');
+    }
+
     // Función para alternar pestañas
     function switchTab(tab) {
       currentMainTab = tab;
       const btnDash = document.getElementById('tabBtnDashboard');
       const btnHist = document.getElementById('tabBtnHistorico');
+      const btnReporte = document.getElementById('tabBtnReporte');
+      const btnCitas = document.getElementById('tabBtnCitas');
       const viewDash = document.getElementById('viewDashboard');
       const viewHist = document.getElementById('viewHistorico');
-      const tabBadge = document.getElementById('tabTotalDatabaseBadge');
-
-      if (!btnDash || !btnHist || !viewDash || !viewHist) return;
+      const viewReporte = document.getElementById('reporteDiario');
+      const viewCitas = document.getElementById('viewCitas');
+      if (!btnDash || !btnHist || !btnReporte || !btnCitas || !viewDash || !viewHist || !viewReporte || !viewCitas) return;
+      const inactive = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent";
+      [btnDash, btnHist, btnReporte, btnCitas].forEach(b => b.className = inactive);
 
       if (tab === 'dashboard') {
-        btnDash.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
-        btnHist.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer border border-transparent";
-        if (tabBadge) tabBadge.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800/90 border border-slate-700/80 text-xs font-mono font-semibold text-slate-200";
-        viewDash.classList.remove('hidden');
-        viewHist.classList.add('hidden');
+        setDashboardTabState();
+      } else if (tab === 'reporte') {
+        btnReporte.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
+         viewDash.classList.add('hidden'); viewHist.classList.add('hidden'); viewCitas.classList.add('hidden'); viewReporte.classList.remove('hidden');
+         initReporteDiario();
+      } else if (tab === 'citas') {
+        btnCitas.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
+        viewDash.classList.add('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.remove('hidden'); initCitasPanel();
       } else {
-        btnDash.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer border border-transparent";
-        btnHist.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
-        if (tabBadge) tabBadge.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-900/90 border border-indigo-400/40 text-xs font-mono font-bold text-white";
+        btnHist.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
         viewDash.classList.add('hidden');
         viewHist.classList.remove('hidden');
+         viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden');
         renderHistoricalAnalytics();
       }
 
       if (window.lucide) lucide.createIcons();
     }
+
+    function resetCitasPanel() { citasRequestGeneration += 1; citasCache = []; citasRangeKey = ''; ['citasKpis','citasTableBody','citasAviso','citasCount'].forEach(id => { const e=document.getElementById(id); if(e) e.replaceChildren(); }); }
+    function formatLocalDate(d) { return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'); }
+    function citasDateDefaults() { const d=new Date(), first=new Date(d.getFullYear(),d.getMonth(),1); return [formatLocalDate(first), formatLocalDate(d)]; }
+    function clearCitasResults() { citasRequestGeneration += 1; citasCache=[]; citasRangeKey=''; ['citasKpis','citasTableBody','citasAviso','citasCount'].forEach(id=>document.getElementById(id)?.replaceChildren()); ['citasResultado','citasCampana','citasMedio','citasAsesor'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';}); }
+    function resetCitasFilters() { const [a,b]=citasDateDefaults(); document.getElementById('citasDesde').value=a; document.getElementById('citasHasta').value=b; clearCitasResults(); loadCitas(); }
+    function fillCitasSelect(id, values, keep=true) { const e=document.getElementById(id), old=e.value; e.innerHTML='<option value="">Todos</option>'+values.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join(''); if(keep && values.includes(old)) e.value=old; }
+    async function initCitasPanel() { const desde=document.getElementById('citasDesde'); if(!desde.value) { const [a,b]=citasDateDefaults(); desde.value=a; document.getElementById('citasHasta').value=b; } if(isAdmin) document.getElementById('citasAsesorWrap').classList.remove('hidden'); ['citasDesde','citasHasta'].forEach(id=>document.getElementById(id).onchange=loadCitas); ['citasResultado','citasCampana','citasMedio','citasAsesor'].forEach(id=>document.getElementById(id).onchange=renderCitas); await loadCitas(); }
+    async function loadCitas() { if(!supabaseClient || !currentUser || !currentAccess?.activo) return; const desde=document.getElementById('citasDesde').value, hasta=document.getElementById('citasHasta').value; if(!desde||!hasta||desde>hasta){clearCitasResults();showToast('Rango de fechas no válido','warning');return;} const key=desde+'|'+hasta, generation=sessionGeneration, userId=currentUser.id, accessUpdatedAt=currentAccess.updated_at, token=++citasRequestGeneration; if(key===citasRangeKey && citasCache.length) return renderCitas(); const fromParts=desde.split('-').map(Number), untilParts=hasta.split('-').map(Number); const start=new Date(fromParts[0],fromParts[1]-1,fromParts[2]), end=new Date(untilParts[0],untilParts[1]-1,untilParts[2]+1); let q=supabaseClient.from('lead_appointments').select('id,lead_id,scheduled_at,status,advisor_name,advisor_user_id').gte('scheduled_at',start.toISOString()).lt('scheduled_at',end.toISOString()).order('scheduled_at',{ascending:false}); const valid=()=>token===citasRequestGeneration&&generation===sessionGeneration&&currentUser?.id===userId&&currentAccess?.updated_at===accessUpdatedAt&&currentMainTab==='citas'&&document.getElementById('citasDesde')?.value+'|'+document.getElementById('citasHasta')?.value===key; const {data,error}=await q; if(!valid()) return; if(error){clearCitasResults(); document.getElementById('citasAviso').textContent='No se pudo cargar citas. Verifica que la migración esté aplicada.'; return renderCitas();} const rows=data||[], ids=[...new Set(rows.map(r=>r.lead_id))]; let leads=[]; if(ids.length){const res=await supabaseClient.from('leads').select('id,Nombre,Telefono,Campaña,Medio,Mes').in('id',ids); if(!valid())return; leads=res.data||[];} const map=new Map(leads.map(l=>[String(l.id),l])); if(!valid())return; citasCache=rows.map(r=>({...r,lead:map.get(String(r.lead_id))||null})); citasRangeKey=key; fillCitasSelect('citasCampana',catalogOptions('campana',citasCache.map(r=>getField(r.lead,'Campaña')).filter(Boolean))); fillCitasSelect('citasMedio',catalogOptions('medio',citasCache.map(r=>getField(r.lead,'Medio')).filter(Boolean))); if(isAdmin) fillCitasSelect('citasAsesor',catalogOptions('agente',citasCache.map(r=>r.advisor_name).filter(Boolean))); renderCitas(); }
+    function renderCitas() { const result=document.getElementById('citasResultado')?.value||'', camp=document.getElementById('citasCampana')?.value||'', medio=document.getElementById('citasMedio')?.value||'', advisor=isAdmin?(document.getElementById('citasAsesor')?.value||''):''; const rows=citasCache.filter(r=>(!result||r.status===result)&&(!camp||getField(r.lead,'Campaña')===camp)&&(!medio||getField(r.lead,'Medio')===medio)&&(!advisor||r.advisor_name===advisor)); const counts=Object.fromEntries(['PROGRAMADA','ASISTIO','NO_ASISTIO','CANCELADA','REPROGRAMADA'].map(s=>[s,rows.filter(r=>r.status===s).length])), denom=counts.ASISTIO+counts.NO_ASISTIO; document.getElementById('citasKpis').innerHTML=[['Total citas',rows.length],...Object.entries(counts).map(([k,v])=>[k,v]),['Tasa asistencia',(denom?counts.ASISTIO/denom*100:0).toFixed(1)+'%']].map(x=>`<div class="rounded-lg border border-slate-700 bg-slate-800/60 p-3"><div class="text-[10px] text-slate-400">${escapeHtml(x[0])}</div><strong class="text-lg text-white">${escapeHtml(String(x[1]))}</strong></div>`).join(''); document.getElementById('citasCount').textContent=`${rows.length} citas`; document.getElementById('citasTableBody').innerHTML=rows.length?rows.map(r=>{const l=r.lead, id=Number(l?.id); return `<tr><td class="p-3">${escapeHtml(new Date(r.scheduled_at).toLocaleString())}</td><td class="p-3">${escapeHtml(getField(l,'Nombre'))}<br>${escapeHtml(getField(l,'Telefono'))}</td><td class="p-3">${escapeHtml(r.advisor_name)}</td><td class="p-3">${escapeHtml(getField(l,'Campaña'))}</td><td class="p-3">${escapeHtml(getField(l,'Medio'))}</td><td class="p-3">${escapeHtml(getField(l,'Mes'))}</td><td class="p-3">${escapeHtml(r.status)}</td><td class="p-3">${Number.isInteger(id)&&id>0?`<button onclick="openViewLeadModal(${id},'actual')" class="text-indigo-400 hover:underline">Ver ficha</button>`:''}</td></tr>`}).join(''):'<tr><td colspan="8" class="p-6 text-center text-slate-400">No hay citas para los filtros seleccionados.</td></tr>'; }
 
     // Helper para acceder a campos con posibles espacios al final
     function getField(lead, key) {
@@ -2428,6 +2612,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // -------------------------------------------------------------
     // 8. CREAR LEAD (INSERT)
     // -------------------------------------------------------------
+    function isAgendadoGestion(value) { return String(value || '').trim().toUpperCase().startsWith('AGENDAD'); }
+    function toggleNewAppointmentFields() {
+      const visible=isAgendadoGestion(document.getElementById('newGestion')?.value), block=document.getElementById('newAppointmentFields'), date=document.getElementById('newAppointmentDate');
+      block?.classList.toggle('hidden',!visible); if(date) date.required=visible; document.getElementById('newAppointmentAdvisorWrap')?.classList.toggle('hidden',!(visible&&isAdmin));
+      if(!visible){if(date)date.value=''; const n=document.getElementById('newAppointmentNote');if(n)n.value='';const a=document.getElementById('newAppointmentAdvisor');if(a)a.value='';}
+      const submit=document.getElementById('btnSubmitNewLead'); if(submit&&!newLeadSubmitting)submit.disabled=visible&&isAdmin&&(!leadAppointmentAdvisors.length||!document.getElementById('newAppointmentAdvisor')?.value);
+    }
+    function renderAppointmentAdvisorSelect(select, preferredName) { if(!select)return; if(!leadAppointmentAdvisors.length){select.innerHTML='<option value="">No hay asesores activos</option>';select.disabled=true;return;} const chosen=leadAppointmentAdvisors.find(a=>a.nombre===preferredName)||leadAppointmentAdvisors.find(a=>a.user_id===currentUser?.id)||leadAppointmentAdvisors[0]; select.innerHTML='<option value="">Seleccione asesor</option>'+leadAppointmentAdvisors.map(a=>`<option value="${escapeAttr(a.user_id)}" ${chosen?.user_id===a.user_id?'selected':''}>${escapeHtml(a.nombre||a.email||a.user_id)}</option>`).join('');select.disabled=false; }
+    async function loadNewLeadAppointmentAdvisors() { const select=document.getElementById('newAppointmentAdvisor'); if(!isAdmin||!select){toggleNewAppointmentFields();return;} const gen=sessionGeneration, token=++newLeadAdvisorGeneration, uid=currentUser?.id, access=currentAccess?.updated_at; if(leadAppointmentAdvisors.length){renderAppointmentAdvisorSelect(select,document.getElementById('newAgente')?.value.trim());toggleNewAppointmentFields();return;} select.disabled=true;const {data,error}=await supabaseClient.rpc('admin_manage_user_access',{p_action:'list'}); if(gen!==sessionGeneration||token!==newLeadAdvisorGeneration||currentUser?.id!==uid||currentAccess?.updated_at!==access||document.getElementById('modalNewLead')?.classList.contains('hidden'))return; if(error){select.innerHTML='<option value="">No se pudieron cargar asesores</option>';toggleNewAppointmentFields();return;} leadAppointmentAdvisors=(data||[]).filter(a=>a.activo===true);renderAppointmentAdvisorSelect(select,document.getElementById('newAgente')?.value.trim());toggleNewAppointmentFields(); }
     function openNewLeadModal() {
       if (!currentUser || !currentAccess?.activo) return;
       const agentInput = document.getElementById('newAgente');
@@ -2443,24 +2636,31 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         setTimeout(() => document.getElementById('newNombre')?.focus(), 50);
-        if (window.lucide) lucide.createIcons();
+         if (window.lucide) lucide.createIcons();
+         toggleNewAppointmentFields();
+         loadNewLeadAppointmentAdvisors();
       }
     }
 
-    function closeNewLeadModal() {
+    function closeNewLeadModal(force = false) {
+      if (newLeadSubmitting && !force) { showToast('Espera a que termine el guardado', 'warning'); return; }
+      newLeadAdvisorGeneration++;
+      newLeadRequestGeneration++;
+      newLeadSubmitting = false;
       const modal = document.getElementById('modalNewLead');
       if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
         document.getElementById('formNewLead')?.reset();
+        toggleNewAppointmentFields();
       }
     }
 
     async function handleCreateLead(event) {
       event.preventDefault();
+      if (newLeadSubmitting) return;
       if (!currentUser || !currentAccess?.activo) return;
       const btn = document.getElementById('btnSubmitNewLead');
-      if (btn) btn.disabled = true;
 
       const now = new Date();
       const fechaHoy = `${now.getDate()}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
@@ -2478,31 +2678,39 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         "OBSERVACIONES": document.getElementById('newObservaciones')?.value.trim() || 'Nuevo lead registrado desde el panel.'
       };
 
+      const requestGeneration = ++newLeadRequestGeneration;
+      const capturedSessionGeneration = sessionGeneration, capturedUserId = currentUser.id, capturedAccessUpdatedAt = currentAccess.updated_at;
+      const validRequest = () => requestGeneration === newLeadRequestGeneration && capturedSessionGeneration === sessionGeneration && currentUser?.id === capturedUserId && currentAccess?.updated_at === capturedAccessUpdatedAt && !document.getElementById('modalNewLead')?.classList.contains('hidden');
       try {
         if (supabaseClient) {
-          const { data, error } = await supabaseClient.rpc('create_lead', { p_lead: newLeadData });
+            const agendado = isAgendadoGestion(newLeadData.GESTION); const date = appointmentDate(document.getElementById('newAppointmentDate')?.value); const note = document.getElementById('newAppointmentNote')?.value.trim() || ''; const advisor = document.getElementById('newAppointmentAdvisor')?.value || null;
+            if (agendado && (!date || date.getFullYear() < 2000 || note.length > 2000 || (isAdmin && !advisor))) { showToast('Fecha, asesor y nota de cita no válidos', 'warning'); return; }
+            newLeadSubmitting = true; if (btn) btn.disabled = true;
+            const { data, error } = await supabaseClient.rpc(agendado ? 'create_lead_with_appointment' : 'create_lead', agendado ? { p_lead: newLeadData, p_scheduled_at: date.toISOString(), p_notes: note, p_advisor_user_id: isAdmin ? advisor : null } : { p_lead: newLeadData });
+            if (!validRequest()) return;
 
           if (error) {
             console.error("Error al insertar en Supabase:", error);
             showToast("Error Supabase: " + error.message, "error");
           } else if (data) {
-            if (isSupabaseLive) {
-              upsertLeadInState(data);
-              updateConnectionStatus("online");
-            } else {
-              await loadLeadsData();
-            }
-            showToast("Lead registrado con éxito en Supabase", "success");
-            closeNewLeadModal();
+             if (isSupabaseLive) {
+               upsertLeadInState(data);
+               updateConnectionStatus("online");
+             } else {
+               await loadLeadsData();
+               if (!validRequest()) return;
+             }
+             if (!validRequest()) return;
+              showToast(agendado ? "Lead y cita registrados con éxito" : "Lead registrado con éxito en Supabase", "success");
+             closeNewLeadModal(true);
             populateFilterOptions();
             applyFilters();
           }
         }
       } catch (err) {
-        console.error("Excepción al crear lead:", err);
-        showToast("Error inesperado al guardar", "error");
+         if (validRequest()) { console.error("Excepción al crear lead:", err); showToast("Error inesperado al guardar", "error"); }
       } finally {
-        if (btn) btn.disabled = false;
+         if (requestGeneration === newLeadRequestGeneration) { newLeadSubmitting = false; toggleNewAppointmentFields(); }
       }
     }
 
@@ -2682,6 +2890,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     function openViewLeadModal(leadId, origin) {
+      viewLeadGeneration += 1;
       const resolvedOrigin = origin === 'historico' ? 'historico' : 'actual';
       let lead = findLeadByOrigin(resolvedOrigin, leadId);
       let finalOrigin = resolvedOrigin;
@@ -2778,7 +2987,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           }).join('');
           const total = items.length;
           repetidosHtml = `
-        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+          <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
           <div class="flex items-center justify-between gap-3">
             <span class="text-[10px] uppercase text-amber-400 font-semibold flex items-center gap-1.5">
               <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
@@ -2859,8 +3068,21 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             <button onclick="addLeadNote()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition-colors shrink-0 flex items-center gap-1.5">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Añadir</span>
             </button>
-          </div>
-        </div>`}
+           </div>
+         </div>`}
+          ${finalOrigin === 'historico' ? '' : `<div id="leadAppointmentsSection" class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-3">
+            <span class="text-[10px] uppercase text-slate-400 font-semibold block">Citas</span>
+            <div id="leadAppointmentCreate" class="${isAgendadoGestion(getField(lead, 'GESTION')) ? '' : 'hidden'}">
+            <form id="leadAppointmentForm" onsubmit="createLeadAppointment(event)" class="grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end">
+             <label class="text-[11px] text-slate-400">Fecha y hora<input id="leadAppointmentDate" type="datetime-local" required class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
+             <label class="text-[11px] text-slate-400">Nota opcional<textarea id="leadAppointmentNote" maxlength="2000" rows="1" class="block w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></textarea></label>
+             <div id="leadAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="leadAppointmentAdvisor" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
+             <button id="leadAppointmentSubmit" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Crear cita</button>
+            </form>
+            </div>
+            <p id="leadAppointmentNotice" class="${isAgendadoGestion(getField(lead, 'GESTION')) ? 'hidden' : 'text-[11px] text-slate-500'}">El lead no está agendado; no se pueden crear nuevas citas.</p>
+           <div id="leadAppointmentsList"><p class="text-[11px] text-slate-500">Cargando citas…</p></div>
+         </div>`}
 
         <div class="flex justify-end pt-2">
           ${finalOrigin === 'historico'
@@ -2883,9 +3105,42 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         leadNotesCache = [];
         editingNoteId = null;
          leadGestionesCache = [];
-         Promise.all([loadLeadNotes(lead.id), loadLeadGestiones(lead.id)]);
+            Promise.allSettled([loadLeadNotes(lead.id), loadLeadGestiones(lead.id), loadLeadAppointments(lead.id, lead), isAdmin && isAgendadoGestion(getField(lead, 'GESTION')) ? loadLeadAppointmentAdvisors(lead) : Promise.resolve()]);
       }
     }
+
+    function validAppointmentId(value) { const id = Number(value); return Number.isFinite(id) && Number.isInteger(id) && id > 0 ? id : null; }
+    function appointmentDate(value) { const d = new Date(value); return Number.isNaN(d.getTime()) ? null : d; }
+     function appointmentLocal(value) { const d = appointmentDate(value); return d ? d.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) : '-'; }
+      function appointmentBadge(status) { const s = String(status || ''); return `<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-semibold">${escapeHtml(s || '-')}</span>`; }
+       function appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) { return generation === sessionGeneration && viewGeneration === viewLeadGeneration && String(currentViewId) === String(leadId) && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo; }
+      function setAppointmentMutationPending(id, pending) { const appointmentId = validAppointmentId(id); if (!appointmentId) return; document.querySelectorAll(`[data-appointment-id="${appointmentId}"]`).forEach(control => { if (!('disabled' in control)) return; control.disabled = pending; control.classList.toggle('opacity-50', pending); control.classList.toggle('cursor-not-allowed', pending); }); }
+     async function loadLeadAppointmentAdvisors(lead) { if(!isAdmin)return; const select=document.getElementById('leadAppointmentAdvisor');if(!select)return; document.getElementById('leadAppointmentAdvisorWrap')?.classList.remove('hidden'); if(leadAppointmentAdvisors.length){renderAppointmentAdvisorSelect(select,getField(lead,'Agente ').trim());return;} const gen=sessionGeneration,viewGen=viewLeadGeneration,id=currentViewId,uid=currentUser?.id,access=currentAccess?.updated_at;select.disabled=true;const {data,error}=await supabaseClient.rpc('admin_manage_user_access',{p_action:'list'});if(!appointmentSessionValid(gen,viewGen,id,uid,access))return;if(error){select.innerHTML='<option value="">No se pudieron cargar asesores</option>';return;}leadAppointmentAdvisors=(data||[]).filter(a=>a.activo===true);renderAppointmentAdvisorSelect(select,getField(lead,'Agente ').trim()); }
+async function loadLeadAppointments(leadId, lead) {
+      const list = document.getElementById('leadAppointmentsList'); if (!list) return;
+      const id = validAppointmentId(leadId); if (!id) return;
+        const generation = sessionGeneration, viewGeneration = viewLeadGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
+       const { data, error } = await supabaseClient.from('lead_appointments').select('id, lead_id, scheduled_at, status, advisor_name, notes, rescheduled_from_id, resolved_at, created_at').eq('lead_id', id).order('scheduled_at', { ascending: false });
+        if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return;
+       if (error) { console.warn('No se pudieron cargar citas:', error); document.getElementById('leadAppointmentsSection')?.classList.add('hidden'); return; }
+       leadAppointmentsCache = data || [];
+       const section = document.getElementById('leadAppointmentsSection'); if (section && !isAgendadoGestion(getField((lead || findLeadByOrigin('actual', leadId)), 'GESTION')) && !leadAppointmentsCache.length) section.classList.add('hidden');
+       if (section && leadAppointmentsCache.length) section.classList.remove('hidden');
+      renderLeadAppointments();
+    }
+    function renderLeadAppointments() {
+      const list = document.getElementById('leadAppointmentsList'); if (!list) return;
+       list.innerHTML = leadAppointmentsCache.length ? leadAppointmentsCache.map(a => { const id = validAppointmentId(a.id); if (!id) return ''; const scheduled = String(a.status) === 'PROGRAMADA'; return `<div data-appointment-id="${id}" class="border-b border-slate-800 last:border-0 py-2 space-y-1"><div class="flex flex-wrap items-center gap-2 text-xs"><span class="text-slate-200 font-medium">${escapeHtml(appointmentLocal(a.scheduled_at))}</span>${appointmentBadge(a.status)}<span class="text-slate-400">${escapeHtml(a.advisor_name || '-')}</span>${a.rescheduled_from_id ? `<span class="text-[11px] text-slate-500">reprogramada desde #${escapeHtml(String(validAppointmentId(a.rescheduled_from_id) || ''))}</span>` : ''}</div>${a.notes ? `<p class="text-[11px] text-slate-400 whitespace-pre-line">${escapeHtml(a.notes)}</p>` : ''}${scheduled ? `<div class="flex flex-wrap gap-1.5"><button data-appointment-id="${id}" onclick="setLeadAppointmentStatus(${id}, 'ASISTIO')" class="px-2 py-1 rounded bg-emerald-600 text-white text-[11px]">Asistió</button><button data-appointment-id="${id}" onclick="setLeadAppointmentStatus(${id}, 'NO_ASISTIO')" class="px-2 py-1 rounded bg-amber-600 text-white text-[11px]">No asistió</button><button data-appointment-id="${id}" onclick="setLeadAppointmentStatus(${id}, 'CANCELADA')" class="px-2 py-1 rounded bg-rose-600 text-white text-[11px]">Cancelada</button><input data-appointment-id="${id}" id="reschedule-${id}" type="datetime-local" class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-[11px]"><button data-appointment-id="${id}" onclick="rescheduleLeadAppointment(${id})" class="px-2 py-1 rounded bg-indigo-600 text-white text-[11px]">Reprogramar</button></div>` : ''}</div>`; }).join('') : '<p class="text-[11px] text-slate-500">Sin citas registradas.</p>';
+    }
+    async function createLeadAppointment(event) {
+      event.preventDefault(); const input = document.getElementById('leadAppointmentDate'); const date = appointmentDate(input?.value); const note = (document.getElementById('leadAppointmentNote')?.value || '').trim(); const submit = document.getElementById('leadAppointmentSubmit');
+      if (!date || !input?.value || date.getFullYear() < 2000 || note.length > 2000) { showToast('Fecha de cita no válida o nota demasiado larga', 'warning'); return; }
+      const args = { p_lead_id: validAppointmentId(currentViewId), p_scheduled_at: date.toISOString(), p_notes: note }; if (isAdmin) args.p_advisor_user_id = document.getElementById('leadAppointmentAdvisor')?.value || null;
+       if (!args.p_lead_id || (isAdmin && !args.p_advisor_user_id)) return; const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at, key = `create:${leadId}`; if (pendingAppointmentMutations.has(key)) return; const operationToken = Symbol(); pendingAppointmentMutations.set(key, operationToken); if (submit) submit.disabled = true;
+       try { const { error } = await supabaseClient.rpc('create_lead_appointment', args); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { if (error.message?.includes('lead_not_agendado')) { showToast('Solo los leads agendados pueden tener citas', 'warning'); document.getElementById('leadAppointmentCreate')?.classList.add('hidden'); } else showToast('No se pudo crear la cita', 'error'); return; } event.target.reset(); await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita creada', 'success'); } catch (err) { if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) { console.warn('No se pudo crear la cita:', err); showToast('No se pudo crear la cita', 'error'); } } finally { if (pendingAppointmentMutations.get(key) === operationToken) pendingAppointmentMutations.delete(key); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.getElementById('leadAppointmentForm')) { if (submit) submit.disabled = false; } }
+    }
+      async function setLeadAppointmentStatus(id, status) { const appointmentId = validAppointmentId(id); if (!appointmentId || pendingAppointmentMutations.has(appointmentId)) return; const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at; const operationToken = Symbol(); pendingAppointmentMutations.set(appointmentId, operationToken); setAppointmentMutationPending(appointmentId, true); try { const { error } = await supabaseClient.rpc('set_lead_appointment_status', { p_id: appointmentId, p_status: status, p_notes: '' }); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { showToast('No se pudo actualizar la cita', 'error'); return; } await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita actualizada', 'success'); } finally { if (pendingAppointmentMutations.get(appointmentId) === operationToken) pendingAppointmentMutations.delete(appointmentId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.querySelector(`[data-appointment-id="${appointmentId}"]`)) setAppointmentMutationPending(appointmentId, false); } }
+      async function rescheduleLeadAppointment(id) { const appointmentId = validAppointmentId(id); const date = appointmentDate(document.getElementById(`reschedule-${appointmentId}`)?.value); if (!appointmentId || !date || date.getFullYear() < 2000 || pendingAppointmentMutations.has(appointmentId)) { showToast('Fecha de reprogramación no válida', 'warning'); return; } const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at; const operationToken = Symbol(); pendingAppointmentMutations.set(appointmentId, operationToken); setAppointmentMutationPending(appointmentId, true); try { const { error } = await supabaseClient.rpc('reschedule_lead_appointment', { p_id: appointmentId, p_scheduled_at: date.toISOString(), p_notes: '' }); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { showToast('No se pudo reprogramar la cita', 'error'); return; } await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita reprogramada', 'success'); } finally { if (pendingAppointmentMutations.get(appointmentId) === operationToken) pendingAppointmentMutations.delete(appointmentId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.querySelector(`[data-appointment-id="${appointmentId}"]`)) setAppointmentMutationPending(appointmentId, false); } }
 
     // -------------------------------------------------------------
     // Notas de equipo (lead_notes): append-only vía RPC; editar/borrar solo admin.
@@ -3041,6 +3296,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     function closeViewLeadModal() {
+      viewLeadGeneration += 1; currentViewId = null; currentViewOrigin = null; leadAppointmentsCache = [];
       const modal = document.getElementById('modalViewLead');
       if (modal) {
         modal.classList.add('hidden');
@@ -3565,12 +3821,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         }
       }
 
-      Chart.defaults.color = '#94a3b8';
+      const chartTheme = document.documentElement.dataset.theme === 'light' ? { text: '#334155', grid: 'rgba(148, 163, 184, 0.35)' } : { text: '#94a3b8', grid: 'rgba(51, 65, 85, 0.35)' };
+      Chart.defaults.color = chartTheme.text;
       Chart.defaults.font.family = '"Plus Jakarta Sans", sans-serif';
 
       const commonScales = {
-        x: { grid: { color: 'rgba(51, 65, 85, 0.35)' }, ticks: { color: '#94a3b8', font: { size: 11 } } },
-        y: { grid: { color: 'rgba(51, 65, 85, 0.35)' }, ticks: { color: '#94a3b8', font: { size: 11 } }, beginAtZero: true }
+        x: { grid: { color: chartTheme.grid }, ticks: { color: chartTheme.text, font: { size: 11 } } },
+        y: { grid: { color: chartTheme.grid }, ticks: { color: chartTheme.text, font: { size: 11 } }, beginAtZero: true }
       };
 
       // GRÁFICO 1
@@ -3814,6 +4071,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // 14. INICIALIZACIÓN
     // -------------------------------------------------------------
     document.addEventListener('DOMContentLoaded', async () => {
+      const themeIcon = document.querySelector('#btnTheme [data-lucide]');
+      if (themeIcon) themeIcon.setAttribute('data-lucide', document.documentElement.dataset.theme === 'light' ? 'sun' : 'moon');
       const modal = document.getElementById('modalLogin');
       modal?.classList.remove('hidden'); modal?.classList.add('flex');
       await validateCurrentSession();
@@ -3824,6 +4083,60 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (document.visibilityState === 'visible') validateCurrentSession();
     });
     window.addEventListener('focus', () => validateCurrentSession());
+
+    function initReporteDiario() {
+      const date = document.getElementById('reporteFecha');
+        if (!date.value) date.value = formatLocalDate(new Date());
+      const wrap = document.getElementById('reporteAgenteWrap');
+       if (isAdmin) { wrap.classList.remove('hidden'); const select = document.getElementById('reporteAgente'); select.innerHTML = activeCatalogValues('agente').map(a => `<option>${escapeHtml(a)}</option>`).join(''); } else wrap.classList.add('hidden');
+       loadReporteDiario();
+    }
+     async function loadReporteDiario() {
+       const generation = sessionGeneration;
+       const fecha = document.getElementById('reporteFecha').value, agente = isAdmin ? document.getElementById('reporteAgente').value : currentAccess?.nombre;
+       if (!fecha || !agente) return;
+       const token = ++reporteRequestGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
+       const parts = fecha.split('-').map(Number), start = new Date(parts[0], parts[1] - 1, parts[2]), end = new Date(parts[0], parts[1] - 1, parts[2] + 1);
+       const valid = () => token === reporteRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'reporte' && document.getElementById('reporteFecha')?.value === fecha && (isAdmin ? document.getElementById('reporteAgente')?.value : currentAccess?.nombre) === agente;
+      const d = new Date(`${fecha}T12:00:00`); const dia = d.toLocaleDateString('es-ES', { weekday: 'long' });
+      document.getElementById('reporteFechaTexto').textContent = `Fecha: ${d.toLocaleDateString('es-ES')} · Día: ${dia} · Agente: ${agente}`;
+      const auto = document.getElementById('reporteAuto');
+      auto.innerHTML = '<div class="sm:col-span-2 text-slate-500">Cargando autollenado…</div>';
+        const reporteAvisoBase = 'Los comentarios manuales no se guardan: completa el reporte y toma captura.';
+        const reporteWarnings = [];
+        let citasResult;
+        try {
+           let gestionesResult;
+           const resultados = await Promise.allSettled([
+             supabaseClient.from('lead_gestiones').select('*').eq('fecha_gestion', fecha).eq('autor_name', agente).order('created_at'),
+             supabaseClient.from('lead_appointments').select('status,scheduled_at,lead_id').eq('advisor_name', agente).gte('scheduled_at', start.toISOString()).lt('scheduled_at', end.toISOString())
+           ]);
+           if (!valid()) return;
+           gestionesResult = resultados[0].status === 'fulfilled' ? resultados[0].value : { error: resultados[0].reason };
+           citasResult = resultados[1].status === 'fulfilled' ? resultados[1].value : { error: resultados[1].reason };
+           const gestionesError = gestionesResult.error, citasError = citasResult.error;
+           const citas = citasError ? [] : (citasResult.data || []);
+           if (gestionesError) reporteWarnings.push('Gestiones no disponibles para el autollenado.');
+           if (citasError) reporteWarnings.push('Citas no disponibles hasta aplicar la migración.');
+          let gestiones = [], leads = new Map(), gestionError = gestionesError;
+          if (!gestionError) {
+            gestiones = gestionesResult.data || [];
+            const ids = [...new Set(gestiones.map(g => g.lead_id).filter(Boolean))];
+            const leadsResult = ids.length ? await supabaseClient.from('leads').select('*').in('id', ids) : { data: [], error: null };
+            if (!valid()) return;
+            gestionError = leadsResult.error;
+            if (!gestionError) leads = new Map((leadsResult.data || []).map(l => [l.id, l]));
+          }
+           if (gestionError && !gestionesError) { reporteWarnings.push('Gestiones no disponibles para el autollenado.'); throw gestionError; }
+          const now = MONTH_CHRONO[new Date().getMonth()];
+        const groups = { Whatsapp: [], 'Facebook/Instagram': [], Aircall: [], 'Directo o Referido': [] };
+         let inscritos = 0, inscritosDura = 0;
+          gestiones.forEach(g => { const lead = leads.get(g.lead_id) || {}, medio = getField(lead, 'Medio').toLowerCase(), bucket = medio.includes('whatsapp') ? 'Whatsapp' : (medio.includes('facebook') || medio.includes('instagram')) ? 'Facebook/Instagram' : medio.includes('aircall') ? 'Aircall' : 'Directo o Referido'; groups[bucket].push(g); const estado = String(g.gestion_nueva || '').trim().toUpperCase(), leadMonth = normalizeLeadMonth(lead), old = MONTH_CHRONO.includes(leadMonth) && leadMonth !== now; if (estado.startsWith('INSCRIT')) { inscritos++; if (old) inscritosDura++; } });
+         const asistieron = citas.filter(c => c.status === 'ASISTIO').length, noAsistieron = citas.filter(c => c.status === 'NO_ASISTIO').length;
+         auto.innerHTML = Object.entries(groups).map(([name, rows]) => { const counts = {}; rows.forEach(g => { const key = groupGestionEstado(String(g.gestion_nueva || '').trim().replace(/\s+/g, ' ').toUpperCase()); counts[key] = (counts[key] || 0) + 1; }); const lines = Object.entries(counts).sort((a,b) => b[1]-a[1]).filter(([,n]) => n).map(([s,n]) => `<div class="flex justify-between border-b border-slate-100 py-1"><span>${escapeHtml(s)}</span><strong>${n}</strong></div>`).join('') || '<div class="text-slate-400">Sin gestiones</div>'; return `<div class="border border-slate-300 rounded p-3"><h3 class="font-bold text-indigo-900">Gestión de Leads de ${escapeHtml(name)} <span class="float-right text-lg">${rows.length}</span></h3>${lines}</div>`; }).join('') + `<div class="sm:col-span-2 grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">${[['Total Leads Gestionados',gestiones.length],['Agendados para hoy',citas.length],['Asistieron hoy',asistieron],['No asistieron hoy',noAsistieron],['Inscritos',inscritos],['Inscritos Data Dura',inscritosDura]].map(([l,n]) => `<div class="border border-slate-300 rounded p-2"><div class="text-sm">${l}</div><strong class="text-2xl text-indigo-900">${n}</strong></div>`).join('')}</div>`;
+          } catch (error) { console.warn('No se pudo cargar el reporte diario:', error); if (!valid()) return; reporteWarnings.push('No se pudo completar el autollenado del reporte.'); const citas = citasResult && !citasResult.error ? (citasResult.data || []) : []; const asistieron = citas.filter(c => c.status === 'ASISTIO').length, noAsistieron = citas.filter(c => c.status === 'NO_ASISTIO').length; auto.innerHTML = ['Whatsapp','Facebook/Instagram','Aircall','Directo o Referido'].map(n => `<div class="border border-slate-300 rounded p-3"><h3 class="font-bold text-indigo-900">Gestión de Leads de ${n} <span class="float-right">0</span></h3></div>`).join('') + `<div class="sm:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-2 text-center">${[['Total Leads Gestionados',0],['Agendados para hoy',citas.length],['Asistieron hoy',asistieron],['No asistieron hoy',noAsistieron],['Inscritos',0],['Inscritos Data Dura',0]].map(([l,n]) => `<div class="border border-slate-300 rounded p-2"><div class="text-sm">${l}</div><strong class="text-2xl text-indigo-900">${n}</strong></div>`).join('')}</div>`; }
+          if (valid()) document.getElementById('reporteAviso').textContent = [reporteAvisoBase, ...reporteWarnings].join(' ');
+    }
   </script>
 </body>
 </html>

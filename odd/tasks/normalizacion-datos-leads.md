@@ -56,7 +56,7 @@ Modo: off | Fuente: default | Runner: no disponible (sin runner de tests; `npm r
 - El primer intento de T5 abortó limpio por `23505: duplicate key (kind, value)=(agente, Jessica)` — se descubrió el UNIQUE que ningún lint lo marcaba. Reorden: dedupe antes de normalizar y borrar la fila inactiva `Jessica` antes de renombrar `Jessi`.
 - Trigger `trg_leads_normalize_catalog_columns` y `trg_catalogs_normalize_value` como guarda para impedir que vuelva una variante.
 - Nina sigue con sus 518 leads e inactiva. `AGENTE`/`Na`/`Tecnologia` inactivos; las 70 filas pertenecientes a ellos (`Agente` 19, `Na` 8, `Tecnologia` 1) quedan para revisión manual del humano.
-- En la app, los datalists estáticos se mantienen crudos pero con el roster real (Ana, Jessica, Loli); placehelders reformulados a `Ej: Ana, Jessica, Loli`.
+- En la app, los datalists estáticos se mantienen crudos pero con el roster real (Ana, Jessica, Loli); placeholders reformulados a `Ej: Ana, Jessica, Loli`.
 
 ## Reutilización investigada
 - `getField`/`normalizeGestion`/`normalizeLeadMonth` ya normalizan a mayúsculas en la lógica; el display no las toca.
@@ -81,7 +81,7 @@ Modo: off | Fuente: default | Runner: no disponible (sin runner de tests; `npm r
   - `npm run build` tras el cambio de T6 OK.
 
 ## Progreso
-- Estado: implementado y verificado en local y en la BD (T1-T6).
+- Estado: implementado y verificado en local y en la BD (T1-T6). Aplicación remota confirmada en el servidor MCP (`list_migrations` devuelve `version=20260926213006, name=202609260001_normalize_catalog_values`; fuente MCP, no solo el fichero local).
 - Última tarea: T6.
-- Siguiente paso: commit cuando el humano lo pida.
+- Siguiente paso: revisión visual del humano en la app (Jessica en fichas y filtros, menús Title Case, creación de lead limpia con triggers activos).
 - Bloqueos: ninguno.

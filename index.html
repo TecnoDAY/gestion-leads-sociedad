@@ -810,7 +810,7 @@
     <div id="viewCitas" class="hidden space-y-5">
       <div class="glass-card rounded-2xl p-4 sm:p-6 border border-slate-700/80 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2"><div><h2 class="text-xl font-bold text-white">Citas</h2><p id="citasCount" class="text-xs text-slate-400">0 citas</p></div><button onclick="resetCitasFilters()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700">Limpiar</button></div>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs"><label>Desde<input id="citasDesde" type="date" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></label><label>Hasta<input id="citasHasta" type="date" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></label><label>Resultado<select id="citasResultado" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"><option value="">Todos</option><option>PROGRAMADA</option><option>ASISTIO</option><option>NO_ASISTIO</option><option>CANCELADA</option><option>REPROGRAMADA</option></select></label><label>Campaña<select id="citasCampana" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label><label>Medio<select id="citasMedio" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label><label id="citasAsesorWrap" class="hidden">Asesor<select id="citasAsesor" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label></div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs"><label>Desde<input id="citasDesde" type="date" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></label><label>Hasta<input id="citasHasta" type="date" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></label><label>Resultado<select id="citasResultado" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"><option value="">Todos</option><option value="PROGRAMADA">Programada</option><option value="ASISTIO">Asistió</option><option value="NO_ASISTIO">No asistió</option><option value="CANCELADA">Cancelada</option><option value="REPROGRAMADA">Reprogramada</option></select></label><label>Campaña<select id="citasCampana" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label><label>Medio<select id="citasMedio" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label><label id="citasAsesorWrap" class="hidden">Asesor<select id="citasAsesor" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label></div>
       </div>
       <div id="citasKpis" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2"></div>
       <div class="glass-card rounded-2xl border border-slate-700/80 overflow-x-auto"><table class="w-full min-w-[900px] text-xs"><thead class="bg-slate-800 text-slate-300"><tr><th class="p-3 text-left">Fecha/hora</th><th class="p-3 text-left">Lead</th><th class="p-3 text-left">Asesor</th><th class="p-3 text-left">Campaña</th><th class="p-3 text-left">Medio</th><th class="p-3 text-left">Mes origen</th><th class="p-3 text-left">Resultado</th><th></th></tr></thead><tbody id="citasTableBody" class="divide-y divide-slate-800"></tbody></table></div>
@@ -929,18 +929,18 @@
           <div>
             <label class="block font-medium text-slate-300 mb-1">Mes</label>
             <select id="newMes" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
-              <option value="ENERO">ENERO</option>
-              <option value="FEBRERO">FEBRERO</option>
-              <option value="MARZO">MARZO</option>
-              <option value="ABRIL">ABRIL</option>
-              <option value="MAYO">MAYO</option>
-              <option value="JUNIO">JUNIO</option>
-              <option value="JULIO">JULIO</option>
-              <option value="AGOSTO">AGOSTO</option>
-              <option value="SEPTIEMBRE" selected>SEPTIEMBRE</option>
-              <option value="OCTUBRE">OCTUBRE</option>
-              <option value="NOVIEMBRE">NOVIEMBRE</option>
-              <option value="DICIEMBRE">DICIEMBRE</option>
+              <option value="ENERO">Enero</option>
+              <option value="FEBRERO">Febrero</option>
+              <option value="MARZO">Marzo</option>
+              <option value="ABRIL">Abril</option>
+              <option value="MAYO">Mayo</option>
+              <option value="JUNIO">Junio</option>
+              <option value="JULIO">Julio</option>
+              <option value="AGOSTO">Agosto</option>
+              <option value="SEPTIEMBRE" selected>Septiembre</option>
+              <option value="OCTUBRE">Octubre</option>
+              <option value="NOVIEMBRE">Noviembre</option>
+              <option value="DICIEMBRE">Diciembre</option>
             </select>
           </div>
 
@@ -1632,7 +1632,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     function citasDateDefaults() { const d=new Date(), first=new Date(d.getFullYear(),d.getMonth(),1); return [formatLocalDate(first), formatLocalDate(d)]; }
     function clearCitasResults() { citasRequestGeneration += 1; citasCache=[]; citasRangeKey=''; ['citasKpis','citasTableBody','citasAviso','citasCount'].forEach(id=>document.getElementById(id)?.replaceChildren()); ['citasResultado','citasCampana','citasMedio','citasAsesor'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';}); }
     function resetCitasFilters() { const [a,b]=citasDateDefaults(); document.getElementById('citasDesde').value=a; document.getElementById('citasHasta').value=b; clearCitasResults(); loadCitas(); }
-    function fillCitasSelect(id, values, keep=true) { const e=document.getElementById(id), old=e.value; e.innerHTML='<option value="">Todos</option>'+values.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join(''); if(keep && values.includes(old)) e.value=old; }
+    function fillCitasSelect(id, values, keep=true) { const e=document.getElementById(id), old=e.value; e.innerHTML='<option value="">Todos</option>'+values.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(catalogLabel(v))}</option>`).join(''); if(keep && values.includes(old)) e.value=old; }
     async function initCitasPanel() { const desde=document.getElementById('citasDesde'); if(!desde.value) { const [a,b]=citasDateDefaults(); desde.value=a; document.getElementById('citasHasta').value=b; } if(isAdmin) document.getElementById('citasAsesorWrap').classList.remove('hidden'); ['citasDesde','citasHasta'].forEach(id=>document.getElementById(id).onchange=loadCitas); ['citasResultado','citasCampana','citasMedio','citasAsesor'].forEach(id=>document.getElementById(id).onchange=renderCitas); await loadCitas(); }
     async function loadCitas() { if(!supabaseClient || !currentUser || !currentAccess?.activo) return; const desde=document.getElementById('citasDesde').value, hasta=document.getElementById('citasHasta').value; if(!desde||!hasta||desde>hasta){clearCitasResults();showToast('Rango de fechas no válido','warning');return;} const key=desde+'|'+hasta, generation=sessionGeneration, userId=currentUser.id, accessUpdatedAt=currentAccess.updated_at, token=++citasRequestGeneration; if(key===citasRangeKey && citasCache.length) return renderCitas(); const fromParts=desde.split('-').map(Number), untilParts=hasta.split('-').map(Number); const start=new Date(fromParts[0],fromParts[1]-1,fromParts[2]), end=new Date(untilParts[0],untilParts[1]-1,untilParts[2]+1); let q=supabaseClient.from('lead_appointments').select('id,lead_id,scheduled_at,status,advisor_name,advisor_user_id').gte('scheduled_at',start.toISOString()).lt('scheduled_at',end.toISOString()).order('scheduled_at',{ascending:false}); const valid=()=>token===citasRequestGeneration&&generation===sessionGeneration&&currentUser?.id===userId&&currentAccess?.updated_at===accessUpdatedAt&&currentMainTab==='citas'&&document.getElementById('citasDesde')?.value+'|'+document.getElementById('citasHasta')?.value===key; const {data,error}=await q; if(!valid()) return; if(error){clearCitasResults(); document.getElementById('citasAviso').textContent='No se pudo cargar citas. Verifica que la migración esté aplicada.'; return renderCitas();} const rows=data||[], ids=[...new Set(rows.map(r=>r.lead_id))]; let leads=[]; if(ids.length){const res=await supabaseClient.from('leads').select('id,Nombre,Telefono,Campaña,Medio,Mes').in('id',ids); if(!valid())return; leads=res.data||[];} const map=new Map(leads.map(l=>[String(l.id),l])); if(!valid())return; citasCache=rows.map(r=>({...r,lead:map.get(String(r.lead_id))||null})); citasRangeKey=key; fillCitasSelect('citasCampana',catalogOptions('campana',citasCache.map(r=>getField(r.lead,'Campaña')).filter(Boolean))); fillCitasSelect('citasMedio',catalogOptions('medio',citasCache.map(r=>getField(r.lead,'Medio')).filter(Boolean))); if(isAdmin) fillCitasSelect('citasAsesor',catalogOptions('agente',citasCache.map(r=>r.advisor_name).filter(Boolean))); renderCitas(); }
     function renderCitas() { const result=document.getElementById('citasResultado')?.value||'', camp=document.getElementById('citasCampana')?.value||'', medio=document.getElementById('citasMedio')?.value||'', advisor=isAdmin?(document.getElementById('citasAsesor')?.value||''):''; const rows=citasCache.filter(r=>(!result||r.status===result)&&(!camp||getField(r.lead,'Campaña')===camp)&&(!medio||getField(r.lead,'Medio')===medio)&&(!advisor||r.advisor_name===advisor)); const counts=Object.fromEntries(['PROGRAMADA','ASISTIO','NO_ASISTIO','CANCELADA','REPROGRAMADA'].map(s=>[s,rows.filter(r=>r.status===s).length])), denom=counts.ASISTIO+counts.NO_ASISTIO; document.getElementById('citasKpis').innerHTML=[['Total citas',rows.length],...Object.entries(counts).map(([k,v])=>[k,v]),['Tasa asistencia',(denom?counts.ASISTIO/denom*100:0).toFixed(1)+'%']].map(x=>`<div class="rounded-lg border border-slate-700 bg-slate-800/60 p-3"><div class="text-[10px] text-slate-400">${escapeHtml(x[0])}</div><strong class="text-lg text-white">${escapeHtml(String(x[1]))}</strong></div>`).join(''); document.getElementById('citasCount').textContent=`${rows.length} citas`; document.getElementById('citasTableBody').innerHTML=rows.length?rows.map(r=>{const l=r.lead, id=Number(l?.id); return `<tr><td class="p-3">${escapeHtml(new Date(r.scheduled_at).toLocaleString())}</td><td class="p-3">${escapeHtml(getField(l,'Nombre'))}<br>${escapeHtml(getField(l,'Telefono'))}</td><td class="p-3">${escapeHtml(r.advisor_name)}</td><td class="p-3">${escapeHtml(getField(l,'Campaña'))}</td><td class="p-3">${escapeHtml(getField(l,'Medio'))}</td><td class="p-3">${escapeHtml(getField(l,'Mes'))}</td><td class="p-3">${escapeHtml(r.status)}</td><td class="p-3">${Number.isInteger(id)&&id>0?`<button onclick="openViewLeadModal(${id},'actual')" class="text-indigo-400 hover:underline">Ver ficha</button>`:''}</td></tr>`}).join(''):'<tr><td colspan="8" class="p-6 text-center text-slate-400">No hay citas para los filtros seleccionados.</td></tr>'; }
@@ -1648,6 +1648,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const matchingKey = Object.keys(lead).find(candidate => candidate.trim().toLowerCase() === normalizedKey);
       if (matchingKey && lead[matchingKey] !== undefined && lead[matchingKey] !== null) return String(lead[matchingKey]);
       return '';
+    }
+
+    // Etiqueta visible de una opción de catálogo (Mes, Campaña, Medio, Gestión,
+    // Agente): primera letra en mayúscula y resto en minúsculas. Es SOLO
+    // presentación; el valor interno (`option.value`) se mantiene crudo, así que
+    // filtros, guardados y catálogos siguen coincidindo con los datos.
+    function catalogLabel(v) {
+      const s = String(v ?? '').trim().replace(/\s+/g, ' ');
+      return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
     }
 
     // Helpers de teléfono: comparar siempre con dígitos; formatear solo números de EE. UU.
@@ -2068,7 +2077,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       values.forEach(v => {
         const opt = document.createElement('option');
         opt.value = v;
-        opt.innerText = v;
+        opt.innerText = catalogLabel(v);
         if (v === currentVal) opt.selected = true;
         select.appendChild(opt);
       });
@@ -2113,7 +2122,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       all.forEach(v => {
         const opt = document.createElement('option');
         opt.value = v;
-        opt.innerText = v;
+        opt.innerText = catalogLabel(v);
         if (v === current) opt.selected = true;
         select.appendChild(opt);
       });
@@ -3672,13 +3681,13 @@ async function loadLeadAppointments(leadId, lead) {
 
       const campOptions = ['<option value="">Todas las Campañas</option>'];
       Array.from(campanas).sort().forEach(c => {
-        campOptions.push(`<option value="${escapeAttr(c)}" ${c === currentCamp ? 'selected' : ''}>${escapeHtml(c)}</option>`);
+        campOptions.push(`<option value="${escapeAttr(c)}" ${c === currentCamp ? 'selected' : ''}>${escapeHtml(catalogLabel(c))}</option>`);
       });
       campanaSelect.innerHTML = campOptions.join('');
 
       const agentOptions = ['<option value="">Todos los Asesores</option>'];
       catalogOptions('agente', Array.from(agentes).sort()).forEach(a => {
-        agentOptions.push(`<option value="${escapeAttr(a)}" ${a === currentAgent ? 'selected' : ''}>${escapeHtml(a)}</option>`);
+        agentOptions.push(`<option value="${escapeAttr(a)}" ${a === currentAgent ? 'selected' : ''}>${escapeHtml(catalogLabel(a))}</option>`);
       });
       agenteSelect.innerHTML = agentOptions.join('');
 
@@ -3686,7 +3695,7 @@ async function loadLeadAppointments(leadId, lead) {
       if (meses.has('OTRO')) mesOrder.push('OTRO');
       const mesOptions = ['<option value="">Todos los Meses</option>'];
       mesOrder.forEach(m => {
-        mesOptions.push(`<option value="${escapeAttr(m)}" ${m === currentMes ? 'selected' : ''}>${escapeHtml(m)}</option>`);
+        mesOptions.push(`<option value="${escapeAttr(m)}" ${m === currentMes ? 'selected' : ''}>${escapeHtml(catalogLabel(m))}</option>`);
       });
       mesSelect.innerHTML = mesOptions.join('');
     }

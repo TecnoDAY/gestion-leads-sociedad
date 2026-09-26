@@ -6,3 +6,9 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Config local de OpenCode (servidor MCP de Supabase)
+opencode.json
+
+# Artefactos locales de la CLI de Supabase
+supabase/.temp/

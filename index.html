@@ -181,6 +181,10 @@
           <i data-lucide="list" class="w-3.5 h-3.5"></i>
           <span>Catálogos</span>
         </button>
+        <button id="btnHelp" onclick="openHelpModal()" title="Centro de Ayuda" aria-label="Abrir el centro de ayuda" class="hidden items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
+          <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+          <span>Ayuda</span>
+        </button>
         <button id="btnTheme" onclick="applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light')" title="Cambiar tema" aria-label="Cambiar tema" class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
           <i data-lucide="moon" class="w-3.5 h-3.5"></i>
         </button>
@@ -230,7 +234,7 @@
 
     <div id="reporteDiario" class="hidden max-w-5xl mx-auto bg-white text-slate-800 rounded-xl border border-slate-300 shadow-lg p-5 sm:p-7 space-y-5">
       <div class="border-b-2 border-indigo-600 pb-3 flex flex-wrap justify-between gap-3 items-end">
-        <div><h1 class="text-2xl font-bold text-indigo-900">Reporte Diario de Trabajo</h1><p id="reporteFechaTexto" class="text-base text-slate-600"></p></div>
+        <div><div class="flex items-center gap-1.5"><h1 class="text-2xl font-bold text-indigo-900">Reporte Diario de Trabajo</h1><button type="button" onclick="openHelpModal('ayuda-reporte-diario')" title="Ayuda: reporte diario" aria-label="Ayuda sobre el reporte diario" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-200 hover:bg-indigo-600 text-[10px] font-bold text-slate-700 hover:text-white align-middle cursor-pointer shrink-0">?</button></div><p id="reporteFechaTexto" class="text-base text-slate-600"></p></div>
         <div class="flex flex-wrap gap-2 items-center text-sm"><label>Fecha <input id="reporteFecha" type="date" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"></label><label id="reporteAgenteWrap" class="hidden">Agente <select id="reporteAgente" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"></select></label></div>
       </div>
        <div id="reporteAviso" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">Los comentarios manuales no se guardan: completa el reporte y toma captura.</div>
@@ -896,6 +900,41 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: CENTRO DE AYUDA ================= -->
+  <div id="modalHelp" class="fixed inset-0 z-[70] bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4" onclick="closeHelpModal()">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="modalHelpTitle" onclick="event.stopPropagation()">
+      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+            <i data-lucide="help-circle" class="w-4 h-4"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 id="modalHelpTitle" class="font-bold text-white text-base">Centro de Ayuda</h3>
+            <p class="text-[11px] text-slate-400">Cómo registrar leads, gestionar estados, citas, reporte y catálogos.</p>
+          </div>
+        </div>
+        <button onclick="closeHelpModal()" title="Cerrar la ayuda" aria-label="Cerrar el centro de ayuda" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer shrink-0">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="px-6 py-3 border-b border-slate-700/80 flex items-center gap-2 shrink-0">
+        <label for="helpSearch" class="sr-only">Buscar en la ayuda</label>
+        <input id="helpSearch" type="search" oninput="renderHelpContent()" placeholder="Buscar citas, reporte, catálogos…" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+        <button onclick="clearHelpSearch()" title="Limpiar la búsqueda" aria-label="Limpiar la búsqueda de ayuda" class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium cursor-pointer shrink-0">Limpiar</button>
+      </div>
+
+      <div id="helpBody" class="p-6 space-y-4 text-xs overflow-y-auto min-h-0">
+        <div id="helpContent"><!-- Injected by JS --></div>
+      </div>
+
+      <div class="px-6 py-3 border-t border-slate-700/80 bg-slate-900/50 flex items-center justify-between gap-3 shrink-0">
+        <p class="text-[11px] text-slate-400">La ayuda se muestra sobre la pantalla en la que estás; ciérrala para volver.</p>
+        <button onclick="closeHelpModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= MODAL: NUEVO LEAD ================= -->
   <div id="modalNewLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
@@ -964,6 +1003,7 @@
           </div>
 
           <div id="newAppointmentFields" class="hidden sm:col-span-2 grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end border border-indigo-500/30 rounded-lg p-3">
+            <div class="sm:col-span-3 flex items-center gap-1.5 text-[11px] text-indigo-300 font-semibold">Cita obligatoria al agendar<button type="button" onclick="openHelpModal('ayuda-nuevo-lead')" title="Ayuda: cita obligatoria" aria-label="Ayuda sobre la cita obligatoria al agendar" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button></div>
             <label class="text-[11px] text-slate-400">Fecha y hora<input id="newAppointmentDate" type="datetime-local" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
             <label class="text-[11px] text-slate-400">Nota opcional<textarea id="newAppointmentNote" maxlength="2000" rows="1" class="block w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></textarea></label>
             <div id="newAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="newAppointmentAdvisor" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
@@ -984,6 +1024,7 @@
           <!-- Gestión (Estatus) -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Gestión Inicial</label>
+            <div class="flex items-center gap-1.5"><button type="button" onclick="openHelpModal('ayuda-nuevo-lead')" title="Ayuda: gestión inicial" aria-label="Ayuda sobre la gestión inicial del lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button><span class="text-[11px] text-slate-400">Agendado o AGENDADO DATADURA exige cita.</span></div>
             <select id="newGestion" onchange="toggleNewAppointmentFields()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
               <option value="Información ">Información</option>
               <option value="Agendado">Agendado</option>
@@ -1000,13 +1041,12 @@
           <!-- Agente -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Asesor / Agente</label>
-            <input type="text" id="newAgente" list="agenteList" placeholder="Ej: Nina, Jessi, Loli, Ana" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <input type="text" id="newAgente" list="agenteList" placeholder="Ej: Ana, Jessica, Loli" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
             <p id="newAgenteHint" class="text-[11px] text-slate-500 mt-1 hidden">Se asignará automáticamente con tu nombre de agente.</p>
             <datalist id="agenteList">
-              <option value="Nina">
-              <option value="Jessi">
-              <option value="Loli">
               <option value="Ana">
+              <option value="Jessica">
+              <option value="Loli">
             </datalist>
           </div>
 
@@ -1059,7 +1099,8 @@
           <!-- GESTION -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Estatus de Gestión *</label>
-            <select id="editGestion" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 font-semibold focus:outline-none focus:border-amber-500">
+            <div class="flex items-center gap-1.5"><button type="button" onclick="openHelpModal('ayuda-gestionar-lead')" title="Ayuda: cambiar la gestión" aria-label="Ayuda sobre el cambio de gestión de un lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-amber-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button><span class="text-[11px] text-slate-400">Información → Agendado crea la cita en el mismo guardado.</span></div>
+            <select id="editGestion" onchange="toggleEditAppointmentFields()" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 font-semibold focus:outline-none focus:border-amber-500">
               <option value="INSCRITO">INSCRITO (Cerrado)</option>
               <option value="Agendado">Agendado (Cita / Visita)</option>
               <option value="Información ">Información</option>
@@ -1104,7 +1145,7 @@
           <!-- ULTIMO AGENTE -->
           <div class="sm:col-span-2">
             <label class="block font-medium text-slate-300 mb-1">Último Asesor que gestionó</label>
-            <input type="text" id="editUltimoAgente" list="agenteList" placeholder="Ej: Nina, Jessi, Loli, Ana" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
+            <input type="text" id="editUltimoAgente" list="agenteList" placeholder="Ej: Ana, Jessica, Loli" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
           </div>
 
           <!-- OBSERVACIONES -->
@@ -1113,6 +1154,15 @@
             <textarea id="editObservaciones" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono text-xs"></textarea>
             <p class="text-[11px] text-slate-400 mt-1">Puedes agregar nuevas notas fechadas al final del texto.</p>
           </div>
+        </div>
+
+        <p id="editAppointmentAlreadyNotice" class="hidden text-[11px] text-slate-400">Este lead ya estaba agendado, así que no se crea una cita nueva aquí. Las citas adicionales se gestionan desde la ficha del lead.</p>
+
+        <div id="editAppointmentFields" class="hidden sm:col-span-2 grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end border border-indigo-500/30 rounded-lg p-3">
+          <label class="text-[11px] text-slate-400">Fecha y hora de la cita<input id="editAppointmentDate" type="datetime-local" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
+          <label class="text-[11px] text-slate-400">Nota opcional<textarea id="editAppointmentNote" maxlength="2000" rows="1" class="block w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></textarea></label>
+          <div id="editAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="editAppointmentAdvisor" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
+          <p class="sm:col-span-3 text-[11px] text-slate-400">Al guardar, el lead pasa a Agendado y se crea su cita en la misma operación.</p>
         </div>
 
         <section id="adminLeadFields" class="hidden border-t border-slate-700/80 pt-4 space-y-3">
@@ -1299,6 +1349,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       viewLeadGeneration += 1;
       newLeadRequestGeneration += 1;
       newLeadSubmitting = false;
+      editLeadRequestGeneration += 1;
+      editLeadAdvisorGeneration += 1;
+      editLeadSubmitting = false;
+      editLeadPreviousGestion = '';
+      editAdvisorsLoading = false;
       citasRequestGeneration = (citasRequestGeneration || 0) + 1;
       reporteRequestGeneration += 1;
       currentUser = null;
@@ -1331,6 +1386,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       document.getElementById('btnSignOut')?.classList.add('hidden');
       document.getElementById('btnAdminUsers')?.classList.add('hidden');
       document.getElementById('btnCatalogs')?.classList.add('hidden');
+      document.getElementById('btnHelp')?.classList.add('hidden');
+      helpReturnFocus = null;
       document.querySelectorAll('[data-admin-only]').forEach(el => el.classList.add('hidden'));
       currentMainTab = 'dashboard';
        setDashboardTabState();
@@ -1351,7 +1408,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         const element = document.getElementById(id);
         if (element) element.replaceChildren();
       });
-      ['modalNewLead', 'modalEditLead', 'modalViewLead', 'modalRls', 'panelAdminUsers', 'modalCatalogs'].forEach(id => {
+      ['modalNewLead', 'modalEditLead', 'modalViewLead', 'modalRls', 'panelAdminUsers', 'modalCatalogs', 'modalHelp'].forEach(id => {
         const element = document.getElementById(id);
         if (element) {
           element.classList.add('hidden');
@@ -1425,6 +1482,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (signOut) signOut.classList.toggle('hidden', false);
       if (adminButton) adminButton.classList.toggle('hidden', !isAdmin);
       if (catalogsButton) catalogsButton.classList.toggle('hidden', !isAdmin);
+      const helpButton = document.getElementById('btnHelp');
+      if (helpButton) helpButton.classList.toggle('hidden', false);
       document.querySelectorAll('[data-admin-only]').forEach(el => el.classList.toggle('hidden', !isAdmin));
     }
 
@@ -1528,6 +1587,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // Catálogo de opciones (lead_catalogs) agrupado por kind: [{id, value, active}]
     let catalogRows = { mes: [], campana: [], medio: [], gestion: [], agente: [] };
     let currentEditOrigin = 'actual';
+    let editLeadPreviousGestion = '';
+    let editLeadRequestGeneration = 0;
+    let editLeadAdvisorGeneration = 0;
+    let editLeadSubmitting = false;
+    let editAdvisorsLoading = false;
     let isLoadingLeads = false;
     let pendingRealtimeEvents = [];
     let loadLeadsPromise = null;
@@ -2726,6 +2790,40 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // -------------------------------------------------------------
     // 9. EDITAR / SEGUIMIENTO LEAD (UPDATE)
     // -------------------------------------------------------------
+    function editLeadNeedsAppointment() { return !isAgendadoGestion(editLeadPreviousGestion) && isAgendadoGestion(document.getElementById('editGestion')?.value); }
+    function editSessionValid(generation, requestGeneration, userId, accessUpdatedAt) { return generation === sessionGeneration && requestGeneration === editLeadRequestGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && !document.getElementById('modalEditLead')?.classList.contains('hidden'); }
+    function editAppointmentSubmitBlocked() { return editLeadNeedsAppointment() && isAdmin && (!leadAppointmentAdvisors.length || !document.getElementById('editAppointmentAdvisor')?.value); }
+    function updateEditSubmitState() { const submit = document.getElementById('btnSubmitEditLead'); if (submit && !editLeadSubmitting) submit.disabled = editAppointmentSubmitBlocked(); }
+    function applyEditAppointmentVisibility() {
+      const needs = editLeadNeedsAppointment(), block = document.getElementById('editAppointmentFields'), date = document.getElementById('editAppointmentDate');
+      const already = document.getElementById('editAppointmentAlreadyNotice');
+      if (already) already.classList.toggle('hidden', !(isAgendadoGestion(editLeadPreviousGestion) && isAgendadoGestion(document.getElementById('editGestion')?.value)));
+      block?.classList.toggle('hidden', !needs);
+      if (date) date.required = needs;
+      document.getElementById('editAppointmentAdvisorWrap')?.classList.toggle('hidden', !(needs && isAdmin));
+      if (!needs) resetEditAppointmentValues();
+      updateEditSubmitState();
+    }
+    function resetEditAppointmentValues() { const date = document.getElementById('editAppointmentDate'); if (date) { date.value = ''; date.required = false; } const note = document.getElementById('editAppointmentNote'); if (note) note.value = ''; const advisor = document.getElementById('editAppointmentAdvisor'); if (advisor) advisor.value = ''; }
+    function hideEditAppointmentFields() { document.getElementById('editAppointmentFields')?.classList.add('hidden'); document.getElementById('editAppointmentAdvisorWrap')?.classList.add('hidden'); document.getElementById('editAppointmentAlreadyNotice')?.classList.add('hidden'); resetEditAppointmentValues(); const submit = document.getElementById('btnSubmitEditLead'); if (submit) submit.disabled = false; }
+    function toggleEditAppointmentFields() { applyEditAppointmentVisibility(); if (editLeadNeedsAppointment()) loadEditAppointmentAdvisors(); }
+    async function loadEditAppointmentAdvisors() {
+      const select = document.getElementById('editAppointmentAdvisor');
+      if (!select || !isAdmin) return;
+      const preferred = document.getElementById('editAgenteAdmin')?.value.trim() || '';
+      if (leadAppointmentAdvisors.length) { renderAppointmentAdvisorSelect(select, preferred); applyEditAppointmentVisibility(); return; }
+      if (editAdvisorsLoading) return;
+      editAdvisorsLoading = true;
+      const gen = sessionGeneration, token = ++editLeadAdvisorGeneration, uid = currentUser?.id, access = currentAccess?.updated_at;
+      select.disabled = true;
+      const { data, error } = await supabaseClient.rpc('admin_manage_user_access', { p_action: 'list' });
+      if (token === editLeadAdvisorGeneration) editAdvisorsLoading = false;
+      if (gen !== sessionGeneration || token !== editLeadAdvisorGeneration || currentUser?.id !== uid || currentAccess?.updated_at !== access || document.getElementById('modalEditLead')?.classList.contains('hidden')) return;
+      if (error) { select.innerHTML = '<option value="">No se pudieron cargar asesores</option>'; applyEditAppointmentVisibility(); return; }
+      leadAppointmentAdvisors = (data || []).filter(a => a.activo === true);
+      renderAppointmentAdvisorSelect(select, preferred);
+      applyEditAppointmentVisibility();
+    }
     function openEditLeadModal(leadId, origin) {
       const resolvedOrigin = origin === 'historico' ? 'historico' : 'actual';
       if (resolvedOrigin === 'historico') {
@@ -2735,6 +2833,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const lead = findLeadByOrigin('actual', leadId);
       if (!lead || !currentAccess) return;
       currentEditOrigin = 'actual';
+      editLeadRequestGeneration += 1;
+      editLeadAdvisorGeneration += 1;
+      editAdvisorsLoading = false;
+      editLeadSubmitting = false;
+      editLeadPreviousGestion = String(getField(lead, 'GESTION') || '').trim().toUpperCase();
+      hideEditAppointmentFields();
 
       document.getElementById('editLeadId').value = leadId;
       document.getElementById('editLeadLeadInfo').innerText = `ID: #${leadId} — ${getField(lead, 'Nombre')} (${getField(lead, 'Campaña')})`;
@@ -2798,19 +2902,34 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         if (window.lucide) lucide.createIcons();
+        applyEditAppointmentVisibility();
+        if (editLeadNeedsAppointment()) loadEditAppointmentAdvisors();
       }
     }
 
     function closeEditLeadModal() {
+      editLeadRequestGeneration += 1;
+      editLeadAdvisorGeneration += 1;
+      editAdvisorsLoading = false;
+      editLeadSubmitting = false;
+      editLeadPreviousGestion = '';
       const modal = document.getElementById('modalEditLead');
       if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
       }
+      hideEditAppointmentFields();
+    }
+
+    function editUpdateErrorMessage(error) {
+      const message = String(error?.message || '');
+      if (message.includes('appointment_required_for_agendado_transition') || message.includes('agendado_transition_required')) return 'Un lead agendado necesita fecha y hora de cita';
+      return 'Error Supabase: ' + message;
     }
 
     async function handleUpdateLead(event) {
       event.preventDefault();
+      if (editLeadSubmitting) return;
       if (!currentUser || !currentAccess?.activo) return;
       const leadId = document.getElementById('editLeadId')?.value;
       if (!leadId) return;
@@ -2819,7 +2938,21 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         return;
       }
 
+      const needsAppointment = editLeadNeedsAppointment();
+      const scheduledAt = needsAppointment ? appointmentDate(document.getElementById('editAppointmentDate')?.value) : null;
+      const appointmentNote = needsAppointment ? (document.getElementById('editAppointmentNote')?.value.trim() || '') : '';
+      const appointmentAdvisor = needsAppointment && isAdmin ? (document.getElementById('editAppointmentAdvisor')?.value || null) : null;
+      if (needsAppointment && !validAppointmentId(leadId)) { showToast('No se pudo identificar el lead a actualizar', 'error'); return; }
+      if (needsAppointment && (!scheduledAt || scheduledAt.getFullYear() < 2000 || appointmentNote.length > 2000 || (isAdmin && (!appointmentAdvisor || !leadAppointmentAdvisors.length)))) {
+        showToast(isAdmin ? 'Selecciona fecha y hora de cita, y el asesor' : 'Selecciona la fecha y hora de la cita', 'warning');
+        return;
+      }
+
+      const requestGeneration = ++editLeadRequestGeneration;
+      const capturedSessionGeneration = sessionGeneration, capturedUserId = currentUser.id, capturedAccessUpdatedAt = currentAccess.updated_at;
+      const validRequest = () => editSessionValid(capturedSessionGeneration, requestGeneration, capturedUserId, capturedAccessUpdatedAt) && String(document.getElementById('editLeadId')?.value) === String(leadId);
       const btn = document.getElementById('btnSubmitEditLead');
+      editLeadSubmitting = true;
       if (btn) btn.disabled = true;
 
       const updatedFields = {
@@ -2848,22 +2981,28 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         if (supabaseClient) {
           let updated;
           let error;
-          if (isAdmin) {
+          if (needsAppointment) {
+            const params = { p_id: Number(leadId), p_fields: updatedFields, p_scheduled_at: scheduledAt.toISOString(), p_notes: appointmentNote };
+            if (isAdmin && appointmentAdvisor) params.p_advisor_user_id = appointmentAdvisor;
+            ({ data: updated, error } = await supabaseClient.rpc('update_lead_with_appointment', params));
+          } else if (isAdmin) {
             ({ data: updated, error } = await supabaseClient.rpc('update_lead_full', { p_id: leadId, p_lead: updatedFields }));
           } else {
             ({ data: updated, error } = await supabaseClient.rpc('update_lead_followup', { p_id: leadId, p_fields: updatedFields }));
           }
+          if (!validRequest()) return;
 
           if (error) {
             console.error("Error al actualizar en Supabase:", error);
-            showToast("Error Supabase: " + error.message, "error");
+            showToast(editUpdateErrorMessage(error), "error");
           } else {
-            showToast("Lead #" + leadId + " actualizado en Supabase", "success");
+            showToast(needsAppointment ? "Lead #" + leadId + " agendado y cita registrada" : "Lead #" + leadId + " actualizado en Supabase", "success");
             if (isSupabaseLive) {
               upsertLeadInState(updated);
               updateConnectionStatus("online");
             } else {
               await loadLeadsData();
+              if (!validRequest()) return;
             }
             closeEditLeadModal();
             populateFilterOptions();
@@ -2871,10 +3010,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           }
         }
       } catch (err) {
-        console.error("Excepción al actualizar:", err);
-        showToast("Error inesperado al actualizar", "error");
+        if (validRequest()) {
+          console.error("Excepción al actualizar:", err);
+          showToast("Error inesperado al actualizar", "error");
+        }
       } finally {
-        if (btn) btn.disabled = false;
+        if (requestGeneration === editLeadRequestGeneration) {
+          editLeadSubmitting = false;
+          updateEditSubmitState();
+        }
       }
     }
 
@@ -3080,7 +3224,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
            </div>
          </div>`}
           ${finalOrigin === 'historico' ? '' : `<div id="leadAppointmentsSection" class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-3">
-            <span class="text-[10px] uppercase text-slate-400 font-semibold block">Citas</span>
+            <div class="flex items-center justify-between gap-2"><span class="text-[10px] uppercase text-slate-400 font-semibold">Citas</span><button type="button" onclick="openHelpModal('ayuda-citas')" title="Ayuda: citas del lead" aria-label="Ayuda sobre la gestión de citas del lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 cursor-pointer shrink-0">?</button></div>
             <div id="leadAppointmentCreate" class="${isAgendadoGestion(getField(lead, 'GESTION')) ? '' : 'hidden'}">
             <form id="leadAppointmentForm" onsubmit="createLeadAppointment(event)" class="grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end">
              <label class="text-[11px] text-slate-400">Fecha y hora<input id="leadAppointmentDate" type="datetime-local" required class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
@@ -3312,6 +3456,230 @@ async function loadLeadAppointments(leadId, lead) {
         modal.classList.remove('flex');
       }
     }
+
+    // -------------------------------------------------------------
+    // 10b. CENTRO DE AYUDA (contenido estatico, buscable, sin red)
+    // -------------------------------------------------------------
+    const HELP_SECTIONS = [
+      {
+        id: 'ayuda-nuevo-lead',
+        title: 'Crear un lead',
+        summary: 'Registrar un contacto nuevo y, si se agenda, su cita en la misma operación.',
+        steps: [
+          'Pulsa "+ Nuevo Lead" en la cabecera para abrir el formulario de alta.',
+          'Rellena Nombre Completo y Teléfono / WhatsApp: son los únicos campos obligatorios. El teléfono se formatea solo al salir del campo.',
+          'Elige el Mes de origen del lead (por ejemplo SEPTIEMBRE) y escribe la Campaña; el Medio se elige del desplegable (Whatsapp, Instagram, Lead Directo, Referidos Andres, CogniTalkign).',
+          'Elige la Gestión Inicial. Con Información el lead entra como contacto nuevo, sin cita.',
+          'Al elegir Agendado o AGENDADO DATADURA aparece el bloque de cita: la Fecha y hora es obligatoria y la cita se crea junto al lead en la misma operación. Si algo falla, no se guarda ni el lead ni la cita.',
+          'Como administrador puedes elegir el asesor de la cita; como agente se asigna automáticamente tu nombre de agente.',
+          'Añade Ciudad / Zona y Observaciones Iniciales si ayudan al seguimiento y pulsa "Guardar en Supabase".'
+        ],
+        notes: [
+          'No se crea ninguna cita si la gestión no es Agendado o AGENDADO DATADURA: en ese caso el bloque de cita no se muestra.',
+          'El Mes es el mes de origen del lead y no cambia aunque la cita sea de otro mes.'
+        ]
+      },
+      {
+        id: 'ayuda-gestionar-lead',
+        title: 'Gestionar un lead existente',
+        summary: 'Cambiar la gestión comercial conservando el historial y las citas.',
+        steps: [
+          'Abre la ficha del lead y pulsa "Editar este Lead", o pulsa el lápiz de edición en la tabla de leads.',
+          'En "Actualizar Seguimiento" elige el nuevo Estatus de Gestión y pulsa "Actualizar en Supabase".',
+          'De Información a Agendado: elige Agendado, rellena la Fecha y hora de la cita y guarda. El lead y su cita se escriben en la misma operación.',
+          'Verifica la cita recién creada en el bloque Citas de la ficha y comprueba que en Historial de Gestiones aparece "Información → Agendado", con su fecha, su canal y su asesor.',
+          'De Agendado a Inscrito: elige INSCRITO y guarda. La cita ya creada no se borra y sigue visible en la ficha.',
+          'De Agendado a AGENDADO DATADURA: elige esa gestión y guarda; el lead pasa a Data Dura y conserva su Mes de origen.',
+          'De Agendado a Información: al guardar, la cita se conserva y sigue apareciendo en el historial del lead.'
+        ],
+        notes: [
+          'Si el lead ya estaba agendado, el modal avisa y las citas adicionales se gestionan desde la ficha, no desde el formulario de edición.',
+          'Historial de Gestiones es un registro que solo añade: ninguna línea anterior se borra ni se reescribe.',
+          'Solo el administrador puede modificar los datos principales del lead (Nombre, Mes, Fecha, Campaña, Medio, Ciudad, Agente, Odoo, Landing).'
+        ]
+      },
+      {
+        id: 'ayuda-citas',
+        title: 'Citas',
+        summary: 'Crear, marcar el resultado y reprogramar citas de un lead agendado.',
+        steps: [
+          'Solo un lead con gestión Agendado o AGENDADO DATADURA puede tener citas. Con cualquier otra gestión el formulario aparece oculto y el servidor también lo rechaza.',
+          'En la ficha del lead, sección Citas, elige Fecha y hora, añade una nota opcional y, si eres administrador, el asesor. Pulsa "Crear cita".',
+          'Marca el resultado con los botones "Asistió", "No asistió" y "Cancelada". Cada cambio queda registrado en el historial de la cita.',
+          'Para reprogramar, escribe la nueva Fecha y hora y pulsa "Reprogramar": la cita anterior queda como REPROGRAMADA y se crea una cita nueva enlazada a ella, sin sobrescribirla.',
+          'Un lead puede tener varias citas, cada una con su propio estado; todas se listan ordenadas en la ficha.',
+          'Al cambiar la gestión del lead, las citas ya creadas se conservan aunque el lead deje de estar agendado.'
+        ],
+        notes: [
+          'No se crea ninguna cita al lead si su gestión no es Agendado o AGENDADO DATADURA.',
+          'Los estados posibles de una cita son PROGRAMADA, ASISTIO, NO_ASISTIO, CANCELADA y REPROGRAMADA.',
+          'El resultado se puede marcar solo mientras la cita está PROGRAMADA.'
+        ]
+      },
+      {
+        id: 'ayuda-reporte-diario',
+        title: 'Reporte diario',
+        summary: 'Hoja de trabajo del día con datos automáticos y solo dos textos manuales.',
+        steps: [
+          'Abre la pestaña Reporte de la barra superior.',
+          'Elige la Fecha del reporte. Si eres administrador, elige también el Agente; como agente se usa tu propio nombre.',
+          'Los bloques por medio (Whatsapp, Facebook/Instagram, Aircall, Directo o Referido) y los totales (Total Leads Gestionados, Agendados para hoy, Asistieron hoy, No asistieron hoy, Inscritos e Inscritos Data Dura) se rellenan solos.',
+          'Los únicos campos manuales son Problemas o bloqueos y Observaciones adicionales.',
+          'Esos dos comentarios NO se guardan: rellénalos y toma captura antes de cambiar de pestaña o cerrar sesión.',
+          'La hoja se mantiene clara en tema claro y en tema oscuro, para que la captura se lea igual en ambos.'
+        ],
+        notes: [
+          'Agendados para hoy cuenta las citas del asesor en la fecha elegida, y Asistieron / No asistieron dependen del resultado marcado en cada cita.',
+          'Los Inscritos Data Dura son los leads inscritos cuyo Mes de origen es distinto del mes actual.'
+        ]
+      },
+      {
+        id: 'ayuda-filtros-reportes',
+        title: 'Filtros y reportes',
+        summary: 'Panel Citas, tasa de asistencia y datos históricos de 2025.',
+        steps: [
+          'En la pestaña Citas, el rango Desde / Hasta filtra por la fecha de la cita, no por el mes del lead.',
+          'Filtra por Resultado, Campaña y Medio. El filtro Asesor solo aparece si eres administrador.',
+          'Las métricas (Total citas, PROGRAMADA, ASISTIO, NO_ASISTIO, CANCELADA, REPROGRAMADA y Tasa asistencia) se recalculan con los filtros aplicados. La tasa divide ASISTIO entre ASISTIO + NO_ASISTIO.',
+          'La columna Mes origen muestra el mes del lead, mientras que la cita se cuenta por su propia fecha: una cita de septiembre de un lead de agosto cuenta en septiembre.',
+          'Como agente solo ves tus propias citas; como administrador ves las de todos los asesores.',
+          'Los datos históricos de 2025 son de solo lectura: se consultan en Gráficos Históricos y en la ficha, pero no se editan.'
+        ],
+        notes: [
+          'Si un rango es inválido, los resultados y las métricas se vacían para no mostrar datos de otra fecha.',
+          'La tabla incluye un enlace "Ver ficha" para abrir el lead de cada cita.'
+        ]
+      },
+      {
+        id: 'ayuda-catalogos',
+        title: 'Catálogos',
+        summary: 'Valores de Mes, Campaña, Medio, Gestión y Agente que alimentan formularios y filtros.',
+        steps: [
+          'Solo el administrador ve el botón Catálogos en la cabecera.',
+          'Elige el tipo de catálogo (Mes, Campaña, Medio, Gestión o Agente), escribe el valor y pulsa Añadir.',
+          'Con el lápiz renembras un valor: el nuevo texto se usará en formularios y filtros.',
+          'Con la X desactivas un valor: deja de ofrecerse en formularios y filtros, y se puede reactivar con el icono de check.',
+          'Desactivar o renombrar un valor no modifica los leads ya guardados: siguen mostrando el texto con el que se crearon.',
+          'Un catálogo no es una cuenta de usuario. Para dar de alta o desactivar a una persona que entra al sistema usa el botón Usuarios.'
+        ],
+        notes: [
+          'Si un catálogo está vacío, los filtros usan directamente los valores presentes en los datos.'
+        ]
+      },
+      {
+        id: 'ayuda-data-dura',
+        title: 'Estados Data Dura',
+        summary: 'Como se contabilizan INSCRITO DATADURA y AGENDADO DATADURA.',
+        steps: [
+          'INSCRITO DATADURA y AGENDADO DATADURA son los estados Data Dura del catálogo Gestión.',
+          'Un lead Data Dura conserva su Mes de origen: no se reasigna al mes en el que se cierra la gestión.',
+          'Sus citas se reportan por la fecha de la cita, no por el mes de origen del lead.',
+          'AGENDADO DATADURA sigue siendo una gestión agendada, así que permite crear y marcar citas con normalidad.',
+          'En Reporte diario, los Inscritos Data Dura son los leads con estado INSCRIT* cuyo Mes de origen es distinto del mes actual.',
+          'En los filtros, usa el desplegable Gestión y selecciona el valor que contiene DATADURA para quedarte solo con esos leads.'
+        ]
+      },
+      {
+        id: 'ayuda-seguridad-roles',
+        title: 'Seguridad y roles',
+        summary: 'Qué puede ver y hacer un administrador y un agente.',
+        steps: [
+          'El administrador ve todos los leads, puede filtrar por asesor, editar los datos principales, gestionar Catálogos y abrir el botón Usuarios.',
+          'El agente solo ve y gestiona sus propios leads y sus propias citas; el filtro Asesor no le aparece.',
+          'La protección real está en Supabase (RLS y funciones de la base de datos), no solo en la interfaz: ocultar un botón no es la medida de seguridad.',
+          'Las cuentas se controlan desde Usuarios: activa, desactiva y asigna el rol de admin o agente.',
+          'Una cuenta desactivada pierde el acceso: la sesión se cierra y la pantalla vuelve al inicio de sesión.',
+          'Los registros históricos de 2025 no admiten cambios desde la aplicación.'
+        ]
+      }
+    ];
+
+    let helpReturnFocus = null;
+
+    // Buscamos sobre texto sin diacríticos: "catálogo" y "catalogo" (o "gestión" y
+    // "gestion") deben encontrar exactamente las mismas secciones.
+    function normalizeHelpText(value) {
+      return String(value == null ? '' : value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
+
+    function renderHelpContent(query) {
+      const container = document.getElementById('helpContent');
+      if (!container) return;
+      const raw = query === undefined ? (document.getElementById('helpSearch')?.value || '') : query;
+      const term = normalizeHelpText(raw).trim();
+      const html = HELP_SECTIONS.map(section => {
+        const title = normalizeHelpText(section.title);
+        const summary = normalizeHelpText(section.summary);
+        const titleHit = !!term && title.indexOf(term) !== -1;
+        // Guardamos el indice original para no renumerar los pasos filtrados.
+        const steps = (section.steps || [])
+          .map((step, index) => ({ step, index }))
+          .filter(({ step }) => !term || titleHit || normalizeHelpText(step).indexOf(term) !== -1);
+        const notes = (section.notes || []).filter(note => !term || titleHit || normalizeHelpText(note).indexOf(term) !== -1);
+        if (term && !titleHit && !summary.includes(term) && !steps.length && !notes.length) return '';
+        const listHtml = steps.length
+          ? `<ol class="space-y-1.5">${steps.map(({ step, index }) => `<li class="flex gap-2"><span class="shrink-0 w-4 h-4 mt-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold flex items-center justify-center">${index + 1}</span><span class="text-slate-300 leading-relaxed">${escapeHtml(step)}</span></li>`).join('')}</ol>`
+          : '<p class="text-slate-400 text-xs leading-relaxed">Sin pasos para este término; revisa el resumen.</p>';
+        const notesHtml = notes.length ? `<ul class="space-y-1.5 border-l-2 border-amber-500/40 pl-3">${notes.map(note => `<li class="text-slate-400 leading-relaxed">${escapeHtml(note)}</li>`).join('')}</ul>` : '';
+        return `<section id="helpSection-${escapeAttr(section.id)}" tabindex="-1" class="rounded-xl border border-slate-700/80 bg-slate-900/50 p-4 space-y-3 focus:outline-none">
+          <header class="flex items-center gap-2">
+            <i data-lucide="book-open" class="w-4 h-4 text-indigo-400 shrink-0"></i>
+            <h4 class="font-bold text-white text-sm">${escapeHtml(section.title)}</h4>
+          </header>
+          <p class="text-slate-400 leading-relaxed">${escapeHtml(section.summary)}</p>
+          ${listHtml}
+          ${notesHtml}
+        </section>`;
+      }).join('');
+      container.innerHTML = html || '<p class="text-center text-slate-400 py-10">Sin resultados. Prueba con otra palabra o pulsa Limpiar.</p>';
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function clearHelpSearch() {
+      const search = document.getElementById('helpSearch');
+      if (search) search.value = '';
+      renderHelpContent('');
+      search?.focus();
+    }
+
+    function openHelpModal(sectionId) {
+      const modal = document.getElementById('modalHelp');
+      if (!modal) return;
+      helpReturnFocus = document.activeElement;
+      const search = document.getElementById('helpSearch');
+      if (search) search.value = '';
+      renderHelpContent('');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      const target = HELP_SECTIONS.some(section => section.id === sectionId)
+        ? document.getElementById(`helpSection-${sectionId}`)
+        : null;
+      const body = document.getElementById('helpBody');
+      if (body) body.scrollTop = 0;
+      if (target) {
+        target.scrollIntoView({ block: 'start' });
+        target.focus({ preventScroll: true });
+      } else {
+        search?.focus();
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeHelpModal() {
+      const modal = document.getElementById('modalHelp');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      const restore = helpReturnFocus;
+      helpReturnFocus = null;
+      if (restore && document.contains(restore) && typeof restore.focus === 'function') restore.focus();
+    }
+
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape') return;
+      if (document.getElementById('modalHelp')?.classList.contains('hidden')) return;
+      closeHelpModal();
+    });
 
     // -------------------------------------------------------------
     // 11. MODAL RLS Y REFRESH

@@ -1557,12 +1557,21 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     async function handleAuthorizeUser(event) {
       event.preventDefault();
+      const btn = event.target.querySelector('button[type="submit"]');
       const email = document.getElementById('authorizeEmail').value.trim().toLowerCase();
       const nombre = document.getElementById('authorizeName').value.trim();
       const role = document.getElementById('authorizeRole').value;
-      const { error } = await supabaseClient.functions.invoke('authorize-user', { body: { email, nombre, role } });
-      if (error) showToast('No se pudo autorizar el usuario', 'error');
-      else { showToast('Solicitud procesada', 'success'); event.target.reset(); loadAuthorizedUsers(); }
+      if (btn) btn.disabled = true;
+      try {
+        const { error } = await supabaseClient.functions.invoke('authorize-user', { body: { email, nombre, role } });
+        if (error) showToast('No se pudo autorizar el usuario', 'error');
+        else { showToast('Solicitud procesada', 'success'); event.target.reset(); loadAuthorizedUsers(); }
+      } catch (err) {
+        console.warn('No se pudo autorizar el usuario:', err);
+        showToast('No se pudo autorizar el usuario', 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
 
 
@@ -1698,7 +1707,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     function resetCitasFilters() { const [a,b]=citasDateDefaults(); document.getElementById('citasDesde').value=a; document.getElementById('citasHasta').value=b; clearCitasResults(); loadCitas(); }
     function fillCitasSelect(id, values, keep=true) { const e=document.getElementById(id), old=e.value; e.innerHTML='<option value="">Todos</option>'+values.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(catalogLabel(v))}</option>`).join(''); if(keep && values.includes(old)) e.value=old; }
     async function initCitasPanel() { const desde=document.getElementById('citasDesde'); if(!desde.value) { const [a,b]=citasDateDefaults(); desde.value=a; document.getElementById('citasHasta').value=b; } if(isAdmin) document.getElementById('citasAsesorWrap').classList.remove('hidden'); ['citasDesde','citasHasta'].forEach(id=>document.getElementById(id).onchange=loadCitas); ['citasResultado','citasCampana','citasMedio','citasAsesor'].forEach(id=>document.getElementById(id).onchange=renderCitas); await loadCitas(); }
-    async function loadCitas() { if(!supabaseClient || !currentUser || !currentAccess?.activo) return; const desde=document.getElementById('citasDesde').value, hasta=document.getElementById('citasHasta').value; if(!desde||!hasta||desde>hasta){clearCitasResults();showToast('Rango de fechas no válido','warning');return;} const key=desde+'|'+hasta, generation=sessionGeneration, userId=currentUser.id, accessUpdatedAt=currentAccess.updated_at, token=++citasRequestGeneration; if(key===citasRangeKey && citasCache.length) return renderCitas(); const fromParts=desde.split('-').map(Number), untilParts=hasta.split('-').map(Number); const start=new Date(fromParts[0],fromParts[1]-1,fromParts[2]), end=new Date(untilParts[0],untilParts[1]-1,untilParts[2]+1); let q=supabaseClient.from('lead_appointments').select('id,lead_id,scheduled_at,status,advisor_name,advisor_user_id').gte('scheduled_at',start.toISOString()).lt('scheduled_at',end.toISOString()).order('scheduled_at',{ascending:false}); const valid=()=>token===citasRequestGeneration&&generation===sessionGeneration&&currentUser?.id===userId&&currentAccess?.updated_at===accessUpdatedAt&&currentMainTab==='citas'&&document.getElementById('citasDesde')?.value+'|'+document.getElementById('citasHasta')?.value===key; const {data,error}=await q; if(!valid()) return; if(error){clearCitasResults(); document.getElementById('citasAviso').textContent='No se pudo cargar citas. Verifica que la migración esté aplicada.'; return renderCitas();} const rows=data||[], ids=[...new Set(rows.map(r=>r.lead_id))]; let leads=[]; if(ids.length){const res=await supabaseClient.from('leads').select('id,Nombre,Telefono,Campaña,Medio,Mes').in('id',ids); if(!valid())return; leads=res.data||[];} const map=new Map(leads.map(l=>[String(l.id),l])); if(!valid())return; citasCache=rows.map(r=>({...r,lead:map.get(String(r.lead_id))||null})); citasRangeKey=key; fillCitasSelect('citasCampana',catalogOptions('campana',citasCache.map(r=>getField(r.lead,'Campaña')).filter(Boolean))); fillCitasSelect('citasMedio',catalogOptions('medio',citasCache.map(r=>getField(r.lead,'Medio')).filter(Boolean))); if(isAdmin) fillCitasSelect('citasAsesor',catalogOptions('agente',citasCache.map(r=>r.advisor_name).filter(Boolean))); renderCitas(); }
+    async function loadCitas() { if(!supabaseClient || !currentUser || !currentAccess?.activo) return; const desde=document.getElementById('citasDesde').value, hasta=document.getElementById('citasHasta').value; if(!desde||!hasta||desde>hasta){clearCitasResults();showToast('Rango de fechas no válido','warning');return;} const key=desde+'|'+hasta, generation=sessionGeneration, userId=currentUser.id, accessUpdatedAt=currentAccess.updated_at, token=++citasRequestGeneration; if(key===citasRangeKey && citasCache.length) return renderCitas(); const fromParts=desde.split('-').map(Number), untilParts=hasta.split('-').map(Number); const start=new Date(fromParts[0],fromParts[1]-1,fromParts[2]), end=new Date(untilParts[0],untilParts[1]-1,untilParts[2]+1); let q=supabaseClient.from('lead_appointments').select('id,lead_id,scheduled_at,status,advisor_name,advisor_user_id').gte('scheduled_at',start.toISOString()).lt('scheduled_at',end.toISOString()).order('scheduled_at',{ascending:false}); const valid=()=>token===citasRequestGeneration&&generation===sessionGeneration&&currentUser?.id===userId&&currentAccess?.updated_at===accessUpdatedAt&&currentMainTab==='citas'&&document.getElementById('citasDesde')?.value+'|'+document.getElementById('citasHasta')?.value===key; const {data,error}=await q; if(!valid()) return; if(error){clearCitasResults(); document.getElementById('citasAviso').textContent='No se pudo cargar citas. Verifica que la migración esté aplicada.'; return renderCitas();} const rows=data||[], ids=[...new Set(rows.map(r=>r.lead_id))]; let leads=[]; if(ids.length){const res=await supabaseClient.from('leads').select('id,Nombre,Telefono,Campaña,Medio,Mes').in('id',ids); if(!valid())return; if(res.error){console.warn('No se pudo cargar los leads de las citas:',res.error); showToast('Citas cargadas sin datos del lead','warning');} leads=res.data||[];} const map=new Map(leads.map(l=>[String(l.id),l])); if(!valid())return; citasCache=rows.map(r=>({...r,lead:map.get(String(r.lead_id))||null})); citasRangeKey=key; fillCitasSelect('citasCampana',catalogOptions('campana',citasCache.map(r=>getField(r.lead,'Campaña')).filter(Boolean))); fillCitasSelect('citasMedio',catalogOptions('medio',citasCache.map(r=>getField(r.lead,'Medio')).filter(Boolean))); if(isAdmin) fillCitasSelect('citasAsesor',catalogOptions('agente',citasCache.map(r=>r.advisor_name).filter(Boolean))); renderCitas(); }
     function renderCitas() { const result=document.getElementById('citasResultado')?.value||'', camp=document.getElementById('citasCampana')?.value||'', medio=document.getElementById('citasMedio')?.value||'', advisor=isAdmin?(document.getElementById('citasAsesor')?.value||''):''; const rows=citasCache.filter(r=>(!result||r.status===result)&&(!camp||getField(r.lead,'Campaña')===camp)&&(!medio||getField(r.lead,'Medio')===medio)&&(!advisor||r.advisor_name===advisor)); const counts=Object.fromEntries(['PROGRAMADA','ASISTIO','NO_ASISTIO','CANCELADA','REPROGRAMADA'].map(s=>[s,rows.filter(r=>r.status===s).length])), denom=counts.ASISTIO+counts.NO_ASISTIO; document.getElementById('citasKpis').innerHTML=[['Total citas',rows.length],...Object.entries(counts).map(([k,v])=>[k,v]),['Tasa asistencia',(denom?counts.ASISTIO/denom*100:0).toFixed(1)+'%']].map(x=>`<div class="rounded-lg border border-slate-700 bg-slate-800/60 p-3"><div class="text-[10px] text-slate-400">${escapeHtml(x[0])}</div><strong class="text-lg text-white">${escapeHtml(String(x[1]))}</strong></div>`).join(''); document.getElementById('citasCount').textContent=`${rows.length} citas`; document.getElementById('citasTableBody').innerHTML=rows.length?rows.map(r=>{const l=r.lead, id=Number(l?.id); return `<tr><td class="p-3">${escapeHtml(new Date(r.scheduled_at).toLocaleString())}</td><td class="p-3">${escapeHtml(getField(l,'Nombre'))}<br>${escapeHtml(getField(l,'Telefono'))}</td><td class="p-3">${escapeHtml(r.advisor_name)}</td><td class="p-3">${escapeHtml(getField(l,'Campaña'))}</td><td class="p-3">${escapeHtml(getField(l,'Medio'))}</td><td class="p-3">${escapeHtml(getField(l,'Mes'))}</td><td class="p-3">${escapeHtml(r.status)}</td><td class="p-3">${Number.isInteger(id)&&id>0?`<button onclick="openViewLeadModal(${id},'actual')" class="text-indigo-400 hover:underline">Ver ficha</button>`:''}</td></tr>`}).join(''):'<tr><td colspan="8" class="p-6 text-center text-slate-400">No hay citas para los filtros seleccionados.</td></tr>'; }
 
     // Helper para acceder a campos con posibles espacios al final
@@ -2468,7 +2477,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             cellClass += "text-slate-200 font-medium hover:bg-indigo-500/10";
           }
 
-          bodyHtml += `<td class="${cellClass}" onclick="filterFromMatrix('${escapeAttr(gestionName)}', '${escapeAttr(campName)}')">
+          bodyHtml += `<td class="${cellClass}" data-matrix-gestion="${escapeAttr(gestionName)}" data-matrix-campana="${escapeAttr(campName)}">
             ${count > 0 ? count.toLocaleString() : '-'}
           </td>`;
         });
@@ -2502,6 +2511,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       showToast(`Filtrado por: ${gestion} en ${campana}`, "info");
       document.querySelector('#leadsTableBody')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+
+    // Delegacion de clics de la matriz: los valores viajan en data-*, nunca
+    // dentro de onclick inline (los atributos JS decodifican entidades antes
+    // de parsear, lo que permitia inyectar codigo con un apstrofe).
+    document.addEventListener('click', (event) => {
+      const td = event.target.closest?.('[data-matrix-gestion]');
+      if (!td) return;
+      filterFromMatrix(td.dataset.matrixGestion, td.dataset.matrixCampana);
+    });
 
     // -------------------------------------------------------------
     // 7. TABLA PRINCIPAL DE LEADS
@@ -2907,7 +2925,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }
     }
 
-    function closeEditLeadModal() {
+    function closeEditLeadModal(force = false) {
+      if (editLeadSubmitting && !force) { showToast('Espera a que termine el guardado', 'warning'); return; }
       editLeadRequestGeneration += 1;
       editLeadAdvisorGeneration += 1;
       editAdvisorsLoading = false;
@@ -3004,7 +3023,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
               await loadLeadsData();
               if (!validRequest()) return;
             }
-            closeEditLeadModal();
+            closeEditLeadModal(true);
             populateFilterOptions();
             applyFilters();
           }
@@ -3162,7 +3181,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
               ${finalOrigin === 'historico' ? '<span class="text-[10px] uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">Histórico 2025</span>' : ''}
             </div>
             <div class="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
-              <span>ID: #${lead.id}</span>
+              <span>ID: #${escapeHtml(String(lead.id))}</span>
               <span>•</span>
               <span>Ingreso: ${escapeHtml(getField(lead, 'Fecha'))} (${escapeHtml(getField(lead, 'Mes'))})</span>
             </div>
@@ -3218,7 +3237,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           <div id="leadNotesList" class="space-y-2"><p class="text-[11px] text-slate-500">Cargando notas…</p></div>
           <div class="flex items-start gap-2 pt-1">
             <textarea id="leadNoteInput" rows="2" maxlength="2000" placeholder="Añadir una nota para el equipo" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 resize-y"></textarea>
-            <button onclick="addLeadNote()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition-colors shrink-0 flex items-center gap-1.5">
+            <button id="leadNoteSubmit" onclick="addLeadNote()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition-colors shrink-0 flex items-center gap-1.5">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Añadir</span>
             </button>
            </div>
@@ -3292,8 +3311,8 @@ async function loadLeadAppointments(leadId, lead) {
        if (!args.p_lead_id || (isAdmin && !args.p_advisor_user_id)) return; const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at, key = `create:${leadId}`; if (pendingAppointmentMutations.has(key)) return; const operationToken = Symbol(); pendingAppointmentMutations.set(key, operationToken); if (submit) submit.disabled = true;
        try { const { error } = await supabaseClient.rpc('create_lead_appointment', args); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { if (error.message?.includes('lead_not_agendado')) { showToast('Solo los leads agendados pueden tener citas', 'warning'); document.getElementById('leadAppointmentCreate')?.classList.add('hidden'); } else showToast('No se pudo crear la cita', 'error'); return; } event.target.reset(); await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita creada', 'success'); } catch (err) { if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) { console.warn('No se pudo crear la cita:', err); showToast('No se pudo crear la cita', 'error'); } } finally { if (pendingAppointmentMutations.get(key) === operationToken) pendingAppointmentMutations.delete(key); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.getElementById('leadAppointmentForm')) { if (submit) submit.disabled = false; } }
     }
-      async function setLeadAppointmentStatus(id, status) { const appointmentId = validAppointmentId(id); if (!appointmentId || pendingAppointmentMutations.has(appointmentId)) return; const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at; const operationToken = Symbol(); pendingAppointmentMutations.set(appointmentId, operationToken); setAppointmentMutationPending(appointmentId, true); try { const { error } = await supabaseClient.rpc('set_lead_appointment_status', { p_id: appointmentId, p_status: status, p_notes: '' }); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { showToast('No se pudo actualizar la cita', 'error'); return; } await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita actualizada', 'success'); } finally { if (pendingAppointmentMutations.get(appointmentId) === operationToken) pendingAppointmentMutations.delete(appointmentId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.querySelector(`[data-appointment-id="${appointmentId}"]`)) setAppointmentMutationPending(appointmentId, false); } }
-      async function rescheduleLeadAppointment(id) { const appointmentId = validAppointmentId(id); const date = appointmentDate(document.getElementById(`reschedule-${appointmentId}`)?.value); if (!appointmentId || !date || date.getFullYear() < 2000 || pendingAppointmentMutations.has(appointmentId)) { showToast('Fecha de reprogramación no válida', 'warning'); return; } const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at; const operationToken = Symbol(); pendingAppointmentMutations.set(appointmentId, operationToken); setAppointmentMutationPending(appointmentId, true); try { const { error } = await supabaseClient.rpc('reschedule_lead_appointment', { p_id: appointmentId, p_scheduled_at: date.toISOString(), p_notes: '' }); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { showToast('No se pudo reprogramar la cita', 'error'); return; } await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita reprogramada', 'success'); } finally { if (pendingAppointmentMutations.get(appointmentId) === operationToken) pendingAppointmentMutations.delete(appointmentId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.querySelector(`[data-appointment-id="${appointmentId}"]`)) setAppointmentMutationPending(appointmentId, false); } }
+      async function setLeadAppointmentStatus(id, status) { const appointmentId = validAppointmentId(id); if (!appointmentId || pendingAppointmentMutations.has(appointmentId)) return; const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at; const operationToken = Symbol(); pendingAppointmentMutations.set(appointmentId, operationToken); setAppointmentMutationPending(appointmentId, true); try { const { error } = await supabaseClient.rpc('set_lead_appointment_status', { p_id: appointmentId, p_status: status, p_notes: '' }); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { showToast('No se pudo actualizar la cita', 'error'); return; } await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita actualizada', 'success'); } catch (err) { if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) { console.warn('No se pudo actualizar la cita:', err); showToast('No se pudo actualizar la cita', 'error'); } } finally { if (pendingAppointmentMutations.get(appointmentId) === operationToken) pendingAppointmentMutations.delete(appointmentId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.querySelector(`[data-appointment-id="${appointmentId}"]`)) setAppointmentMutationPending(appointmentId, false); } }
+      async function rescheduleLeadAppointment(id) { const appointmentId = validAppointmentId(id); const date = appointmentDate(document.getElementById(`reschedule-${appointmentId}`)?.value); if (!appointmentId || !date || date.getFullYear() < 2000 || pendingAppointmentMutations.has(appointmentId)) { showToast('Fecha de reprogramación no válida', 'warning'); return; } const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at; const operationToken = Symbol(); pendingAppointmentMutations.set(appointmentId, operationToken); setAppointmentMutationPending(appointmentId, true); try { const { error } = await supabaseClient.rpc('reschedule_lead_appointment', { p_id: appointmentId, p_scheduled_at: date.toISOString(), p_notes: '' }); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { showToast('No se pudo reprogramar la cita', 'error'); return; } await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita reprogramada', 'success'); } catch (err) { if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) { console.warn('No se pudo reprogramar la cita:', err); showToast('No se pudo reprogramar la cita', 'error'); } } finally { if (pendingAppointmentMutations.get(appointmentId) === operationToken) pendingAppointmentMutations.delete(appointmentId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.querySelector(`[data-appointment-id="${appointmentId}"]`)) setAppointmentMutationPending(appointmentId, false); } }
 
     // -------------------------------------------------------------
     // Notas de equipo (lead_notes): append-only vía RPC; editar/borrar solo admin.
@@ -3405,13 +3424,20 @@ async function loadLeadAppointments(leadId, lead) {
 
     async function addLeadNote() {
       const input = document.getElementById('leadNoteInput');
+      const btn = document.getElementById('leadNoteSubmit');
+      const leadId = currentViewId;
       const note = (input?.value || '').trim();
       if (!note) { showToast('La nota no puede estar vacía', 'warning'); return; }
-      const { error } = await supabaseClient.rpc('create_lead_note', { p_lead_id: currentViewId, p_note: note });
-      if (error) { showToast('No se pudo guardar la nota', 'error'); return; }
-      if (input) input.value = '';
-      await loadLeadNotes(currentViewId);
-      showToast('Nota añadida', 'success');
+      if (btn) btn.disabled = true;
+      try {
+        const { error } = await supabaseClient.rpc('create_lead_note', { p_lead_id: leadId, p_note: note });
+        if (error) { showToast('No se pudo guardar la nota', 'error'); return; }
+        if (input) input.value = '';
+        await loadLeadNotes(leadId);
+        showToast('Nota añadida', 'success');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
 
     // Edición inline: convierte la nota en textarea en su sitio (sin prompt()).
@@ -3869,6 +3895,9 @@ async function loadLeadAppointments(leadId, lead) {
     function escapeAttr(str) {
       if (!str) return '';
       return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
     }

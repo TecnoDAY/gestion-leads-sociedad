@@ -26,4 +26,10 @@ Fuera de alcance: idempotencia en alta de leads y debounce de filtros (P4, requi
 - `node --check` sobre el script extraído (3.249 líneas) OK; `npm run build` OK; `npm run lint` OK; `git diff --check` limpio.
 
 ## Progreso
-- Estado: implementado y verificado. Pendiente: revisión del humano (clic en matriz, nota doble, cerrar modal editando) y decisión sobre commit/push.
+- Estado: implementado, verificado y subido a `origin/main` (`f3df141` migracion P0, `2367032` codigo P1-P3).
+- Revision visual del humano pendiente: clic en celda de la matriz, doble clic en "anadir nota", cerrar el modal de edicion mientras guarda.
+
+## Recordatorio abierto (decision del humano, no borrar sin preguntar)
+- Tabla `public._bkp_lead_gestiones_20260926` (4.797 filas, ~520 kB, sin grants para `anon`/`authenticated`): contiene las 4.797 gestiones fantasma borradas por `202609260002`, por si el predicado del borrado hubiera sido demasiado amplio.
+- El humano decide borrarla tras revisar el historial en la app. Fecha de revision acordada: **2026-10-03**.
+- Si sigue ahí en esa fecha, preguntar antes de hacer nada; el `drop table` es irreversible.

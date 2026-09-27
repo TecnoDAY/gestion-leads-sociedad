@@ -326,7 +326,7 @@
           <label class="block text-xs font-medium text-slate-400 mb-1">Buscar (Nombre o Teléfono)</label>
           <div class="relative">
             <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-            <input type="text" id="filterSearch" oninput="applyFilters()" placeholder="Ej: Diana, 786, Camila..." class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
+            <input type="text" id="filterSearch" oninput="scheduleApplyFilters()" placeholder="Ej: Diana, 786, Camila..." class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
           </div>
         </div>
 
@@ -2310,7 +2310,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       showToast(active ? 'Valor reactivado' : 'Valor desactivado', 'success');
     }
 
+    let filterDebounceTimer = null;
+    function scheduleApplyFilters() {
+      clearTimeout(filterDebounceTimer);
+      filterDebounceTimer = setTimeout(applyFilters, 200);
+    }
+
     function applyFilters() {
+      clearTimeout(filterDebounceTimer);
       const search = (document.getElementById('filterSearch')?.value || '').toLowerCase().trim();
       const mes = document.getElementById('filterMes')?.value || '';
       const campana = document.getElementById('filterCampana')?.value || '';

@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "check:app": "node scripts/check-app.mjs",
+    "lint": "tsc --noEmit && node scripts/check-app.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

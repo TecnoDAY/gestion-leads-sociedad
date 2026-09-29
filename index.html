@@ -235,13 +235,10 @@
     <div id="reporteDiario" class="hidden max-w-5xl mx-auto bg-white text-slate-800 rounded-xl border border-slate-300 shadow-lg p-5 sm:p-7 space-y-5">
       <div class="border-b-2 border-indigo-600 pb-3 flex flex-wrap justify-between gap-3 items-end">
         <div><div class="flex items-center gap-1.5"><h1 class="text-2xl font-bold text-indigo-900">Reporte Diario de Trabajo</h1><button type="button" onclick="openHelpModal('ayuda-reporte-diario')" title="Ayuda: reporte diario" aria-label="Ayuda sobre el reporte diario" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-200 hover:bg-indigo-600 text-[10px] font-bold text-slate-700 hover:text-white align-middle cursor-pointer shrink-0">?</button></div><p id="reporteFechaTexto" class="text-base text-slate-600"></p></div>
-        <div class="flex flex-wrap gap-2 items-center text-sm"><label>Fecha <input id="reporteFecha" type="date" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"></label><label id="reporteAgenteWrap" class="hidden">Agente <select id="reporteAgente" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"></select></label></div>
+        <div class="flex flex-wrap gap-2 items-center text-sm"><label>Fecha <input id="reporteFecha" type="date" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"></label><button type="button" id="reporteBtnCsv" onclick="exportReporteDiarioCSV()" class="px-3 py-1.5 rounded bg-slate-700 text-white text-sm font-semibold hover:bg-indigo-600 cursor-pointer">Descargar CSV</button></div>
       </div>
-       <div id="reporteAviso" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">Los comentarios manuales no se guardan: completa el reporte y toma captura.</div>
-      <div id="reporteAuto" class="grid sm:grid-cols-2 gap-3"></div>
-       <div class="border-t-2 border-indigo-200 pt-3"><h2 class="font-bold text-lg text-indigo-900 mb-3">Comentarios del asesor</h2><div class="space-y-3 text-sm">
-         <label class="block">Problemas o bloqueos<textarea class="reporte-manual w-full border rounded p-2 min-h-32" rows="5"></textarea></label><label class="block">Observaciones adicionales<textarea class="reporte-manual w-full border rounded p-2 min-h-32" rows="5"></textarea></label>
-      </div></div>
+       <div id="reporteAviso" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">Los cambios en Problemas y Observaciones se guardan por asesora y fecha (zona horaria de Miami).</div>
+      <div id="reporteAuto" class="space-y-3"></div>
     </div>
 
     <!-- ================= VISTA 1: PANEL OPERATIVO ================= -->
@@ -1355,6 +1352,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       editLeadPreviousGestion = '';
       editAdvisorsLoading = false;
       citasRequestGeneration = (citasRequestGeneration || 0) + 1;
+     let reporteDayAdvisors = [];
+     let reporteDayData = [];
       reporteRequestGeneration += 1;
       currentUser = null;
       currentAccess = null;
@@ -1393,12 +1392,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
        setDashboardTabState();
        resetCitasPanel();
       document.getElementById('reporteDiario')?.classList.add('hidden');
-      document.getElementById('reporteAgenteWrap')?.classList.add('hidden');
-      document.getElementById('reporteAgente')?.replaceChildren();
+      reporteDayAdvisors = [];
+      reporteDayData = [];
       const reporteFecha = document.getElementById('reporteFecha');
-        if (reporteFecha) reporteFecha.value = formatLocalDate(new Date());
+        if (reporteFecha) reporteFecha.value = miamiToday();
       const reporteAviso = document.getElementById('reporteAviso');
-       if (reporteAviso) reporteAviso.textContent = 'Los comentarios manuales no se guardan: completa el reporte y toma captura.';
+       if (reporteAviso) reporteAviso.textContent = 'Los cambios en Problemas y Observaciones se guardan por asesora y fecha (zona horaria de Miami).';
       document.getElementById('reporteFechaTexto')?.replaceChildren();
       document.getElementById('reporteAuto')?.replaceChildren();
       document.querySelectorAll('.reporte-manual').forEach(input => { input.value = ''; });
@@ -1721,6 +1720,29 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const matchingKey = Object.keys(lead).find(candidate => candidate.trim().toLowerCase() === normalizedKey);
       if (matchingKey && lead[matchingKey] !== undefined && lead[matchingKey] !== null) return String(lead[matchingKey]);
       return '';
+    }
+    // Hoy en Miami (YYYY-MM-DD): el navegador no decide "hoy", lo hace Intl con la zona del reporte.
+    function miamiToday() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date()); }
+    // Rango [startISO, endISO] del día Miami de una fecha: inicio = 00:00 Miami,
+    // fin = 12:00 Miami del día siguiente. Sondea offsets -05:00/-04:00 y
+    // verifica con Intl la hora Miami de cada instante; [null, null] si ninguna cuadra.
+    function miamiDayBounds(fecha) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha || '')) return [null, null];
+      const horaMiami = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'America/New_York' });
+      const resolver = (base, hora) => {
+        for (const off of ['-05:00', '-04:00']) {
+          const instant = new Date(`${base}T${hora}:00${off}`);
+          if (!Number.isNaN(instant.getTime()) && horaMiami.format(instant) === hora) return instant.toISOString();
+        }
+        return null;
+      };
+      const [y, m, d] = fecha.split('-').map(Number);
+      const startISO = resolver(fecha, '00:00');
+      if (!startISO) return [null, null];
+      const next = new Date(Date.UTC(y, m - 1, d + 1));
+      const nextFecha = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, '0')}-${String(next.getUTCDate()).padStart(2, '0')}`;
+      const endISO = resolver(nextFecha, '00:00');
+      return endISO ? [startISO, endISO] : [null, null];
     }
 
     // Etiqueta visible de una opción de catálogo (Mes, Campaña, Medio, Gestión,
@@ -2326,7 +2348,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const baseLeads = getVisibleBaseLeads();
 
       filteredLeads = baseLeads.filter(lead => {
-          if (!currentUser || !currentAccess?.activo) return;
+        if (!currentUser || !currentAccess?.activo) return;
         if (lead.archived_at) return false;
         if (search) {
           const nombre = getField(lead, 'Nombre').toLowerCase();
@@ -2346,7 +2368,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const activeCount = [mes, campana, medio, gestion, search].filter(Boolean).length;
       const activeFiltersCountEl = document.getElementById('activeFiltersCount');
       if (activeFiltersCountEl) {
-        activeFiltersCountEl.innerText = activeCount > 0 
+        activeFiltersCountEl.innerText = activeCount > 0
           ? `${filteredLeads.length.toLocaleString()} de ${baseLeads.length.toLocaleString()} (${activeCount} filtro${activeCount > 1 ? 's' : ''})`
           : `${filteredLeads.length.toLocaleString()} leads en total`;
       }
@@ -2896,7 +2918,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }
       
       const now = new Date();
-      const hoyFormatted = `${now.getDate()}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+      const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/New_York', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(now);
+      const hoyFormatted = `${parts.find(p => p.type === 'day').value}/${parts.find(p => p.type === 'month').value}/${parts.find(p => p.type === 'year').value}`;
       document.getElementById('editFechaUltima').value = getField(lead, 'Fecha Última Gestión ') || hoyFormatted;
       
       const ultimaGestion = getField(lead, 'ULTIMA GESTION');
@@ -3552,18 +3575,20 @@ async function loadLeadAppointments(leadId, lead) {
       {
         id: 'ayuda-reporte-diario',
         title: 'Reporte diario',
-        summary: 'Hoja de trabajo del día con datos automáticos y solo dos textos manuales.',
+        summary: 'Hoja de trabajo del día con un bloque por asesora, datos automáticos y notas guardadas.',
         steps: [
           'Abre la pestaña Reporte de la barra superior.',
-          'Elige la Fecha del reporte. Si eres administrador, elige también el Agente; como agente se usa tu propio nombre.',
-          'Los bloques por medio (Whatsapp, Facebook/Instagram, Aircall, Directo o Referido) y los totales (Total Leads Gestionados, Agendados para hoy, Asistieron hoy, No asistieron hoy, Inscritos e Inscritos Data Dura) se rellenan solos.',
-          'Los únicos campos manuales son Problemas o bloqueos y Observaciones adicionales.',
-          'Esos dos comentarios NO se guardan: rellénalos y toma captura antes de cambiar de pestaña o cerrar sesión.',
-          'La hoja se mantiene clara en tema claro y en tema oscuro, para que la captura se lea igual en ambos.'
+          'Elige la Fecha del reporte: se muestra un bloque por cada asesora del día, con su total gestionados.',
+          'Los bloques por medio (Whatsapp, Facebook/Instagram, Aircall, Directo o Referido) y los indicadores (Agendados hoy, Asistieron hoy, No asistieron hoy, Inscritos e Inscritos Data Dura) se rellenan solos.',
+          'En cada bloque, Problemas o bloqueos y Observaciones adicionales se guardan por asesora y fecha (zona horaria de Miami) con los botones Guardar y Eliminar.',
+          'Como agente solo puedes editar tu propio bloque del día actual; en fechas anteriores tu vista es de solo lectura.',
+          'Como administrador puedes editar y borrar cualquier bloque en cualquier fecha.',
+          'Pulsa "Descargar CSV" para exportar el día: resumen por asesora, total y comentarios.'
         ],
         notes: [
-          'Agendados para hoy cuenta las citas del asesor en la fecha elegida, y Asistieron / No asistieron dependen del resultado marcado en cada cita.',
-          'Los Inscritos Data Dura son los leads inscritos cuyo Mes de origen es distinto del mes actual.'
+          'Agendados hoy cuenta las citas en la fecha elegida, y Asistieron / No asistieron dependen del resultado marcado en cada cita.',
+          'Los Inscritos Data Dura son los leads inscritos cuyo Mes de origen es distinto del mes actual.',
+          'Al guardar en un bloque ajeno, administración escribe en nombre de la asesora y el bloque sigue siendo de ella.'
         ]
       },
       {
@@ -4499,56 +4524,216 @@ async function loadLeadAppointments(leadId, lead) {
 
     function initReporteDiario() {
       const date = document.getElementById('reporteFecha');
-        if (!date.value) date.value = formatLocalDate(new Date());
-      const wrap = document.getElementById('reporteAgenteWrap');
-       if (isAdmin) { wrap.classList.remove('hidden'); const select = document.getElementById('reporteAgente'); select.innerHTML = activeCatalogValues('agente').map(a => `<option>${escapeHtml(a)}</option>`).join(''); } else wrap.classList.add('hidden');
-       loadReporteDiario();
+      if (date && !date.value) date.value = miamiToday();
+      loadReporteDiario();
     }
-     async function loadReporteDiario() {
-       const generation = sessionGeneration;
-       const fecha = document.getElementById('reporteFecha').value, agente = isAdmin ? document.getElementById('reporteAgente').value : currentAccess?.nombre;
-       if (!fecha || !agente) return;
-       const token = ++reporteRequestGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
-       const parts = fecha.split('-').map(Number), start = new Date(parts[0], parts[1] - 1, parts[2]), end = new Date(parts[0], parts[1] - 1, parts[2] + 1);
-       const valid = () => token === reporteRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'reporte' && document.getElementById('reporteFecha')?.value === fecha && (isAdmin ? document.getElementById('reporteAgente')?.value : currentAccess?.nombre) === agente;
-      const d = new Date(`${fecha}T12:00:00`); const dia = d.toLocaleDateString('es-ES', { weekday: 'long' });
-      document.getElementById('reporteFechaTexto').textContent = `Fecha: ${d.toLocaleDateString('es-ES')} · Día: ${dia} · Agente: ${agente}`;
+
+    // Render de un bloque por asesora: gestiones por medio, indicadores y
+    // campos manuales guardados por (fecha, asesora). Administración edita
+    // siempre; una asesora solo edita su bloque y solo hoy (Miami).
+    function renderReporteBloque(b, i, fecha, hoy) {
+      const editable = isAdmin || (b.advisor === currentAccess?.nombre && fecha === hoy);
+      const nota = b.nota || null;
+      const medioHtml = Object.entries(b.groups).map(([medio, rows]) => {
+        const counts = {};
+        rows.forEach(g => { const key = groupGestionEstado(String(g.gestion_nueva || '').trim().replace(/\s+/g, ' ').toUpperCase()); counts[key] = (counts[key] || 0) + 1; });
+        const lines = Object.entries(counts).sort((x, y) => y[1] - x[1]).filter(([, n]) => n).map(([s, n]) => `<div class="flex justify-between border-b border-slate-100 py-0.5 text-sm"><span>${escapeHtml(s)}</span><strong>${n}</strong></div>`).join('');
+        return `<div class="border-b border-slate-100 pb-1.5 mb-1.5 last:border-0 last:mb-0"><div class="flex justify-between text-sm font-semibold text-slate-700"><span>${escapeHtml(medio)}</span><span>${rows.length}</span></div>${lines}</div>`;
+      }).join('');
+      const indicadores = [['Agendados hoy', b.agendados], ['Asistieron hoy', b.asistieron], ['No asistieron hoy', b.noAsistieron], ['Inscritos', b.inscritos], ['Inscritos Data Dura', b.inscritosDura]];
+      const indicadoresHtml = `<div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">${indicadores.map(([l, n]) => `<div class="border border-slate-200 rounded p-1.5"><div class="text-xs text-slate-500">${l}</div><strong class="text-lg text-indigo-900">${n}</strong></div>`).join('')}</div>`;
+      const manualHtml = editable
+        ? `<div class="grid sm:grid-cols-2 gap-3 text-sm"><label class="block">Problemas o bloqueos<textarea id="reporte-problemas-${i}" class="reporte-manual w-full border rounded p-2 min-h-24" rows="4" placeholder="Sin problemas reportados">${escapeHtml(nota?.problemas || '')}</textarea></label><label class="block">Observaciones adicionales<textarea id="reporte-obs-${i}" class="reporte-manual w-full border rounded p-2 min-h-24" rows="4" placeholder="Sin observaciones">${escapeHtml(nota?.observaciones || '')}</textarea></label></div><div class="flex flex-wrap gap-2"><button type="button" id="reporte-save-${i}" onclick="saveReporteNota(${i})" class="px-3 py-1.5 rounded bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 cursor-pointer">Guardar</button>${nota?.id ? `<button type="button" id="reporte-delete-${i}" onclick="deleteReporteNota(${i})" class="px-3 py-1.5 rounded border border-rose-400 text-rose-600 text-sm font-semibold hover:bg-rose-50 cursor-pointer">Eliminar</button>` : ''}</div>`
+        : `<div class="grid sm:grid-cols-2 gap-3 text-sm"><label class="block">Problemas o bloqueos<textarea id="reporte-problemas-${i}" class="reporte-manual w-full border rounded p-2 min-h-24" rows="4" readonly>${escapeHtml(nota?.problemas || '')}</textarea></label><label class="block">Observaciones adicionales<textarea id="reporte-obs-${i}" class="reporte-manual w-full border rounded p-2 min-h-24" rows="4" readonly>${escapeHtml(nota?.observaciones || '')}</textarea></label></div><p class="text-xs text-slate-400">Solo lectura: editable por la asesora hoy o por administración.</p>`;
+      return `<div class="border border-slate-300 rounded p-3 space-y-2"><div class="flex flex-wrap justify-between items-baseline gap-2 border-b-2 border-indigo-100 pb-2"><h3 class="font-bold text-indigo-900">${escapeHtml(b.advisor)}</h3><span class="text-sm text-slate-500">Total gestionados: <strong class="text-lg text-indigo-900">${b.gestionados}</strong></span></div>${medioHtml || '<div class="text-slate-400 text-sm">Sin gestiones</div>'}${indicadoresHtml}${manualHtml}</div>`;
+    }
+
+    // Resumen TOTAL del día: suma de los bloques por asesora.
+    function renderReporteTotal(bloques) {
+      const total = bloques.reduce((acc, b) => ({ gestionados: acc.gestionados + b.gestionados, agendados: acc.agendados + b.agendados, asistieron: acc.asistieron + b.asistieron, noAsistieron: acc.noAsistieron + b.noAsistieron, inscritos: acc.inscritos + b.inscritos, inscritosDura: acc.inscritosDura + b.inscritosDura }), { gestionados: 0, agendados: 0, asistieron: 0, noAsistieron: 0, inscritos: 0, inscritosDura: 0 });
+      const kpis = [['Total gestionados', total.gestionados], ['Agendados hoy', total.agendados], ['Asistieron hoy', total.asistieron], ['No asistieron hoy', total.noAsistieron], ['Inscritos', total.inscritos], ['Inscritos Data Dura', total.inscritosDura]];
+      return `<div class="border-2 border-indigo-600 rounded p-3 space-y-2"><div class="flex flex-wrap justify-between items-baseline gap-2"><h3 class="font-bold text-lg text-indigo-900">TOTAL del día</h3><span class="text-xs text-slate-500">${bloques.length} ${bloques.length === 1 ? 'asesora' : 'asesoras'}</span></div><div class="grid grid-cols-2 sm:grid-cols-6 gap-2 text-center">${kpis.map(([l, n]) => `<div class="border border-slate-200 rounded p-1.5"><div class="text-xs text-slate-500">${l}</div><strong class="text-lg text-indigo-900">${n}</strong></div>`).join('')}</div></div>`;
+    }
+
+    async function loadReporteDiario() {
+      const generation = sessionGeneration;
+      const fecha = document.getElementById('reporteFecha')?.value;
+      if (!fecha) return;
+      const token = ++reporteRequestGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
+      const valid = () => token === reporteRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'reporte' && document.getElementById('reporteFecha')?.value === fecha;
+      const d = new Date(`${fecha}T12:00:00`);
+      const fechaTexto = document.getElementById('reporteFechaTexto');
+      if (fechaTexto) fechaTexto.textContent = Number.isNaN(d.getTime()) ? `Fecha: ${fecha}` : `Fecha: ${d.toLocaleDateString('es-ES')} · Día: ${d.toLocaleDateString('es-ES', { weekday: 'long' })}`;
       const auto = document.getElementById('reporteAuto');
-      auto.innerHTML = '<div class="sm:col-span-2 text-slate-500">Cargando autollenado…</div>';
-        const reporteAvisoBase = 'Los comentarios manuales no se guardan: completa el reporte y toma captura.';
-        const reporteWarnings = [];
-        let citasResult;
-        try {
-           let gestionesResult;
-           const resultados = await Promise.allSettled([
-             supabaseClient.from('lead_gestiones').select('*').eq('fecha_gestion', fecha).eq('autor_name', agente).order('created_at'),
-             supabaseClient.from('lead_appointments').select('status,scheduled_at,lead_id').eq('advisor_name', agente).gte('scheduled_at', start.toISOString()).lt('scheduled_at', end.toISOString())
-           ]);
-           if (!valid()) return;
-           gestionesResult = resultados[0].status === 'fulfilled' ? resultados[0].value : { error: resultados[0].reason };
-           citasResult = resultados[1].status === 'fulfilled' ? resultados[1].value : { error: resultados[1].reason };
-           const gestionesError = gestionesResult.error, citasError = citasResult.error;
-           const citas = citasError ? [] : (citasResult.data || []);
-           if (gestionesError) reporteWarnings.push('Gestiones no disponibles para el autollenado.');
-           if (citasError) reporteWarnings.push('Citas no disponibles hasta aplicar la migración.');
-          let gestiones = [], leads = new Map(), gestionError = gestionesError;
-          if (!gestionError) {
-            gestiones = gestionesResult.data || [];
-            const ids = [...new Set(gestiones.map(g => g.lead_id).filter(Boolean))];
-            const leadsResult = ids.length ? await supabaseClient.from('leads').select('*').in('id', ids) : { data: [], error: null };
-            if (!valid()) return;
-            gestionError = leadsResult.error;
-            if (!gestionError) leads = new Map((leadsResult.data || []).map(l => [l.id, l]));
-          }
-           if (gestionError && !gestionesError) { reporteWarnings.push('Gestiones no disponibles para el autollenado.'); throw gestionError; }
-          const now = MONTH_CHRONO[new Date().getMonth()];
-        const groups = { Whatsapp: [], 'Facebook/Instagram': [], Aircall: [], 'Directo o Referido': [] };
-         let inscritos = 0, inscritosDura = 0;
-          gestiones.forEach(g => { const lead = leads.get(g.lead_id) || {}, medio = getField(lead, 'Medio').toLowerCase(), bucket = medio.includes('whatsapp') ? 'Whatsapp' : (medio.includes('facebook') || medio.includes('instagram')) ? 'Facebook/Instagram' : medio.includes('aircall') ? 'Aircall' : 'Directo o Referido'; groups[bucket].push(g); const estado = String(g.gestion_nueva || '').trim().toUpperCase(), leadMonth = normalizeLeadMonth(lead), old = MONTH_CHRONO.includes(leadMonth) && leadMonth !== now; if (estado.startsWith('INSCRIT')) { inscritos++; if (old) inscritosDura++; } });
-         const asistieron = citas.filter(c => c.status === 'ASISTIO').length, noAsistieron = citas.filter(c => c.status === 'NO_ASISTIO').length;
-         auto.innerHTML = Object.entries(groups).map(([name, rows]) => { const counts = {}; rows.forEach(g => { const key = groupGestionEstado(String(g.gestion_nueva || '').trim().replace(/\s+/g, ' ').toUpperCase()); counts[key] = (counts[key] || 0) + 1; }); const lines = Object.entries(counts).sort((a,b) => b[1]-a[1]).filter(([,n]) => n).map(([s,n]) => `<div class="flex justify-between border-b border-slate-100 py-1"><span>${escapeHtml(s)}</span><strong>${n}</strong></div>`).join('') || '<div class="text-slate-400">Sin gestiones</div>'; return `<div class="border border-slate-300 rounded p-3"><h3 class="font-bold text-indigo-900">Gestión de Leads de ${escapeHtml(name)} <span class="float-right text-lg">${rows.length}</span></h3>${lines}</div>`; }).join('') + `<div class="sm:col-span-2 grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">${[['Total Leads Gestionados',gestiones.length],['Agendados para hoy',citas.length],['Asistieron hoy',asistieron],['No asistieron hoy',noAsistieron],['Inscritos',inscritos],['Inscritos Data Dura',inscritosDura]].map(([l,n]) => `<div class="border border-slate-300 rounded p-2"><div class="text-sm">${l}</div><strong class="text-2xl text-indigo-900">${n}</strong></div>`).join('')}</div>`;
-          } catch (error) { console.warn('No se pudo cargar el reporte diario:', error); if (!valid()) return; reporteWarnings.push('No se pudo completar el autollenado del reporte.'); const citas = citasResult && !citasResult.error ? (citasResult.data || []) : []; const asistieron = citas.filter(c => c.status === 'ASISTIO').length, noAsistieron = citas.filter(c => c.status === 'NO_ASISTIO').length; auto.innerHTML = ['Whatsapp','Facebook/Instagram','Aircall','Directo o Referido'].map(n => `<div class="border border-slate-300 rounded p-3"><h3 class="font-bold text-indigo-900">Gestión de Leads de ${n} <span class="float-right">0</span></h3></div>`).join('') + `<div class="sm:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-2 text-center">${[['Total Leads Gestionados',0],['Agendados para hoy',citas.length],['Asistieron hoy',asistieron],['No asistieron hoy',noAsistieron],['Inscritos',0],['Inscritos Data Dura',0]].map(([l,n]) => `<div class="border border-slate-300 rounded p-2"><div class="text-sm">${l}</div><strong class="text-2xl text-indigo-900">${n}</strong></div>`).join('')}</div>`; }
-          if (valid()) document.getElementById('reporteAviso').textContent = [reporteAvisoBase, ...reporteWarnings].join(' ');
+      if (auto) auto.innerHTML = '<div class="text-slate-500">Cargando reporte…</div>';
+      const reporteAvisoBase = 'Los cambios en Problemas y Observaciones se guardan por asesora y fecha (zona horaria de Miami).';
+      const reporteWarnings = [];
+      const hoy = miamiToday();
+      const render = bloques => {
+        reporteDayAdvisors = bloques.map(b => b.advisor);
+        reporteDayData = bloques;
+        if (!auto) return;
+        auto.innerHTML = bloques.length ? bloques.map((b, i) => renderReporteBloque(b, i, fecha, hoy)).join('') + renderReporteTotal(bloques) : '<div class="text-slate-500">Sin datos para esta fecha.</div>';
+      };
+      const collectNombres = (citas, notas, gestiones) => {
+        const nombres = new Set();
+        activeCatalogValues('agente').forEach(n => { if (n) nombres.add(n); });
+        gestiones.forEach(g => { if (g.autor_name) nombres.add(g.autor_name); });
+        notas.forEach(n => { if (n.autor_name) nombres.add(n.autor_name); });
+        citas.forEach(c => { if (c.advisor_name) nombres.add(c.advisor_name); });
+        return [...nombres].sort((a, b) => a.localeCompare(b, 'es'));
+      };
+      const buildBloques = (gestiones, citas, notas, leads) => {
+        const now = MONTH_CHRONO[Number(hoy.slice(5, 7)) - 1];
+        const notasPorAutor = new Map(notas.map(n => [n.autor_name, n]));
+        const uuidPorNombre = new Map();
+        notas.forEach(n => { if (n.autor_name && n.autor_user_id) uuidPorNombre.set(n.autor_name, n.autor_user_id); });
+        citas.forEach(c => { if (c.advisor_name && c.advisor_user_id && !uuidPorNombre.has(c.advisor_name)) uuidPorNombre.set(c.advisor_name, c.advisor_user_id); });
+        const matchCita = (c, nombre, uuid) => c.advisor_user_id ? (uuid ? c.advisor_user_id === uuid : c.advisor_name === nombre) : c.advisor_name === nombre;
+        return collectNombres(citas, notas, gestiones).map(nombre => {
+          const gestionesAsesora = gestiones.filter(g => g.autor_name === nombre);
+          const groups = { Whatsapp: [], 'Facebook/Instagram': [], Aircall: [], 'Directo o Referido': [] };
+          let inscritos = 0, inscritosDura = 0;
+          gestionesAsesora.forEach(g => {
+            const lead = leads.get(g.lead_id) || {}, medio = getField(lead, 'Medio').toLowerCase();
+            const bucket = medio.includes('whatsapp') ? 'Whatsapp' : (medio.includes('facebook') || medio.includes('instagram')) ? 'Facebook/Instagram' : medio.includes('aircall') ? 'Aircall' : 'Directo o Referido';
+            groups[bucket].push(g);
+            const estado = String(g.gestion_nueva || '').trim().toUpperCase(), leadMonth = normalizeLeadMonth(lead), old = MONTH_CHRONO.includes(leadMonth) && leadMonth !== now;
+            if (estado.startsWith('INSCRIT')) { inscritos++; if (old) inscritosDura++; }
+          });
+          const citasAsesora = citas.filter(c => matchCita(c, nombre, nombre === currentAccess?.nombre ? userId : uuidPorNombre.get(nombre)));
+          const nota = notasPorAutor.get(nombre) || null;
+          return { advisor: nombre, groups, gestionados: gestionesAsesora.length, agendados: citasAsesora.length, asistieron: citasAsesora.filter(c => c.status === 'ASISTIO').length, noAsistieron: citasAsesora.filter(c => c.status === 'NO_ASISTIO').length, inscritos, inscritosDura, nota };
+        });
+      };
+      let citasResult, notasResult;
+      try {
+        const [startISO, endISO] = miamiDayBounds(fecha);
+        if (!startISO) reporteWarnings.push('No se pudo calcular el rango Miami para las citas.');
+        const resultados = await Promise.allSettled([
+          supabaseClient.from('lead_gestiones').select('lead_id,gestion_nueva,autor_name,created_at').eq('fecha_gestion', fecha).order('created_at'),
+          startISO ? supabaseClient.from('lead_appointments').select('status,scheduled_at,advisor_name,advisor_user_id').gte('scheduled_at', startISO).lt('scheduled_at', endISO) : Promise.resolve({ data: [], error: null }),
+          supabaseClient.from('daily_report_notes').select('*').eq('report_date', fecha)
+        ]);
+        if (!valid()) return;
+        const gestionesResult = resultados[0].status === 'fulfilled' ? resultados[0].value : { error: resultados[0].reason };
+        citasResult = resultados[1].status === 'fulfilled' ? resultados[1].value : { error: resultados[1].reason };
+        notasResult = resultados[2].status === 'fulfilled' ? resultados[2].value : { error: resultados[2].reason };
+        const gestionesError = gestionesResult.error, citasError = citasResult.error, notasError = notasResult.error;
+        if (gestionesError) reporteWarnings.push('Gestiones no disponibles para el autollenado.');
+        if (citasError) reporteWarnings.push('Citas no disponibles hasta aplicar la migración.');
+        if (notasError) reporteWarnings.push('Notas del día no disponibles hasta aplicar la migración.');
+        const gestiones = gestionesError ? [] : (gestionesResult.data || []);
+        const citas = citasError ? [] : (citasResult.data || []);
+        const notas = notasError ? [] : (notasResult.data || []);
+        let leads = new Map(), gestionError = gestionesError;
+        if (!gestionError && gestiones.length) {
+          const ids = [...new Set(gestiones.map(g => g.lead_id).filter(Boolean))];
+          const leadsResult = ids.length ? await supabaseClient.from('leads').select('id,Medio').in('id', ids) : { data: [], error: null };
+          if (!valid()) return;
+          gestionError = leadsResult.error;
+          if (!gestionError) leads = new Map((leadsResult.data || []).map(l => [l.id, l]));
+        }
+        if (gestionError && !gestionesError) { reporteWarnings.push('Gestiones no disponibles para el autollenado.'); throw gestionError; }
+        render(buildBloques(gestiones, citas, notas, leads));
+      } catch (error) {
+        console.warn('No se pudo cargar el reporte diario:', error);
+        if (!valid()) return;
+        reporteWarnings.push('No se pudo completar el autollenado del reporte.');
+        const citas = citasResult && !citasResult.error ? (citasResult.data || []) : [];
+        const notas = notasResult && !notasResult.error ? (notasResult.data || []) : [];
+        render(buildBloques([], citas, notas, new Map()));
+      }
+      if (valid()) { const aviso = document.getElementById('reporteAviso'); if (aviso) aviso.textContent = [reporteAvisoBase, ...reporteWarnings].join(' '); }
+    }
+
+    async function saveReporteNota(i) {
+      const fecha = document.getElementById('reporteFecha')?.value;
+      const autor = reporteDayAdvisors[i];
+      if (!fecha || !autor || !supabaseClient) return;
+      const problemas = document.getElementById(`reporte-problemas-${i}`)?.value || '';
+      const observaciones = document.getElementById(`reporte-obs-${i}`)?.value || '';
+      const generation = sessionGeneration;
+      const botones = [`reporte-save-${i}`, `reporte-delete-${i}`].map(id => document.getElementById(id)).filter(Boolean);
+      botones.forEach(b => { b.disabled = true; });
+      try {
+        const { error } = await supabaseClient.rpc('upsert_daily_report_note', { p_report_date: fecha, p_autor_name: autor, p_problemas: problemas, p_observaciones: observaciones });
+        if (generation !== sessionGeneration) return;
+        if (error) {
+          console.warn('No se pudo guardar la nota del reporte:', error);
+          showToast(`No se pudo guardar la nota: ${error.message}`, 'error');
+          const aviso = document.getElementById('reporteAviso');
+          if (aviso) aviso.textContent = `No se pudo guardar la nota de ${autor}: ${error.message}`;
+          return;
+        }
+        showToast('Nota guardada por asesora y fecha', 'success');
+        await loadReporteDiario();
+      } catch (error) {
+        console.warn('No se pudo guardar la nota del reporte:', error);
+        if (generation !== sessionGeneration) return;
+        showToast(`No se pudo guardar la nota: ${error.message}`, 'error');
+      } finally {
+        if (generation === sessionGeneration) botones.forEach(b => { b.disabled = false; });
+      }
+    }
+
+    async function deleteReporteNota(i) {
+      const autor = reporteDayAdvisors[i];
+      const noteId = reporteDayData[i]?.nota?.id;
+      if (!autor || !noteId || !supabaseClient) return;
+      const generation = sessionGeneration;
+      const botones = [`reporte-save-${i}`, `reporte-delete-${i}`].map(id => document.getElementById(id)).filter(Boolean);
+      botones.forEach(b => { b.disabled = true; });
+      try {
+        const { error } = await supabaseClient.rpc('delete_daily_report_note', { p_note_id: Number(noteId) });
+        if (generation !== sessionGeneration) return;
+        if (error) {
+          console.warn('No se pudo eliminar la nota del reporte:', error);
+          showToast(`No se pudo eliminar la nota: ${error.message}`, 'error');
+          const aviso = document.getElementById('reporteAviso');
+          if (aviso) aviso.textContent = `No se pudo eliminar la nota de ${autor}: ${error.message}`;
+          return;
+        }
+        showToast('Nota eliminada', 'success');
+        await loadReporteDiario();
+      } catch (error) {
+        console.warn('No se pudo eliminar la nota del reporte:', error);
+        if (generation !== sessionGeneration) return;
+        showToast(`No se pudo eliminar la nota: ${error.message}`, 'error');
+      } finally {
+        if (generation === sessionGeneration) botones.forEach(b => { b.disabled = false; });
+      }
+    }
+
+    // Campo CSV seguro: comillas dobles doblando comillas internas y
+    // neutralización de prefijos peligrosos (=, +, -, @) anteponiendo apóstrofe.
+    function csvReporteField(value) {
+      const text = String(value ?? '');
+      const safe = /^[=+\-@]/.test(text) ? `'${text}` : text;
+      return `"${safe.replace(/"/g, '""')}"`;
+    }
+
+    function exportReporteDiarioCSV() {
+      if (!reporteDayData.length) { showToast('No hay datos para exportar', 'warning'); return; }
+      const fecha = document.getElementById('reporteFecha')?.value || miamiToday();
+      const headers = ['Asesora', 'Total Gestionados', 'Agendados hoy', 'Asistieron hoy', 'No asistieron hoy', 'Inscritos', 'Inscritos Data Dura', 'Problemas', 'Observaciones'];
+      const sumas = { gestionados: 0, agendados: 0, asistieron: 0, noAsistieron: 0, inscritos: 0, inscritosDura: 0 };
+      const lineas = ['Reporte Diario de Trabajo', `Fecha: ${fecha}`, `Generado: ${miamiToday()} Miami`, '', headers.join(',')];
+      reporteDayData.forEach((b, i) => {
+        sumas.gestionados += b.gestionados; sumas.agendados += b.agendados; sumas.asistieron += b.asistieron; sumas.noAsistieron += b.noAsistieron; sumas.inscritos += b.inscritos; sumas.inscritosDura += b.inscritosDura;
+        const problemas = document.getElementById(`reporte-problemas-${i}`)?.value || '';
+        const observaciones = document.getElementById(`reporte-obs-${i}`)?.value || '';
+        lineas.push([csvReporteField(b.advisor), csvReporteField(b.gestionados), csvReporteField(b.agendados), csvReporteField(b.asistieron), csvReporteField(b.noAsistieron), csvReporteField(b.inscritos), csvReporteField(b.inscritosDura), csvReporteField(problemas), csvReporteField(observaciones)].join(','));
+      });
+      lineas.push([csvReporteField('TOTAL'), csvReporteField(sumas.gestionados), csvReporteField(sumas.agendados), csvReporteField(sumas.asistieron), csvReporteField(sumas.noAsistieron), csvReporteField(sumas.inscritos), csvReporteField(sumas.inscritosDura), csvReporteField(''), csvReporteField('')].join(','));
+      const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURI(lineas.join('\n').replace(/#/g, '%23'));
+      const link = document.createElement('a');
+      link.setAttribute('href', csvContent);
+      link.setAttribute('download', `Reporte_Diario_${fecha}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Reporte diario exportado a CSV', 'success');
     }
   </script>
 </body>

@@ -22,8 +22,13 @@ const normalizeEmail = (value: unknown): string | null => {
 const normalizeName = (value: unknown): string =>
   typeof value === 'string' ? value.trim().slice(0, 120) : '';
 
-const normalizeRole = (value: unknown): 'admin' | 'agente' =>
-  value === 'admin' ? 'admin' : 'agente';
+const ROLES = ['admin', 'agente', 'trafficker', 'supervisor'] as const;
+type Role = (typeof ROLES)[number];
+
+// Un rol desconocido se RECHAZA, no se degrada: convertirlo en 'agente' daba de
+// alta a un supervisor o un trafficker con permisos que nadie habia pedido.
+const normalizeRole = (value: unknown): Role | null =>
+  typeof value === 'string' && (ROLES as readonly string[]).includes(value) ? (value as Role) : null;
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -47,6 +52,9 @@ Deno.serve(async (request) => {
   const nombre = normalizeName(payload.nombre);
   const role = normalizeRole(payload.role);
   if (!email) return json(202, { accepted: true });
+  // La validacion de rol no revela nada sobre ningun correo, asi que puede
+  // responderse con un error claro en lugar del 202 no enumerativo.
+  if (!role) return json(400, { error: 'invalid_role' });
 
   const authorization = request.headers.get('Authorization') ?? '';
   const bearerToken = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
@@ -91,16 +99,31 @@ Deno.serve(async (request) => {
     // Provisioning is deliberately server-side. The response is intentionally
     // non-enumerating: an unauthorized, unknown, or already provisioned email
     // looks the same to the caller.
-    const { data: created, error: createError } = await service.auth.admin.createUser({
-      email,
-      email_confirm: true,
-      user_metadata: { nombre },
+    //
+    // Se INVITA en lugar de crear la cuenta confirmada: la persona abre el
+    // enlace del correo, verifica su identidad y define su propia contraseña.
+    // El servidor nunca recibe ni guarda una contraseña en claro.
+    const { data: invited, error: inviteError } = await service.auth.admin.inviteUserByEmail(email, {
+      data: { nombre },
     });
 
-    let userId = created?.user?.id ?? null;
-    if (createError && !/already|registered|exists/i.test(createError.message)) {
-      console.error('Auth provisioning failed:', createError.message);
-      return json(202, { accepted: true });
+    let userId = invited?.user?.id ?? null;
+    if (inviteError) {
+      const accountExists = /already|registered|exists/i.test(inviteError.message);
+      if (!accountExists) {
+        console.error('Auth invitation failed:', inviteError.message);
+        return json(202, { accepted: true });
+      }
+      // La cuenta ya existe (alta previa o reenvio de acceso): se manda un
+      // enlace de restablecimiento para que quien la usa pueda definir o
+      // recuperar su clave. Va en su propio try para que ningun fallo de correo
+      // interrumpa el upsert del rol: si el envio falla, se loguea y se sigue.
+      try {
+        const { error: recoveryError } = await service.auth.resetPasswordForEmail(email);
+        if (recoveryError) console.error('Password recovery email failed:', recoveryError.message);
+      } catch (err) {
+        console.warn('Password recovery email threw:', err);
+      }
     }
 
     if (!userId) {

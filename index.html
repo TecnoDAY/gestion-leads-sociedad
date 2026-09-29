@@ -1352,6 +1352,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
      let sessionGeneration = 0;
      let viewLeadGeneration = 0;
      let reporteRequestGeneration = 0;
+     let reporteDayAdvisors = [];
+     let reporteDayData = [];
 
     try {
       if (window.supabase && window.supabase.createClient) {
@@ -1721,6 +1723,29 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     function resetCitasPanel() { citasRequestGeneration += 1; citasCache = []; citasRangeKey = ''; ['citasKpis','citasTableBody','citasAviso','citasCount'].forEach(id => { const e=document.getElementById(id); if(e) e.replaceChildren(); }); }
     function formatLocalDate(d) { return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'); }
+    // Hoy en Miami (YYYY-MM-DD): el navegador no decide "hoy", lo hace Intl con la zona del reporte.
+    function miamiToday() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date()); }
+    // Rango [startISO, endISO] del día Miami de una fecha: inicio = 00:00 Miami,
+    // fin = 12:00 Miami del día siguiente. Sondea offsets -05:00/-04:00 y
+    // verifica con Intl la hora Miami de cada instante; [null, null] si ninguna cuadra.
+    function miamiDayBounds(fecha) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha || '')) return [null, null];
+      const horaMiami = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'America/New_York' });
+      const resolver = (base, hora) => {
+        for (const off of ['-05:00', '-04:00']) {
+          const instant = new Date(`${base}T${hora}:00${off}`);
+          if (!Number.isNaN(instant.getTime()) && horaMiami.format(instant) === hora) return instant.toISOString();
+        }
+        return null;
+      };
+      const [y, m, d] = fecha.split('-').map(Number);
+      const startISO = resolver(fecha, '00:00');
+      if (!startISO) return [null, null];
+      const next = new Date(Date.UTC(y, m - 1, d + 1));
+      const nextFecha = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, '0')}-${String(next.getUTCDate()).padStart(2, '0')}`;
+      const endISO = resolver(nextFecha, '00:00');
+      return endISO ? [startISO, endISO] : [null, null];
+    }
     function citasDateDefaults() { const d=new Date(), first=new Date(d.getFullYear(),d.getMonth(),1); return [formatLocalDate(first), formatLocalDate(d)]; }
     function clearCitasResults() { citasRequestGeneration += 1; citasCache=[]; citasRangeKey=''; ['citasKpis','citasTableBody','citasAviso','citasCount'].forEach(id=>document.getElementById(id)?.replaceChildren()); ['citasResultado','citasCampana','citasMedio','citasAsesor'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';}); }
     function resetCitasFilters() { const [a,b]=citasDateDefaults(); document.getElementById('citasDesde').value=a; document.getElementById('citasHasta').value=b; clearCitasResults(); loadCitas(); }

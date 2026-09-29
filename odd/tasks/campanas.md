@@ -81,6 +81,5 @@ Modo: off | Fuente: default | Runner: no disponible (checks funcionales obligato
 
 ## Progreso
 - Estado: implementación completa y verificada (T1-T3 passed).
-- Última tarea: T3 verificación independiente.
-- Siguiente paso: revisión del humano, aplicación manual de `202609290001_campaign_stats.sql` en Supabase, prueba del flujo trafficker (login → solo ve Campañas → guardar nota de campaña → refrescar → agente la entiende en solo lectura), commit/push.
-- Bloqueos: aplicación remota de la migración es manual del humano.
+- Última tarea: T3 verificación independiente; commit local.
+- Siguiente paso: revisión del humano, aplicación manual de `202609290001_campaign_stats.sql` en Supabase, prueba del flujo trafficker (login → solo ve Campañas → guardar nota de campaña → refrescar → agente la entiende en solo lectura).

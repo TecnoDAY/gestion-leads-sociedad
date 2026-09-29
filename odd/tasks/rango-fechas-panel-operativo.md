@@ -43,18 +43,17 @@ Modo: off | Fuente: default | Runner: no disponible (checks funcionales obligato
 - Patrón de consulta a `lead_gestiones` y manejo de rangos de fechas ya usado en `loadCitas()` y `loadReporteDiario()`.
 - Estilos de inputs de fecha del panel de Citas o Histórico reutilizados para coherencia visual.
 
-## Evidencia
-- T1: fila propia del rango insertada bajo los filtros con borde indigo, inputs `dashDesde` / `dashHasta` con `onchange="applyFilters()"`, botón "Limpiar rango" y aviso de error `dashRangeError`.
-- T2: `applyFilters` protegida con generador `dashRangeGen` (ignora respuestas obsoletas), validación `Desde ≤ Hasta`, consulta segura a `lead_gestiones` con `.gte/.lt` por fecha, manejo de errores y aviso visible en caso de fallo.
-- `clearDashRange()` añadida y usada desde el botón y desde `resetAllFilters()`.
-- Corrección Citas: `loadCitas` ahora incluye `archived_at` en la consulta de leads, excluye citas de leads archivados o sin lead, muestra aviso de citas omitidas y limpia resultados si falla la carga de leads. Eliminado `|| null` del map que causaba filas sin datos.
-- `npm run build`: OK (274.99 kB).
-- `npm run lint`: OK (3 bloques, 2 reglas).
-- `git diff --check`: OK.
-- `qa-gate`: sin hallazgos nuevos (solo aviso preexistente de `.env.example`).
+## Revisión posterior (integración en Filtros Dinámicos)
+- El rango de gestión se movió a la tarjeta "Filtros Dinámicos en Tiempo Real" (fila separada tras Origen), con layout responsive y sin tarjeta propia. Botón "Limpiar rango" sigue presente dentro de esa fila.
+- Correcciones aplicadas:
+  1. **Fechas iguales a cadenas**: la consulta a `lead_gestiones` ahora compara `gte/lte` con `YYYY-MM-DD` directamente, sin `new Date`/`toISOString` que podían desviar un día por la zona horaria.
+  2. **Generación en todos los caminos**: el token `dashRangeGen` se incrementa al entrar a `applyFilters`, no solo si hay rango, para invalidar consultas en vuelo aunque luego se limpie el rango.
+  3. **`resetAllFilters` evita doble llamada**: limpia el rango manualmente y llama `applyFilters` una sola vez (ya no llama a `clearDashRange` además).
+  4. **Conteo de filtros**: el rango desde-hasta cuenta como un filtro, no dos.
+
+- 5. **Layout compacto v1.2**: Origen y Rango de gestión ahora comparten una fila dentro de la tarjeta (flex-wrap entre la rejilla de filtros y el final de la tarjeta); los inputs de fecha son compactos (`w-[120px]`), "Limpiar" queda in-line, y en móvil se ordenan verticalmente. "Origen" dejó de ocupar una celda de la rejilla para que esta quede equilibrada.
 
 ## Progreso
-- Estado: implementado y verificado (T1-T3 passed; corrección Citas aplicada).
-- Última tarea: T3 verificación.
-- Siguiente paso: prueba manual en navegador — seleccionar rango válido, probar rango inválido (Desde > Hasta), probar con filtro de estado (ej. Agendado), limpiar rango y verificar que vuelve al comportamiento original; revisar que el icono `calendar-range` se renderiza; en Citas verificar que no aparezcan filas con datos vacíos al archivar un lead.
-- Bloqueos: prueba manual del humano; commit/push pendiente de petición explícita.
+- Estado: implementado y verificado (T1-T3 passed; corrección Citas aplicada; revisión integrada en Filtros Dinámicos v1.1).
+- Última tarea: v1.1 integración.
+- Siguiente paso: prueba manual en navegador — mover el rango a la tarjeta, validar que los filtros siguen combinados, limpiar rango y verificar que regresa al comportamiento original.

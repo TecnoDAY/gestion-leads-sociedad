@@ -76,8 +76,11 @@ Modo: off | Fuente: default | Runner: no disponible (checks funcionales obligato
 - Estado: T2 UI en `index.html` implementada por asesora + total, guardado por RPC, CSV, aviso y ayuda actualizados, reset de sesión limpio.
 - Estado: T3 verificación independiente completada manualmente (build, lint, git diff, node --check, grep) con todos los checks verdes.
 - Estado: migración correctiva `supabase/migrations/202609280002_reporte_diario_notas_fix.sql` creada para endurecer permisos por `autor_user_id` en vez de `autor_name`.
+- Estado: ambas migraciones aplicadas en Supabase; verificado en remoto `UNIQUE (report_date, autor_user_id)`, RLS activo, índice por fecha y ambas RPC creadas.
+- Estado: error corregido en `miamiDayBounds`: el fin del rango era 12:00 del día siguiente (36h); ahora es 00:00 del día siguiente. Origen: redacción ambigua del contrato, no fallo del worker.
+- Estado: comiteado y enviado a `origin/main` (5 commits atómicos; el diff de `index.html` mezclaba esta feature con el rango de fechas y el filtrado de citas, separados por hunks).
 
 ## Progreso
-- Estado: implementación completa y verificada.
+- Estado: implementación completa, aplicada en remoto y enviada.
 - Última tarea: migración correctiva creada.
 - Siguiente paso: aplicación manual de ambas migraciones en Supabase SQL editor, prueba de flujo real (guardar, ver desde otra cuenta, borrar, descargar CSV), commit/push cuando lo pida.

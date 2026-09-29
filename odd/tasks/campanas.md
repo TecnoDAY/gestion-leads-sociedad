@@ -33,7 +33,7 @@ Hoy el trafficker lleva las cifras de Meta en hojas externas y las asesoras no p
 - `admin_manage_user_access`: verificar que acepta el rol nuevo (recibir p_role text con check); si tiene check propio, recrearlo incluyendo 'trafficker'.
 
 ## Restricciones
-- Sin dependencias nuevas; vanilla JS + Chart.js ya cargado; migración NO aplicada por el agente (manual del humano).
+- Sin dependencias nuevas; vanilla JS + Chart.js ya cargado; migración aplicada en el remoto con petición explícita del humano (2026-09-29).
 - Sin clase de prueba, sin monto pagado, sin storage de imágenes (v1).
 - Mes de informe = mes calendario; atribución leads por campo `Mes` del lead (patrón existente); citas por `scheduled_at`.
 - No commit/push/deploy sin petición explícita.
@@ -47,17 +47,17 @@ Hoy el trafficker lleva las cifras de Meta en hojas externas y las asesoras no p
 Modo: off | Fuente: default | Runner: no disponible (checks funcionales obligatorios).
 
 ## Tareas
-- [ ] T1 migración rol + tabla + RLS + RPCs + endurecimiento CRM
-- [ ] T2 pestaña Campañas (selector mes, tabla, edición inline, totales, gráfico, aislamiento trafficker)
-- [ ] T3 verificación independiente
+- [x] T1 migración rol + tabla + RLS + RPCs + endurecimiento CRM (aplicada en remoto 2026-09-29)
+- [x] T2 pestaña Campañas (selector mes, tabla, edición inline, totales, gráfico, aislamiento trafficker)
+- [x] T3 verificación independiente
 
 ## Criterios de aceptación
-- [ ] Trafficker entra y solo ve Campañas; no puede llamar a tablas/leads/RPCs del CRM (42501/P0002).
-- [ ] Trafficker puede crear y corregir campañas del mes; no puede borrar; no puede corregir filas de otro (salvo upsert del mismo campaign_name/anio/mes → admin o dueño).
-- [ ] Agente y admin ven Campañas y el rollup sin poder editar (solo admin edita cualquier fila).
-- [ ] Total mensual = suma de filas; coste/resultado mostrado y no editable; «—» si resultados=0.
-- [ ] Selector de mes cambia el informe; por defecto mes actual.
-- [ ] build/lint/diff-check/node-check/qa-gate (qa-gate admite solo aviso preexistente .env.example).
+- [x] Trafficker entra y solo ve Campañas; no puede llamar a tablas/leads/RPCs del CRM (42501/P0002). — Verificado en remoto con sesión simulada: 0 filas en las 6 tablas del CRM, `is_crm_user()`=false.
+- [ ] Trafficker puede crear y corregir campañas del mes; no puede borrar; no puede corregir filas de otro (salvo upsert del mismo campaign_name/anio/mes → admin o dueño). — Falta usuario `trafficker` real para probar el camino de escritura.
+- [x] Agente y admin ven Campañas y el rollup sin poder editar (solo admin edita cualquier fila). — Verificado: agente recibe 42501 `campaign_editor_required` y `admin_required`; el `role` ya admite `trafficker`.
+- [x] Total mensual = suma de filas; coste/resultado mostrado y no editable; «—» si resultados=0.
+- [x] Selector de mes cambia el informe; por defecto mes actual.
+- [x] build/lint/diff-check/node-check/qa-gate (qa-gate admite solo aviso preexistente .env.example).
 
 ## Decisiones aceptadas
 - `Campaña` del CRM == campaña de Meta (decidido por el humano en conversación).
@@ -80,6 +80,19 @@ Modo: off | Fuente: default | Runner: no disponible (checks funcionales obligato
 - Evidencia de menores (T3): gráfico simple ausente en v1 (lo permite el cock contractado); migración SQL pendiente de compilación real al aplicarla manualmente; on-conflict del upsert confirma el comportamiento acordado.
 
 ## Progreso
-- Estado: implementación completa y verificada (T1-T3 passed).
-- Última tarea: T3 verificación independiente; commit local.
-- Siguiente paso: revisión del humano, aplicación manual de `202609290001_campaign_stats.sql` en Supabase, prueba del flujo trafficker (login → solo ve Campañas → guardar nota de campaña → refrescar → agente la entiende en solo lectura).
+- Estado: implementación completa, verificada y **aplicada en el remoto** (project_ref `hkkuyomlcqyxtzblowle`, 2026-09-29).
+- Última tarea: aplicación de la migración en Supabase + verificación post-aplicación.
+- Siguiente paso: dar de alta al usuario `trafficker` en `user_access` (aún no existe ninguno) y probar el flujo real (login → solo ve Campañas → guardar cifras → refrescar → el agente las ve en solo lectura).
+
+### Evidencia de aplicación remota (2026-09-29)
+- Pre-flight: `user_access_role_check` con `('admin','agente')`; 3 usuarios activos; las 6 tablas CRM presentes; `campaign_stats` inexistente.
+- Antes de recrear las 7 funciones CRM se comparó su `prosrc` remoto con el del fichero: 6 de 7 coincidían byte a byte. `create_lead` difería en 3 espacios finales dentro de literales (`'Agente '`, `'OBSERVACIONES '`, `'Informacion '`); la versión del fichero es superconjunto, no se perdió ninguna corrección manual.
+- Los 12 cuerpos de función del remoto se validaron por md5 normalizado contra el fichero: **coinciden los 12**. `prosecdef = true` en todos.
+- Tabla: RLS activo, política `campaign_stats_read_active` con `is_active_user()`; `authenticated` solo tiene SELECT (sin INSERT/UPDATE/DELETE). Sus privilegios coinciden con el baseline del proyecto (`leads`, `lead_notes`, `daily_report_notes`).
+- Las 6 políticas `*_read_active_authorized` recreadas, todas con `is_crm_user()`.
+- Pruebas con sesión simulada (transacciones revertidas, sin datos persistidos):
+  - admin: rollup de 2026-09 devuelve 6 campañas (confirma que el alias `asistieron` ya no está roto).
+  - agente: `upsert_campaign_stat` → 42501 `campaign_editor_required`; `delete_campaign_stat` → 42501 `admin_required`; INSERT directo → permission denied; rollup sí funciona.
+  - `anon`: rollup y upsert → 42501 `active_user_required`.
+  - trafficker (rol simulado en transacción revertida): `is_crm_user`=false, `is_campaign_editor`=true, 0 filas en leads/historico/citas/notas/gestiones/reporte, lee `campaign_stats` y el rollup.
+- Incidente durante la aplicación: el cuerpo de `campaign_monthly_rollup` se transmitió con el alias corrupto `as前后asistieron`. PostgreSQL lo aceptó (identificador CJK válido) y la función habría fallado solo en runtime. Detectado por el hash guardián y corregido; de ahí que toda la aplicación se hiciera con verificación por hash y en bloques idempotentes.

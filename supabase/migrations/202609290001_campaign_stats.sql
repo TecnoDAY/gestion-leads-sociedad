@@ -5,8 +5,10 @@
 -- 4) RPCs upsert_campaign_stat / delete_campaign_stat / campaign_monthly_rollup.
 -- 5) Endurecimiento CRM: trafficker no puede leer ni escribir datos de leads
 --    (politicas select + guarda temprana 42501 en RPCs activos).
--- This migration is intentionally NOT applied by this repository.
--- Review it in the Supabase SQL editor before applying it to the remote project.
+-- Aplicada en el proyecto remoto (project_ref hkkuyomlcqyxtzblowle) el 2026-09-29.
+-- Verificado tras aplicar: los 12 cuerpos de funcion coinciden byte a byte con este
+-- fichero (md5 normalizado), y el aislamiento se probo con sesion simulada:
+-- el rol 'trafficker' ve campaign_stats pero 0 filas en las 6 tablas del CRM.
 
 begin;
 

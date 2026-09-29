@@ -80,6 +80,58 @@ for (const { re, msg } of REGRESSION_RULES) {
   }
 }
 
+// --- 3. Cobertura del tema claro ---------------------------------------------
+// El modo claro no reescribe Tailwind: suma sobrescrituras bajo [data-theme="light"].
+// Si se usa una utilidad oscura sin su sobrescritura, se rompe SOLO en modo claro
+// (borde/divisor/superficie oscuro sobre fondo blanco) y sin ningun aviso, que es
+// como se acabo de perder una vez. Esta regla convierte ese fallo silencioso en un
+// error de build.
+//   - fondos neutros: avisan desde 600 (un bg de 500 es un indicador legitimo en ambos temas)
+//   - bordes/divisores/anillos: avisan desde 500 (cualquier tono medio pesa sobre blanco)
+const styleTag = html.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+if (!styleTag) {
+  failures++;
+  console.error('check-app: no hay bloque <style> que analizar para el tema claro');
+} else {
+  const deescapar = (t) => t.replace(/\\(.)/g, '$1');
+  const cubiertas = new Set();
+  for (const regla of styleTag[1].matchAll(/([^{}]+)\{[^}]*\}/g)) {
+    const selector = regla[1];
+    if (!selector.includes('[data-theme="light"]')) continue;
+    for (const parte of selector.split(',')) {
+      if (!parte.includes('[data-theme="light"]')) continue;
+      // .hover\:bg-x:hover -> .hover\:bg-x ; .bg-x > :not([hidden]) -> .bg-x > :not()
+      const limpio = parte
+        .replace(/:(hover|focus|focus-visible|active|disabled)(\([^)]*\))?/g, '')
+        .replace(/\[[^\]]*\]/g, '');
+      for (const c of limpio.matchAll(/\.((?:\\.|[\w-])+)/g)) cubiertas.add(deescapar(c[1]));
+    }
+  }
+
+  // El lado "usado" es solo HTML/JS: el propio CSS genera tokens con otra forma
+  // (.hover\:bg-x se lee como bg-x) y daria falsos positivos.
+  const marcado = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+  const utilidad = /(?:[a-zA-Z0-9-]+:)*(?:bg|text|border|divide|ring|placeholder)-(?:slate|zinc|neutral|gray|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d+(?:\/\d+)?/g;
+  const sinSobrescritura = new Set();
+  let usadas = 0;
+  for (const m of marcado.matchAll(utilidad)) {
+    usadas++;
+    const clase = m[0];
+    if (cubiertas.has(clase)) continue;
+    const base = clase.split(':').pop(); // quita variantes hover:/focus:/lg:
+    const b = base.match(/^(bg|border|divide|ring)-(slate|zinc|neutral|gray)-(\d+)(?:\/\d+)?$/);
+    if (b && Number(b[3]) >= (b[1] === 'bg' ? 600 : 500)) sinSobrescritura.add(clase);
+  }
+  if (sinSobrescritura.size > 0) {
+    failures++;
+    console.error(
+      `check-app: regresion detectada -> tema claro sin sobrescritura para: ${[...sinSobrescritura].sort().join(', ')}`
+    );
+  } else {
+    console.log(`check-app: tema claro OK (${cubiertas.size} sobrescrituras, ${usadas} utilidades usadas)`);
+  }
+}
+
 if (failures > 0) {
   console.error(`check-app: ${failures} fallo(s)`);
   process.exit(1);

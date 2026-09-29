@@ -58,13 +58,16 @@
     .tabular-nums { font-variant-numeric: tabular-nums; }
     .glass-card { background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(8px); }
     body:not(.session-ready) > header, body:not(.session-ready) > div.sticky, body:not(.session-ready) > main, body:not(.session-ready) > footer { display: none; }
+    /* Anillo de foco visible al navegar con teclado. !important gana al
+       focus:outline-none de Tailwind (foco de 46 controles sin indicador). */
+    :focus-visible { outline: 2px solid #6366f1 !important; outline-offset: 2px !important; }
     :root { color-scheme: dark; }
     [data-theme="light"] { color-scheme: light; }
     [data-theme="light"] .glass-card { background: rgba(255, 255, 255, 0.92); }
     [data-theme="light"] .bg-slate-950, [data-theme="light"] .bg-slate-900, [data-theme="light"] .bg-slate-900\/95, [data-theme="light"] .bg-slate-900\/90 { background-color: #f8fafc; }
     [data-theme="light"] .bg-slate-950\/80, [data-theme="light"] .bg-slate-950\/95 { background-color: rgba(255, 255, 255, 0.92); }
     [data-theme="light"] .bg-slate-950\/90, [data-theme="light"] .bg-slate-900\/50 { background-color: #f1f5f9; }
-    [data-theme="light"] .bg-slate-800, [data-theme="light"] .bg-slate-800\/50 { background-color: #e2e8f0; }
+    [data-theme="light"] .bg-slate-800, [data-theme="light"] .bg-slate-800\/50, [data-theme="light"] .bg-slate-800\/60, [data-theme="light"] .bg-slate-800\/70 { background-color: #e2e8f0; }
     [data-theme="light"] .bg-slate-700, [data-theme="light"] .bg-slate-700\/60 { background-color: #cbd5e1; }
     [data-theme="light"] .bg-slate-900\/60, [data-theme="light"] .bg-slate-900\/80 { background-color: #e2e8f0; }
     [data-theme="light"] .bg-slate-950\/70 { background-color: #f1f5f9; }
@@ -72,7 +75,17 @@
     [data-theme="light"] .bg-indigo-500, [data-theme="light"] .bg-indigo-600 { background-color: #4338ca; }
     [data-theme="light"] .bg-emerald-500 { background-color: #047857; }
     [data-theme="light"] .bg-amber-500, [data-theme="light"] .bg-amber-600 { background-color: #b45309; }
-    [data-theme="light"] .border-slate-800, [data-theme="light"] .border-slate-700, [data-theme="light"] .border-slate-700\/80 { border-color: #cbd5e1; }
+    [data-theme="light"] .border-slate-800, [data-theme="light"] .border-slate-700, [data-theme="light"] .border-slate-700\/80, [data-theme="light"] .border-slate-700\/60 { border-color: #cbd5e1; }
+    [data-theme="light"] .border-slate-600, [data-theme="light"] .border-slate-600\/60 { border-color: #cbd5e1; }
+    /* Campos de formulario: #94a3b8 da 2.71:1 frente a los 1.48:1 de #cbd5e1, para
+       que el control se distinga del fondo (WCAG 1.4.11 pide 3:1). Sólo input/select/
+       textarea: tarjetas y botones conservan el borde sutil. !important gana a
+       [data-theme="light"] .border-slate-600 (0,2,0); #reporteDiario conserva su
+       #cbd5e1 porque su propia regla tiene !important y especificidad 1,1,1. */
+    [data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea { border-color: #94a3b8 !important; }
+    /* Los divisores de fila los genera Tailwind como > :not([hidden]) ~ :not([hidden])
+       (especificidad 0,3,0): sin !important el override podria quedar por debajo. */
+    [data-theme="light"] .divide-slate-800 > :not([hidden]) ~ :not([hidden]), [data-theme="light"] .divide-slate-800\/80 > :not([hidden]) ~ :not([hidden]) { border-color: #e2e8f0 !important; }
     [data-theme="light"] .text-slate-100, [data-theme="light"] .text-slate-200, [data-theme="light"] .text-white { color: #0f172a; }
     [data-theme="light"] .text-slate-300 { color: #334155; }
     [data-theme="light"] .text-slate-400, [data-theme="light"] .text-slate-500 { color: #475569; }
@@ -91,7 +104,7 @@
     [data-theme="light"] .bg-rose-500\/15.text-rose-300 { color: #be123c; }
     [data-theme="light"] .hover\:bg-slate-700:hover { background-color: #cbd5e1; }
     [data-theme="light"] .hover\:bg-slate-600:hover { background-color: #cbd5e1; }
-    [data-theme="light"] .hover\:bg-slate-700\/50:hover, [data-theme="light"] .hover\:bg-slate-800\/40:hover, [data-theme="light"] .hover\:bg-slate-800\/60:hover, [data-theme="light"] .hover\:bg-slate-800\/80:hover { background-color: #f1f5f9; }
+    [data-theme="light"] .hover\:bg-slate-700\/50:hover, [data-theme="light"] .hover\:bg-slate-800\/40:hover, [data-theme="light"] .hover\:bg-slate-800\/50:hover, [data-theme="light"] .hover\:bg-slate-800\/60:hover, [data-theme="light"] .hover\:bg-slate-800\/80:hover { background-color: #f1f5f9; }
     [data-theme="light"] .hover\:bg-indigo-500:hover { background-color: #3730a3; }
     [data-theme="light"] .hover\:bg-emerald-500:hover { background-color: #047857; }
     [data-theme="light"] .hover\:bg-amber-500:hover { background-color: #92400e; }
@@ -210,7 +223,7 @@
         <button id="tabBtnHistorico" onclick="switchTab('historico')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">
           <i data-lucide="line-chart" class="w-4 h-4"></i>
           <span>Gráficos Históricos</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono font-semibold">2026</span>
+          <span class="text-[11px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono font-semibold">2026</span>
         </button>
         <button id="tabBtnReporte" onclick="switchTab('reporte')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">
           <i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Reporte</span>
@@ -379,15 +392,15 @@
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <div class="flex items-center gap-1.5">
-              <label class="text-[10px] text-slate-400">Desde</label>
+              <label class="text-[11px] text-slate-400">Desde</label>
               <input type="date" id="dashDesde" onchange="applyFilters()" class="w-[120px] bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
             </div>
             <div class="flex items-center gap-1.5">
-              <label class="text-[10px] text-slate-400">Hasta</label>
+              <label class="text-[11px] text-slate-400">Hasta</label>
               <input type="date" id="dashHasta" onchange="applyFilters()" class="w-[120px] bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
             </div>
-            <button onclick="clearDashRange()" class="text-[10px] text-indigo-400 hover:text-indigo-300 underline cursor-pointer">Limpiar</button>
-            <div id="dashRangeError" class="text-[10px] text-amber-400 hidden"></div>
+            <button onclick="clearDashRange()" class="text-[11px] text-indigo-400 hover:text-indigo-300 underline cursor-pointer">Limpiar</button>
+            <div id="dashRangeError" class="text-[11px] text-amber-400 hidden"></div>
           </div>
         </div>
       </div>
@@ -2743,7 +2756,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         const leadId = lead.id || (startIndex + idx + 1);
         const origin = getLeadOrigin(lead);
         const originBadge = origin === 'historico'
-          ? '<span class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold shrink-0">2025</span>'
+          ? '<span class="text-[11px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold shrink-0">2025</span>'
           : '';
         const mes = getField(lead, 'Mes');
         const fecha = getField(lead, 'Fecha');
@@ -2762,7 +2775,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           <td class="px-3.5 py-3 font-mono text-[11px] text-slate-400 tabular-nums">#${leadId}</td>
           <td class="px-3.5 py-3 text-slate-300">
             <div class="font-medium text-white">${escapeHtml(fecha || '-')}</div>
-            <div class="text-[10px] text-slate-500">${escapeHtml(mes || '')}</div>
+            <div class="text-[11px] text-slate-500">${escapeHtml(mes || '')}</div>
           </td>
           <td class="px-3.5 py-3">
             <div class="flex items-center gap-1.5">
@@ -3327,8 +3340,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             const itemOrigin = getLeadOrigin(l);
             const esActual = itemOrigin === finalOrigin && String(l.id) === String(lead.id);
             const yearBadge = itemOrigin === 'historico'
-              ? '<span class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">2025</span>'
-              : '<span class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-700/60 text-slate-300 border border-slate-600/60 font-semibold">2026</span>';
+              ? '<span class="text-[11px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">2025</span>'
+              : '<span class="text-[11px] uppercase px-1.5 py-0.5 rounded bg-slate-700/60 text-slate-300 border border-slate-600/60 font-semibold">2026</span>';
             const obsRaw = (getField(l, 'OBSERVACIONES ') || '').replace(/\s+/g, ' ').trim();
             const obs = obsRaw.length > 160 ? obsRaw.slice(0, 160) + '…' : obsRaw;
             return `<li class="flex items-start justify-between gap-3 border-b border-slate-800 last:border-0 py-2">
@@ -3337,7 +3350,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
                   <span class="text-slate-200 font-medium">${escapeHtml(getField(l, 'Fecha') || '-')}</span>
                   <span class="text-slate-500 font-mono">#${escapeHtml(String(l.id))}</span>
                   ${yearBadge}
-                  ${esActual ? '<span class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-semibold">Este lead</span>' : ''}
+                  ${esActual ? '<span class="text-[11px] uppercase px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-semibold">Este lead</span>' : ''}
                 </div>
                 <div class="text-[11px] text-slate-400 truncate">${escapeHtml(getField(l, 'Campaña') || '-')} · ${escapeHtml(getField(l, 'Medio') || '-')}</div>
                 <div class="text-[11px] text-slate-400">Agente: ${escapeHtml(getField(l, 'Agente ') || '-')}</div>
@@ -3351,7 +3364,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           repetidosHtml = `
           <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
           <div class="flex items-center justify-between gap-3">
-            <span class="text-[10px] uppercase text-amber-400 font-semibold flex items-center gap-1.5">
+            <span class="text-[11px] uppercase text-amber-400 font-semibold flex items-center gap-1.5">
               <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
               <span>Posible lead repetido</span>
             </span>
@@ -3368,7 +3381,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           <div>
             <div class="flex items-center gap-2 flex-wrap">
               <div class="text-base font-bold text-white">${escapeHtml(nombre)}</div>
-              ${finalOrigin === 'historico' ? '<span class="text-[10px] uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">Histórico 2025</span>' : ''}
+              ${finalOrigin === 'historico' ? '<span class="text-[11px] uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">Histórico 2025</span>' : ''}
             </div>
             <div class="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
               <span>ID: #${escapeHtml(String(lead.id))}</span>
@@ -3381,7 +3394,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
-            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Teléfono / WhatsApp</span>
+            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Teléfono / WhatsApp</span>
             <div class="flex items-center gap-1.5 mt-0.5">
               ${cleanPhone ? `<a href="${waLink}" target="_blank" class="text-emerald-400 hover:text-emerald-300"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></a>` : ''}
               <span class="font-mono text-slate-200">${escapeHtml(telefonoFmt || 'S/N')}</span>
@@ -3389,41 +3402,41 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           </div>
 
           <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
-            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Campaña</span>
+            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Campaña</span>
             <span class="font-medium text-slate-200 mt-0.5 block truncate">${escapeHtml(getField(lead, 'Campaña') || '-')}</span>
           </div>
 
           <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
-            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Medio</span>
+            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Medio</span>
             <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'Medio') || '-')}</span>
           </div>
 
           <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
-            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Asesor Principal</span>
+            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Asesor Principal</span>
             <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'Agente ') || '-')}</span>
           </div>
 
           <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
-            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Último Asesor</span>
+            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Último Asesor</span>
             <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'ULTIMO AGENTE ') || '-')}</span>
           </div>
 
           <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
-            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Última Gestión</span>
+            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Última Gestión</span>
             <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'Fecha Última Gestión ') || '-')}</span>
           </div>
         </div>${repetidosHtml}
 
         <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-1">
-          <span class="text-[10px] uppercase text-slate-400 font-semibold block">Historial de Observaciones</span>
+          <span class="text-[11px] uppercase text-slate-400 font-semibold block">Historial de Observaciones</span>
           <p class="text-slate-300 font-mono text-xs whitespace-pre-line leading-relaxed">${escapeHtml(getField(lead, 'OBSERVACIONES ') || 'Sin observaciones registradas.')}</p>
          </div>${finalOrigin === 'historico' ? '' : `
          <div id="leadGestionesSection" class="hidden bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
-           <span class="text-[10px] uppercase text-slate-400 font-semibold block">Historial de gestiones</span>
+           <span class="text-[11px] uppercase text-slate-400 font-semibold block">Historial de gestiones</span>
            <div id="leadGestionesList"><p class="text-[11px] text-slate-500">Cargando historial…</p></div>
          </div>
          <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
-          <span class="text-[10px] uppercase text-slate-400 font-semibold block">Notas del Equipo</span>
+          <span class="text-[11px] uppercase text-slate-400 font-semibold block">Notas del Equipo</span>
           <div id="leadNotesList" class="space-y-2"><p class="text-[11px] text-slate-500">Cargando notas…</p></div>
           <div class="flex items-start gap-2 pt-1">
             <textarea id="leadNoteInput" rows="2" maxlength="2000" placeholder="Añadir una nota para el equipo" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 resize-y"></textarea>
@@ -3433,7 +3446,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
            </div>
          </div>`}
           ${finalOrigin === 'historico' ? '' : `<div id="leadAppointmentsSection" class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-3">
-            <div class="flex items-center justify-between gap-2"><span class="text-[10px] uppercase text-slate-400 font-semibold">Citas</span><button type="button" onclick="openHelpModal('ayuda-citas')" title="Ayuda: citas del lead" aria-label="Ayuda sobre la gestión de citas del lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 cursor-pointer shrink-0">?</button></div>
+            <div class="flex items-center justify-between gap-2"><span class="text-[11px] uppercase text-slate-400 font-semibold">Citas</span><button type="button" onclick="openHelpModal('ayuda-citas')" title="Ayuda: citas del lead" aria-label="Ayuda sobre la gestión de citas del lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 cursor-pointer shrink-0">?</button></div>
             <div id="leadAppointmentCreate" class="${isAgendadoGestion(getField(lead, 'GESTION')) ? '' : 'hidden'}">
             <form id="leadAppointmentForm" onsubmit="createLeadAppointment(event)" class="grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end">
              <label class="text-[11px] text-slate-400">Fecha y hora<input id="leadAppointmentDate" type="datetime-local" required class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
@@ -3474,7 +3487,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     function validAppointmentId(value) { const id = Number(value); return Number.isFinite(id) && Number.isInteger(id) && id > 0 ? id : null; }
     function appointmentDate(value) { const d = new Date(value); return Number.isNaN(d.getTime()) ? null : d; }
      function appointmentLocal(value) { const d = appointmentDate(value); return d ? d.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) : '-'; }
-      function appointmentBadge(status) { const s = String(status || ''); return `<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-semibold">${escapeHtml(s || '-')}</span>`; }
+      function appointmentBadge(status) { const s = String(status || ''); return `<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[11px] font-semibold">${escapeHtml(s || '-')}</span>`; }
        function appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) { return generation === sessionGeneration && viewGeneration === viewLeadGeneration && String(currentViewId) === String(leadId) && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo; }
       function setAppointmentMutationPending(id, pending) { const appointmentId = validAppointmentId(id); if (!appointmentId) return; document.querySelectorAll(`[data-appointment-id="${appointmentId}"]`).forEach(control => { if (!('disabled' in control)) return; control.disabled = pending; control.classList.toggle('opacity-50', pending); control.classList.toggle('cursor-not-allowed', pending); }); }
      async function loadLeadAppointmentAdvisors(lead) { if(!isAdmin)return; const select=document.getElementById('leadAppointmentAdvisor');if(!select)return; document.getElementById('leadAppointmentAdvisorWrap')?.classList.remove('hidden'); if(leadAppointmentAdvisors.length){renderAppointmentAdvisorSelect(select,getField(lead,'Agente ').trim());return;} const gen=sessionGeneration,viewGen=viewLeadGeneration,id=currentViewId,uid=currentUser?.id,access=currentAccess?.updated_at;select.disabled=true;const {data,error}=await supabaseClient.rpc('admin_manage_user_access',{p_action:'list'});if(!appointmentSessionValid(gen,viewGen,id,uid,access))return;if(error){select.innerHTML='<option value="">No se pudieron cargar asesores</option>';return;}leadAppointmentAdvisors=(data||[]).filter(a=>a.activo===true);renderAppointmentAdvisorSelect(select,getField(lead,'Agente ').trim()); }

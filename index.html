@@ -371,6 +371,26 @@
       </div>
     </section>
 
+    <!-- Filtro Rango de Fechas de Gestión (fila propia) -->
+    <div class="glass-card rounded-xl p-3 border border-indigo-500/40 shadow-sm">
+      <div class="flex flex-wrap items-end gap-3">
+        <div class="flex items-center gap-1.5 shrink-0">
+          <i data-lucide="calendar-range" class="w-4 h-4 text-indigo-400"></i>
+          <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wider">Rango de gestión</span>
+        </div>
+        <div class="flex items-center gap-2 flex-1 min-w-[220px]">
+          <label class="text-[10px] text-slate-400">Desde</label>
+          <input type="date" id="dashDesde" onchange="applyFilters()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+        </div>
+        <div class="flex items-center gap-2 flex-1 min-w-[220px]">
+          <label class="text-[10px] text-slate-400">Hasta</label>
+          <input type="date" id="dashHasta" onchange="applyFilters()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+        </div>
+        <button onclick="clearDashRange()" class="shrink-0 text-[10px] text-indigo-400 hover:text-indigo-300 underline cursor-pointer">Limpiar rango</button>
+        <div id="dashRangeError" class="shrink-0 text-[10px] text-amber-400 hidden"></div>
+      </div>
+    </div>
+
     <!-- DASHBOARD ANALÍTICO - MATRIZ CRUZADA (GESTIÓN VS CAMPAÑAS) -->
     <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden">
       <div class="p-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -2338,14 +2358,66 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       filterDebounceTimer = setTimeout(applyFilters, 200);
     }
 
-    function applyFilters() {
+    let dashRangeGen = 0;
+
+    function clearDashRange() {
+      const desde = document.getElementById('dashDesde');
+      const hasta = document.getElementById('dashHasta');
+      const err = document.getElementById('dashRangeError');
+      if (desde) desde.value = '';
+      if (hasta) hasta.value = '';
+      if (err) { err.classList.add('hidden'); err.innerText = ''; }
+      applyFilters();
+    }
+
+    async function applyFilters() {
       clearTimeout(filterDebounceTimer);
       const search = (document.getElementById('filterSearch')?.value || '').toLowerCase().trim();
       const mes = document.getElementById('filterMes')?.value || '';
       const campana = document.getElementById('filterCampana')?.value || '';
       const medio = document.getElementById('filterMedio')?.value || '';
       const gestion = document.getElementById('filterGestion')?.value || '';
+      const dashDesde = document.getElementById('dashDesde')?.value || '';
+      const dashHasta = document.getElementById('dashHasta')?.value || '';
+      const errEl = document.getElementById('dashRangeError');
       const baseLeads = getVisibleBaseLeads();
+
+      // Validar rango de fechas de gestión
+      let gestionIds = null;
+      if (dashDesde && dashHasta) {
+        if (dashDesde > dashHasta) {
+          if (errEl) { errEl.classList.remove('hidden'); errEl.innerText = 'La fecha "Desde" no puede ser posterior a "Hasta".'; }
+          return;
+        }
+        if (errEl) { errEl.classList.add('hidden'); errEl.innerText = ''; }
+        const gen = ++dashRangeGen;
+        if (!supabaseClient || !currentUser) {
+          if (errEl) { errEl.classList.remove('hidden'); errEl.innerText = 'No se pudo consultar la base de datos. Verifica la sesión.'; }
+          return;
+        }
+        try {
+          const fromParts = dashDesde.split('-').map(Number);
+          const untilParts = dashHasta.split('-').map(Number);
+          const start = new Date(fromParts[0], fromParts[1] - 1, fromParts[2]);
+          const end = new Date(untilParts[0], untilParts[1] - 1, untilParts[2] + 1);
+          const { data, error } = await supabaseClient
+            .from('lead_gestiones')
+            .select('lead_id')
+            .gte('fecha_gestion', start.toISOString())
+            .lt('fecha_gestion', end.toISOString());
+          // Solo aplicar si es la última solicitud
+          if (gen !== dashRangeGen) return;
+          if (error) throw error;
+          gestionIds = new Set((data || []).map(r => String(r.lead_id)));
+        } catch (e) {
+          if (gen !== dashRangeGen) return;
+          console.warn('Error consultando lead_gestiones por rango:', e);
+          if (errEl) { errEl.classList.remove('hidden'); errEl.innerText = 'Error al consultar el rango de gestión. Inténtalo de nuevo.'; }
+          return;
+        }
+      } else {
+        if (errEl) { errEl.classList.add('hidden'); errEl.innerText = ''; }
+      }
 
       filteredLeads = baseLeads.filter(lead => {
         if (!currentUser || !currentAccess?.activo) return;
@@ -2362,10 +2434,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         if (campana && getField(lead, 'Campaña').trim() !== campana) return false;
         if (medio && getField(lead, 'Medio').trim() !== medio) return false;
         if (gestion && getField(lead, 'GESTION').trim() !== gestion) return false;
+        if (gestionIds !== null && !gestionIds.has(String(lead.id))) return false;
         return true;
       });
 
-      const activeCount = [mes, campana, medio, gestion, search].filter(Boolean).length;
+      const activeCount = [mes, campana, medio, gestion, search, dashDesde, dashHasta].filter(Boolean).length;
       const activeFiltersCountEl = document.getElementById('activeFiltersCount');
       if (activeFiltersCountEl) {
         activeFiltersCountEl.innerText = activeCount > 0
@@ -2385,6 +2458,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (document.getElementById('filterCampana')) document.getElementById('filterCampana').value = '';
       if (document.getElementById('filterMedio')) document.getElementById('filterMedio').value = '';
       if (document.getElementById('filterGestion')) document.getElementById('filterGestion').value = '';
+      clearDashRange();
       applyFilters();
       showToast("Filtros reiniciados", "info");
     }

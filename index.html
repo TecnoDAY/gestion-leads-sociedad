@@ -939,6 +939,18 @@
       </form>
       <p class="text-[11px] text-slate-400">Se envía un correo de invitación para que la persona verifique su correo y defina su propia contraseña. Aquí solo se guarda el correo, el nombre, el rol y el estado.</p>
       <div id="authorizedUsers" class="text-xs text-slate-400 space-y-1"></div>
+      <div id="changeEmailBox" class="hidden space-y-2 border-t border-slate-700 pt-3 text-xs">
+        <p class="text-slate-400">Cambiar el correo de <span id="changeEmailTarget" class="text-white"></span></p>
+        <form id="formChangeEmail" onsubmit="handleChangeEmail(event)" class="space-y-2">
+          <input id="changeEmailNew" type="email" required maxlength="320" placeholder="nuevo@correo.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
+          <div class="flex items-center gap-2">
+            <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Enviar confirmación</button>
+            <button type="button" onclick="closeChangeEmail()" class="px-3 py-2 rounded-lg border border-slate-600 hover:border-slate-400 text-slate-300">Cancelar</button>
+          </div>
+          <p id="changeEmailStatus" class="text-[11px] text-slate-400"></p>
+        </form>
+      </div>
+      <p class="text-[11px] text-slate-400">Al cambiar el correo se envían confirmaciones a las dos direcciones: la persona confirma primero el correo nuevo y después el antiguo, y al terminar define su contraseña. La cuenta, el rol y el historial no cambian.</p>
     </div>
   </div>
 
@@ -1420,14 +1432,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
      let campaignStatsMap = new Map();
      let campanasRequestGeneration = 0;
 
-    // Los enlaces de invitación y de recuperación llegan como
-    // #access_token=...&type=invite|recovery. supabase-js los consume y borra el
-    // fragmento durante createClient(), así que el tipo se lee ANTES de crear el
-    // cliente; sin esa lectura previa no hay forma de saberlo después.
+    // Los enlaces de invitación, de recuperación y de cambio de correo llegan
+    // como #access_token=...&type=invite|recovery|email_change. supabase-js los
+    // consume y borra el fragmento durante createClient(), así que el tipo se lee
+    // ANTES de crear el cliente; sin esa lectura previa no hay forma de saberlo
+    // después. email_change es el retorno de confirmar el correo nuevo: la
+    // persona acaba con sesión abierta y todavía sin contraseña propia.
     let pendingPasswordSetup = false;
     try {
       const authRedirectType = new URLSearchParams(window.location.hash.slice(1)).get('type');
-      pendingPasswordSetup = authRedirectType === 'invite' || authRedirectType === 'recovery';
+      pendingPasswordSetup = ['invite', 'recovery', 'email_change'].includes(authRedirectType);
     } catch (err) {
       console.warn('No se pudo leer el tipo de enlace de autenticación:', err);
     }
@@ -1761,6 +1775,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (supabaseClient) await supabaseClient.auth.signOut();
     }
 
+    let authorizedUsersList = [];
+    let changeEmailTarget = null;
+
     async function loadAuthorizedUsers() {
       if (!isAdmin) return;
       const container = document.getElementById('authorizedUsers');
@@ -1768,7 +1785,91 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const { data, error } = await supabaseClient.rpc('admin_manage_user_access', { p_action: 'list' });
       if (!container) return;
       if (error) { container.innerHTML = '<p class="text-rose-300">No se pudieron cargar los usuarios.</p>'; return; }
-      container.innerHTML = (data || []).map(item => `<div class="flex items-center justify-between gap-3 border-b border-slate-700 py-1"><span>${escapeHtml(item.email)} · ${escapeHtml(item.role)}</span><span class="flex items-center gap-2">${item.activo ? 'Activo' : 'Inactivo'}<button onclick="setUserActive('${escapeAttr(item.user_id)}', ${item.activo ? 'false' : 'true'})" class="px-2 py-1 rounded border border-slate-600 hover:border-indigo-400 text-[11px]">${item.activo ? 'Desactivar' : 'Activar'}</button></span></div>`).join('') || '<p class="text-slate-500">No hay usuarios.</p>';
+      // La lista se guarda para poder resolver el correo por id: pasar el correo
+      // por el atributo onclick metería datos del usuario dentro de JavaScript.
+      authorizedUsersList = Array.isArray(data) ? data : [];
+      container.innerHTML = authorizedUsersList.map(item => `
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700 py-1">
+          <span>${escapeHtml(item.email)} · ${escapeHtml(item.role)}</span>
+          <span class="flex items-center gap-2">
+            ${item.activo ? 'Activo' : 'Inactivo'}
+            <button onclick="openChangeEmail('${escapeAttr(item.user_id)}')" class="px-2 py-1 rounded border border-slate-600 hover:border-indigo-400 text-[11px]">Cambiar correo</button>
+            <button onclick="setUserActive('${escapeAttr(item.user_id)}', ${item.activo ? 'false' : 'true'})" class="px-2 py-1 rounded border border-slate-600 hover:border-indigo-400 text-[11px]">${item.activo ? 'Desactivar' : 'Activar'}</button>
+          </span>
+        </div>`).join('') || '<p class="text-slate-500">No hay usuarios.</p>';
+    }
+
+    function openChangeEmail(userId) {
+      if (!isAdmin) return;
+      const target = authorizedUsersList.find(item => item.user_id === userId);
+      if (!target) return;
+      changeEmailTarget = { userId, email: target.email };
+      const input = document.getElementById('changeEmailNew');
+      // Se vacía el campo: si no, se reenviaría sin querer el correo anterior.
+      if (input) input.value = '';
+      const status = document.getElementById('changeEmailStatus');
+      if (status) status.textContent = '';
+      const targetLabel = document.getElementById('changeEmailTarget');
+      if (targetLabel) targetLabel.textContent = target.email;
+      document.getElementById('changeEmailBox')?.classList.remove('hidden');
+      input?.focus();
+    }
+
+    function closeChangeEmail() {
+      changeEmailTarget = null;
+      document.getElementById('changeEmailBox')?.classList.add('hidden');
+    }
+
+    const changeEmailMessages = {
+      invalid_email: 'El correo no tiene un formato válido.',
+      same_email: 'El correo nuevo es el mismo que el actual.',
+      email_taken: 'Ese correo ya está en uso por otra cuenta.',
+      email_rate_limit: 'Se agotó el límite de correos del proyecto. Inténtalo en unos minutos.',
+      user_not_found: 'Esa cuenta ya no existe.',
+      change_rejected: 'Supabase rechazó el cambio. Inténtalo de nuevo.',
+      internal: 'Algo falló en el servidor. Inténtalo de nuevo.',
+    };
+
+    // supabase-js devuelve el cuerpo del error del lado de error.context (un
+    // Response). Si en otra versión no está, o su cuerpo ya fue leído, se pasa
+    // de largo y se usa un mensaje genérico: esto nunca debe lanzar.
+    async function readFunctionErrorCode(error) {
+      const context = error?.context;
+      if (!context || typeof context.json !== 'function') return null;
+      try {
+        const body = await context.json();
+        return typeof body?.error === 'string' ? body.error : null;
+      } catch (err) {
+        console.warn('No se pudo leer la respuesta de la función:', err);
+        return null;
+      }
+    }
+
+    async function handleChangeEmail(event) {
+      event.preventDefault();
+      if (!isAdmin || !changeEmailTarget) return;
+      const newEmail = (document.getElementById('changeEmailNew')?.value || '').trim().toLowerCase();
+      const status = document.getElementById('changeEmailStatus');
+      const btn = event.target.querySelector('button[type="submit"]');
+      if (btn) btn.disabled = true;
+      if (status) status.textContent = 'Enviando confirmaciones...';
+      try {
+        const { data, error } = await supabaseClient.functions.invoke('change-user-email', {
+          body: { targetUserId: changeEmailTarget.userId, newEmail },
+        });
+        if (!error && data?.accepted) {
+          closeChangeEmail();
+          showToast('Confirmaciones enviadas al correo nuevo y al antiguo', 'success');
+          return;
+        }
+        const code = (typeof data?.error === 'string' ? data.error : null) ?? await readFunctionErrorCode(error);
+        if (status) status.textContent = changeEmailMessages[code] || 'No se pudo solicitar el cambio de correo.';
+      } catch (err) {
+        console.warn('No se pudo solicitar el cambio de correo:', err);
+        if (status) status.textContent = 'No se pudo solicitar el cambio de correo.';
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
 
     async function setUserActive(userId, activo) {

@@ -10,7 +10,7 @@
     "clean": "rm -rf dist server.js",
     "check:app": "node scripts/check-app.mjs",
     "lint": "tsc --noEmit && node scripts/check-app.mjs",
-    "test": "node --test scripts/tests/*.test.mjs"
+    "test": "node --test scripts/tests/*.test.mjs && python3 -m unittest scripts/tests/test_reconcile_leads.py"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

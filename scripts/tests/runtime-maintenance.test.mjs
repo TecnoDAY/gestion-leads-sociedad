@@ -43,7 +43,7 @@ for (const name of ['authorize-user', 'change-user-email', 'meta-whatsapp-webhoo
 }
 
 test('npm test expone la suite existente sin modificar puertos dev', () => {
-  assert.equal(pkg.scripts.test, 'node --test scripts/tests/*.test.mjs');
+  assert.equal(pkg.scripts.test, 'node --test scripts/tests/*.test.mjs && python3 -m unittest scripts/tests/test_reconcile_leads.py');
   assert.equal(pkg.scripts.dev, 'vite --port=3000 --host=0.0.0.0');
 });
 

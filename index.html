@@ -375,8 +375,8 @@
 
       </div>
 
-      <!-- Origen + Rango de Gestión en la misma fila (compacto) -->
-      <div class="flex flex-wrap items-end gap-4 pt-2 border-t border-slate-700/60">
+      <!-- Origen + Rango de Gestión + Asesora en la misma fila -->
+      <div class="grid grid-cols-1 md:grid-cols-[minmax(150px,1fr)_minmax(260px,2fr)_minmax(150px,1fr)] items-end gap-4 pt-2 border-t border-slate-700/60">
         <div class="min-w-[150px]">
           <label class="block text-xs font-medium text-slate-400 mb-1">Origen</label>
           <select id="dataSourceFilter" onchange="setDataSource(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
@@ -385,7 +385,7 @@
             <option value="todos">Todos</option>
           </select>
         </div>
-        <div class="flex-1 min-w-[260px]">
+        <div class="min-w-0">
           <div class="flex items-center gap-1.5 mb-1">
             <i data-lucide="calendar-range" class="w-4 h-4 text-indigo-400"></i>
             <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wider">Rango de gestión</span>
@@ -402,6 +402,12 @@
             <button onclick="clearDashRange()" class="text-[11px] text-indigo-400 hover:text-indigo-300 underline cursor-pointer">Limpiar</button>
             <div id="dashRangeError" class="text-[11px] text-amber-400 hidden"></div>
           </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Asesora</label>
+          <select id="filterAsesora" onchange="applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+            <option value="">Todas las asesoras</option>
+          </select>
         </div>
       </div>
     </section>
@@ -1223,7 +1229,8 @@
           <!-- Fecha Última Gestión -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Fecha Última Gestión</label>
-            <input type="text" id="editFechaUltima" placeholder="Ej: 23/09/2026" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
+            <input type="text" id="editFechaUltima" readonly placeholder="Ej: 23/09/2026" class="w-full opacity-70 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
+            <p class="text-[11px] text-slate-400 mt-1">Se registra automáticamente al guardar.</p>
           </div>
 
           <!-- ULTIMA GESTION (Canal) -->
@@ -1241,7 +1248,8 @@
           <!-- ULTIMO AGENTE -->
           <div class="sm:col-span-2">
             <label class="block font-medium text-slate-300 mb-1">Último Asesor que gestionó</label>
-            <input type="text" id="editUltimoAgente" list="agenteList" placeholder="Ej: Ana, Jessica, Loli" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
+            <input type="text" id="editUltimoAgente" readonly list="agenteList" placeholder="Ej: Ana, Jessica, Loli" class="w-full opacity-70 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
+            <p class="text-[11px] text-slate-400 mt-1">Se registra automáticamente al guardar.</p>
           </div>
 
           <!-- OBSERVACIONES -->
@@ -2332,7 +2340,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
         const { data, error } = await query;
         if (!sessionValid()) throw new Error('La sesión cambió durante la paginación');
-        if (error) throw new Error(`Error cargando bloque posterior a ${cursor ?? 'inicio'}: ${error.message}`);
+        if (error) { const failure = new Error(`Error cargando bloque posterior a ${cursor ?? 'inicio'}: ${error.message}`); failure.code = error.code; throw failure; }
         if (!Array.isArray(data) || data.length > blockSize) {
           throw new Error("Supabase devolvió un bloque inválido");
         }
@@ -2630,6 +2638,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       populateSelect('filterCampana', catalogOptions('campana', getUniqueValues('Campaña')));
       populateSelect('filterMedio', catalogOptions('medio', getUniqueValues('Medio')));
       populateSelect('filterGestion', catalogOptions('gestion', getUniqueValues('GESTION')));
+      populateSelect('filterAsesora', catalogOptions('agente', getUniqueValues('Agente ')));
     }
 
     function populateSelect(elementId, values) {
@@ -2850,6 +2859,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const campana = document.getElementById('filterCampana')?.value || '';
       const medio = document.getElementById('filterMedio')?.value || '';
       const gestion = document.getElementById('filterGestion')?.value || '';
+      const asesora = document.getElementById('filterAsesora')?.value || '';
       const dashDesde = document.getElementById('dashDesde')?.value || '';
       const dashHasta = document.getElementById('dashHasta')?.value || '';
       const errEl = document.getElementById('dashRangeError');
@@ -2906,13 +2916,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         if (campana && getField(lead, 'Campaña').trim() !== campana) return false;
         if (medio && getField(lead, 'Medio').trim() !== medio) return false;
         if (gestion && getField(lead, 'GESTION').trim() !== gestion) return false;
+        const agenteLead = getField(lead, 'Agente ').trim() || getField(lead, 'Agente').trim();
+        if (asesora && agenteLead !== asesora) return false;
         if (gestionIds !== null && (getLeadOrigin(lead) === 'historico' || !gestionIds.has(String(lead.id)))) return false;
         return true;
       });
 
       // Contar el rango Desde-Hasta como un solo filtro
       const rangeActive = dashDesde !== '' || dashHasta !== '';
-      const activeCount = [mes, campana, medio, gestion, search, rangeActive].filter(Boolean).length;
+      const activeCount = [mes, campana, medio, gestion, asesora, search, rangeActive].filter(Boolean).length;
       const activeFiltersCountEl = document.getElementById('activeFiltersCount');
       if (activeFiltersCountEl) {
         activeFiltersCountEl.innerText = activeCount > 0
@@ -2932,6 +2944,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (document.getElementById('filterCampana')) document.getElementById('filterCampana').value = '';
       if (document.getElementById('filterMedio')) document.getElementById('filterMedio').value = '';
       if (document.getElementById('filterGestion')) document.getElementById('filterGestion').value = '';
+      if (document.getElementById('filterAsesora')) document.getElementById('filterAsesora').value = '';
       if (document.getElementById('dashDesde')) document.getElementById('dashDesde').value = '';
       if (document.getElementById('dashHasta')) document.getElementById('dashHasta').value = '';
       const err = document.getElementById('dashRangeError');
@@ -3471,7 +3484,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const now = new Date();
       const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/New_York', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(now);
       const hoyFormatted = `${parts.find(p => p.type === 'day').value}/${parts.find(p => p.type === 'month').value}/${parts.find(p => p.type === 'year').value}`;
-      document.getElementById('editFechaUltima').value = getField(lead, 'Fecha Última Gestión ') || hoyFormatted;
+      document.getElementById('editFechaUltima').value = hoyFormatted;
       
       const ultimaGestion = getField(lead, 'ULTIMA GESTION');
       if (document.getElementById('editUltimaGestion')) {
@@ -4129,7 +4142,7 @@ async function loadLeadAppointments(leadId, lead) {
         steps: [
           'Abre la pestaña Reporte de la barra superior.',
           'Elige la Fecha del reporte: se muestra un bloque por cada asesora del día, con su total gestionados.',
-          'Los bloques por medio (Whatsapp, Facebook/Instagram, Aircall, Directo o Referido) y los indicadores (Agendados hoy, Asistieron hoy, No asistieron hoy, Inscritos e Inscritos Data Dura) se rellenan solos.',
+          'Los bloques por canal real de cada gestión y los indicadores (Agendados hoy, Asistieron hoy, No asistieron hoy, Inscritos e Inscritos Data Dura) se rellenan solos.',
           'En cada bloque, Problemas o bloqueos y Observaciones adicionales se guardan por asesora y fecha (zona horaria de Miami) con los botones Guardar y Eliminar.',
           'Como agente solo puedes editar tu propio bloque del día actual; en fechas anteriores tu vista es de solo lectura.',
           'Como administrador puedes editar y borrar cualquier bloque en cualquier fecha.',
@@ -4544,9 +4557,11 @@ async function loadLeadAppointments(leadId, lead) {
     }
 
     // Prefijos de estado reconocidos (variantes tipo 'AGENDADO 12/09' se agrupan); si no coincide, se usa el estado completo.
-    const GESTION_STATE_GROUPS = [
-      ['INSCRIT', 'INSCRITO'],
-      ['AGENDAD', 'AGENDADO'],
+      const GESTION_STATE_GROUPS = [
+       ['INSCRIT', 'INSCRITO'],
+       ['AGENDADO DATA DURA', 'AGENDADO DATA DURA'],
+       ['AGENDADO DATADURA', 'AGENDADO DATA DURA'],
+       ['AGENDAD', 'AGENDADO'],
       ['NO CONTEST', 'NO CONTESTA'],
       ['INFORMACIÓN', 'INFORMACIÓN'],
       ['INFORMACION', 'INFORMACIÓN'],
@@ -5184,27 +5199,34 @@ async function loadLeadAppointments(leadId, lead) {
         const matchCita = (c, nombre, uuid) => c.advisor_user_id ? (uuid ? c.advisor_user_id === uuid : c.advisor_name === nombre) : c.advisor_name === nombre;
         return collectNombres(citas, notas, gestiones).map(nombre => {
           const gestionesAsesora = gestiones.filter(g => g.autor_name === nombre);
-          const groups = { Whatsapp: [], 'Facebook/Instagram': [], Aircall: [], 'Directo o Referido': [] };
+           const groups = {};
           let inscritos = 0, inscritosDura = 0;
           gestionesAsesora.forEach(g => {
-            const lead = leads.get(g.lead_id) || {}, medio = getField(lead, 'Medio').toLowerCase();
-            const bucket = medio.includes('whatsapp') ? 'Whatsapp' : (medio.includes('facebook') || medio.includes('instagram')) ? 'Facebook/Instagram' : medio.includes('aircall') ? 'Aircall' : 'Directo o Referido';
+             const lead = leads.get(g.lead_id) || {};
+             const bucket = String(g.canal || '').trim() || 'Sin canal';
+             if (!groups[bucket]) groups[bucket] = [];
             groups[bucket].push(g);
             const estado = String(g.gestion_nueva || '').trim().toUpperCase(), old = isInscritoDataDura(lead, fecha);
             if (estado.startsWith('INSCRIT')) { inscritos++; if (old) inscritosDura++; }
           });
           const citasAsesora = citas.filter(c => matchCita(c, nombre, nombre === currentAccess?.nombre ? userId : uuidPorNombre.get(nombre)));
           const nota = notasPorAutor.get(nombre) || null;
-          return { advisor: nombre, groups, gestionados: gestionesAsesora.length, agendados: citasAsesora.length, asistieron: citasAsesora.filter(c => c.status === 'ASISTIO').length, noAsistieron: citasAsesora.filter(c => c.status === 'NO_ASISTIO').length, inscritos, inscritosDura, nota };
+           return { advisor: nombre, groups, gestionados: gestionesAsesora.length, agendados: citasAsesora.filter(c => c.is_data_dura !== true).length, asistieron: citasAsesora.filter(c => c.status === 'ASISTIO').length, noAsistieron: citasAsesora.filter(c => c.status === 'NO_ASISTIO').length, inscritos, inscritosDura, nota };
         });
       };
       let citasResult, notasResult;
       try {
-        const [startISO, endISO] = miamiDayBounds(fecha);
+         const [startISO, endISO] = miamiDayBounds(fecha);
+         const loadCitasReporte = async () => {
+           const withDataDura = await fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id,status,scheduled_at,advisor_name,advisor_user_id,is_data_dura').gte('scheduled_at', startISO).lt('scheduled_at', endISO));
+           return withDataDura.error?.code === '42703'
+             ? fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id,status,scheduled_at,advisor_name,advisor_user_id').gte('scheduled_at', startISO).lt('scheduled_at', endISO))
+             : withDataDura;
+         };
         if (!startISO) reporteWarnings.push('No se pudo calcular el rango Miami para las citas.');
         const resultados = await Promise.allSettled([
-          fetchPagedResult(() => supabaseClient.from('lead_gestiones').select('id,lead_id,gestion_nueva,autor_name,created_at').eq('fecha_gestion', fecha)),
-          startISO ? fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id,status,scheduled_at,advisor_name,advisor_user_id').gte('scheduled_at', startISO).lt('scheduled_at', endISO)) : Promise.resolve({ data: [], error: null }),
+          fetchPagedResult(() => supabaseClient.from('lead_gestiones').select('id,lead_id,gestion_nueva,canal,autor_name,created_at').eq('fecha_gestion', fecha)),
+           startISO ? loadCitasReporte() : Promise.resolve({ data: [], error: null }),
           fetchPagedResult(() => supabaseClient.from('daily_report_notes').select('*').eq('report_date', fecha))
         ]);
         if (!valid()) return;

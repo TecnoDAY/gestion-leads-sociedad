@@ -105,8 +105,12 @@ Cambio de alcance aceptado respecto a T1–T4 ya completadas:
 - T5 implementada: filtros reordenados en escritorio como Origen → Rango → Asesora, campos automáticos readonly con aviso y pruebas de orden/atributos añadidas. `npm test` OK (184 Node, 11 Python), `npm run lint` OK, `npm run build` OK y `git diff --check` OK.
 - T6 implementada: `leads_record_gestion` registra una fila por cada UPDATE de seguimiento (incluye `OBSERVACIONES `), y `leads_set_gestion_meta` fija fecha Miami y asesora desde `user_access`; columnas con espacio final verificadas en migraciones existentes. Ejecución SQL local `unavailable` (sin `psql`/Supabase CLI); no se aplicó al remoto. `git diff --check` OK.
 
+- T7: verificación integral del conjunto, 185 Node + 11 Python, lint, build y `git diff --check` en verde; `qa-gate` solo el aviso histórico de `.env.example`. Revisores independientes sin discrepancias en T1-T3 y T5-T6.
+- Migración aplicada 2026-10-01 con autorización humana (`canal_gestion_datadura`). Estado previo: 5.917 leads, 24 gestiones, 10 citas, sin columna ni trigger de metadatos. Estado posterior verificado: mismos conteos, `lead_appointments.is_data_dura` presente, función `set_lead_gestion_meta` creada, y triggers `leads_record_gestion` (AFTER UPDATE OF "GESTION", "ULTIMA GESTION", "OBSERVACIONES ", sin WHEN) y `leads_set_gestion_meta` (BEFORE) con las definiciones esperadas. Sin backfill; ningún dato alterado.
+
 ## Progreso
-- Estado: implementación local completa; pendiente solo de autorización para aplicar la migración al remoto.
-- Última tarea: T6 completada.
-- Siguiente paso: aplicación remota de `202610010001_canal_gestion_datadura.sql` tras aprobación humana + commit/push si el usuario lo pide.
+- Estado: feature completa, aplicada en remoto y publicada en `main`.
+- Última tarea: T7 + aplicación remota autorizada.
+- Publicada: 98fa5f6 migración, 26ea2f5 UI, a13b223 tests, f23e8c4 doc ODD. `deno.lock` sigue sin rastrear por decisión previa.
+- Siguiente paso: prueba manual en el panel (guardar seguimiento sin cambiar el estado y comprobar que el lead aparece en el rango del día) y, si el usuario lo pide, rediseño del Reporte.
 - Bloqueos: ninguno.

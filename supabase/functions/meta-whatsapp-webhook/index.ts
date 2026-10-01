@@ -134,6 +134,15 @@ function isUniqueViolation(error: any): boolean {
   return error?.code === '23505';
 }
 
+function resolveCampaignName(value: unknown, activeCatalogNames: unknown[]): string {
+  const candidate = typeof value === 'string' ? value.trim() : '';
+  if (!candidate) return 'Sin definir';
+  const match = activeCatalogNames.find((name) =>
+    typeof name === 'string' && name.trim().toLocaleLowerCase() === candidate.toLocaleLowerCase()
+  );
+  return typeof match === 'string' ? match.trim() : 'Sin definir';
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -202,7 +211,24 @@ Deno.serve(async (request) => {
   });
 
   const defaultAgent = Deno.env.get('WHATSAPP_DEFAULT_AGENTE') ?? 'Agente';
-  const campana = Deno.env.get('WHATSAPP_CAMPANA') ?? 'General';
+  let campana = 'Sin definir';
+  try {
+    const { data, error } = await service
+      .from('lead_catalogs')
+      .select('value')
+      .eq('kind', 'campana')
+      .eq('active', true);
+    if (error) throw error;
+    campana = resolveCampaignName(
+      Deno.env.get('WHATSAPP_CAMPANA'),
+      (data ?? []).map((row: any) => row?.value),
+    );
+    if (campana === 'Sin definir') {
+      console.warn('WHATSAPP_CAMPANA inválida, usando Sin definir');
+    }
+  } catch {
+    console.warn('No se pudo validar WHATSAPP_CAMPANA, usando Sin definir');
+  }
 
   const results: Array<Record<string, unknown>> = [];
   let transientFailures = 0;

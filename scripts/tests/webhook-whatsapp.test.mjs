@@ -19,6 +19,7 @@ function harness(options = {}) {
   const rpcPhones = [];
   const windowQueries = [];
   const logs = [];
+  const catalog = options.catalog ?? ['Campaña activa'];
   let handler;
   let insertAttempts = 0;
   const env = {
@@ -36,6 +37,14 @@ function harness(options = {}) {
       return { data: contacts.get(args.p_phone), error: null };
     },
     from(table) {
+      if (table === 'lead_catalogs') {
+        const query = {
+          select() { return query; },
+          eq() { return query; },
+          async then(resolve) { resolve({ data: options.catalogError ? null : catalog.map((value) => ({ value })), error: options.catalogError ? dbError : null }); },
+        };
+        return query;
+      }
       assert.equal(table, 'leads');
       let field;
       let expected;
@@ -85,7 +94,7 @@ function harness(options = {}) {
     require: (url) => { assert.equal(url, 'https://esm.sh/@supabase/supabase-js@2.117.1'); return { createClient: () => client }; },
     Deno: { env: { get: (key) => env[key] }, serve: (fn) => { handler = fn; }, readTextFileSync: () => { throw new Error('unavailable'); } },
     Request, Response, URL, TextEncoder, crypto: webcrypto,
-    console: { error: (...args) => logs.push(args.join(' ')), log: (...args) => logs.push(args.join(' ')) },
+    console: { error: (...args) => logs.push(args.join(' ')), log: (...args) => logs.push(args.join(' ')), warn: (...args) => logs.push(args.join(' ')) },
   });
   return {
     rows, contacts, rpcPhones, windowQueries, logs, get insertAttempts() { return insertAttempts; },
@@ -108,6 +117,28 @@ test('procesa todos los mensajes de entries y changes; receipts no crean leads',
   assert.equal(result.status, 200);
   assert.equal(result.body.results.length, 4);
   assert.equal(h.rows.length, 4);
+});
+
+test('campaña válida se conserva con comparación trim y case-insensitive', async () => {
+  const h = harness({ env: { WHATSAPP_CAMPANA: '  cAmPaÑa activa ' } });
+  assert.equal((await h.post(payload([message('campaign-valid')]))).status, 200);
+  assert.equal(h.rows[0].Campaña, 'Campaña activa');
+});
+
+test('campaña inválida o ausente usa Sin definir y advierte sin PII', async () => {
+  for (const env of [{ WHATSAPP_CAMPANA: 'inexistente' }, {}]) {
+    const h = harness({ env });
+    assert.equal((await h.post(payload([message('campaign-invalid')]))).status, 200);
+    assert.equal(h.rows[0].Campaña, 'Sin definir');
+    assert.ok(h.logs.some((log) => log.includes('WHATSAPP_CAMPANA inválida')));
+  }
+});
+
+test('fallo al consultar catálogo usa Sin definir sin rechazar el lead', async () => {
+  const h = harness({ catalogError: true, env: { WHATSAPP_CAMPANA: 'Campaña activa' } });
+  assert.equal((await h.post(payload([message('campaign-db-error')]))).status, 200);
+  assert.equal(h.rows[0].Campaña, 'Sin definir');
+  assert.ok(h.logs.some((log) => log.includes('No se pudo validar WHATSAPP_CAMPANA')));
 });
 
 test('fallo parcial devuelve 503; retry conserva persistidos sin duplicarlos', async () => {

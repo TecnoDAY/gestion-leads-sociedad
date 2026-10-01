@@ -406,6 +406,85 @@ test('histórico real mantiene Inscritos/Agendados y nueve columnas, sin indicad
   assert.match(f.element('histMonthlyTableBody').innerHTML, /colspan="9"/);
 });
 
+test('select de catálogo unifica SEPTIEMBRE con su forma canónica (regresión duplicado)', () => {
+  const f = frontend(), c = f.context;
+  const sel = f.element('newMes');
+  // Simula las opciones estáticas en MAYÚSCULAS: valor actual es una de ellas.
+  sel.appendChild({ value: 'AGOSTO' }); sel.appendChild({ value: 'SEPTIEMBRE', selected: true });
+  assert.equal(sel.value, 'SEPTIEMBRE');
+  vm.runInContext(extractFunction('fillSelectFromCatalog'), c);
+  c.fillSelectFromCatalog('newMes', ['Agosto', 'Septiembre']);
+  const values = plain(f.element('newMes').options.map(o => o.value));
+  assert.deepEqual(values, ['Agosto', 'Septiembre'], 'un solo Septiembre y en forma canónica');
+  assert.equal(f.element('newMes').value, 'Septiembre', 'la selección migró a la forma del catálogo');
+  // Valor genuinamente desconocido: se conserva como opción adicional seleccionada.
+  sel.appendChild({ value: 'SEPTIEMBRE' }); // tras innerHTML reset queda vacío
+  f.element('newMes').innerHTML = '';
+  f.element('newMes').appendChild({ value: 'TEMPORADA', selected: true });
+  c.fillSelectFromCatalog('newMes', ['Agosto', 'Septiembre']);
+  assert.deepEqual(plain(f.element('newMes').options.at(-1).value), 'TEMPORADA');
+  assert.equal(f.element('newMes').value, 'TEMPORADA');
+});
+
+test('histórico instancia los 8 gráficos con claves año-mes (regresión monthLabels)', () => {
+  const leads = [
+    { Mes: 'ENERO', Fecha: '1/1/2025', GESTION: 'INSCRITO', Campaña: 'Casting', Medio: 'WhatsApp', 'Agente ': 'Ana' },
+    { Mes: 'ENERO', Fecha: '2/1/2025', GESTION: 'NO CONTESTA', Campaña: 'Casting', Medio: 'WhatsApp', 'Agente ': 'Ana' },
+    { Mes: 'FEBRERO', Fecha: '1/2/2025', GESTION: 'AGENDADO', Campaña: 'Weston', Medio: 'Instagram', 'Agente ': 'Loli' },
+  ];
+  const f = frontend({ allLeads: leads }), c = f.context;
+  // Canvas sintéticos y un Chart falso que captura la configuración real.
+  const configs = [], canvases = new Map();
+  const getElementById = c.document.getElementById;
+  c.document.getElementById = id => {
+    if (id.startsWith('chart')) {
+      if (!canvases.has(id)) canvases.set(id, { id });
+      return canvases.get(id);
+    }
+    return getElementById(id);
+  };
+  c.document.documentElement = { dataset: { theme: 'dark' } };
+  class FakeChart {
+    constructor(canvas, config) { configs.push({ canvasId: canvas.id, config }); this.canvas = canvas; }
+    destroy() {}
+  }
+  FakeChart.defaults = { font: {} };
+  c.Chart = FakeChart; c.window.Chart = FakeChart;
+  c.histCharts = {};
+  vm.runInContext([
+    extractFunction('updateHistRangeNotice'),
+    extractFunction('renderHistoricalAnalytics'),
+  ].join('\n'), c);
+  // renderHistoricalAnalytics usa la variable global histCharts del contexto.
+  c.renderHistoricalAnalytics();
+  assert.equal(configs.length, 8, `esperaba 8 gráficos, hubo ${configs.length}`);
+  const byId = Object.fromEntries(configs.map(e => [e.canvasId, e.config]));
+  assert.deepEqual(plain(byId.chartMonthlyEvolution.data.labels), ['ENERO 2025', 'FEBRERO 2025']);
+  assert.deepEqual(plain(byId.chartMonthlyEvolution.data.datasets.find(d => d.label === 'Total Leads Captados').data), [2, 1]);
+  assert.deepEqual(plain(byId.chartMonthlyEvolution.data.datasets.find(d => d.label === 'Inscritos Matriculados').data), [1, 0]);
+  assert.deepEqual(plain(byId.chartConversionTrend.data.datasets[0].data), [50.0, 0]);
+  assert.ok(byId.chartCampaignPerformance.data.labels.includes('Casting'));
+  assert.ok(byId.chartFunnel.data.labels[0].startsWith('Recibidos: 3'));
+  assert.equal(f.element('histKpiTotalLeads').textContent, '3');
+});
+
+test('histórico renderiza KPIs y tabla aunque Chart.js no esté disponible', () => {
+  const leads = [{ Mes: 'ENERO', Fecha: '1/1/2025', GESTION: 'INSCRITO', Campaña: 'Casting' }];
+  const f = frontend({ allLeads: leads }), c = f.context;
+  const getElementById = c.document.getElementById;
+  c.document.getElementById = id => id.startsWith('chart') ? undefined : getElementById(id);
+  c.document.documentElement = { dataset: { theme: 'dark' } };
+  delete c.window.Chart; delete c.Chart;
+  c.histCharts = {};
+  vm.runInContext([
+    extractFunction('updateHistRangeNotice'),
+    extractFunction('renderHistoricalAnalytics'),
+  ].join('\n'), c);
+  c.renderHistoricalAnalytics();
+  assert.equal(f.element('histKpiTotalLeads').textContent, '1');
+  assert.match(f.element('histMonthlyTableBody').innerHTML, /ENERO 2025/);
+});
+
 test('reporte diario real calcula Data Dura para la fecha seleccionada, no para hoy ni para el histórico', async () => {
   const leads = [
     { id: 1, Mes: 'MARZO', Fecha: '1/3/2026' },

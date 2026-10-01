@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -86,12 +86,13 @@ Deno.serve(async (request) => {
       timingSafeEqual(bootstrapToken, expectedBootstrapToken)
     ) {
       bootstrap = true;
-      const { count, error } = await service
-        .from('user_access')
-        .select('id', { count: 'exact', head: true })
-        .eq('role', 'admin')
-        .eq('activo', true);
-      if (error || (count ?? 0) > 0) return json(202, { accepted: true });
+      // Bootstrap solo crea al primer admin. La exclusividad se decide dentro
+      // de la misma transaccion que escribe el acceso, nunca con count+upsert.
+      if (role !== 'admin') return json(202, { accepted: true });
+      const { data: bootstrapOpen, error: bootstrapError } = await service.rpc('bootstrap_admin_user', {
+        p_user_id: null, p_email: null, p_nombre: null,
+      });
+      if (bootstrapError || bootstrapOpen !== true) return json(202, { accepted: true });
     } else {
       return json(202, { accepted: true });
     }
@@ -127,23 +128,27 @@ Deno.serve(async (request) => {
     }
 
     if (!userId) {
-      const { data: matches } = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
-      userId = matches?.users?.find((user: { email?: string }) =>
-        user.email?.trim().toLowerCase() === email
-      )?.id ?? null;
+      for (let page = 1; !userId; page += 1) {
+        const { data: matches, error } = await service.auth.admin.listUsers({ page, perPage: 1000 });
+        if (error) throw error;
+        if (!Array.isArray(matches?.users)) throw new Error('Invalid Auth users page');
+        userId = matches.users.find((user: { email?: string }) => user.email?.trim().toLowerCase() === email)?.id ?? null;
+        if (matches.users.length < 1000) break;
+      }
     }
     if (!userId) return json(202, { accepted: true });
 
-    const { error: upsertError } = await service
-      .from('user_access')
-      .upsert({ user_id: userId, email, nombre, role, activo: true, updated_at: new Date().toISOString() }, { onConflict: 'email' });
+    const { error: upsertError } = bootstrap
+      ? await service.rpc('bootstrap_admin_user', { p_user_id: userId, p_email: email, p_nombre: nombre })
+      : await service
+        .from('user_access')
+        .upsert({ user_id: userId, email, nombre, role, activo: true, updated_at: new Date().toISOString() }, { onConflict: 'email' });
 
     if (upsertError) {
       console.error('Allowlist upsert failed:', upsertError.message);
       return json(202, { accepted: true });
     }
 
-    console.log('Authorized user provisioned', { bootstrap, actor: adminUserId, email });
     return json(202, { accepted: true });
   } catch (error) {
     console.error('Unexpected authorize-user error', error);

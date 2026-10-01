@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -41,13 +41,13 @@
   </script>
 
   <!-- Supabase JS v2 CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2"></script>
 
   <!-- Lucide Icons CDN -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@1.49.0/dist/umd/lucide.min.js"></script>
 
   <!-- Chart.js CDN for Historical Analytics -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
 
   <style>
     /* Custom scrollbar and table aesthetics */
@@ -515,8 +515,8 @@
               <i data-lucide="line-chart" class="w-5 h-5"></i>
             </div>
             <div>
-              <h2 class="text-lg sm:text-xl font-bold text-white tracking-tight">Análisis y Gráficos Históricos 2026</h2>
-              <p class="text-xs text-slate-400">Evolución mensual acumulada, tasas de conversión y rendimiento por campaña</p>
+              <h2 class="text-lg sm:text-xl font-bold text-white tracking-tight">Análisis y Gráficos Históricos</h2>
+              <p class="text-xs text-slate-400">Evolución mensual por año, tasas de conversión y rendimiento por campaña</p>
             </div>
           </div>
         </div>
@@ -541,6 +541,13 @@
           <div class="w-full sm:w-auto">
             <select id="histFilterMes" onchange="renderHistoricalAnalytics()" class="w-full sm:w-40 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
               <option value="">Todos los Meses</option>
+            </select>
+          </div>
+
+          <!-- Filtro de Año en Histórico (el informe distingue años: ENERO 2025 ≠ ENERO 2026) -->
+          <div class="w-full sm:w-auto">
+            <select id="histFilterAnio" onchange="renderHistoricalAnalytics()" class="w-full sm:w-32 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+              <option value="">Todos los Años</option>
             </select>
           </div>
 
@@ -581,7 +588,7 @@
           </div>
           <div class="mt-2 flex items-baseline gap-2">
             <span id="histKpiTotalLeads" class="text-2xl sm:text-3xl font-bold font-mono text-white tabular-nums">0</span>
-            <span class="text-xs text-slate-400">2026 total</span>
+            <span class="text-xs text-slate-400">total filtrado</span>
           </div>
         </div>
 
@@ -662,7 +669,7 @@
           <div>
             <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
               <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-400"></i>
-              <span>Evolución Mensual de Captación y Cierres (2026)</span>
+              <span>Evolución Mensual de Captación y Cierres</span>
             </h3>
             <p class="text-xs text-slate-400">Comparativa mes a mes del total de leads recibidos frente a alumnos inscritos</p>
           </div>
@@ -809,8 +816,8 @@
               <i data-lucide="table-2" class="w-4 h-4"></i>
             </div>
             <div>
-              <h3 class="font-bold text-white text-sm">Resumen Consolidado Histórico por Mes (2026)</h3>
-              <p class="text-xs text-slate-400">Métricas clave desglosadas cronológicamente</p>
+              <h3 class="font-bold text-white text-sm">Resumen Consolidado Histórico por Mes</h3>
+              <p class="text-xs text-slate-400">Métricas clave desglosadas por año y mes</p>
             </div>
           </div>
           <button onclick="exportHistoricalSummaryCSV()" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0">
@@ -829,7 +836,7 @@
                 <th class="px-4 py-3 text-right">No Contesta</th>
                 <th class="px-4 py-3 text-right">Inscritos</th>
                 <th class="px-4 py-3 text-right">% Conversión</th>
-                <th class="px-4 py-3 text-right">% del Año</th>
+                <th class="px-4 py-3 text-right">% del Total</th>
                 <th class="px-4 py-3">Campaña Más Fuerte</th>
                 <th class="px-4 py-3">Asesor con Más Cierres</th>
               </tr>
@@ -938,6 +945,8 @@
         <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Autorizar y enviar invitación</button>
       </form>
       <p class="text-[11px] text-slate-400">Se envía un correo de invitación para que la persona verifique su correo y defina su propia contraseña. Aquí solo se guarda el correo, el nombre, el rol y el estado.</p>
+      <input id="userSearch" type="search" oninput="renderAuthorizedUsers()" placeholder="Buscar por correo, nombre o rol…" aria-label="Buscar usuarios" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+      <p id="userSearchCount" class="text-[11px] text-slate-500"></p>
       <div id="authorizedUsers" class="text-xs text-slate-400 space-y-1"></div>
       <div id="changeEmailBox" class="hidden space-y-2 border-t border-slate-700 pt-3 text-xs">
         <p class="text-slate-400">Cambiar el correo de <span id="changeEmailTarget" class="text-white"></span></p>
@@ -1093,7 +1102,7 @@
             <div class="sm:col-span-3 flex items-center gap-1.5 text-[11px] text-indigo-300 font-semibold">Cita obligatoria al agendar<button type="button" onclick="openHelpModal('ayuda-nuevo-lead')" title="Ayuda: cita obligatoria" aria-label="Ayuda sobre la cita obligatoria al agendar" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button></div>
             <label class="text-[11px] text-slate-400">Fecha y hora<input id="newAppointmentDate" type="datetime-local" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
             <label class="text-[11px] text-slate-400">Nota opcional<textarea id="newAppointmentNote" maxlength="2000" rows="1" class="block w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></textarea></label>
-            <div id="newAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="newAppointmentAdvisor" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
+            <div id="newAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="newAppointmentAdvisor" onchange="toggleNewAppointmentFields()" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
           </div>
 
           <!-- Medio -->
@@ -1248,7 +1257,7 @@
         <div id="editAppointmentFields" class="hidden sm:col-span-2 grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end border border-indigo-500/30 rounded-lg p-3">
           <label class="text-[11px] text-slate-400">Fecha y hora de la cita<input id="editAppointmentDate" type="datetime-local" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
           <label class="text-[11px] text-slate-400">Nota opcional<textarea id="editAppointmentNote" maxlength="2000" rows="1" class="block w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></textarea></label>
-          <div id="editAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="editAppointmentAdvisor" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
+          <div id="editAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="editAppointmentAdvisor" onchange="updateEditSubmitState()" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
           <p class="sm:col-span-3 text-[11px] text-slate-400">Al guardar, el lead pasa a Agendado y se crea su cita en la misma operación.</p>
         </div>
 
@@ -1431,6 +1440,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
      let campanasData = [];
      let campaignStatsMap = new Map();
      let campanasRequestGeneration = 0;
+     // T2: contexto visible. save/delete solo contra el mes renderizado.
+     let campanasLoading = false;
+     let campanasContextMonth = '';
 
     // Los enlaces de invitación, de recuperación y de cambio de correo llegan
     // como #access_token=...&type=invite|recovery|email_change. supabase-js los
@@ -1456,6 +1468,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     function clearSessionState() {
       sessionGeneration += 1;
+      authValidationPromise = null;
+      sessionInitializationPromise = null;
       viewLeadGeneration += 1;
       newLeadRequestGeneration += 1;
       newLeadSubmitting = false;
@@ -1465,9 +1479,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       editLeadPreviousGestion = '';
       editAdvisorsLoading = false;
       citasRequestGeneration = (citasRequestGeneration || 0) + 1;
-     let reporteDayAdvisors = [];
-     let reporteDayData = [];
+      newLeadAdvisorGeneration = (newLeadAdvisorGeneration || 0) + 1;
       reporteRequestGeneration += 1;
+      reporteDayAdvisors = [];
+      reporteDayData = [];
       currentUser = null;
       currentAccess = null;
       isAdmin = false;
@@ -1484,7 +1499,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       currentEditOrigin = 'actual';
       totalDatabaseCount = 0;
       pendingRealtimeEvents = [];
-       leadAppointmentsCache = [];
+       leadNotesCache = [];
+       leadGestionesCache = [];
+       editingNoteId = null;
+        leadAppointmentsCache = [];
        pendingAppointmentMutations?.clear();
       leadAppointmentAdvisors = [];
       loadLeadsPromise = null;
@@ -1561,18 +1579,23 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     async function closeInvalidSession(reason = 'La sesión expiró o la cuenta fue desactivada.') {
       clearSessionState();
+      const generation = sessionGeneration;
       if (supabaseClient) {
         try { await supabaseClient.auth.signOut(); } catch (_) { /* local cleanup already complete */ }
       }
+      if (generation !== sessionGeneration) return;
       const loginStatus = document.getElementById('loginStatus');
       if (loginStatus) loginStatus.textContent = reason;
     }
 
     async function validateCurrentSession() {
       if (authValidationPromise) return authValidationPromise;
-      authValidationPromise = (async () => {
+      const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
+      const valid = () => generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt;
+      const validation = (async () => {
         if (!supabaseClient) return false;
         const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+        if (!valid()) return false;
         if (sessionError || !sessionData.session?.user) {
           if (currentUser || currentAccess || document.body.classList.contains('session-ready')) {
             await closeInvalidSession('La sesión no está disponible. Inicia sesión de nuevo.');
@@ -1581,6 +1604,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         }
         const user = sessionData.session.user;
         const access = await loadCurrentAccess(user);
+        if (!valid()) return false;
         if (!access) {
           await closeInvalidSession('La sesión o el acceso fue desactivado. Inicia sesión de nuevo.');
           return false;
@@ -1588,9 +1612,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         const sameSession = currentUser?.id === user.id;
         const sameAccess = currentAccess?.updated_at === access.updated_at;
         if (sameSession && sameAccess && isSupabaseLive && realtimeChannel) return true;
-        await enterAuthenticatedSession(user, access);
-        return true;
-      })().finally(() => { authValidationPromise = null; });
+        const initialized = await enterAuthenticatedSession(user, access);
+        return generation === sessionGeneration && initialized;
+      })().catch(error => {
+        if (generation !== sessionGeneration) return false;
+        throw error;
+      }).finally(() => {
+        if (authValidationPromise === validation) authValidationPromise = null;
+      });
+      authValidationPromise = validation;
       return authValidationPromise;
     }
 
@@ -1618,11 +1648,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     async function loadCurrentAccess(user) {
+      const generation = sessionGeneration;
       const { data, error } = await supabaseClient.rpc('is_active_user');
-      if (error || !data) return null;
+      if (generation !== sessionGeneration || error || !data) return null;
       const { data: access, error: accessError } = await supabaseClient
         .from('user_access').select('user_id, email, nombre, role, activo, updated_at').eq('user_id', user.id).maybeSingle();
-      return !accessError && access?.activo ? access : null;
+      return generation === sessionGeneration && !accessError && access?.activo ? access : null;
     }
 
     async function handleLogin(event) {
@@ -1739,8 +1770,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     async function enterAuthenticatedSession(user, access = null) {
       if (sessionInitializationPromise) return sessionInitializationPromise;
-      sessionInitializationPromise = (async () => {
+      const generation = sessionGeneration, previousUserId = currentUser?.id, previousAccessUpdatedAt = currentAccess?.updated_at;
+      const initialization = (async () => {
         const resolvedAccess = access || await loadCurrentAccess(user);
+        if (generation !== sessionGeneration || currentUser?.id !== previousUserId || currentAccess?.updated_at !== previousAccessUpdatedAt) return false;
         if (!resolvedAccess) {
           await closeInvalidSession('La sesión o el acceso fue desactivado. Inicia sesión de nuevo.');
           return false;
@@ -1752,21 +1785,31 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           return false;
         }
         setAppAuthenticated(user, resolvedAccess);
+        const valid = () => generation === sessionGeneration && currentUser?.id === user.id && currentAccess?.updated_at === resolvedAccess.updated_at;
         document.body.classList.add('session-ready');
         document.getElementById('modalLogin')?.classList.add('hidden');
         document.getElementById('modalLogin')?.classList.remove('flex');
         if (isTrafficker) {
           // El trafficker no toca el CRM: ni realtime ni carga de leads.
           await refreshCatalogs();
+          if (!valid()) return false;
           switchTab('campanas');
           return true;
         }
         const realtimeReady = await setupRealtimeListener();
+        if (!valid()) return false;
         if (!realtimeReady) console.warn('Realtime no disponible; se cargará el snapshot por REST.');
         await loadLeadsData();
+        if (!valid()) return false;
         await refreshCatalogs();
-        return true;
-      })().finally(() => { sessionInitializationPromise = null; });
+        return valid();
+      })().catch(error => {
+        if (generation !== sessionGeneration) return false;
+        throw error;
+      }).finally(() => {
+        if (sessionInitializationPromise === initialization) sessionInitializationPromise = null;
+      });
+      sessionInitializationPromise = initialization;
       return sessionInitializationPromise;
     }
 
@@ -1780,23 +1823,35 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     async function loadAuthorizedUsers() {
       if (!isAdmin) return;
+      const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
       const container = document.getElementById('authorizedUsers');
       if (container) container.innerHTML = '<p class="text-slate-500">Cargando usuarios...</p>';
       const { data, error } = await supabaseClient.rpc('admin_manage_user_access', { p_action: 'list' });
-      if (!container) return;
+      if (!container || generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt || !isAdmin) return;
       if (error) { container.innerHTML = '<p class="text-rose-300">No se pudieron cargar los usuarios.</p>'; return; }
       // La lista se guarda para poder resolver el correo por id: pasar el correo
       // por el atributo onclick metería datos del usuario dentro de JavaScript.
       authorizedUsersList = Array.isArray(data) ? data : [];
-      container.innerHTML = authorizedUsersList.map(item => `
+      renderAuthorizedUsers();
+    }
+
+    function renderAuthorizedUsers() {
+      if (!isAdmin) return;
+      const container = document.getElementById('authorizedUsers');
+      if (!container) return;
+      const search = (document.getElementById('userSearch')?.value || '').trim().toLowerCase();
+      const users = authorizedUsersList.filter(item => [item.email, item.nombre, item.role].some(value => String(value ?? '').toLowerCase().includes(search)));
+      const count = document.getElementById('userSearchCount');
+      if (count) count.textContent = `${users.length} de ${authorizedUsersList.length} usuarios`;
+      container.innerHTML = users.map(item => `
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700 py-1">
-          <span>${escapeHtml(item.email)} · ${escapeHtml(item.role)}</span>
+          <span>${escapeHtml(item.email)}${item.nombre ? ' · ' + escapeHtml(item.nombre) : ''} · ${escapeHtml(item.role)}</span>
           <span class="flex items-center gap-2">
             ${item.activo ? 'Activo' : 'Inactivo'}
             <button onclick="openChangeEmail('${escapeAttr(item.user_id)}')" class="px-2 py-1 rounded border border-slate-600 hover:border-indigo-400 text-[11px]">Cambiar correo</button>
             <button onclick="setUserActive('${escapeAttr(item.user_id)}', ${item.activo ? 'false' : 'true'})" class="px-2 py-1 rounded border border-slate-600 hover:border-indigo-400 text-[11px]">${item.activo ? 'Desactivar' : 'Activar'}</button>
           </span>
-        </div>`).join('') || '<p class="text-slate-500">No hay usuarios.</p>';
+        </div>`).join('') || `<p class="text-slate-500">${search ? 'No hay coincidencias.' : 'No hay usuarios.'}</p>`;
     }
 
     function openChangeEmail(userId) {
@@ -1960,13 +2015,19 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }
 
     if (supabaseClient) {
-      supabaseClient.auth.onAuthStateChange((event) => {
+      supabaseClient.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_OUT') {
           clearSessionState();
           return;
         }
         if (['INITIAL_SESSION', 'SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED', 'PASSWORD_RECOVERY'].includes(event)) {
-          setTimeout(() => validateCurrentSession(), 0);
+          if (session?.user && currentUser?.id !== session.user.id) {
+            const needsPasswordSetup = pendingPasswordSetup;
+            clearSessionState();
+            pendingPasswordSetup = needsPasswordSetup;
+          }
+          const generation = sessionGeneration;
+          setTimeout(() => { if (generation === sessionGeneration) validateCurrentSession(); }, 0);
         }
       });
     }
@@ -2034,10 +2095,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         renderHistoricalAnalytics();
       }
 
+      [btnDash, btnHist, btnReporte, btnCitas].forEach(button => button.classList.toggle('hidden', isTrafficker));
       if (window.lucide) lucide.createIcons();
     }
 
     function resetCitasPanel() { citasRequestGeneration += 1; citasCache = []; citasRangeKey = ''; ['citasKpis','citasTableBody','citasAviso','citasCount'].forEach(id => { const e=document.getElementById(id); if(e) e.replaceChildren(); }); }
+    // T4: invalida la cache del panel Citas tras mutaciones de citas en la ficha.
+    function invalidateCitasCache() { citasRequestGeneration += 1; citasCache = []; citasRangeKey = ''; }
     function formatLocalDate(d) { return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'); }
     // Hoy en Miami (YYYY-MM-DD): el navegador no decide "hoy", lo hace Intl con la zona del reporte.
     function miamiToday() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date()); }
@@ -2067,7 +2131,46 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     function resetCitasFilters() { const [a,b]=citasDateDefaults(); document.getElementById('citasDesde').value=a; document.getElementById('citasHasta').value=b; clearCitasResults(); loadCitas(); }
     function fillCitasSelect(id, values, keep=true) { const e=document.getElementById(id), old=e.value; e.innerHTML='<option value="">Todos</option>'+values.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(catalogLabel(v))}</option>`).join(''); if(keep && values.includes(old)) e.value=old; }
     async function initCitasPanel() { const desde=document.getElementById('citasDesde'); if(!desde.value) { const [a,b]=citasDateDefaults(); desde.value=a; document.getElementById('citasHasta').value=b; } if(isAdmin || isSupervisor) document.getElementById('citasAsesorWrap').classList.remove('hidden'); ['citasDesde','citasHasta'].forEach(id=>document.getElementById(id).onchange=loadCitas); ['citasResultado','citasCampana','citasMedio','citasAsesor'].forEach(id=>document.getElementById(id).onchange=renderCitas); await loadCitas(); }
-    async function loadCitas() { if(!supabaseClient || !currentUser || !currentAccess?.activo) return; const desde=document.getElementById('citasDesde').value, hasta=document.getElementById('citasHasta').value; if(!desde||!hasta||desde>hasta){clearCitasResults();showToast('Rango de fechas no válido','warning');return;} const key=desde+'|'+hasta, generation=sessionGeneration, userId=currentUser.id, accessUpdatedAt=currentAccess.updated_at, token=++citasRequestGeneration; if(key===citasRangeKey && citasCache.length) return renderCitas(); const fromParts=desde.split('-').map(Number), untilParts=hasta.split('-').map(Number); const start=new Date(fromParts[0],fromParts[1]-1,fromParts[2]), end=new Date(untilParts[0],untilParts[1]-1,untilParts[2]+1); let q=supabaseClient.from('lead_appointments').select('id,lead_id,scheduled_at,status,advisor_name,advisor_user_id').gte('scheduled_at',start.toISOString()).lt('scheduled_at',end.toISOString()).order('scheduled_at',{ascending:false}); const valid=()=>token===citasRequestGeneration&&generation===sessionGeneration&&currentUser?.id===userId&&currentAccess?.updated_at===accessUpdatedAt&&currentMainTab==='citas'&&document.getElementById('citasDesde')?.value+'|'+document.getElementById('citasHasta')?.value===key; const {data,error}=await q; if(!valid()) return; if(error){clearCitasResults(); document.getElementById('citasAviso').textContent='No se pudo cargar citas. Verifica que la migración esté aplicada.'; return renderCitas();} const rows=data||[], ids=[...new Set(rows.map(r=>r.lead_id).filter(Boolean))]; let leads=[]; let missingLeads=0, archivedLeads=0; if(ids.length){const res=await supabaseClient.from('leads').select('id,Nombre,Telefono,Campaña,Medio,Mes,archived_at').in('id',ids); if(!valid())return; if(res.error){console.warn('No se pudo cargar los leads de las citas:',res.error); clearCitasResults(); document.getElementById('citasAviso').textContent='No se pudieron cargar los datos de los leads asociados a las citas.'; return renderCitas();} leads=res.data||[];} const activeLeads=leads.filter(l=>!l.archived_at); const archivedSet=new Set(leads.filter(l=>l.archived_at).map(l=>String(l.id))); const map=new Map(activeLeads.map(l=>[String(l.id),l])); citasCache=rows.filter(r=>{if(!r.lead_id)return false; if(archivedSet.has(String(r.lead_id))){archivedLeads++;return false;} if(!map.has(String(r.lead_id))){missingLeads++;return false;} return true;}).map(r=>({...r,lead:map.get(String(r.lead_id))})); if(missingLeads||archivedLeads){const parts=[]; if(missingLeads) parts.push(`${missingLeads} cita(s) sin lead asociado`); if(archivedLeads) parts.push(`${archivedLeads} cita(s) de lead(s) archivado(s)`); document.getElementById('citasAviso').textContent='Omitidas: '+parts.join('; ')+'.';} else { document.getElementById('citasAviso').textContent=''; } citasRangeKey=key; fillCitasSelect('citasCampana',catalogOptions('campana',citasCache.map(r=>getField(r.lead,'Campaña')).filter(Boolean))); fillCitasSelect('citasMedio',catalogOptions('medio',citasCache.map(r=>getField(r.lead,'Medio')).filter(Boolean))); if(isAdmin || isSupervisor) fillCitasSelect('citasAsesor',catalogOptions('agente',citasCache.map(r=>r.advisor_name).filter(Boolean))); renderCitas(); }
+    async function loadCitas() {
+      if (!supabaseClient || !currentUser || !currentAccess?.activo) return;
+      const desde = document.getElementById('citasDesde').value, hasta = document.getElementById('citasHasta').value;
+      if (!desde || !hasta || desde > hasta) { clearCitasResults(); showToast('Rango de fechas no válido', 'warning'); return; }
+      const key = desde + '|' + hasta, generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at, token = ++citasRequestGeneration;
+      if (key === citasRangeKey && citasCache.length) return renderCitas();
+      const fromParts = desde.split('-').map(Number), untilParts = hasta.split('-').map(Number);
+      const start = new Date(fromParts[0], fromParts[1] - 1, fromParts[2]), end = new Date(untilParts[0], untilParts[1] - 1, untilParts[2] + 1);
+      const valid = () => token === citasRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentMainTab === 'citas' && document.getElementById('citasDesde')?.value + '|' + document.getElementById('citasHasta')?.value === key;
+      const { data, error } = await fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id,lead_id,scheduled_at,status,advisor_name,advisor_user_id').gte('scheduled_at', start.toISOString()).lt('scheduled_at', end.toISOString()));
+      if (!valid()) return;
+      if (error) { clearCitasResults(); document.getElementById('citasAviso').textContent = 'No se pudo cargar citas. Verifica que la migración esté aplicada.'; return renderCitas(); }
+      const rows = (data || []).sort((a, b) => String(b.scheduled_at).localeCompare(String(a.scheduled_at)) || Number(b.id) - Number(a.id));
+      const ids = [...new Set(rows.map(r => r.lead_id).filter(Boolean))];
+      let leads = [], missingLeads = 0, archivedLeads = 0;
+      if (ids.length) {
+        const res = await fetchRowsByIds('leads', 'id,Nombre,Telefono,Campaña,Medio,Mes,archived_at', ids);
+        if (!valid()) return;
+        if (res.error) { console.warn('No se pudo cargar los leads de las citas:', res.error); clearCitasResults(); document.getElementById('citasAviso').textContent = 'No se pudieron cargar los datos de los leads asociados a las citas.'; return renderCitas(); }
+        leads = res.data || [];
+      }
+      const activeLeads = leads.filter(l => !l.archived_at);
+      const archivedSet = new Set(leads.filter(l => l.archived_at).map(l => String(l.id)));
+      const map = new Map(activeLeads.map(l => [String(l.id), l]));
+      citasCache = rows.filter(r => {
+        if (!r.lead_id) return false;
+        if (archivedSet.has(String(r.lead_id))) { archivedLeads++; return false; }
+        if (!map.has(String(r.lead_id))) { missingLeads++; return false; }
+        return true;
+      }).map(r => ({ ...r, lead: map.get(String(r.lead_id)) }));
+      const parts = [];
+      if (missingLeads) parts.push(`${missingLeads} cita(s) sin lead asociado`);
+      if (archivedLeads) parts.push(`${archivedLeads} cita(s) de lead(s) archivado(s)`);
+      document.getElementById('citasAviso').textContent = parts.length ? 'Omitidas: ' + parts.join('; ') + '.' : '';
+      citasRangeKey = key;
+      fillCitasSelect('citasCampana', catalogOptions('campana', citasCache.map(r => getField(r.lead, 'Campaña')).filter(Boolean)));
+      fillCitasSelect('citasMedio', catalogOptions('medio', citasCache.map(r => getField(r.lead, 'Medio')).filter(Boolean)));
+      if (isAdmin || isSupervisor) fillCitasSelect('citasAsesor', catalogOptions('agente', citasCache.map(r => r.advisor_name).filter(Boolean)));
+      renderCitas();
+    }
     function renderCitas() { const result=document.getElementById('citasResultado')?.value||'', camp=document.getElementById('citasCampana')?.value||'', medio=document.getElementById('citasMedio')?.value||'', advisor=isAdmin || isSupervisor?(document.getElementById('citasAsesor')?.value||''):''; const rows=citasCache.filter(r=>(!result||r.status===result)&&(!camp||getField(r.lead,'Campaña')===camp)&&(!medio||getField(r.lead,'Medio')===medio)&&(!advisor||r.advisor_name===advisor)); const counts=Object.fromEntries(['PROGRAMADA','ASISTIO','NO_ASISTIO','CANCELADA','REPROGRAMADA'].map(s=>[s,rows.filter(r=>r.status===s).length])), denom=counts.ASISTIO+counts.NO_ASISTIO; document.getElementById('citasKpis').innerHTML=[['Total citas',rows.length],...Object.entries(counts).map(([k,v])=>[k,v]),['Tasa asistencia',(denom?counts.ASISTIO/denom*100:0).toFixed(1)+'%']].map(x=>`<div class="rounded-lg border border-slate-700 bg-slate-800/60 p-3"><div class="text-[11px] text-slate-400">${escapeHtml(x[0])}</div><strong class="text-lg text-white">${escapeHtml(String(x[1]))}</strong></div>`).join(''); document.getElementById('citasCount').textContent=`${rows.length} citas`; document.getElementById('citasTableBody').innerHTML=rows.length?rows.map(r=>{const l=r.lead, id=Number(l?.id); return `<tr><td class="p-3">${escapeHtml(new Date(r.scheduled_at).toLocaleString())}</td><td class="p-3">${escapeHtml(getField(l,'Nombre'))}<br>${escapeHtml(getField(l,'Telefono'))}</td><td class="p-3">${escapeHtml(r.advisor_name)}</td><td class="p-3">${escapeHtml(getField(l,'Campaña'))}</td><td class="p-3">${escapeHtml(getField(l,'Medio'))}</td><td class="p-3">${escapeHtml(getField(l,'Mes'))}</td><td class="p-3">${escapeHtml(r.status)}</td><td class="p-3">${Number.isInteger(id)&&id>0?`<button onclick="openViewLeadModal(${id},'actual')" class="text-indigo-400 hover:underline">Ver ficha</button>`:''}</td></tr>`}).join(''):'<tr><td colspan="8" class="p-6 text-center text-slate-400">No hay citas para los filtros seleccionados.</td></tr>'; }
 
     // Helper para acceder a campos con posibles espacios al final
@@ -2081,29 +2184,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const matchingKey = Object.keys(lead).find(candidate => candidate.trim().toLowerCase() === normalizedKey);
       if (matchingKey && lead[matchingKey] !== undefined && lead[matchingKey] !== null) return String(lead[matchingKey]);
       return '';
-    }
-    // Hoy en Miami (YYYY-MM-DD): el navegador no decide "hoy", lo hace Intl con la zona del reporte.
-    function miamiToday() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date()); }
-    // Rango [startISO, endISO] del día Miami de una fecha: inicio = 00:00 Miami,
-    // fin = 12:00 Miami del día siguiente. Sondea offsets -05:00/-04:00 y
-    // verifica con Intl la hora Miami de cada instante; [null, null] si ninguna cuadra.
-    function miamiDayBounds(fecha) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha || '')) return [null, null];
-      const horaMiami = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'America/New_York' });
-      const resolver = (base, hora) => {
-        for (const off of ['-05:00', '-04:00']) {
-          const instant = new Date(`${base}T${hora}:00${off}`);
-          if (!Number.isNaN(instant.getTime()) && horaMiami.format(instant) === hora) return instant.toISOString();
-        }
-        return null;
-      };
-      const [y, m, d] = fecha.split('-').map(Number);
-      const startISO = resolver(fecha, '00:00');
-      if (!startISO) return [null, null];
-      const next = new Date(Date.UTC(y, m - 1, d + 1));
-      const nextFecha = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, '0')}-${String(next.getUTCDate()).padStart(2, '0')}`;
-      const endISO = resolver(nextFecha, '00:00');
-      return endISO ? [startISO, endISO] : [null, null];
     }
 
     // Etiqueta visible de una opción de catálogo (Mes, Campaña, Medio, Gestión,
@@ -2217,6 +2297,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       dataSource = value === 'historico' ? 'historico' : value === 'todos' ? 'todos' : 'actual';
       const select = document.getElementById('dataSourceFilter');
       if (select && select.value !== dataSource) select.value = dataSource;
+      populateFilterOptions();
       applyFilters();
     }
 
@@ -2232,22 +2313,25 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       return count;
     }
 
-    async function fetchLeadsByIdCursor(columns = '*') {
+    // Cursor canónico por id; cada página reconstruye la consulta filtrada.
+    async function fetchRowsByIdCursor(makeQuery) {
       const blockSize = 1000;
       const rows = [];
       let cursor = null;
+      const cursors = new Set();
+      const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
+      const sessionValid = () => generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt;
 
       while (true) {
-        let query = supabaseClient
-          .from('leads')
-          .select(columns)
-          .is('archived_at', null);
+        if (!sessionValid()) throw new Error('La sesión cambió durante la paginación');
+        let query = makeQuery();
         if (cursor !== null) query = query.lt('id', cursor);
         query = query
           .order('id', { ascending: false })
           .range(0, blockSize - 1);
 
         const { data, error } = await query;
+        if (!sessionValid()) throw new Error('La sesión cambió durante la paginación');
         if (error) throw new Error(`Error cargando bloque posterior a ${cursor ?? 'inicio'}: ${error.message}`);
         if (!Array.isArray(data) || data.length > blockSize) {
           throw new Error("Supabase devolvió un bloque inválido");
@@ -2255,47 +2339,46 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         if (data.length === 0) break;
 
         const nextCursor = data[data.length - 1]?.id;
-        if (nextCursor === undefined || nextCursor === null || String(nextCursor) === String(cursor)) {
+        if (nextCursor === undefined || nextCursor === null || cursors.has(String(nextCursor))) {
           throw new Error("La paginación por id no pudo avanzar");
         }
         rows.push(...data);
         cursor = nextCursor;
-        if (data.length < blockSize) break;
+        cursors.add(String(cursor));
+        // max_rows del servidor puede ser menor que blockSize: solo una
+        // página vacía confirma que no quedan filas tras el cursor.
       }
 
-      return consolidateLeadsById(rows);
+      return rows;
+    }
+
+    // Conserva el contrato {data,error} usado por paneles y sus guardas de sesión.
+    async function fetchPagedResult(makeQuery) {
+      try {
+        return { data: await fetchRowsByIdCursor(makeQuery), error: null };
+      } catch (error) {
+        return { data: null, error };
+      }
+    }
+
+    // Lotes pequeños evitan URLs excesivas en .in(); el cursor evita truncamiento.
+    async function fetchRowsByIds(table, columns, ids) {
+      const rows = [];
+      for (let i = 0; i < ids.length; i += 200) {
+        const batch = ids.slice(i, i + 200);
+        const result = await fetchPagedResult(() => supabaseClient.from(table).select(columns).in('id', batch));
+        if (result.error) return result;
+        rows.push(...result.data);
+      }
+      return { data: rows, error: null };
+    }
+
+    async function fetchLeadsByIdCursor(columns = '*') {
+      return consolidateLeadsById(await fetchRowsByIdCursor(() => supabaseClient.from('leads').select(columns).is('archived_at', null)));
     }
 
     async function fetchHistoricoByIdCursor() {
-      const blockSize = 1000;
-      const rows = [];
-      let cursor = null;
-
-      while (true) {
-        let query = supabaseClient
-          .from('leads_historico')
-          .select('*');
-        if (cursor !== null) query = query.lt('id', cursor);
-        query = query
-          .order('id', { ascending: false })
-          .range(0, blockSize - 1);
-
-        const { data, error } = await query;
-        if (error) throw new Error(`Error cargando histórico 2025 (bloque posterior a ${cursor ?? 'inicio'}): ${error.message}`);
-        if (!Array.isArray(data) || data.length > blockSize) {
-          throw new Error("Supabase devolvió un bloque inválido del histórico");
-        }
-        if (data.length === 0) break;
-
-        const nextCursor = data[data.length - 1]?.id;
-        if (nextCursor === undefined || nextCursor === null || String(nextCursor) === String(cursor)) {
-          throw new Error("La paginación del histórico no pudo avanzar");
-        }
-        rows.push(...data);
-        cursor = nextCursor;
-        if (data.length < blockSize) break;
-      }
-
+      const rows = await fetchRowsByIdCursor(() => supabaseClient.from('leads_historico').select('*'));
       const consolidated = consolidateLeadsById(rows);
       consolidated.forEach(lead => withOrigin(lead, 'historico'));
       return consolidated;
@@ -2303,17 +2386,28 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     function loadHistoricoData() {
       if (historicoLoadPromise) return historicoLoadPromise;
-      historicoLoadPromise = performLoadHistoricoData().finally(() => {
-        historicoLoadPromise = null;
+      const loading = performLoadHistoricoData().finally(() => {
+        if (historicoLoadPromise === loading) historicoLoadPromise = null;
       });
+      historicoLoadPromise = loading;
       return historicoLoadPromise;
     }
 
     async function performLoadHistoricoData() {
+      // T4: patron sessionGeneration en exito y error; no publicar parcial.
       if (!currentUser || !currentAccess?.activo || !supabaseClient) return false;
-      allHistorico = await fetchHistoricoByIdCursor();
-      historicoLoaded = true;
-      return true;
+      const generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at;
+      try {
+        const rows = await fetchHistoricoByIdCursor();
+        if (generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt || !currentAccess?.activo) return false;
+        allHistorico = rows;
+        historicoLoaded = true;
+        return true;
+      } catch (err) {
+        if (generation !== sessionGeneration || currentUser?.id !== userId) return false;
+        console.warn("No se pudo cargar el histórico 2025:", err);
+        return false;
+      }
     }
 
     function haveSameLeadIds(leads, idRows) {
@@ -2323,15 +2417,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     function loadLeadsData() {
       if (loadLeadsPromise) return loadLeadsPromise;
-      loadLeadsPromise = performLoadLeadsData().finally(() => {
-        loadLeadsPromise = null;
+      const loading = performLoadLeadsData().finally(() => {
+        if (loadLeadsPromise === loading) loadLeadsPromise = null;
       });
+      loadLeadsPromise = loading;
       return loadLeadsPromise;
     }
 
     async function performLoadLeadsData() {
       if (!currentUser || !currentAccess?.activo) return false;
-      const generation = sessionGeneration;
+      // T4: patron sessionGeneration en exito y error (usuario+acceso incluidos).
+      const generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at;
+      const sessionValid = () => generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo;
       showLoadingState(true);
       updateConnectionStatus("connecting");
       isLoadingLeads = true;
@@ -2341,11 +2438,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         try {
           const maxAttempts = 2;
           for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            if (!sessionValid()) return false;
             pendingRealtimeEvents = [];
             const initialCount = await getExactLeadsCount();
+            if (!sessionValid()) return false;
             const loadedLeads = await fetchLeadsByIdCursor('*');
+            if (!sessionValid()) return false;
             const reconciledIds = await fetchLeadsByIdCursor('id');
+            if (!sessionValid()) return false;
             const finalCount = await getExactLeadsCount();
+            if (!sessionValid()) return false;
             const changedDuringLoad = pendingRealtimeEvents.length > 0
               || initialCount !== finalCount
               || loadedLeads.length !== finalCount
@@ -2357,7 +2459,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
               throw new Error("La tabla cambió durante la carga; no se publicará una colección parcial");
             }
 
-            if (generation !== sessionGeneration || !currentUser || !currentAccess?.activo) return false;
+            if (!sessionValid()) return false;
             allLeads = loadedLeads;
             totalDatabaseCount = finalCount;
             isSupabaseLive = true;
@@ -2366,6 +2468,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             break;
           }
         } catch (err) {
+          // T4: un error obsoleto (logout/cambio de cuenta en vuelo) no borra
+          // ni publica datos de la sesion nueva.
+          if (!sessionValid()) return false;
           console.error("No se pudo completar la carga desde Supabase:", err);
           showToast("No se pudo completar la carga desde Supabase: " + err.message, "error");
           allLeads = [];
@@ -2379,16 +2484,21 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         isSupabaseLive = false;
       }
 
+      if (!sessionValid()) return false;
       isLoadingLeads = false;
       pendingRealtimeEvents = [];
 
       try {
         await loadHistoricoData();
+        if (!sessionValid()) return false;
       } catch (err) {
+        if (!sessionValid()) return false;
         console.warn("No se pudo cargar el histórico 2025:", err);
-        showToast("No se pudo cargar el histórico 2025; se muestran solo leads actuales", "warning");
+        if (sessionValid()) showToast("No se pudo cargar el histórico 2025; se muestran solo leads actuales", "warning");
       }
 
+      // T4: no pintar resultados de una sesion ya cerrada/cambiada.
+      if (!sessionValid()) return false;
       updateConnectionStatus(loadedSuccessfully
         ? (allLeads.length > 0 ? "online" : "online_empty")
         : "offline");
@@ -2509,7 +2619,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     function populateFilterOptions() {
       const getUniqueValues = (key) => {
         const set = new Set();
-        allLeads.forEach(item => {
+        getVisibleBaseLeads().forEach(item => {
           const val = getField(item, key).trim();
           if (val && val !== 'SN') set.add(val);
         });
@@ -2543,15 +2653,24 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // 4b. CATÁLOGOS (lead_catalogs): valores admin ∪ valores en datos
     // -------------------------------------------------------------
     async function loadCatalogs() {
+      const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
+      const valid = () => generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo;
+      if (!supabaseClient || !valid()) return false;
       catalogRows = { mes: [], campana: [], medio: [], gestion: [], agente: [] };
-      const { data, error } = await supabaseClient
-        .from('lead_catalogs')
-        .select('id, kind, value, active')
-        .order('id');
-      // Migración 0009 no aplicada o error: degrada a valores deducidos de los datos.
-      if (error || !data) return false;
-      data.forEach(r => { if (catalogRows[r.kind]) catalogRows[r.kind].push(r); });
-      return true;
+      try {
+        const { data, error } = await supabaseClient
+          .from('lead_catalogs')
+          .select('id, kind, value, active')
+          .order('id');
+        if (!valid()) return false;
+        // Migración 0009 no aplicada o error: degrada a valores deducidos de los datos.
+        if (error || !data) return false;
+        data.forEach(r => { if (catalogRows[r.kind]) catalogRows[r.kind].push(r); });
+        return true;
+      } catch (error) {
+        if (!valid()) return false;
+        throw error;
+      }
     }
 
     function activeCatalogValues(kind) {
@@ -2563,8 +2682,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // el catálogo queda oculto aunque aparezca en los leads.
     function catalogOptions(kind, dataValues) {
       const known = new Set((catalogRows[kind] || []).map(r => r.value));
+      // Los valores de los datos pueden venir repetidos (p. ej. la misma campaña
+      // en varias citas) y no hay que convertirlos en varias opciones del menú.
       const extra = (dataValues || []).filter(v => !known.has(v)).sort();
-      return [...activeCatalogValues(kind), ...extra];
+      return [...new Set([...activeCatalogValues(kind), ...extra])];
     }
 
     // Rellena un <select> desde el catálogo preservando la selección actual
@@ -2610,7 +2731,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     async function refreshCatalogs() {
+      const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
       await loadCatalogs();
+      if (generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt || !currentAccess?.activo) return;
       populateCatalogSelects();
       populateFilterOptions();
       applyFilters();
@@ -2715,6 +2838,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       clearTimeout(filterDebounceTimer);
       // Invalidar cualquier consulta del rango aún en vuelo
       const gen = ++dashRangeGen;
+      const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
+      const valid = () => gen === dashRangeGen && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt;
       const search = (document.getElementById('filterSearch')?.value || '').toLowerCase().trim();
       const mes = document.getElementById('filterMes')?.value || '';
       const campana = document.getElementById('filterCampana')?.value || '';
@@ -2727,9 +2852,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
       // Validar rango de fechas de gestión
       let gestionIds = null;
-      if (dashDesde && dashHasta) {
-        if (dashDesde > dashHasta) {
-          if (errEl) { errEl.classList.remove('hidden'); errEl.innerText = 'La fecha "Desde" no puede ser posterior a "Hasta".'; }
+      if (dashDesde || dashHasta) {
+        if (!dashDesde || !dashHasta || dashDesde > dashHasta) {
+          if (errEl) { errEl.classList.remove('hidden'); errEl.innerText = 'Completa Desde y Hasta en orden válido; el rango no se ha aplicado.'; }
           return;
         }
         if (errEl) { errEl.classList.add('hidden'); errEl.innerText = ''; }
@@ -2739,16 +2864,20 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         }
         try {
           // Comparar fechas planas YYYY-MM-DD; el navegador no decide la fecha
-          const { data, error } = await supabaseClient
+          const { data, error } = await fetchPagedResult(() => supabaseClient
             .from('lead_gestiones')
-            .select('lead_id')
+            .select('id,lead_id')
             .gte('fecha_gestion', dashDesde)
-            .lte('fecha_gestion', dashHasta);
-          if (gen !== dashRangeGen) return;
+            .lte('fecha_gestion', dashHasta));
+          if (!valid()) return;
           if (error) throw error;
           gestionIds = new Set((data || []).map(r => String(r.lead_id)));
+          if (dataSource !== 'actual' && errEl) {
+            errEl.classList.remove('hidden');
+            errEl.innerText = 'El rango de gestión solo incluye leads actuales; el histórico no tiene historial de gestiones.';
+          }
         } catch (e) {
-          if (gen !== dashRangeGen) return;
+          if (!valid()) return;
           console.warn('Error consultando lead_gestiones por rango:', e);
           if (errEl) { errEl.classList.remove('hidden'); errEl.innerText = 'Error al consultar el rango de gestión. Inténtalo de nuevo.'; }
           return;
@@ -2772,7 +2901,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         if (campana && getField(lead, 'Campaña').trim() !== campana) return false;
         if (medio && getField(lead, 'Medio').trim() !== medio) return false;
         if (gestion && getField(lead, 'GESTION').trim() !== gestion) return false;
-        if (gestionIds !== null && !gestionIds.has(String(lead.id))) return false;
+        if (gestionIds !== null && (getLeadOrigin(lead) === 'historico' || !gestionIds.has(String(lead.id)))) return false;
         return true;
       });
 
@@ -3510,14 +3639,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     function openViewLeadModal(leadId, origin) {
       viewLeadGeneration += 1;
+      // T4: la ficha abre origen+ID exactos, sin fallback cruzado (los ids
+      // numericos colisionan entre 'actual' e 'historico').
       const resolvedOrigin = origin === 'historico' ? 'historico' : 'actual';
-      let lead = findLeadByOrigin(resolvedOrigin, leadId);
-      let finalOrigin = resolvedOrigin;
-      if (!lead) {
-        const other = resolvedOrigin === 'historico' ? 'actual' : 'historico';
-        lead = findLeadByOrigin(other, leadId);
-        if (lead) finalOrigin = other;
-      }
+      const lead = findLeadByOrigin(resolvedOrigin, leadId);
+      const finalOrigin = resolvedOrigin;
       if (!lead) return;
       currentViewOrigin = finalOrigin;
       currentViewId = lead.id;
@@ -3739,10 +3865,10 @@ async function loadLeadAppointments(leadId, lead) {
       const list = document.getElementById('leadAppointmentsList'); if (!list) return;
       const id = validAppointmentId(leadId); if (!id) return;
         const generation = sessionGeneration, viewGeneration = viewLeadGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
-       const { data, error } = await supabaseClient.from('lead_appointments').select('id, lead_id, scheduled_at, status, advisor_name, notes, rescheduled_from_id, resolved_at, created_at').eq('lead_id', id).order('scheduled_at', { ascending: false });
+       const { data, error } = await fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id, lead_id, scheduled_at, status, advisor_name, notes, rescheduled_from_id, resolved_at, created_at').eq('lead_id', id));
         if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return;
        if (error) { console.warn('No se pudieron cargar citas:', error); document.getElementById('leadAppointmentsSection')?.classList.add('hidden'); return; }
-       leadAppointmentsCache = data || [];
+       leadAppointmentsCache = (data || []).sort((a, b) => String(b.scheduled_at).localeCompare(String(a.scheduled_at)) || Number(b.id) - Number(a.id));
        const section = document.getElementById('leadAppointmentsSection'); if (section && !isAgendadoGestion(getField((lead || findLeadByOrigin('actual', leadId)), 'GESTION')) && !leadAppointmentsCache.length) section.classList.add('hidden');
        if (section && leadAppointmentsCache.length) section.classList.remove('hidden');
       renderLeadAppointments();
@@ -3756,10 +3882,10 @@ async function loadLeadAppointments(leadId, lead) {
       if (!date || !input?.value || date.getFullYear() < 2000 || note.length > 2000) { showToast('Fecha de cita no válida o nota demasiado larga', 'warning'); return; }
       const args = { p_lead_id: validAppointmentId(currentViewId), p_scheduled_at: date.toISOString(), p_notes: note }; if (isAdmin) args.p_advisor_user_id = document.getElementById('leadAppointmentAdvisor')?.value || null;
        if (!args.p_lead_id || (isAdmin && !args.p_advisor_user_id)) return; const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at, key = `create:${leadId}`; if (pendingAppointmentMutations.has(key)) return; const operationToken = Symbol(); pendingAppointmentMutations.set(key, operationToken); if (submit) submit.disabled = true;
-       try { const { error } = await supabaseClient.rpc('create_lead_appointment', args); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { if (error.message?.includes('lead_not_agendado')) { showToast('Solo los leads agendados pueden tener citas', 'warning'); document.getElementById('leadAppointmentCreate')?.classList.add('hidden'); } else showToast('No se pudo crear la cita', 'error'); return; } event.target.reset(); await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita creada', 'success'); } catch (err) { if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) { console.warn('No se pudo crear la cita:', err); showToast('No se pudo crear la cita', 'error'); } } finally { if (pendingAppointmentMutations.get(key) === operationToken) pendingAppointmentMutations.delete(key); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.getElementById('leadAppointmentForm')) { if (submit) submit.disabled = false; } }
+       try { const { error } = await supabaseClient.rpc('create_lead_appointment', args); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { if (error.message?.includes('lead_not_agendado')) { showToast('Solo los leads agendados pueden tener citas', 'warning'); document.getElementById('leadAppointmentCreate')?.classList.add('hidden'); } else showToast('No se pudo crear la cita', 'error'); return; } event.target.reset(); invalidateCitasCache(); await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita creada', 'success'); } catch (err) { if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) { console.warn('No se pudo crear la cita:', err); showToast('No se pudo crear la cita', 'error'); } } finally { if (pendingAppointmentMutations.get(key) === operationToken) pendingAppointmentMutations.delete(key); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.getElementById('leadAppointmentForm')) { if (submit) submit.disabled = false; } }
     }
-      async function setLeadAppointmentStatus(id, status) { const appointmentId = validAppointmentId(id); if (!appointmentId || pendingAppointmentMutations.has(appointmentId)) return; const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at; const operationToken = Symbol(); pendingAppointmentMutations.set(appointmentId, operationToken); setAppointmentMutationPending(appointmentId, true); try { const { error } = await supabaseClient.rpc('set_lead_appointment_status', { p_id: appointmentId, p_status: status, p_notes: '' }); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { showToast('No se pudo actualizar la cita', 'error'); return; } await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita actualizada', 'success'); } catch (err) { if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) { console.warn('No se pudo actualizar la cita:', err); showToast('No se pudo actualizar la cita', 'error'); } } finally { if (pendingAppointmentMutations.get(appointmentId) === operationToken) pendingAppointmentMutations.delete(appointmentId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.querySelector(`[data-appointment-id="${appointmentId}"]`)) setAppointmentMutationPending(appointmentId, false); } }
-      async function rescheduleLeadAppointment(id) { const appointmentId = validAppointmentId(id); const date = appointmentDate(document.getElementById(`reschedule-${appointmentId}`)?.value); if (!appointmentId || !date || date.getFullYear() < 2000 || pendingAppointmentMutations.has(appointmentId)) { showToast('Fecha de reprogramación no válida', 'warning'); return; } const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at; const operationToken = Symbol(); pendingAppointmentMutations.set(appointmentId, operationToken); setAppointmentMutationPending(appointmentId, true); try { const { error } = await supabaseClient.rpc('reschedule_lead_appointment', { p_id: appointmentId, p_scheduled_at: date.toISOString(), p_notes: '' }); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { showToast('No se pudo reprogramar la cita', 'error'); return; } await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita reprogramada', 'success'); } catch (err) { if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) { console.warn('No se pudo reprogramar la cita:', err); showToast('No se pudo reprogramar la cita', 'error'); } } finally { if (pendingAppointmentMutations.get(appointmentId) === operationToken) pendingAppointmentMutations.delete(appointmentId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.querySelector(`[data-appointment-id="${appointmentId}"]`)) setAppointmentMutationPending(appointmentId, false); } }
+      async function setLeadAppointmentStatus(id, status) { const appointmentId = validAppointmentId(id); if (!appointmentId || pendingAppointmentMutations.has(appointmentId)) return; const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at; const operationToken = Symbol(); pendingAppointmentMutations.set(appointmentId, operationToken); setAppointmentMutationPending(appointmentId, true); try { const { error } = await supabaseClient.rpc('set_lead_appointment_status', { p_id: appointmentId, p_status: status, p_notes: '' }); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { showToast('No se pudo actualizar la cita', 'error'); return; } invalidateCitasCache(); await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita actualizada', 'success'); } catch (err) { if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) { console.warn('No se pudo actualizar la cita:', err); showToast('No se pudo actualizar la cita', 'error'); } } finally { if (pendingAppointmentMutations.get(appointmentId) === operationToken) pendingAppointmentMutations.delete(appointmentId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.querySelector(`[data-appointment-id="${appointmentId}"]`)) setAppointmentMutationPending(appointmentId, false); } }
+      async function rescheduleLeadAppointment(id) { const appointmentId = validAppointmentId(id); const date = appointmentDate(document.getElementById(`reschedule-${appointmentId}`)?.value); if (!appointmentId || !date || date.getFullYear() < 2000 || pendingAppointmentMutations.has(appointmentId)) { showToast('Fecha de reprogramación no válida', 'warning'); return; } const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at; const operationToken = Symbol(); pendingAppointmentMutations.set(appointmentId, operationToken); setAppointmentMutationPending(appointmentId, true); try { const { error } = await supabaseClient.rpc('reschedule_lead_appointment', { p_id: appointmentId, p_scheduled_at: date.toISOString(), p_notes: '' }); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { showToast('No se pudo reprogramar la cita', 'error'); return; } invalidateCitasCache(); await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita reprogramada', 'success'); } catch (err) { if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) { console.warn('No se pudo reprogramar la cita:', err); showToast('No se pudo reprogramar la cita', 'error'); } } finally { if (pendingAppointmentMutations.get(appointmentId) === operationToken) pendingAppointmentMutations.delete(appointmentId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.querySelector(`[data-appointment-id="${appointmentId}"]`)) setAppointmentMutationPending(appointmentId, false); } }
 
     // -------------------------------------------------------------
     // Notas de equipo (lead_notes): append-only vía RPC; editar/borrar solo admin.
@@ -3767,13 +3893,15 @@ async function loadLeadAppointments(leadId, lead) {
     async function loadLeadNotes(leadId) {
       const list = document.getElementById('leadNotesList');
       if (!list) return;
-      const { data, error } = await supabaseClient
+      // T4: patron sessionGeneration en exito y error (ficha+sesion+usuario).
+      const generation = sessionGeneration, viewGeneration = viewLeadGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
+      const { data, error } = await fetchPagedResult(() => supabaseClient
         .from('lead_notes')
         .select('id, lead_id, author_name, note, created_at, updated_at')
-        .eq('lead_id', leadId)
-        .order('created_at', { ascending: false });
-      // La ficha pudo cambiarse mientras esperábamos: descarta la respuesta obsoleta.
-      if (String(currentViewId) !== String(leadId)) return;
+        .eq('lead_id', leadId));
+      // La ficha o la sesion pudo cambiarse mientras esperábamos: descarta la
+      // respuesta obsoleta sin pintar ni limpiar datos ajenos.
+      if (generation !== sessionGeneration || viewGeneration !== viewLeadGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt || String(currentViewId) !== String(leadId)) return;
       if (error) {
         list.innerHTML = '<p class="text-[11px] text-rose-400">No se pudieron cargar las notas.</p>';
         return;
@@ -3783,7 +3911,7 @@ async function loadLeadAppointments(leadId, lead) {
         leadNotesCache = [];
         return;
       }
-      leadNotesCache = data;
+      leadNotesCache = data.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)) || Number(b.id) - Number(a.id));
       renderLeadNotes();
     }
 
@@ -3791,18 +3919,18 @@ async function loadLeadAppointments(leadId, lead) {
       const section = document.getElementById('leadGestionesSection');
       const list = document.getElementById('leadGestionesList');
       if (!section || !list) return;
-      const { data, error } = await supabaseClient
+      // T4: patron sessionGeneration en exito y error (ficha+sesion+usuario).
+      const generation = sessionGeneration, viewGeneration = viewLeadGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
+      const { data, error } = await fetchPagedResult(() => supabaseClient
         .from('lead_gestiones')
-        .select('fecha_gestion, gestion_anterior, gestion_nueva, canal, autor_name, created_at')
-        .eq('lead_id', leadId)
-        .order('fecha_gestion', { ascending: true })
-        .order('created_at', { ascending: true });
-      if (String(currentViewId) !== String(leadId)) return;
+        .select('id, fecha_gestion, gestion_anterior, gestion_nueva, canal, autor_name, created_at')
+        .eq('lead_id', leadId));
+      if (generation !== sessionGeneration || viewGeneration !== viewLeadGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt || String(currentViewId) !== String(leadId)) return;
       if (error) {
         console.warn('No se pudo cargar el historial de gestiones:', error);
         return;
       }
-      leadGestionesCache = data || [];
+      leadGestionesCache = (data || []).sort((a, b) => String(a.fecha_gestion).localeCompare(String(b.fecha_gestion)) || String(a.created_at).localeCompare(String(b.created_at)) || Number(a.id) - Number(b.id));
       section.classList.remove('hidden');
       renderLeadGestiones();
     }
@@ -3922,7 +4050,7 @@ async function loadLeadAppointments(leadId, lead) {
     }
 
     function closeViewLeadModal() {
-      viewLeadGeneration += 1; currentViewId = null; currentViewOrigin = null; leadAppointmentsCache = [];
+      viewLeadGeneration += 1; currentViewId = null; currentViewOrigin = null; leadAppointmentsCache = []; leadNotesCache = []; leadGestionesCache = []; editingNoteId = null;
       const modal = document.getElementById('modalViewLead');
       if (modal) {
         modal.classList.add('hidden');
@@ -4206,26 +4334,11 @@ async function loadLeadAppointments(leadId, lead) {
       const headers = ["ID", "Mes", "Fecha", "Nombre", "Telefono", "Campaña", "Medio", "GESTION", "Ciudad", "Agente", "Observaciones"];
       const rows = filteredLeads.map(l => [
         l.id || '',
-        `"${getField(l, 'Mes').replace(/"/g, '""')}"`,
-        `"${getField(l, 'Fecha').replace(/"/g, '""')}"`,
-        `"${getField(l, 'Nombre').replace(/"/g, '""')}"`,
-        `"${getField(l, 'Telefono').replace(/"/g, '""')}"`,
-        `"${getField(l, 'Campaña').replace(/"/g, '""')}"`,
-        `"${getField(l, 'Medio').replace(/"/g, '""')}"`,
-        `"${getField(l, 'GESTION').replace(/"/g, '""')}"`,
-        `"${getField(l, 'Ciudad').replace(/"/g, '""')}"`,
-        `"${getField(l, 'Agente ').replace(/"/g, '""')}"`,
-        `"${getField(l, 'OBSERVACIONES ').replace(/"/g, '""')}"`
-      ]);
-
-      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Leads_Sociedad_Actoral_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+        getField(l, 'Mes'), getField(l, 'Fecha'), getField(l, 'Nombre'),
+        getField(l, 'Telefono'), getField(l, 'Campaña'), getField(l, 'Medio'),
+        getField(l, 'GESTION'), getField(l, 'Ciudad'), getField(l, 'Agente '), getField(l, 'OBSERVACIONES ')
+      ].map(csvReporteField));
+      downloadCSV([headers.join(','), ...rows.map(r => r.join(','))].join('\n'), `Leads_Sociedad_Actoral_${new Date().toISOString().slice(0, 10)}.csv`);
       showToast(`${filteredLeads.length.toLocaleString()} leads exportados a CSV`, "success");
     }
 
@@ -4241,7 +4354,6 @@ async function loadLeadAppointments(leadId, lead) {
       }
 
       const headers = ["Mes", "Total Leads", "Agendados", "No Contesta", "Inscritos", "% Conversión", "% del Total", "Campaña Más Fuerte", "Asesor con Más Cierres"];
-      const q = v => `"${String(v).replace(/"/g, '""')}"`;
       const rows = activeMonths.map(m => {
         const st = monthlyStats[m];
         const mConv = st.total > 0 ? ((st.inscritos / st.total) * 100).toFixed(1) : '0.0';
@@ -4260,26 +4372,19 @@ async function loadLeadAppointments(leadId, lead) {
         });
 
         return [
-          q(m),
+          histMonthLabel(m),
           st.total,
           st.agendados,
           st.noContesta,
           st.inscritos,
-          q(mConv + '%'),
-          q(mMonthPct + '%'),
-          q(topCamp),
-          q(topAg)
-        ].join(',');
+          mConv + '%',
+          mMonthPct + '%',
+          topCamp,
+          topAg
+        ].map(csvReporteField).join(',');
       });
 
-      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(','), ...rows].join('\n');
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Historical_Summary_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      downloadCSV([headers.join(','), ...rows].join('\n'), `Historical_Summary_${new Date().toISOString().slice(0, 10)}.csv`);
       const suffix = rangeActive && excludedNoDate > 0 ? ` (${excludedNoDate.toLocaleString()} sin fecha válida excluidos)` : '';
       showToast(`${activeMonths.length.toLocaleString()} meses exportados a CSV${suffix}`, "success");
     }
@@ -4362,7 +4467,7 @@ async function loadLeadAppointments(leadId, lead) {
       const raw = getField(lead, 'Fecha').trim();
       if (!raw) return null;
       const parts = raw.split(/[/-]/);
-      if (parts.length < 2) return null;
+      if (parts.length !== 3 || !parts.every(p => /^\d+$/.test(p))) return null;
       let day, month, year;
       if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
         year = Number(parts[0]); month = Number(parts[1]); day = Number(parts[2]);
@@ -4384,17 +4489,48 @@ async function loadLeadAppointments(leadId, lead) {
       const fromMes = MONTH_CHRONO.find(m => raw.includes(m));
       if (fromMes) return fromMes;
 
-      const fecha = getField(lead, 'Fecha').trim();
-      if (fecha) {
-        const parts = fecha.split(/[/-]/);
-        if (parts.length >= 2) {
-          const monthNum = Number(parts[1]);
-          if (Number.isInteger(monthNum) && monthNum >= 1 && monthNum <= 12) {
-            return MONTH_CHRONO[monthNum - 1];
-          }
-        }
-      }
+      const ts = parseFechaLead(lead);
+      if (ts !== null) return MONTH_CHRONO[new Date(ts).getUTCMonth()];
       return 'OTRO';
+    }
+
+    function isInscritoDataDura(lead, fecha) {
+      const month = normalizeLeadMonth(lead);
+      const origin = leadReportDate(lead);
+      const report = leadReportDate({ Fecha: fecha });
+      if (!report) return false;
+      return MONTH_CHRONO.includes(month) && (month !== MONTH_CHRONO[report.mesIdx] || (origin !== null && origin.anio !== report.anio));
+    }
+
+    // T5: fecha del lead como {anio, mesIdx} UTC o null si no hay fecha válida.
+    function leadReportDate(lead) {
+      const ts = parseFechaLead(lead);
+      if (ts === null) return null;
+      const d = new Date(ts);
+      return { anio: d.getUTCFullYear(), mesIdx: d.getUTCMonth() };
+    }
+
+    // T5: clave año-mes ('2026-03'): Mes canónico + año de Fecha.
+    // El mes de Fecha solo sirve de respaldo cuando Mes es desconocido.
+    // Sin fecha: 'SIN-FECHA·ENERO' u 'OTRO'. ENERO 2025 ≠ ENERO 2026.
+    function histMonthKey(lead) {
+      const r = leadReportDate(lead);
+      const month = normalizeLeadMonth(lead);
+      if (r) return `${r.anio}-${String(MONTH_CHRONO.indexOf(month) + 1).padStart(2, '0')}`;
+      return month !== 'OTRO' ? `SIN-FECHA·${month}` : 'OTRO';
+    }
+
+    function histMonthLabel(key) {
+      const m = /^(\d{4})-(\d{2})$/.exec(key || '');
+      if (m) return `${MONTH_CHRONO[Number(m[2]) - 1]} ${m[1]}`;
+      if (typeof key === 'string' && key.startsWith('SIN-FECHA·')) return `${key.slice(10)} (sin fecha)`;
+      return 'OTRO';
+    }
+
+    // T5: orden cronológico de claves de mes; SIN-FECHA y OTRO al final.
+    function sortHistMonthKeys(keys) {
+      const rank = k => /^(\d{4})-(\d{2})$/.test(k) ? `0${k}` : (k === 'OTRO' ? '2OTRO' : `1${k}`);
+      return [...keys].sort((a, b) => (rank(a) < rank(b) ? -1 : rank(a) > rank(b) ? 1 : 0));
     }
 
     // Normaliza el estado de gestión: trim, colapso de espacios internos y mayúsculas.
@@ -4455,16 +4591,24 @@ async function loadLeadAppointments(leadId, lead) {
 
     // Filtro común del panel histórico (render y export CSV).
     // El rango Desde/Hasta tiene precedencia sobre el filtro de mes.
+    // T5: respeta el selector de origen (actual/histórico/todos), distingue
+    // años (clave año-mes) y añade filtro de año; OTRO se conserva como mes.
     function filterHistoricalLeads() {
       const selectedCampana = document.getElementById('histFilterCampana')?.value || '';
       const selectedAgente = document.getElementById('histFilterAgente')?.value || '';
       const selectedMes = document.getElementById('histFilterMes')?.value || '';
+      const selectedAnio = document.getElementById('histFilterAnio')?.value || '';
       const range = readHistRange();
       const rangeActive = range.from !== null || range.to !== null;
 
-      let data = allLeads;
+      let data = getVisibleBaseLeads();
       if (selectedCampana) data = data.filter(l => getField(l, 'Campaña').trim() === selectedCampana);
       if (selectedAgente) data = data.filter(l => getField(l, 'Agente ').trim() === selectedAgente);
+      if (selectedAnio === 'SIN-FECHA') {
+        data = data.filter(l => leadReportDate(l) === null);
+      } else if (selectedAnio) {
+        data = data.filter(l => String(leadReportDate(l)?.anio || '') === selectedAnio);
+      }
 
       let excludedNoDate = 0;
       if (rangeActive) {
@@ -4481,7 +4625,7 @@ async function loadLeadAppointments(leadId, lead) {
         data = data.filter(l => normalizeLeadMonth(l) === selectedMes);
       }
 
-      return { data, range, rangeActive, selectedMes, excludedNoDate };
+      return { data, range, rangeActive, selectedMes, selectedAnio, excludedNoDate };
     }
 
     // Aviso visible del rango activo y de los registros excluidos sin fecha válida.
@@ -4507,22 +4651,29 @@ async function loadLeadAppointments(leadId, lead) {
       const campanaSelect = document.getElementById('histFilterCampana');
       const agenteSelect = document.getElementById('histFilterAgente');
       const mesSelect = document.getElementById('histFilterMes');
+      const anioSelect = document.getElementById('histFilterAnio');
       if (!campanaSelect || !agenteSelect || !mesSelect) return;
 
       const currentCamp = campanaSelect.value;
       const currentAgent = agenteSelect.value;
       const currentMes = mesSelect.value;
+      const currentAnio = anioSelect?.value || '';
 
       const campanas = new Set();
       const agentes = new Set();
       const meses = new Set();
+      const anios = new Set();
+      let haySinFecha = false;
 
-      allLeads.forEach(l => {
+      getVisibleBaseLeads().forEach(l => {
         const c = getField(l, 'Campaña').trim();
         const a = getField(l, 'Agente ').trim();
         if (c) campanas.add(c);
         if (a) agentes.add(a);
         meses.add(normalizeLeadMonth(l));
+        const r = leadReportDate(l);
+        if (r) anios.add(String(r.anio));
+        else haySinFecha = true;
       });
 
       const campOptions = ['<option value="">Todas las Campañas</option>'];
@@ -4544,15 +4695,30 @@ async function loadLeadAppointments(leadId, lead) {
         mesOptions.push(`<option value="${escapeAttr(m)}" ${m === currentMes ? 'selected' : ''}>${escapeHtml(catalogLabel(m))}</option>`);
       });
       mesSelect.innerHTML = mesOptions.join('');
+
+      if (anioSelect) {
+        const anioOptions = ['<option value="">Todos los Años</option>'];
+        [...anios].sort().forEach(y => {
+          anioOptions.push(`<option value="${escapeAttr(y)}" ${y === currentAnio ? 'selected' : ''}>${escapeHtml(y)}</option>`);
+        });
+        if (haySinFecha) anioOptions.push(`<option value="SIN-FECHA" ${currentAnio === 'SIN-FECHA' ? 'selected' : ''}>Sin fecha</option>`);
+        anioSelect.innerHTML = anioOptions.join('');
+      }
     }
 
     // Agregación mensual compartida por render y export CSV (cierra la deuda de historicos-mensuales T3).
     // Devuelve también contadores de estados/campañas y el embudo usados por los gráficos.
+    // T5: la clave es año-mes ('2026-03'; ENERO 2025 ≠ ENERO 2026). Sin fecha
+    // válida se agrupa por Mes declarado ('SIN-FECHA·…') u 'OTRO', que siempre
+    // aparece si tiene datos.
+    // No cambia la semántica de "Agendados" (incluye AGENDAD* sin distinguir
+    // canceladas/reprogramadas; pendiente de definición humana).
     function computeHistoricalAggregates(data) {
       const monthlyStats = {};
-      MONTH_CHRONO.forEach(m => {
-        monthlyStats[m] = { total: 0, inscritos: 0, agendados: 0, noContesta: 0, campanas: {}, agentes: {} };
-      });
+      const statBucket = key => {
+        if (!monthlyStats[key]) monthlyStats[key] = { total: 0, inscritos: 0, agendados: 0, noContesta: 0, campanas: {}, agentes: {} };
+        return monthlyStats[key];
+      };
 
       const stateTotals = {};
       const stateByMonth = {};
@@ -4561,39 +4727,35 @@ async function loadLeadAppointments(leadId, lead) {
       let funnelGestionados = 0;
 
       data.forEach(l => {
-        const mes = normalizeLeadMonth(l);
-        if (!monthlyStats[mes]) monthlyStats[mes] = { total: 0, inscritos: 0, agendados: 0, noContesta: 0, campanas: {}, agentes: {} };
-
-        const stats = monthlyStats[mes];
+        const key = histMonthKey(l);
+        const stats = statBucket(key);
         stats.total++;
 
         const gestion = normalizeGestion(l);
-        if (gestion.includes('INSCRIT')) stats.inscritos++;
+        const inscrito = gestion.includes('INSCRIT');
+        if (inscrito) stats.inscritos++;
         if (gestion.includes('AGENDAD')) stats.agendados++;
         if (gestion.includes('NO CONTEST')) stats.noContesta++;
         if (gestion && gestion !== 'INFORMACIÓN' && gestion !== 'INTERESADO') funnelGestionados++;
 
         const estado = groupGestionEstado(gestion);
         stateTotals[estado] = (stateTotals[estado] || 0) + 1;
-        if (!stateByMonth[mes]) stateByMonth[mes] = {};
-        stateByMonth[mes][estado] = (stateByMonth[mes][estado] || 0) + 1;
+        if (!stateByMonth[key]) stateByMonth[key] = {};
+        stateByMonth[key][estado] = (stateByMonth[key][estado] || 0) + 1;
 
         const camp = getField(l, 'Campaña').trim() || 'General';
         stats.campanas[camp] = (stats.campanas[camp] || 0) + 1;
         campTotals[camp] = (campTotals[camp] || 0) + 1;
-        if (!campByMonth[mes]) campByMonth[mes] = {};
-        campByMonth[mes][camp] = (campByMonth[mes][camp] || 0) + 1;
+        if (!campByMonth[key]) campByMonth[key] = {};
+        campByMonth[key][camp] = (campByMonth[key][camp] || 0) + 1;
 
         const agent = getField(l, 'Agente ').trim() || 'Sin asignar';
-        if (gestion.includes('INSCRIT')) {
+        if (inscrito) {
           stats.agentes[agent] = (stats.agentes[agent] || 0) + 1;
         }
       });
 
-      const activeMonths = MONTH_CHRONO.filter(m => monthlyStats[m] && monthlyStats[m].total > 0);
-      if (activeMonths.length === 0 && monthlyStats['OTRO']?.total > 0) {
-        activeMonths.push('OTRO');
-      }
+      const activeMonths = sortHistMonthKeys(Object.keys(monthlyStats).filter(k => monthlyStats[k].total > 0));
 
       return { monthlyStats, activeMonths, stateTotals, stateByMonth, campTotals, campByMonth, funnelGestionados };
     }
@@ -4620,13 +4782,14 @@ async function loadLeadAppointments(leadId, lead) {
       document.getElementById('histKpiConversion').textContent = convRate + '%';
 
       const { monthlyStats, activeMonths, stateTotals, stateByMonth, campTotals, campByMonth, funnelGestionados } = computeHistoricalAggregates(data);
+      const monthLabels = activeMonths.map(histMonthLabel);
 
       let recordMonth = '-';
       let recordCount = 0;
       activeMonths.forEach(m => {
         if (monthlyStats[m].total > recordCount) {
           recordCount = monthlyStats[m].total;
-          recordMonth = m;
+          recordMonth = histMonthLabel(m);
         }
       });
 
@@ -4657,7 +4820,7 @@ async function loadLeadAppointments(leadId, lead) {
 
             return `
               <tr class="hover:bg-slate-800/40 transition-colors">
-                <td class="px-4 py-3 font-semibold text-slate-200">${escapeHtml(m)}</td>
+                <td class="px-4 py-3 font-semibold text-slate-200">${escapeHtml(histMonthLabel(m))}</td>
                 <td class="px-4 py-3 text-right text-white font-bold tabular-nums">${st.total.toLocaleString()}</td>
                 <td class="px-4 py-3 text-right text-amber-400 tabular-nums">${st.agendados.toLocaleString()}</td>
                 <td class="px-4 py-3 text-right text-rose-400 tabular-nums">${st.noContesta.toLocaleString()}</td>
@@ -4689,7 +4852,7 @@ async function loadLeadAppointments(leadId, lead) {
       const ctxMonthly = document.getElementById('chartMonthlyEvolution');
       if (ctxMonthly) {
         if (histCharts.monthly) histCharts.monthly.destroy();
-        const labels = activeMonths;
+        const labels = monthLabels;
         histCharts.monthly = new Chart(ctxMonthly, {
           data: {
             labels: labels,
@@ -4723,7 +4886,7 @@ async function loadLeadAppointments(leadId, lead) {
       const ctxConv = document.getElementById('chartConversionTrend');
       if (ctxConv) {
         if (histCharts.conversion) histCharts.conversion.destroy();
-        const labels = activeMonths;
+        const labels = monthLabels;
         histCharts.conversion = new Chart(ctxConv, {
           type: 'line',
           data: {
@@ -4857,7 +5020,7 @@ async function loadLeadAppointments(leadId, lead) {
         }
         histCharts.monthlyStates = new Chart(ctxStates, {
           type: 'bar',
-          data: { labels: activeMonths, datasets: stateDatasets },
+          data: { labels: monthLabels, datasets: stateDatasets },
           options: stackedMonthlyOptions
         });
       }
@@ -4884,7 +5047,7 @@ async function loadLeadAppointments(leadId, lead) {
         }
         histCharts.monthlyCampaigns = new Chart(ctxCampMonth, {
           type: 'bar',
-          data: { labels: activeMonths, datasets: campDatasets },
+          data: { labels: monthLabels, datasets: campDatasets },
           options: stackedMonthlyOptions
         });
       }
@@ -5001,7 +5164,6 @@ async function loadLeadAppointments(leadId, lead) {
         return [...nombres].sort((a, b) => a.localeCompare(b, 'es'));
       };
       const buildBloques = (gestiones, citas, notas, leads) => {
-        const now = MONTH_CHRONO[Number(hoy.slice(5, 7)) - 1];
         const notasPorAutor = new Map(notas.map(n => [n.autor_name, n]));
         const uuidPorNombre = new Map();
         notas.forEach(n => { if (n.autor_name && n.autor_user_id) uuidPorNombre.set(n.autor_name, n.autor_user_id); });
@@ -5015,7 +5177,7 @@ async function loadLeadAppointments(leadId, lead) {
             const lead = leads.get(g.lead_id) || {}, medio = getField(lead, 'Medio').toLowerCase();
             const bucket = medio.includes('whatsapp') ? 'Whatsapp' : (medio.includes('facebook') || medio.includes('instagram')) ? 'Facebook/Instagram' : medio.includes('aircall') ? 'Aircall' : 'Directo o Referido';
             groups[bucket].push(g);
-            const estado = String(g.gestion_nueva || '').trim().toUpperCase(), leadMonth = normalizeLeadMonth(lead), old = MONTH_CHRONO.includes(leadMonth) && leadMonth !== now;
+            const estado = String(g.gestion_nueva || '').trim().toUpperCase(), old = isInscritoDataDura(lead, fecha);
             if (estado.startsWith('INSCRIT')) { inscritos++; if (old) inscritosDura++; }
           });
           const citasAsesora = citas.filter(c => matchCita(c, nombre, nombre === currentAccess?.nombre ? userId : uuidPorNombre.get(nombre)));
@@ -5028,9 +5190,9 @@ async function loadLeadAppointments(leadId, lead) {
         const [startISO, endISO] = miamiDayBounds(fecha);
         if (!startISO) reporteWarnings.push('No se pudo calcular el rango Miami para las citas.');
         const resultados = await Promise.allSettled([
-          supabaseClient.from('lead_gestiones').select('lead_id,gestion_nueva,autor_name,created_at').eq('fecha_gestion', fecha).order('created_at'),
-          startISO ? supabaseClient.from('lead_appointments').select('status,scheduled_at,advisor_name,advisor_user_id').gte('scheduled_at', startISO).lt('scheduled_at', endISO) : Promise.resolve({ data: [], error: null }),
-          supabaseClient.from('daily_report_notes').select('*').eq('report_date', fecha)
+          fetchPagedResult(() => supabaseClient.from('lead_gestiones').select('id,lead_id,gestion_nueva,autor_name,created_at').eq('fecha_gestion', fecha)),
+          startISO ? fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id,status,scheduled_at,advisor_name,advisor_user_id').gte('scheduled_at', startISO).lt('scheduled_at', endISO)) : Promise.resolve({ data: [], error: null }),
+          fetchPagedResult(() => supabaseClient.from('daily_report_notes').select('*').eq('report_date', fecha))
         ]);
         if (!valid()) return;
         const gestionesResult = resultados[0].status === 'fulfilled' ? resultados[0].value : { error: resultados[0].reason };
@@ -5046,7 +5208,7 @@ async function loadLeadAppointments(leadId, lead) {
         let leads = new Map(), gestionError = gestionesError;
         if (!gestionError && gestiones.length) {
           const ids = [...new Set(gestiones.map(g => g.lead_id).filter(Boolean))];
-          const leadsResult = ids.length ? await supabaseClient.from('leads').select('id,Medio').in('id', ids) : { data: [], error: null };
+          const leadsResult = await fetchRowsByIds('leads', 'id,Medio,Mes,Fecha', ids);
           if (!valid()) return;
           gestionError = leadsResult.error;
           if (!gestionError) leads = new Map((leadsResult.data || []).map(l => [l.id, l]));
@@ -5126,8 +5288,23 @@ async function loadLeadAppointments(leadId, lead) {
     // neutralización de prefijos peligrosos (=, +, -, @) anteponiendo apóstrofe.
     function csvReporteField(value) {
       const text = String(value ?? '');
-      const safe = /^[=+\-@]/.test(text) ? `'${text}` : text;
+      const safe = /^[\s\u0000-\u001f]*[=+\-@]/.test(text) ? `'${text}` : text;
       return `"${safe.replace(/"/g, '""')}"`;
+    }
+
+    function downloadCSV(content, filename) {
+      const url = URL.createObjectURL(new Blob(['\uFEFF', content], { type: 'text/csv;charset=utf-8' }));
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      try {
+        link.click();
+      } finally {
+        document.body.removeChild(link);
+        // El navegador necesita consumir el enlace antes de liberar el Blob.
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
     }
 
     function exportReporteDiarioCSV() {
@@ -5143,13 +5320,7 @@ async function loadLeadAppointments(leadId, lead) {
         lineas.push([csvReporteField(b.advisor), csvReporteField(b.gestionados), csvReporteField(b.agendados), csvReporteField(b.asistieron), csvReporteField(b.noAsistieron), csvReporteField(b.inscritos), csvReporteField(b.inscritosDura), csvReporteField(problemas), csvReporteField(observaciones)].join(','));
       });
       lineas.push([csvReporteField('TOTAL'), csvReporteField(sumas.gestionados), csvReporteField(sumas.agendados), csvReporteField(sumas.asistieron), csvReporteField(sumas.noAsistieron), csvReporteField(sumas.inscritos), csvReporteField(sumas.inscritosDura), csvReporteField(''), csvReporteField('')].join(','));
-      const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURI(lineas.join('\n').replace(/#/g, '%23'));
-      const link = document.createElement('a');
-      link.setAttribute('href', csvContent);
-      link.setAttribute('download', `Reporte_Diario_${fecha}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      downloadCSV(lineas.join('\n'), `Reporte_Diario_${fecha}.csv`);
       showToast('Reporte diario exportado a CSV', 'success');
     }
 
@@ -5180,10 +5351,12 @@ async function loadLeadAppointments(leadId, lead) {
       const [y, m] = monthStr.split('-').map(Number);
       const mesNombre = MONTH_CHRONO[m - 1];
       const generation = sessionGeneration, token = ++campanasRequestGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at;
+      campanasLoading = true; campanasContextMonth = monthStr;
       const valid = () => token === campanasRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'campanas' && document.getElementById('campaignMesSel')?.value === monthStr;
       const [rollupRes, statsRes] = await Promise.allSettled([
+        // RPC escalar JSONB: devuelve el agregado completo, no filas truncables.
         supabaseClient.rpc('campaign_monthly_rollup', { p_anio: y, p_mes: mesNombre }),
-        supabaseClient.from('campaign_stats').select('*').eq('anio', y).eq('mes', mesNombre)
+        fetchPagedResult(() => supabaseClient.from('campaign_stats').select('*').eq('anio', y).eq('mes', mesNombre))
       ]);
       if (!valid()) return;
       const aviso = document.getElementById('campanasAviso');
@@ -5194,7 +5367,8 @@ async function loadLeadAppointments(leadId, lead) {
         if (aviso) aviso.textContent = 'No se pudieron cargar las campañas. Verifica que la migración esté aplicada.';
         campanasData = [];
         campaignStatsMap = new Map();
-        return renderCampanas(campanasData, campaignTotals([]), `${mesNombre} ${y}`, canEditCampaigns());
+        if (token === campanasRequestGeneration) campanasLoading = false;
+        return renderCampanas(campanasData, campaignTotals([]), `${mesNombre} ${y}`, canEditCampaigns(), monthStr);
       }
       const rollupRows = rollupRes.value.data || [];
       const statRows = statsRes.value.data || [];
@@ -5221,10 +5395,11 @@ async function loadLeadAppointments(leadId, lead) {
         };
       });
       if (aviso) aviso.textContent = campanasData.length ? '' : 'Sin datos para este mes.';
-      renderCampanas(campanasData, campaignTotals(campanasData), `${mesNombre} ${y}`, canEditCampaigns());
+      if (token === campanasRequestGeneration) campanasLoading = false;
+      renderCampanas(campanasData, campaignTotals(campanasData), `${mesNombre} ${y}`, canEditCampaigns(), monthStr);
     }
 
-    function renderCampanas(rows, totals, mesLabel, esEditor) {
+    function renderCampanas(rows, totals, mesLabel, esEditor, monthStr) {
       const tbody = document.getElementById('campanasTableBody');
       if (!tbody) return;
       if (!rows.length) {
@@ -5239,9 +5414,10 @@ async function loadLeadAppointments(leadId, lead) {
         const estadoCell = esEditor
           ? `<select data-field="estado" class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-slate-100">${estadoOptions(r.estado)}</select>`
           : escapeHtml(r.estado);
-        const btnSave = esEditor ? `<button type="button" onclick="saveCampaignStat('${escapeAttr(r.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'"))}')" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Guardar</button>` : '';
-        const btnDelete = isAdmin && r.stat_id ? `<button type="button" onclick="deleteCampaignStat(${Number(r.stat_id)})" class="px-2 py-1 rounded border border-rose-700 text-rose-300 hover:bg-rose-950 font-semibold cursor-pointer">Eliminar</button>` : '';
-        return `<tr id="campaign_row_${escapeAttr(r.name)}" class="hover:bg-slate-800/50">
+        const rowMonth = typeof monthStr === 'string' ? monthStr : (document.getElementById('campaignMesSel')?.value || '');
+        const btnSave = esEditor ? `<button type="button" onclick="saveCampaignStat('${escapeAttr(r.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'"))}','${escapeAttr(rowMonth)}',${r.stat_id == null ? 'null' : Number(r.stat_id)})" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Guardar</button>` : '';
+        const btnDelete = isAdmin && r.stat_id ? `<button type="button" onclick="deleteCampaignStat(${Number(r.stat_id)},'${escapeAttr(rowMonth)}')" class="px-2 py-1 rounded border border-rose-700 text-rose-300 hover:bg-rose-950 font-semibold cursor-pointer">Eliminar</button>` : '';
+        return `<tr id="campaign_row_${escapeAttr(r.name)}" data-month="${escapeAttr(rowMonth)}" data-stat-id="${r.stat_id == null ? '' : Number(r.stat_id)}" class="hover:bg-slate-800/50">
           <td class="p-3 text-left text-slate-200">${escapeHtml(r.name)}</td>
           <td class="p-3 text-left">${estadoCell}</td>
           <td class="p-3 text-right">${numCell('alcance', r.alcance)}</td>
@@ -5284,20 +5460,31 @@ async function loadLeadAppointments(leadId, lead) {
       if (cell) cell.textContent = campaignCosteResultado(gasto, resultados);
     }
 
-    async function saveCampaignStat(campaignName) {
+    async function saveCampaignStat(campaignName, expectedMonth, expectedId) {
       if (!canEditCampaigns()) return;
       if (!supabaseClient || !currentUser || !currentAccess?.activo) return;
+      if (campanasLoading) { showToast('Espera a que terminen de cargar las campañas', 'warning'); return; }
       const row = document.getElementById('campaign_row_' + campaignName);
       if (!row) return;
+      const monthStr = document.getElementById('campaignMesSel')?.value;
+      if (!/^\d{4}-\d{2}$/.test(monthStr || '')) { showToast('Mes no válido', 'warning'); return; }
+      // Contexto de fila: el boton guarda el mes y el id renderizados. Si el
+      // mes cambio o llego una carga nueva, no se mezcla el id anterior con
+      // el mes nuevo: se avisa y se recarga.
+      const currentId = campaignStatsMap.get(campaignName)?.id ?? null;
+      const wantedId = expectedId == null ? null : Number(expectedId);
+      if ((expectedMonth && expectedMonth !== monthStr) || row.dataset.month !== monthStr || campanasContextMonth !== monthStr || currentId !== wantedId) {
+        showToast('El mes cambió mientras editabas; recargando la fila', 'warning');
+        await loadCampanas();
+        return;
+      }
+      const [y, m] = monthStr.split('-').map(Number);
+      const mesNombre = MONTH_CHRONO[m - 1];
       const estado = row.querySelector('[data-field="estado"]')?.value || 'activa';
       const alcance = parseInt(row.querySelector('[data-field="alcance"]')?.value, 10) || 0;
       const gasto = parseFloat(row.querySelector('[data-field="gasto"]')?.value) || 0;
       const resultados = parseInt(row.querySelector('[data-field="resultados"]')?.value, 10) || 0;
       if (alcance < 0 || gasto < 0 || resultados < 0) { showToast('Valores negativos no permitidos', 'warning'); return; }
-      const monthStr = document.getElementById('campaignMesSel')?.value;
-      if (!/^\d{4}-\d{2}$/.test(monthStr || '')) { showToast('Mes no válido', 'warning'); return; }
-      const [y, m] = monthStr.split('-').map(Number);
-      const mesNombre = MONTH_CHRONO[m - 1];
       const generation = sessionGeneration;
       try {
         const { error } = await supabaseClient.rpc('upsert_campaign_stat', {
@@ -5325,10 +5512,17 @@ async function loadLeadAppointments(leadId, lead) {
       }
     }
 
-    async function deleteCampaignStat(id) {
+    async function deleteCampaignStat(id, expectedMonth) {
       if (!isAdmin || !supabaseClient || !currentUser || !currentAccess?.activo) return;
+      if (campanasLoading) { showToast('Espera a que terminen de cargar las campañas', 'warning'); return; }
       const statId = Number(id);
       if (!Number.isInteger(statId) || statId <= 0) return;
+      const monthStr = document.getElementById('campaignMesSel')?.value;
+      if ((expectedMonth && expectedMonth !== monthStr) || campanasContextMonth !== monthStr) {
+        showToast('El mes cambió; recargando antes de eliminar', 'warning');
+        await loadCampanas();
+        return;
+      }
       if (!confirm('¿Eliminar los datos manuales de esta campaña para el mes seleccionado?')) return;
       const generation = sessionGeneration;
       try {
@@ -5358,13 +5552,7 @@ async function loadLeadAppointments(leadId, lead) {
       });
       const t = campaignTotals(campanasData);
       lineas.push([csvReporteField('TOTAL'), csvReporteField(''), csvReporteField(t.alcance), csvReporteField(t.gasto.toFixed(2)), csvReporteField(t.resultados), csvReporteField(campaignCosteResultado(t.gasto, t.resultados)), csvReporteField(t.leads_nuevos), csvReporteField(t.agendados), csvReporteField(t.asistieron), csvReporteField(t.inscritos), csvReporteField(t.agendados_previos), csvReporteField(t.pendientes)].join(','));
-      const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURI(lineas.join('\n').replace(/#/g, '%23'));
-      const link = document.createElement('a');
-      link.setAttribute('href', csvContent);
-      link.setAttribute('download', `campanas_${monthStr}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      downloadCSV(lineas.join('\n'), `campanas_${monthStr}.csv`);
       showToast('Campañas exportadas a CSV', 'success');
     }
   </script>

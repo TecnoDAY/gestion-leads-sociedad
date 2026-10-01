@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -96,12 +96,17 @@ Deno.serve(async (request) => {
       .eq('email', newEmail);
     if ((takenInAccess ?? 0) > 0) return json(400, { error: 'email_taken' });
 
-    const { data: matches } = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    const takenInAuth = (matches?.users ?? []).some((user: { email?: string; new_email?: string }) =>
-      (user.email ?? '').trim().toLowerCase() === newEmail ||
-      (user.new_email ?? '').trim().toLowerCase() === newEmail
-    );
-    if (takenInAuth) return json(400, { error: 'email_taken' });
+    for (let page = 1; ; page += 1) {
+      const { data: matches, error } = await service.auth.admin.listUsers({ page, perPage: 1000 });
+      if (error) throw error;
+      if (!Array.isArray(matches?.users)) throw new Error('Invalid Auth users page');
+      const takenInAuth = matches.users.some((user: { email?: string; new_email?: string }) =>
+        (user.email ?? '').trim().toLowerCase() === newEmail ||
+        (user.new_email ?? '').trim().toLowerCase() === newEmail
+      );
+      if (takenInAuth) return json(400, { error: 'email_taken' });
+      if (matches.users.length < 1000) break;
+    }
 
     // Flujo nativo: se abre una sesión de la persona (que no sale de aquí) y se
     // le pide el cambio de correo a GoTrue. Así los correos de confirmación los
@@ -112,10 +117,22 @@ Deno.serve(async (request) => {
       type: 'recovery',
       email: currentEmail,
     });
-    const tokenHash = typeof linkData?.hashed_token === 'string' ? linkData.hashed_token : '';
+    // GoTrue devuelve el enlace dentro de `data.properties` (verificado en
+    // T1 y en el SDK auth-js `_generateLinkResponse`): `data.hashed_token` y
+    // `data.action_link` de nivel superior quedan como respaldo legado.
+    // Nunca se registra ni se devuelve ningun token.
+    const linkProps = (linkData as { properties?: Record<string, unknown> } | null)?.properties ?? {};
+    const propHash = linkProps.hashed_token;
+    const topHash = (linkData as { hashed_token?: unknown } | null)?.hashed_token;
+    const tokenHash = typeof propHash === 'string' ? propHash
+      : (typeof topHash === 'string' ? topHash : '');
+    const propLink = linkProps.action_link;
+    const topLink = (linkData as { action_link?: unknown } | null)?.action_link;
+    const actionLink = typeof propLink === 'string' ? propLink
+      : (typeof topLink === 'string' ? topLink : '');
     let recoveryToken = '';
     try {
-      recoveryToken = new URL(linkData?.action_link ?? '').searchParams.get('token') ?? '';
+      recoveryToken = new URL(actionLink).searchParams.get('token') ?? '';
     } catch {
       recoveryToken = '';
     }

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,6 +42,8 @@ function timingSafeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
+// Meta envia el numero internacional: conservar sus digitos sin inferir pais.
+// RPC, ventana y trigger usan esta misma identidad (el display no anade digitos).
 function normalizePhoneForDB(raw: string): string {
   return raw.replace(/\D/g, '');
 }
@@ -50,10 +52,21 @@ function isValidPhoneDigits(digits: string): boolean {
   return /^[0-9]{7,15}$/.test(digits);
 }
 
+// WHATSAPP_DEDUP_DAYS validado sin excepciones: entero en [0, 3650];
+// cualquier valor ausente/invalido cae al defecto 30 sin tumbar el handler.
+const DEFAULT_DEDUP_DAYS = 30;
+const MAX_DEDUP_DAYS = 3650;
+
+function parseDedupDays(raw: string | null | undefined): number {
+  if (raw === null || raw === undefined) return DEFAULT_DEDUP_DAYS;
+  const trimmed = String(raw).trim();
+  if (!/^\d+$/.test(trimmed)) return DEFAULT_DEDUP_DAYS;
+  const n = parseInt(trimmed, 10);
+  if (!Number.isSafeInteger(n) || n < 0 || n > MAX_DEDUP_DAYS) return DEFAULT_DEDUP_DAYS;
+  return n;
+}
+
 function formatPhoneForDisplay(digits: string): string {
-  if (digits.length === 10) {
-    return `1 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-  }
   if (digits.length === 11 && digits.startsWith('1')) {
     const rest = digits.slice(1);
     return `1 (${rest.slice(0, 3)}) ${rest.slice(3, 6)}-${rest.slice(6, 10)}`;
@@ -86,6 +99,39 @@ async function hmacSha256(message: string, secret: string): Promise<string> {
   return Array.from(new Uint8Array(signature))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+// Aplana TODO el lote Meta: entry[] -> changes[] -> value.messages[].
+// Antes solo se leia entry[0].changes[0].messages[0] y se perdia el resto.
+function extractInboundMessages(payload: unknown): Array<{ message: any; contactName: string }> {
+  const out: Array<{ message: any; contactName: string }> = [];
+  const entries = (payload as any)?.entry;
+  if (!Array.isArray(entries)) return out;
+  for (const entry of entries) {
+    const changes = entry?.changes;
+    if (!Array.isArray(changes)) continue;
+    for (const change of changes) {
+      const value = change?.value;
+      const messages = value?.messages;
+      const contacts = value?.contacts;
+      if (!Array.isArray(messages)) continue;
+      for (const message of messages) {
+        const from = message?.from;
+        const contact = Array.isArray(contacts)
+          ? contacts.find((c: any) => c?.wa_id === from) ?? contacts[0]
+          : undefined;
+        out.push({
+          message,
+          contactName: contact?.profile?.name ?? 'Sin Nombre',
+        });
+      }
+    }
+  }
+  return out;
+}
+
+function isUniqueViolation(error: any): boolean {
+  return error?.code === '23505';
 }
 
 Deno.serve(async (request) => {
@@ -143,98 +189,158 @@ Deno.serve(async (request) => {
     return json(200, { received: true });
   }
 
-  // Meta payload structure
-  const entry = (payload as any)?.entry?.[0];
-  const changes = entry?.changes?.[0];
-  const value = changes?.value;
-  const messages = value?.messages;
-  const contacts = value?.contacts;
-
-  if (!messages || !messages.length) {
+  const inbound = extractInboundMessages(payload);
+  if (!inbound.length) {
     // Not a user message (delivery receipt, read receipt, etc.)
     return json(200, { received: true });
   }
 
-  const message = messages[0];
-  const phoneRaw = message?.from;
-  const name = contacts?.[0]?.profile?.name ?? 'Sin Nombre';
-
-  if (!phoneRaw) {
-    return json(200, { received: true });
-  }
-
-  // Normalize phone to digits only (matches lead_contact_id_for logic)
-  const phoneDigits = normalizePhoneForDB(phoneRaw);
-  if (!isValidPhoneDigits(phoneDigits)) {
-    return json(200, { received: true });
-  }
+  const dedupDays = parseDedupDays(Deno.env.get('WHATSAPP_DEDUP_DAYS'));
 
   const service = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // Deduplication: check lead_contacts first (exact match on phone_normalized)
-  const { data: contact } = await service
-    .from('lead_contacts')
-    .select('id')
-    .eq('phone_normalized', phoneDigits)
-    .limit(1)
-    .single();
-
-  if (contact) {
-    // Contact exists - check for recent lead with this contact_id
-    const dedupDays = parseInt(Deno.env.get('WHATSAPP_DEDUP_DAYS') ?? '30', 10);
-    const since = new Date(Date.now() - dedupDays * 24 * 60 * 60 * 1000).toISOString();
-
-    const { data: existingLead } = await service
-      .from('leads')
-      .select('id')
-      .eq('contact_id', contact.id)
-      .gte('created_at', since)
-      .limit(1)
-      .single();
-
-    if (existingLead) {
-      return json(200, { received: true, duplicate: true, lead_id: existingLead.id });
-    }
-  }
-
-  // Insert new lead
-  const now = new Date();
   const defaultAgent = Deno.env.get('WHATSAPP_DEFAULT_AGENTE') ?? 'Agente';
   const campana = Deno.env.get('WHATSAPP_CAMPANA') ?? 'General';
 
-  const textBody = message?.text?.body ?? '';
-  const observaciones = textBody
-    ? `Lead de WhatsApp: ${textBody}`.slice(0, 500)
-    : 'Lead creado desde webhook de WhatsApp.';
+  const results: Array<Record<string, unknown>> = [];
+  let transientFailures = 0;
 
-  const phoneDisplay = formatPhoneForDisplay(phoneDigits);
+  for (const { message, contactName } of inbound) {
+    const phoneRaw = message?.from;
+    if (!phoneRaw) {
+      // Mensaje sin remitente: veneno, no reintentable. Se cuenta como
+      // omitido pero no provoca reintento del lote.
+      results.push({ skipped: true, reason: 'missing_sender' });
+      continue;
+    }
+    if (typeof phoneRaw !== 'string') {
+      results.push({ skipped: true, reason: 'invalid_phone' });
+      continue;
+    }
 
-  const leadData = {
-    Nombre: name.slice(0, 200),
-    Telefono: phoneDisplay,
-    Medio: 'Whatsapp',
-    GESTION: 'Información',
-    Campaña: campana,
-    Fecha: formatDateForDB(now),
-    Mes: formatMesForDB(now),
-    AGENTE: defaultAgent,
-    // Columnas con espacio final exacto según esquema real
-    "OBSERVACIONES ": observaciones,
-    "Interesado en ": '',
-  };
+    // Normalizacion unica (canonica): solo digitos.
+    const phoneDigits = normalizePhoneForDB(phoneRaw);
+    if (!isValidPhoneDigits(phoneDigits)) {
+      results.push({ skipped: true, reason: 'invalid_phone' });
+      continue;
+    }
 
-  const { data: created, error: createError } = await service
-    .from('leads')
-    .insert(leadData)
-    .select('id');
+    if (typeof message?.id !== 'string' || !message.id.trim()) {
+      // Sin id no hay garantia de reintento idempotente: no crear un lead.
+      results.push({ skipped: true, reason: 'invalid_message_id' });
+      continue;
+    }
+    const messageId = message.id;
 
-  if (createError) {
-    console.error('Lead creation failed:', createError.message);
-    return json(200, { received: true, error: 'creation_failed' });
+    // Contacto via canonica atomica (upsert dentro de la funcion) en vez de
+    // select-then-insert: dos entregas concurrentes no crean dos contactos.
+    // Si la RPC falla de forma transitoria, el mensaje queda pendiente de
+    // reintento (no se confirma como recibido).
+    let contactId: number | null = null;
+    try {
+      const { data, error } = await service.rpc('lead_contact_id_for', {
+        p_phone: phoneDigits,
+        p_nombre: String(contactName).slice(0, 200),
+        p_ciudad: '',
+      });
+      if (error) throw error;
+      if (!Number.isSafeInteger(data) || data <= 0) throw new Error('contact_not_confirmed');
+      contactId = data;
+    } catch {
+      console.error('Contact resolution failed (retryable)');
+      transientFailures += 1;
+      results.push({ error: 'contact_retryable' });
+      continue;
+    }
+
+    // Dedup blanda por ventana: mismo contacto con lead reciente.
+    if (contactId !== null && dedupDays > 0) {
+      try {
+        const since = new Date(Date.now() - dedupDays * 24 * 60 * 60 * 1000).toISOString();
+        const { data: existingLead, error } = await service
+          .from('leads')
+          .select('id')
+          .eq('contact_id', contactId)
+          .gte('created_at', since)
+          .limit(1)
+          .maybeSingle();
+        if (error) throw error;
+        if (existingLead) {
+          if (existingLead.id == null) throw new Error('duplicate_not_confirmed');
+          results.push({ duplicate: true, lead_id: existingLead.id });
+          continue;
+        }
+      } catch {
+        console.error('Dedup window check failed (retryable)');
+        transientFailures += 1;
+        results.push({ error: 'dedup_retryable' });
+        continue;
+      }
+    }
+
+    const now = new Date();
+    const textBody = message?.text?.body ?? '';
+    const observaciones = textBody
+      ? `Lead de WhatsApp: ${textBody}`.slice(0, 500)
+      : 'Lead creado desde webhook de WhatsApp.';
+
+    const leadData: Record<string, unknown> = {
+      Nombre: String(contactName).slice(0, 200),
+      Telefono: formatPhoneForDisplay(phoneDigits),
+      Medio: 'Whatsapp',
+      GESTION: 'Información',
+      Campaña: campana,
+      Fecha: formatDateForDB(now),
+      Mes: formatMesForDB(now),
+      AGENTE: defaultAgent,
+      // Columnas con espacio final exacto según esquema real
+      "OBSERVACIONES ": observaciones,
+      "Interesado en ": '',
+    };
+    leadData['whatsapp_message_id'] = messageId;
+
+    try {
+      const { data: created, error: createError } = await service
+        .from('leads')
+        .insert(leadData)
+        .select('id');
+      if (createError) throw createError;
+      if (created?.[0]?.id == null) throw new Error('creation_not_confirmed');
+      results.push({ lead_id: created[0].id });
+    } catch (err: any) {
+      if (isUniqueViolation(err)) {
+        // 23505 puede proceder de otra restriccion: solo confirmar si existe
+        // realmente un lead con este message.id y la lectura no fallo.
+        try {
+          const { data: dup, error } = await service
+            .from('leads')
+            .select('id')
+            .eq('whatsapp_message_id', messageId)
+            .limit(1)
+            .maybeSingle();
+          if (!error && dup?.id != null) {
+            results.push({ duplicate: true, lead_id: dup.id });
+            continue;
+          }
+        } catch {
+          console.error('Message duplicate check failed (retryable)');
+        }
+      }
+      // Fallo transitorio (red/DB): NO se confirma; Meta reintentara y el
+      // reintento caera en la rama 23505 sin duplicar.
+      console.error('Lead creation failed (retryable)');
+      transientFailures += 1;
+      results.push({ error: 'creation_retryable' });
+    }
   }
 
-  console.log('WhatsApp lead created', { lead_id: created?.[0]?.id });
-  return json(200, { received: true, lead_id: created?.[0]?.id });
+  // ACK coherente: 200 solo si todo el lote quedo persistido, duplicado real
+  // u omitido por validacion. Cualquier fallo transitorio -> 503 para que
+  // Meta reintente (los ya persistidos deduplican por message.id).
+  if (transientFailures > 0) {
+    return json(503, { received: false, error: 'retryable', results });
+  }
+  return json(200, { received: true, results });
 });

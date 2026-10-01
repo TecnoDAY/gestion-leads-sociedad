@@ -4761,8 +4761,6 @@ async function loadLeadAppointments(leadId, lead) {
     }
 
     function renderHistoricalAnalytics() {
-      if (!window.Chart) return;
-
       populateHistoricalFilterOptions();
 
       const filtered = filterHistoricalLeads();
@@ -4839,6 +4837,16 @@ async function loadLeadAppointments(leadId, lead) {
         }
       }
 
+      if (!window.Chart) {
+        console.warn('Chart.js no está disponible; se omiten los gráficos históricos.');
+        const notice = document.getElementById('histRangeNotice');
+        if (notice) {
+          notice.textContent = 'Los gráficos no se pudieron cargar (Chart.js no disponible); los indicadores y la tabla funcionan normalmente.';
+          notice.classList.remove('hidden');
+        }
+        return;
+      }
+
       const chartTheme = document.documentElement.dataset.theme === 'light' ? { text: '#334155', grid: 'rgba(148, 163, 184, 0.35)' } : { text: '#94a3b8', grid: 'rgba(51, 65, 85, 0.35)' };
       Chart.defaults.color = chartTheme.text;
       Chart.defaults.font.family = '"Plus Jakarta Sans", sans-serif';
@@ -4860,7 +4868,7 @@ async function loadLeadAppointments(leadId, lead) {
               {
                 type: 'line',
                 label: 'Inscritos Matriculados',
-                data: labels.map(m => monthlyStats[m].inscritos),
+                data: activeMonths.map(k => monthlyStats[k].inscritos),
                 borderColor: '#10b981',
                 backgroundColor: 'rgba(16, 185, 129, 0.15)',
                 borderWidth: 3,
@@ -4871,7 +4879,7 @@ async function loadLeadAppointments(leadId, lead) {
               {
                 type: 'bar',
                 label: 'Total Leads Captados',
-                data: labels.map(m => monthlyStats[m].total),
+                data: activeMonths.map(k => monthlyStats[k].total),
                 backgroundColor: 'rgba(99, 102, 241, 0.75)',
                 borderRadius: 6,
                 order: 2
@@ -4893,8 +4901,8 @@ async function loadLeadAppointments(leadId, lead) {
             labels: labels,
             datasets: [{
               label: 'Tasa de Conversión (%)',
-              data: labels.map(m => {
-                const st = monthlyStats[m];
+              data: activeMonths.map(k => {
+                const st = monthlyStats[k];
                 return st.total > 0 ? Number(((st.inscritos / st.total) * 100).toFixed(1)) : 0;
               }),
               borderColor: '#818cf8',

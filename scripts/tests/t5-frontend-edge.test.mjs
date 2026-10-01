@@ -28,13 +28,13 @@ const names = [
   'getField', 'compareLeadIdsDescending', 'consolidateLeadsById', 'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads',
   'fetchRowsByIdCursor', 'fetchPagedResult', 'fetchRowsByIds', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor',
   'loadCitas', 'clearCitasResults', 'validAppointmentId', 'appointmentSessionValid', 'loadLeadAppointments',
-  'loadLeadNotes', 'loadLeadGestiones', 'applyFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
+  'loadLeadNotes', 'loadLeadGestiones', 'applyFilters', 'resetAllFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
   'activeCatalogValues', 'catalogOptions', 'parseFechaLead', 'normalizeLeadMonth', 'leadReportDate', 'isInscritoDataDura',
   'histMonthKey', 'histMonthLabel', 'sortHistMonthKeys', 'normalizeGestion', 'groupGestionEstado', 'readHistRange',
   'filterHistoricalLeads', 'populateHistoricalFilterOptions', 'computeHistoricalAggregates', 'escapeHtml', 'escapeAttr',
   'loadReporteDiario', 'csvReporteField', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
   'exportReporteDiarioCSV', 'exportCampanasCSV', 'campaignCosteResultado', 'campaignTotals', 'loadCampanas',
-  'loadAuthorizedUsers', 'renderAuthorizedUsers'
+  'loadAuthorizedUsers', 'renderAuthorizedUsers', 'openEditLeadModal'
 ];
 const frontendSource = [...constants, ...names.map(extractFunction)].join('\n');
 
@@ -45,7 +45,7 @@ function frontend(extra = {}) {
       value: '', _innerHTML: '', textContent: '', innerText: '', options: [{ value: '' }],
       get innerHTML() { return this._innerHTML; },
       set innerHTML(value) { this._innerHTML = value; this.options = []; this.value = ''; },
-      classList: { add() {}, remove() {} },
+       classList: { add() {}, remove() {}, toggle() {} },
       appendChild(option) { this.options.push(option); if (option.selected || this.options.length === 1) this.value = option.value; },
       replaceChildren() { this.innerHTML = ''; },
     });
@@ -107,7 +107,8 @@ function database(tables, { fail, hook, maxRows = 1000 } = {}) {
           return Promise.resolve().then(async () => {
             calls.push(query);
             if (hook) await hook(query, calls.length);
-            if (fail?.(query, calls.length)) return { data: null, error: { message: 'synthetic failure' } };
+            const failure = fail?.(query, calls.length);
+            if (failure) return { data: null, error: typeof failure === 'object' ? failure : { message: 'synthetic failure' } };
             let rows = (tables[table] || []).filter(r => query.filters.every(f => f(r)));
             rows.sort((a, b) => {
               for (const [key, ascending] of query.orders) {
@@ -291,6 +292,45 @@ test('rango gestiones >1000, origen histórico con id coincidente no se mezcla',
   await c.applyFilters();
   assert.equal(c.filteredLeads.length, 1205);
   assert.match(element('dashRangeError').innerText, /solo incluye leads actuales/);
+});
+
+test('filtro asesora combina con mes, cuenta y se limpia', async () => {
+  const f = frontend({ allLeads: [
+    { id: 1, Mes: 'MARZO', AGENTE: 'Ana' },
+    { id: 2, Mes: 'MARZO', AGENTE: 'Bia' },
+    { id: 3, Mes: 'ABRIL', AGENTE: 'Ana' },
+  ] });
+  f.element('filterAsesora').value = 'Ana'; f.element('filterMes').value = 'MARZO';
+  await f.context.applyFilters();
+  assert.deepEqual(f.context.filteredLeads.map(l => l.id), [1]);
+  assert.match(f.element('activeFiltersCount').innerText, /2 filtros/);
+  f.context.resetAllFilters();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.element('filterAsesora').value, '');
+  assert.equal(f.context.filteredLeads.length, 3);
+});
+
+test('modal de edición usa siempre la fecha Miami de hoy', () => {
+  const f = frontend({ allLeads: [{ id: 1, Nombre: 'Lead', 'Fecha Última Gestión ': '01/01/2020' }], editLeadRequestGeneration: 0, editLeadAdvisorGeneration: 0, editAdvisorsLoading: false, editLeadSubmitting: false, editLeadPreviousGestion: '', currentEditOrigin: '' });
+  const c = f.context;
+  c.findLeadByOrigin = () => c.allLeads[0]; c.hideEditAppointmentFields = () => {};
+  c.applyEditAppointmentVisibility = () => {}; c.editLeadNeedsAppointment = () => false;
+  f.element('editGestion').options = [{ value: '' }];
+  c.openEditLeadModal(1, 'actual');
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/New_York', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(new Date());
+  const today = `${parts.find(p => p.type === 'day').value}/${parts.find(p => p.type === 'month').value}/${parts.find(p => p.type === 'year').value}`;
+  assert.equal(f.element('editFechaUltima').value, today);
+});
+
+test('filtros y campos automáticos conservan el orden y readonly en HTML', () => {
+  const source = html;
+  const sourceIndex = source.indexOf('id="dataSourceFilter"');
+  const dateIndex = source.indexOf('id="dashDesde"');
+  const advisorIndex = source.indexOf('id="filterAsesora"');
+  assert.ok(sourceIndex < dateIndex && dateIndex < advisorIndex);
+  assert.match(source.slice(sourceIndex - 500, sourceIndex), /grid/);
+  assert.match(source, /id="editFechaUltima"[^>]*readonly[^>]*opacity-70/);
+  assert.match(source, /id="editUltimoAgente"[^>]*readonly[^>]*opacity-70/);
 });
 
 test('rango incompleto no finge filtrar ni consulta, error y sesión obsoleta no pintan parcial', async () => {
@@ -528,6 +568,39 @@ test('reporte real: pagina gestiones/citas/joins, consulta Mes/Fecha y no cambia
   assert.equal(c.reporteDayData[0].inscritosDura, 2);
   assert.equal(c.reporteDayData[0].agendados, 1205, 'canceladas siguen contando como antes');
   assert.ok(db.calls.filter(q => q.table === 'leads').every(q => q.columns.includes('Mes') && q.columns.includes('Fecha')));
+});
+
+test('reporte agrupa por canal real y usa Sin canal cuando falta', async () => {
+  const gestiones = [
+    { id: 1, lead_id: 1, autor_name: 'Test', fecha_gestion: '2026-03-05', gestion_nueva: 'CONTACTO', canal: 'Llamada' },
+    { id: 2, lead_id: 2, autor_name: 'Test', fecha_gestion: '2026-03-05', gestion_nueva: 'CONTACTO', canal: null },
+  ];
+  const db = database({ leads: [{ id: 1, Medio: 'Whatsapp' }, { id: 2, Medio: 'Whatsapp' }], lead_gestiones: gestiones });
+  const f = frontend({ supabaseClient: db, currentMainTab: 'reporte' }); f.element('reporteFecha').value = '2026-03-05';
+  await f.context.loadReporteDiario();
+  assert.deepEqual(Object.fromEntries(Object.entries(f.context.reporteDayData[0].groups).map(([k, v]) => [k, v.length])), { Llamada: 1, 'Sin canal': 1 });
+});
+
+test('reporte excluye citas data dura de agendados, pero conserva asistencia', async () => {
+  const f = reportFixture();
+  const appointments = [{ id: 1, advisor_name: 'Test', status: 'ASISTIO', scheduled_at: '2026-03-05T12:00:00.000Z', is_data_dura: true }, { id: 2, advisor_name: 'Test', status: 'NO_ASISTIO', scheduled_at: '2026-03-05T12:00:00.000Z', is_data_dura: false }];
+  f.context.supabaseClient = database({ leads: [], lead_gestiones: [], lead_appointments: appointments, daily_report_notes: [] });
+  await f.context.loadReporteDiario();
+  assert.equal(f.context.reporteDayData[0].agendados, 1); assert.equal(f.context.reporteDayData[0].asistieron, 1); assert.equal(f.context.reporteDayData[0].noAsistieron, 1);
+});
+
+test('groupGestionEstado separa variantes data dura', () => {
+  const { context: c } = frontend();
+  assert.equal(c.groupGestionEstado('AGENDADO DATA DURA'), 'AGENDADO DATA DURA');
+  assert.equal(c.groupGestionEstado('AGENDADO DATADURA'), 'AGENDADO DATA DURA');
+  assert.equal(c.groupGestionEstado('AGENDADO'), 'AGENDADO');
+});
+
+test('reporte reintenta citas sin is_data_dura si el esquema aún no existe', async () => {
+  const f = reportFixture({ fail: q => q.table === 'lead_appointments' && q.columns.includes('is_data_dura') ? { code: '42703', message: 'missing column' } : false });
+  await f.context.loadReporteDiario();
+  const calls = f.db.calls.filter(q => q.table === 'lead_appointments');
+  assert.ok(calls.length >= 2); assert.ok(calls.some(q => !q.columns.includes('is_data_dura'))); assert.equal(f.context.reporteDayData[0].agendados, 1205);
 });
 
 test('reporte: notas >1000 recuperadas y error segunda página advierte sin parcial', async () => {

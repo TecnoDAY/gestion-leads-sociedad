@@ -34,7 +34,8 @@ const names = [
   'filterHistoricalLeads', 'populateHistoricalFilterOptions', 'computeHistoricalAggregates', 'escapeHtml', 'escapeAttr',
   'loadReporteDiario', 'csvReporteField', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
   'exportReporteDiarioCSV', 'exportCampanasCSV', 'campaignCosteResultado', 'campaignTotals', 'loadCampanas',
-  'loadAuthorizedUsers', 'renderAuthorizedUsers', 'openEditLeadModal'
+  'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
+  'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal'
 ];
 const frontendSource = [...constants, ...names.map(extractFunction)].join('\n');
 
@@ -464,6 +465,22 @@ test('select de catálogo unifica SEPTIEMBRE con su forma canónica (regresión 
   c.fillSelectFromCatalog('newMes', ['Agosto', 'Septiembre']);
   assert.deepEqual(plain(f.element('newMes').options.at(-1).value), 'TEMPORADA');
   assert.equal(f.element('newMes').value, 'TEMPORADA');
+});
+
+test('Nuevo Lead selecciona mes Miami y restablece campaña en cada apertura', () => {
+  const f = frontend({
+    miamiToday: () => '2026-10-15',
+    catalogRows: { agente: [], campana: [{ value: 'Sin definir', active: true }], medio: [], gestion: [], mes: [{ value: 'Septiembre', active: true }, { value: 'Octubre', active: true }] },
+    toggleNewAppointmentFields() {}, loadNewLeadAppointmentAdvisors() {},
+  });
+  const c = f.context;
+  f.element('newMes').appendChild({ value: 'ENERO' });
+  f.element('newMes').appendChild({ value: 'Septiembre' });
+  f.element('newMes').appendChild({ value: 'Octubre' });
+  f.element('newCampana').value = 'Anterior';
+  c.openNewLeadModal();
+  assert.equal(f.element('newMes').value, 'Octubre');
+  assert.equal(f.element('newCampana').value, 'Sin definir');
 });
 
 test('histórico instancia los 8 gráficos con claves año-mes (regresión monthLabels)', () => {

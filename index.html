@@ -1078,7 +1078,7 @@
               <option value="JUNIO">Junio</option>
               <option value="JULIO">Julio</option>
               <option value="AGOSTO">Agosto</option>
-              <option value="SEPTIEMBRE" selected>Septiembre</option>
+             <option value="SEPTIEMBRE">Septiembre</option>
               <option value="OCTUBRE">Octubre</option>
               <option value="NOVIEMBRE">Noviembre</option>
               <option value="DICIEMBRE">Diciembre</option>
@@ -1089,16 +1089,9 @@
           <!-- Campaña -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Campaña</label>
-            <input type="text" id="newCampana" list="campanaList" placeholder="Ej: Actuacion Kids, Adultos..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
-            <datalist id="campanaList">
-              <option value="Actuacion Adultos">
-              <option value="Actuacion Kids">
-              <option value="Summer Camp">
-              <option value="Weston">
-              <option value="Voz y Diccion">
-              <option value="Taller Camara ">
-              <option value="Locos Adams">
-            </datalist>
+            <select id="newCampana" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+              <option value="Sin definir">Sin definir</option>
+            </select>
             <datalist id="mesList"></datalist>
             <datalist id="medioList"></datalist>
             <datalist id="campanaEditList"></datalist>
@@ -1252,8 +1245,9 @@
             <p class="text-[11px] text-slate-400 mt-1">Se registra automáticamente al guardar.</p>
           </div>
 
-          <!-- OBSERVACIONES -->
-          <div class="sm:col-span-2">
+           <!-- OBSERVACIONES -->
+           <div class="sm:col-span-2"><label class="block font-medium text-slate-300 mb-1">Nombre</label><input id="editNombre" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"></div>
+           <div class="sm:col-span-2">
             <label class="block font-medium text-slate-300 mb-1">Historial de Observaciones & Notas</label>
             <textarea id="editObservaciones" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono text-xs"></textarea>
             <p class="text-[11px] text-slate-400 mt-1">Puedes agregar nuevas notas fechadas al final del texto.</p>
@@ -1273,7 +1267,6 @@
           <div class="flex items-center gap-2 text-sm font-semibold text-white"><i data-lucide="settings-2" class="w-4 h-4 text-indigo-400"></i>Datos principales del lead</div>
           <p class="text-[11px] text-slate-400">Solo el administrador puede modificar estos campos.</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div><label class="block font-medium text-slate-300 mb-1">Nombre</label><input id="editNombre" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
             <div><label class="block font-medium text-slate-300 mb-1">Teléfono</label><input id="editTelefono" type="text" onblur="this.value=formatPhone(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
             <div><label class="block font-medium text-slate-300 mb-1">Mes</label><input id="editMes" type="text" list="mesList" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
             <div><label class="block font-medium text-slate-300 mb-1">Fecha</label><input id="editFecha" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
@@ -2732,9 +2725,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const gestion = activeCatalogValues('gestion');
       // Formulario Nuevo
       fillSelectFromCatalog('newMes', mes);
+      fillSelectFromCatalog('newCampana', campana);
       fillSelectFromCatalog('newMedio', medio);
       fillSelectFromCatalog('newGestion', gestion);
-      fillDatalistFromCatalog('campanaList', campana);
       // Formulario Editar
       fillSelectFromCatalog('editGestion', gestion);
       fillDatalistFromCatalog('mesList', mes);
@@ -2758,8 +2751,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const modal = document.getElementById('modalCatalogs');
       if (modal) {
         modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        renderCatalogList();
+       modal.classList.add('flex');
+         renderCatalogList();
         if (window.lucide) lucide.createIcons();
       }
     }
@@ -3307,6 +3300,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     async function loadNewLeadAppointmentAdvisors() { const select=document.getElementById('newAppointmentAdvisor'); if(!isAdmin||!select){toggleNewAppointmentFields();return;} const gen=sessionGeneration, token=++newLeadAdvisorGeneration, uid=currentUser?.id, access=currentAccess?.updated_at; if(leadAppointmentAdvisors.length){renderAppointmentAdvisorSelect(select,document.getElementById('newAgente')?.value.trim());toggleNewAppointmentFields();return;} select.disabled=true;const {data,error}=await supabaseClient.rpc('admin_manage_user_access',{p_action:'list'}); if(gen!==sessionGeneration||token!==newLeadAdvisorGeneration||currentUser?.id!==uid||currentAccess?.updated_at!==access||document.getElementById('modalNewLead')?.classList.contains('hidden'))return; if(error){select.innerHTML='<option value="">No se pudieron cargar asesores</option>';toggleNewAppointmentFields();return;} leadAppointmentAdvisors=(data||[]).filter(a=>a.activo===true);renderAppointmentAdvisorSelect(select,document.getElementById('newAgente')?.value.trim());toggleNewAppointmentFields(); }
     function openNewLeadModal() {
       if (!currentUser || !currentAccess?.activo) return;
+      if (!activeCatalogValues('campana').length) { showToast('No se puede guardar: catálogo de campañas no disponible', 'warning'); return; }
+      const campana = document.getElementById('newCampana');
+      if (campana) {
+        campana.value = 'Sin definir';
+        campana.disabled = false;
+      }
+      const mes = document.getElementById('newMes');
+      const mesActual = MONTH_CHRONO[Number(miamiToday().split('-')[1]) - 1]?.trim().toLowerCase();
+      if (mes?.options) {
+        const actual = [...mes.options].find(option => String(option.value).trim().toLowerCase() === mesActual);
+        if (actual) mes.value = actual.value;
+      }
       const agentInput = document.getElementById('newAgente');
       const agentHint = document.getElementById('newAgenteHint');
       if (agentInput) {
@@ -3346,15 +3351,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (!currentUser || !currentAccess?.activo) return;
       const btn = document.getElementById('btnSubmitNewLead');
 
-      const now = new Date();
-      const fechaHoy = `${now.getDate()}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+      const [year, month, day] = miamiToday().split('-');
+      const fechaHoy = `${day}/${month}/${year}`;
 
       const newLeadData = {
         "Nombre": document.getElementById('newNombre')?.value.trim() || 'Sin Nombre',
         "Telefono": formatPhone(document.getElementById('newTelefono')?.value.trim() || ''),
-        "Mes": document.getElementById('newMes')?.value || 'SEPTIEMBRE',
+        "Mes": document.getElementById('newMes')?.value || '',
         "Fecha": fechaHoy,
-        "Campaña": document.getElementById('newCampana')?.value.trim() || 'General',
+        "Campaña": document.getElementById('newCampana')?.value || 'Sin definir',
         "Medio": document.getElementById('newMedio')?.value || 'Whatsapp',
         "GESTION": document.getElementById('newGestion')?.value || 'Información ',
         "AGENTE": isAdmin ? (document.getElementById('newAgente')?.value.trim() || currentAccess.nombre || 'Agente') : currentAccess.nombre,
@@ -3495,8 +3500,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       document.getElementById('editObservaciones').value = getField(lead, 'OBSERVACIONES ');
       const adminFields = document.getElementById('adminLeadFields');
       adminFields?.classList.toggle('hidden', !isAdmin);
+      document.getElementById('editNombre').value = getField(lead, 'Nombre');
       if (isAdmin) {
-        document.getElementById('editNombre').value = getField(lead, 'Nombre');
         document.getElementById('editTelefono').value = getField(lead, 'Telefono');
         document.getElementById('editMes').value = getField(lead, 'Mes');
         document.getElementById('editFecha').value = getField(lead, 'Fecha');
@@ -3569,6 +3574,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (btn) btn.disabled = true;
 
       const updatedFields = {
+        "Nombre": document.getElementById('editNombre')?.value.trim() || 'Sin Nombre',
         "GESTION": document.getElementById('editGestion')?.value || 'Información ',
         "Fecha Última Gestión": document.getElementById('editFechaUltima')?.value.trim() || '',
         "ULTIMA GESTION": document.getElementById('editUltimaGestion')?.value || 'Llamada',
@@ -3576,7 +3582,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       };
       if (isAdmin) {
         Object.assign(updatedFields, {
-          "Nombre": document.getElementById('editNombre')?.value.trim() || 'Sin Nombre',
           "Telefono": formatPhone(document.getElementById('editTelefono')?.value.trim() || ''),
           "Mes": document.getElementById('editMes')?.value.trim() || '',
           "Fecha": document.getElementById('editFecha')?.value.trim() || '',

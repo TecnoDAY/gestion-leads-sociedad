@@ -1,13 +1,16 @@
 -- T1
 begin;
-update public.leads set "Campaña"='Locos adams' where id=5928 and btrim("Campaña")='Lo'; if not found then raise exception 'lead_5928_campaign_unexpected'; end if;
-update public.leads set "Campaña"='Weston' where id=5930 and btrim("Campaña")='We'; if not found then raise exception 'lead_5930_campaign_unexpected'; end if;
-do $$ begin if exists(select 1 from public.leads where btrim("Campaña") in ('Lo','We')) then raise exception 'lo_we_campaigns_remain'; end if; end $$;
+do $$
+begin
+  if not exists(select 1 from public.leads where id=5928 and btrim("Campaña") in ('Lo','Locos adams')) then raise exception 'lead_5928_campaign_unexpected'; end if;
+  if not exists(select 1 from public.leads where id=5930 and btrim("Campaña") in ('We','Weston')) then raise exception 'lead_5930_campaign_unexpected'; end if;
+  if exists(select 1 from public.leads where btrim("Campaña") in ('Lo','We')) then raise exception 'lo_we_campaigns_remain'; end if;
+end $$;
 create or replace function public.create_lead(p_lead jsonb) returns public.leads language plpgsql security definer set search_path=public as $$ declare v jsonb; m text; begin
 if not public.is_crm_user() then raise exception using errcode='42501',message='crm_access_forbidden'; end if;
 if upper(btrim(coalesce(p_lead->>'GESTION',''))) like 'AGENDAD%' then raise exception using errcode='22023',message='appointment_required_for_agendado_transition'; end if;
 if not exists(select 1 from public.lead_catalogs c where c.kind='campana' and c.active and lower(btrim(c.value))=lower(btrim(p_lead->>'Campaña'))) then raise exception using errcode='22023',message='campaign_not_in_catalog'; end if;
-m:=array['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'][extract(month from now() at time zone 'America/New_York')::int];
+m:=(array['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'])[extract(month from now() at time zone 'America/New_York')::int];
 v:=jsonb_set(jsonb_set(p_lead,'{Mes}',to_jsonb(coalesce(nullif(btrim(p_lead->>'Mes'),''),m))),'{Fecha}',to_jsonb(coalesce(nullif(btrim(p_lead->>'Fecha'),''),to_char(now() at time zone 'America/New_York','DD/MM/YYYY')))); return public.create_lead_record(v); end; $$;
 create or replace function public.update_lead_followup(p_id bigint, p_fields jsonb)
 returns public.leads

@@ -35,7 +35,8 @@ const names = [
   'loadReporteDiario', 'renderReporteV2', 'csvReporteField', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
   'exportReporteDiarioCSV', 'exportCampanasCSV', 'campaignCosteResultado', 'campaignTotals', 'loadCampanas',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
-  'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'syncNewLeadMes'
+  'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'syncNewLeadMes',
+  'normalizePhone', 'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn'
 ];
 const frontendSource = [...constants, ...names.map(extractFunction)].join('\n');
 
@@ -73,7 +74,7 @@ function frontend(extra = {}) {
     isAgendadoGestion: value => value.startsWith('AGENDAD'),
     miamiToday: () => '2026-09-30', miamiDayBounds: date => [date + 'T04:00:00.000Z', date + 'T16:00:00.000Z'],
     supabaseClient: null, currentUser: { id: 'user-test' }, currentAccess: { activo: true, nombre: 'Test', updated_at: 'v1' },
-    sessionGeneration: 1, currentMainTab: 'citas', isAdmin: false, isSupervisor: false,
+    sessionGeneration: 1, currentMainTab: 'citas', isAdmin: false, isSupervisor: false, newPhoneCheckGeneration: 0, newPhoneCheckTimer: null,
     citasRequestGeneration: 0, citasCache: [], citasRangeKey: '', leadAppointmentsCache: [], leadNotesCache: [], leadGestionesCache: [],
     viewLeadGeneration: 1, currentViewId: 1, dashRangeGen: 0, filterDebounceTimer: null,
   reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], reporteAsesorasDisponibles: [], campanasData: [],
@@ -437,6 +438,51 @@ test('citas: lectura compartida para el equipo y botones de edición solo para a
   // La ficha necesita advisor_user_id para calcular canEdit.
   assert.match(html, /advisor_name, advisor_user_id, notes, rescheduled_from_id/);
 });
+test('aviso de teléfono existente: solo conteo, no bloquea, dígitos cortos no consultan', async () => {
+  const db = database({ check_lead_phone_occurrences: () => ({ total: 2, actuales: 1, archivados: 0, historico: 1 }) });
+  const { context: c, element } = frontend({ supabaseClient: db, newPhoneCheckGeneration: 0, newPhoneCheckTimer: null });
+  element('newTelefono').value = '1 (786) 555-1234';
+  await c.checkNewPhoneDuplicate();
+  // El número viaja normalizado (solo dígitos); nunca se muestra información del duplicado.
+  assert.equal(db.rpcCalls[0].name, 'check_lead_phone_occurrences');
+  assert.equal(db.rpcCalls[0].args.p_phone, '17865551234');
+  assert.match(element('newPhoneWarn').textContent, /ya tiene 2 oportunidades registradas/);
+  assert.match(element('newPhoneWarn').textContent, /Puedes continuar/);
+  // Menos de 7 dígitos: no hay consulta y el aviso se limpia.
+  element('newTelefono').value = '12345';
+  await c.checkNewPhoneDuplicate();
+  assert.equal(db.rpcCalls.length, 1);
+  assert.equal(element('newPhoneWarn').textContent, '');
+  // El envío del formulario no depende del aviso.
+  assert.doesNotMatch(html, /btnSubmitNewLead[^;]{0,200}newPhoneWarn/);
+  // La migración expone solo conteos a usuarios CRM activos.
+  const sql = readFileSync('supabase/migrations/202610020005_check_lead_phone_occurrences.sql', 'utf8');
+  assert.match(sql, /check_lead_phone_occurrences\(p_phone text\)/);
+  assert.match(sql, /is_crm_user\(\) then raise exception/);
+  assert.match(sql, /regexp_replace/);
+  assert.match(sql, /grant execute on function public\.check_lead_phone_occurrences\(text\) to authenticated/);
+  assert.doesNotMatch(sql, /\"Nombre\"/); // sin PII en la respuesta
+});
+
+test('badge Nuevo: fecha de llegada del mes/año Miami actual, no de otros meses', () => {
+  const { context: c } = frontend(); // miamiToday stubbed a 2026-09-30
+  assert.ok(c.isNuevoEsteMes('30/9/2026'));
+  assert.ok(c.isNuevoEsteMes('01/09/2026'));
+  assert.equal(c.isNuevoEsteMes('30/9/2025'), false);
+  assert.equal(c.isNuevoEsteMes('01/08/2026'), false);
+  assert.equal(c.isNuevoEsteMes(''), false);
+  assert.match(html, />\s*Nuevo\s*<\/span>/);
+  assert.match(html, /\$\{nuevoBadge\(lead\)\}/);
+});
+
+test('canal Llamada WhatsApp: etiqueta visible nueva, valor y conteo canónicos intactos', () => {
+  assert.match(html, /<option value="Llamada y WhatsApp">Llamada WhatsApp<\/option>/);
+  assert.match(html, /\['Llamada WhatsApp',num\(l,'llamada_whatsapp'\)\]/);
+  assert.match(html, /'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas'/);
+  // El historial traduce el canal almacenado a la nueva etiqueta.
+  assert.match(html, /String\(g\.canal \|\| ''\) === 'Llamada y WhatsApp' \? 'Llamada WhatsApp'/);
+});
+
 test('migración de detalles de cita: columnas, p_details, validación, edición y reschedule conservador', () => {
   const sql = readFileSync('supabase/migrations/202610020002_appointment_student_details.sql', 'utf8');
   assert.match(sql, /add column if not exists student_name text/);

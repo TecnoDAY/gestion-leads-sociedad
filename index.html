@@ -186,7 +186,7 @@
           <span>+ Nuevo Lead</span>
         </button>
         <span id="userBadge" class="hidden sm:inline text-xs text-slate-400"></span>
-        <button id="btnAdminUsers" onclick="document.getElementById('panelAdminUsers').classList.remove('hidden');document.getElementById('panelAdminUsers').classList.add('flex');loadAuthorizedUsers()" class="hidden items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
+        <button id="btnAdminUsers" onclick="document.getElementById('panelAdminUsers').classList.remove('hidden');document.getElementById('panelAdminUsers').classList.add('flex');loadAuthorizedUsers();loadAgentSessionsReport()" class="hidden items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
           <i data-lucide="users" class="w-3.5 h-3.5"></i>
           <span>Usuarios</span>
         </button>
@@ -901,6 +901,12 @@
     </div>
   </footer>
 
+  <!-- ================= BANNER: INACTIVIDAD (solo asesoras) ================= -->
+  <div id="idleBanner" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-[65] bg-amber-600 text-white rounded-xl shadow-2xl px-4 py-3 flex items-center gap-3 max-w-md" role="alert" aria-live="assertive">
+    <span class="text-xs font-medium">Sesión inactiva: se cerrará en <strong id="idleCountdown">60</strong> s.</span>
+    <button type="button" onclick="continueAgentSession()" class="px-2.5 py-1.5 rounded-lg bg-white/90 text-amber-700 text-[11px] font-bold shrink-0 cursor-pointer">Continuar sesión</button>
+  </div>
+
   <!-- ================= MODAL: INICIO DE SESIÓN ================= -->
   <div id="modalLogin" class="fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
@@ -954,6 +960,11 @@
       <input id="userSearch" type="search" oninput="renderAuthorizedUsers()" placeholder="Buscar por correo, nombre o rol…" aria-label="Buscar usuarios" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
       <p id="userSearchCount" class="text-[11px] text-slate-500"></p>
       <div id="authorizedUsers" class="text-xs text-slate-400 space-y-1"></div>
+      <div class="border-t border-slate-700 pt-3 space-y-2">
+        <div class="flex items-center justify-between"><h3 class="font-semibold text-white text-xs">Actividad de asesoras</h3><button type="button" onclick="loadAgentSessionsReport()" class="px-2 py-1 rounded border border-slate-600 hover:border-indigo-400 text-[11px] cursor-pointer">Actualizar</button></div>
+        <p class="text-[11px] text-slate-500">Inicio, última actividad, cierre y motivo. Se conservan 90 días; no incluye clics ni tecleo.</p>
+        <div id="agentSessionsBody" class="space-y-1 text-[11px] text-slate-400"><p class="text-slate-500">Cargando actividad…</p></div>
+      </div>
       <div id="changeEmailBox" class="hidden space-y-2 border-t border-slate-700 pt-3 text-xs">
         <p class="text-slate-400">Cambiar el correo de <span id="changeEmailTarget" class="text-white"></span></p>
         <form id="formChangeEmail" onsubmit="handleChangeEmail(event)" class="space-y-2">
@@ -1486,6 +1497,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     function clearSessionState() {
       sessionGeneration += 1;
+      stopIdleTracking();
+      try { localStorage.removeItem('idle_last_activity_ts'); } catch (_) { /* cierre best-effort: no bloquea el flujo */ }
+      agentSessionId = null;
+      idleLastTouchSent = 0;
       authValidationPromise = null;
       sessionInitializationPromise = null;
       viewLeadGeneration += 1;
@@ -1595,13 +1610,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (loginStatus) loginStatus.textContent = 'La cuenta está inactiva o no autorizada.';
     }
 
-    async function closeInvalidSession(reason = 'La sesión expiró o la cuenta fue desactivada.') {
+    async function closeInvalidSession(reason = 'La sesión expiró o la cuenta fue desactivada.', sessionEndReason = 'session_invalid') {
+      const pendingEnd = endAgentSessionLocally(sessionEndReason);
       clearSessionState();
       const generation = sessionGeneration;
       if (supabaseClient) {
         try { await supabaseClient.auth.signOut(); } catch (_) { /* local cleanup already complete */ }
       }
       if (generation !== sessionGeneration) return;
+      try { await pendingEnd; } catch (_) { /* el historial es best-effort */ }
       const loginStatus = document.getElementById('loginStatus');
       if (loginStatus) loginStatus.textContent = reason;
     }
@@ -1807,6 +1824,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         document.body.classList.add('session-ready');
         document.getElementById('modalLogin')?.classList.add('hidden');
         document.getElementById('modalLogin')?.classList.remove('flex');
+        startAgentActivityTracking();
         if (isTrafficker) {
           // El trafficker no toca el CRM: ni realtime ni carga de leads.
           await refreshCatalogs();
@@ -1831,9 +1849,123 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       return sessionInitializationPromise;
     }
 
+    // -------------------------------------------------------------
+    // INACTIVIDAD (solo asesoras): aviso a 4 min, cierre a 5, multi-pestaña
+    // -------------------------------------------------------------
+    const IDLE_WARN_MS = 240000, IDLE_LIMIT_MS = 300000, IDLE_KEY = 'idleLastActivityAt';
+    let agentSessionId = null, idleWarnTimer = null, idleTickTimer = null, idleListenersOn = false, idleLastTouchSent = 0;
+
+    function idleLastTs() { return Number(localStorage.getItem(IDLE_KEY) || 0); }
+    function isIdleMonitored() { return !!agentSessionId && currentAccess?.role === 'agente'; }
+
+    function hideIdleBanner() { document.getElementById('idleBanner')?.classList.add('hidden'); }
+    function showIdleBanner() {
+      if (!isIdleMonitored()) return;
+      document.getElementById('idleBanner')?.classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+    function idleSecondsLeft() { return Math.max(0, Math.ceil((IDLE_LIMIT_MS - (Date.now() - idleLastTs())) / 1000)); }
+
+    function continueAgentSession() { markUserActivity(); }
+
+    function markUserActivity() {
+      if (!isIdleMonitored()) return;
+      localStorage.setItem(IDLE_KEY, String(Date.now()));
+      hideIdleBanner();
+      restartIdleTimers();
+      touchAgentSessionThrottled();
+    }
+    function idleStorageSync(event) { if (event.key === IDLE_KEY && event.newValue) { hideIdleBanner(); restartIdleTimers(); } }
+
+    async function touchAgentSessionThrottled() {
+      if (!isIdleMonitored() || !supabaseClient) return;
+      if (Date.now() - idleLastTouchSent < 60000) return;
+      idleLastTouchSent = Date.now();
+      const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at, sid = agentSessionId;
+      try { await supabaseClient.rpc('touch_agent_session', { p_session_id: sid }); } catch (_) { /* la UI no se bloquea por telemetría */ }
+      if (generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt) return;
+    }
+
+    function restartIdleTimers() {
+      clearTimeout(idleWarnTimer); clearTimeout(idleTickTimer);
+      if (!isIdleMonitored()) return;
+      idleWarnTimer = setTimeout(() => {
+        if (!isIdleMonitored()) return;
+        showIdleBanner();
+        const tick = () => {
+          if (!isIdleMonitored()) return;
+          const left = idleSecondsLeft();
+          const el = document.getElementById('idleCountdown'); if (el) el.textContent = String(left);
+          if (left <= 0) { endAgentSessionForIdle(); return; }
+          idleTickTimer = setTimeout(tick, 1000);
+        };
+        tick();
+      }, Math.max(0, IDLE_WARN_MS - (Date.now() - idleLastTs())));
+    }
+
+    async function endAgentSessionForIdle() {
+      if (!isIdleMonitored()) return;
+      const generation = sessionGeneration, sid = agentSessionId;
+      stopIdleTracking();
+      if (supabaseClient) { try { await supabaseClient.rpc('end_agent_session', { p_session_id: sid, p_reason: 'idle_timeout' }); } catch (_) { /* cierre best-effort: no bloquea el flujo */ } }
+      if (generation !== sessionGeneration) return;
+      agentSessionId = null;
+      await closeInvalidSession('Tu sesión se cerró por 5 minutos de inactividad.', 'idle_timeout');
+    }
+
+    // Solo esta pestaña termina; otras del mismo dispositivo conservan su copia.
+    async function endAgentSessionLocally(reason) { const sid = agentSessionId; if (!sid || !supabaseClient) return; try { await supabaseClient.rpc('end_agent_session', { p_session_id: sid, p_reason: reason }); } catch (_) { /* cierre best-effort: no bloquea el flujo */ } if (agentSessionId === sid) agentSessionId = null; }
+
+    function stopIdleTracking() {
+      clearTimeout(idleWarnTimer); clearTimeout(idleTickTimer);
+      idleWarnTimer = null; idleTickTimer = null;
+      if (idleListenersOn && typeof window !== 'undefined') {
+        ['pointerdown', 'keydown', 'scroll', 'visibilitychange'].forEach(e => window.removeEventListener(e, markUserActivity, true));
+        window.removeEventListener('storage', idleStorageSync);
+      }
+      idleListenersOn = false;
+    }
+
+    async function startAgentActivityTracking() {
+      if (!supabaseClient || currentAccess?.role !== 'agente') return;
+      const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
+      try {
+        const { data, error } = await supabaseClient.rpc('start_agent_session');
+        if (error || !data || generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt) return;
+        agentSessionId = Number(data?.id) || null;
+        if (!agentSessionId) return;
+        localStorage.setItem(IDLE_KEY, String(Date.now()));
+        if (!idleListenersOn && typeof window !== 'undefined') {
+          ['pointerdown', 'keydown', 'scroll', 'visibilitychange'].forEach(e => window.addEventListener(e, markUserActivity, true));
+          window.addEventListener('storage', idleStorageSync);
+          idleListenersOn = true;
+        }
+        restartIdleTimers();
+      } catch (_) { /* sesión operativa no registrada; la app sigue funcionando */ }
+    }
+
+    const IDLE_REASON_LABELS = { manual_logout: 'Cierre manual', idle_timeout: 'Inactividad', session_invalid: 'Sesión no válida' };
+    function idleMiami(ts) { if (!ts) return '-'; const d = new Date(ts); return Number.isNaN(d.getTime()) ? '-' : d.toLocaleString('es-ES', { timeZone: 'America/New_York', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+    async function loadAgentSessionsReport() {
+      const box = document.getElementById('agentSessionsBody'); if (!box || !isAdmin || !supabaseClient) return;
+      const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
+      const { data, error } = await supabaseClient.rpc('admin_agent_sessions_report', {});
+      if (!box || generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt) return;
+      if (error) { box.innerHTML = '<p class="text-rose-300">No se pudo cargar la actividad.</p>'; return; }
+      const rows = (data || []).map(s => {
+        const durationMs = s.ended_at ? new Date(s.ended_at) - new Date(s.started_at) : Date.now() - new Date(s.started_at);
+        const mins = Math.max(0, Math.round(durationMs / 60000));
+        const state = s.active ? '<span class="text-emerald-300">Activa</span>' : (IDLE_REASON_LABELS[s.end_reason] || 'Cerrada');
+        return `<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 border-b border-slate-800 pb-1"><span class="text-slate-200 font-medium">${escapeHtml(s.agent_name || '-')}</span><span>${idleMiami(s.started_at)}</span><span class="text-slate-500">→ act. ${idleMiami(s.last_activity_at)}</span><span>${state}</span><span class="text-slate-500">${mins} min</span></div>`;
+      }).join('');
+      box.innerHTML = rows || '<p class="text-slate-500">Sin sesiones de asesoras en los últimos 7 días.</p>';
+      if (window.lucide) lucide.createIcons();
+    }
+
     async function handleSignOut() {
+      try { await endAgentSessionLocally('manual_logout'); } catch (_) { /* cierre best-effort: no bloquea el flujo */ }
       clearSessionState();
-      if (supabaseClient) await supabaseClient.auth.signOut();
+      if (supabaseClient) try { await supabaseClient.auth.signOut({ scope: 'local' }); } catch (_) { /* cierre local de todos modos */ }
     }
 
     let authorizedUsersList = [];

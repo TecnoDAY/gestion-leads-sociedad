@@ -483,6 +483,30 @@ test('canal Llamada WhatsApp: etiqueta visible nueva, valor y conteo canónicos 
   assert.match(html, /String\(g\.canal \|\| ''\) === 'Llamada y WhatsApp' \? 'Llamada WhatsApp'/);
 });
 
+test('ayuda: refleja el comportamiento actual y no repite reglas retiradas', () => {
+  const help = html.slice(html.indexOf('const HELP_SECTIONS = ['), html.indexOf('let helpReturnFocus'));
+  // Reglas que ya no aplican: el Mes no se elige a mano y las citas no son privadas.
+  assert.doesNotMatch(help, /Elige el Mes de origen del lead/);
+  assert.doesNotMatch(help, /solo ves tus propias citas/);
+  assert.doesNotMatch(help, /solo ve y gestiona sus propios leads/);
+  // Contenido que sí debe estar.
+  assert.match(help, /Fecha de llegada/);
+  assert.match(help, /El Mes se calcula solo a partir de la Fecha de llegada/);
+  assert.match(help, /No admite fechas futuras/);
+  assert.match(help, /Si el teléfono ya está en la base/);
+  assert.match(help, /calendario completo de citas del equipo/);
+  assert.match(help, /Solo la asesora asignada a la cita \(o un administrador\) puede modificarla/);
+  assert.match(help, /nombre del estudiante, un correo de contacto y su edad/);
+  assert.match(help, /conserva la marca Data Dura y los datos del estudiante/);
+  assert.match(help, /Registrar un lead también cuenta como gestión/);
+  assert.match(help, /etiqueta verde "Nuevo"/);
+  assert.match(help, /Llamada WhatsApp/);
+  assert.match(help, /id: 'ayuda-campanas'/);
+  // Coherencia con el formulario real: los campos de la cita existen.
+  for (const field of ['newAppointmentStudentName', 'editAppointmentStudentName', 'leadAppointmentStudentName'])
+    assert.ok(html.includes(`id="${field}"`), `falta el campo ${field} descrito en la ayuda`);
+});
+
 test('migración de detalles de cita: columnas, p_details, validación, edición y reschedule conservador', () => {
   const sql = readFileSync('supabase/migrations/202610020002_appointment_student_details.sql', 'utf8');
   assert.match(sql, /add column if not exists student_name text/);

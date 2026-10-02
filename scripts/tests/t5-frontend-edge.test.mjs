@@ -35,7 +35,7 @@ const names = [
   'loadReporteDiario', 'renderReporteV2', 'csvReporteField', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
   'exportReporteDiarioCSV', 'exportCampanasCSV', 'campaignCosteResultado', 'campaignTotals', 'loadCampanas',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
-  'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom'
+  'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'syncNewLeadMes'
 ];
 const frontendSource = [...constants, ...names.map(extractFunction)].join('\n');
 
@@ -405,6 +405,26 @@ test('appointmentDetailsFrom recoge y recorta los tres campos opcionales', () =>
   assert.deepEqual(plain(c.appointmentDetailsFrom('sinCampos')), { student_name: '', contact_email: '', student_age: '' });
 });
 
+test('fecha de llegada: formulario editable, Mes derivado y validación futura; create_lead valida y registra gestión', () => {
+  // Formulario: campo date con max = hoy Miami y Mes solo lectura derivado.
+  assert.match(html, /id="newFechaLlegada"[^>]*onchange="syncNewLeadMes\(\)"/);
+  assert.match(html, /<select id="newMes" disabled/);
+  assert.match(html, /fechaInput\.max = miamiToday\(\)/);
+  assert.match(html, /function syncNewLeadMes\(\)/);
+  // Guardar: fecha futura rechazada en frontend; vacía usa hoy.
+  assert.match(html, /fechaSel > hoyMiami/);
+  assert.match(html, /\(fechaSel \|\| hoyMiami\)\.split\('-'\)/);
+  // Backend create_lead: valida formato/pasado, deriva Mes y registra la gestión.
+  const sql = readFileSync('supabase/migrations/202610020004_create_lead_fecha_gestion.sql', 'utf8');
+  assert.match(sql, /fecha_llegada_invalida/);
+  assert.match(sql, /llegada > hoy or llegada < date '2000-01-01'/);
+  assert.match(sql, /meses\[extract\(month from llegada\)::int\]/);
+  assert.match(sql, /insert into public\.lead_gestiones \(lead_id, fecha_gestion, gestion_anterior, gestion_nueva, canal, autor_name, autor_user_id, is_data_dura\)/);
+  // Misma regla de canal Data Dura que el trigger de actualizaciones.
+  assert.match(sql, /'llamada data dura'/);
+  // Rollback documentado.
+  assert.match(sql, /Rollback manual/);
+});
 test('citas: lectura compartida para el equipo y botones de edición solo para asesora asignada o admin', () => {
   const sql = readFileSync('supabase/migrations/202610020003_citas_lectura_equipo.sql', 'utf8').split('-- Rollback')[0];
   assert.match(sql, /using \(public\.is_active_user\(\) and public\.is_crm_user\(\)\)/);

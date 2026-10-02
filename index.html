@@ -1066,10 +1066,16 @@
             <input type="text" id="newTelefono" required placeholder="Ej: 1 (786) 555-1234" onblur="this.value=formatPhone(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
           </div>
 
-          <!-- Mes -->
+          <!-- Fecha de llegada (opcional, por defecto hoy en Miami; solo actual o pasada) -->
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Fecha de llegada</label>
+            <input type="date" id="newFechaLlegada" onchange="syncNewLeadMes()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <!-- Mes (se calcula de la fecha de llegada) -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Mes</label>
-            <select id="newMes" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+            <select id="newMes" disabled class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-500 opacity-70 focus:outline-none">
               <option value="ENERO">Enero</option>
               <option value="FEBRERO">Febrero</option>
               <option value="MARZO">Marzo</option>
@@ -3308,6 +3314,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
     function renderAppointmentAdvisorSelect(select, preferredName) { if(!select)return; if(!leadAppointmentAdvisors.length){select.innerHTML='<option value="">No hay asesores activos</option>';select.disabled=true;return;} const chosen=leadAppointmentAdvisors.find(a=>a.nombre===preferredName)||leadAppointmentAdvisors.find(a=>a.user_id===currentUser?.id)||leadAppointmentAdvisors[0]; select.innerHTML='<option value="">Seleccione asesor</option>'+leadAppointmentAdvisors.map(a=>`<option value="${escapeAttr(a.user_id)}" ${chosen?.user_id===a.user_id?'selected':''}>${escapeHtml(a.nombre||a.email||a.user_id)}</option>`).join('');select.disabled=false; }
     async function loadNewLeadAppointmentAdvisors() { const select=document.getElementById('newAppointmentAdvisor'); if(!isAdmin||!select){toggleNewAppointmentFields();return;} const gen=sessionGeneration, token=++newLeadAdvisorGeneration, uid=currentUser?.id, access=currentAccess?.updated_at; if(leadAppointmentAdvisors.length){renderAppointmentAdvisorSelect(select,document.getElementById('newAgente')?.value.trim());toggleNewAppointmentFields();return;} select.disabled=true;const {data,error}=await supabaseClient.rpc('admin_manage_user_access',{p_action:'list'}); if(gen!==sessionGeneration||token!==newLeadAdvisorGeneration||currentUser?.id!==uid||currentAccess?.updated_at!==access||document.getElementById('modalNewLead')?.classList.contains('hidden'))return; if(error){select.innerHTML='<option value="">No se pudieron cargar asesores</option>';toggleNewAppointmentFields();return;} leadAppointmentAdvisors=(data||[]).filter(a=>a.activo===true);renderAppointmentAdvisorSelect(select,document.getElementById('newAgente')?.value.trim());toggleNewAppointmentFields(); }
+    // Mes derivado de la fecha de llegada (no editable a mano).
+    function syncNewLeadMes() { const input = document.getElementById('newFechaLlegada'), mes = document.getElementById('newMes'); if (!input || !mes) return; const v = /^\d{4}-\d{2}-\d{2}$/.test(input.value || '') ? input.value : miamiToday(); const nombre = MONTH_CHRONO[Number(v.split('-')[1]) - 1]?.trim().toLowerCase(); const actual = mes.options ? [...mes.options].find(o => String(o.value).trim().toLowerCase() === nombre) : null; if (actual) mes.value = actual.value; }
     function openNewLeadModal() {
       if (!currentUser || !currentAccess?.activo) return;
       if (!activeCatalogValues('campana').length) { showToast('No se puede guardar: catálogo de campañas no disponible', 'warning'); return; }
@@ -3317,7 +3325,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         campana.disabled = false;
       }
       const mes = document.getElementById('newMes');
-      const mesActual = MONTH_CHRONO[Number(miamiToday().split('-')[1]) - 1]?.trim().toLowerCase();
+      const fechaInput = document.getElementById('newFechaLlegada');
+      if (fechaInput) { fechaInput.max = miamiToday(); if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaInput.value || '')) fechaInput.value = miamiToday(); syncNewLeadMes(); }
+      const mesActual = MONTH_CHRONO[Number((fechaInput?.value || miamiToday()).split('-')[1]) - 1]?.trim().toLowerCase();
       if (mes?.options) {
         const actual = [...mes.options].find(option => String(option.value).trim().toLowerCase() === mesActual);
         if (actual) mes.value = actual.value;
@@ -3361,7 +3371,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (!currentUser || !currentAccess?.activo) return;
       const btn = document.getElementById('btnSubmitNewLead');
 
-      const [year, month, day] = miamiToday().split('-');
+      const fechaSel = document.getElementById('newFechaLlegada')?.value || '';
+      const hoyMiami = miamiToday();
+      if (fechaSel && (!/^\d{4}-\d{2}-\d{2}$/.test(fechaSel) || fechaSel > hoyMiami)) { showToast('La fecha de llegada no puede ser futura', 'warning'); return; }
+      const [year, month, day] = (fechaSel || hoyMiami).split('-');
       const fechaHoy = `${day}/${month}/${year}`;
 
       const newLeadData = {

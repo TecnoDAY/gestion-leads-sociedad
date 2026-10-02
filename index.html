@@ -4181,15 +4181,21 @@ async function loadLeadAppointments(leadId, lead) {
         steps: [
           'Pulsa "+ Nuevo Lead" en la cabecera para abrir el formulario de alta.',
           'Rellena Nombre Completo y Teléfono / WhatsApp: son los únicos campos obligatorios. El teléfono se formatea solo al salir del campo.',
-          'Elige el Mes de origen del lead (por ejemplo SEPTIEMBRE) y escribe la Campaña; el Medio se elige del desplegable (Whatsapp, Instagram, Lead Directo, Referidos Andres, CogniTalkign).',
+          'Indica la Fecha de llegada del lead: aparece hoy (Miami) por defecto y admite cualquier fecha pasada, útil cuando el contacto llegó de noche o a la madrugada y se registra al día siguiente. No admite fechas futuras.',
+          'El Mes se calcula solo a partir de la Fecha de llegada y se muestra como referencia: no se elige a mano, así nunca queda inconsistente con la fecha.',
+          'Si el teléfono ya está en la base verás un aviso ámbar con cuántas oportunidades existen. Es informativo: puedes guardar igualmente porque el mismo contacto puede llegar por otra campaña.',
+          'Escribe la Campaña; el Medio se elige del desplegable (Whatsapp, Instagram, Lead Directo, Referidos Andres, CogniTalkign).',
           'Elige la Gestión Inicial. Con Información el lead entra como contacto nuevo, sin cita.',
           'Al elegir Agendado o AGENDADO DATADURA aparece el bloque de cita: la Fecha y hora es obligatoria y la cita se crea junto al lead en la misma operación. Si algo falla, no se guarda ni el lead ni la cita.',
+          'En ese bloque puedes añadir, si los tienes, el nombre del estudiante, un correo de contacto y su edad: los tres son opcionales y también se pueden corregir después.',
           'Como administrador puedes elegir el asesor de la cita; como agente se asigna automáticamente tu nombre de agente.',
           'Añade Ciudad / Zona y Observaciones Iniciales si ayudan al seguimiento y pulsa "Guardar en Supabase".'
         ],
         notes: [
+          'Guardar el lead ya cuenta como trabajo del día: aparece en Creados hoy y en Gestionados hoy del Reporte Diario, aunque la Fecha de llegada sea de ayer.',
+          'Los leads del mes de su Fecha de llegada muestran una etiqueta verde "Nuevo" junto al nombre; desaparece sola al cambiar de mes.',
           'No se crea ninguna cita si la gestión no es Agendado o AGENDADO DATADURA: en ese caso el bloque de cita no se muestra.',
-          'El Mes es el mes de origen del lead y no cambia aunque la cita sea de otro mes.'
+          'El Mes es el mes de llegada del lead y no cambia aunque la cita sea de otro mes.'
         ]
       },
       {
@@ -4203,12 +4209,15 @@ async function loadLeadAppointments(leadId, lead) {
           'Verifica la cita recién creada en el bloque Citas de la ficha y comprueba que en Historial de Gestiones aparece "Información → Agendado", con su fecha, su canal y su asesor.',
           'De Agendado a Inscrito: elige INSCRITO y guarda. La cita ya creada no se borra y sigue visible en la ficha.',
           'De Agendado a AGENDADO DATADURA: elige esa gestión y guarda; el lead pasa a Data Dura y conserva su Mes de origen.',
-          'De Agendado a Información: al guardar, la cita se conserva y sigue apareciendo en el historial del lead.'
+          'De Agendado a Información: al guardar, la cita se conserva y sigue apareciendo en el historial del lead.',
+          'El campo Teléfono / WhatsApp es editable: si lo corriges, el número se revalida (7 a 15 dígitos) y la coincidencia con otros leads se recalcula.',
+          'En "Tipo de Última Gestión" eliges cómo se gestionó el contacto: Llamada, Llamada Data Dura, WhatsApp, Llamada WhatsApp, Instagram o Visita Conservatorio. Esa elección decide cómo suma en el Reporte Diario.'
         ],
         notes: [
           'Si el lead ya estaba agendado, el modal avisa y las citas adicionales se gestionan desde la ficha, no desde el formulario de edición.',
           'Historial de Gestiones es un registro que solo añade: ninguna línea anterior se borra ni se reescribe.',
-          'Solo el administrador puede modificar los datos principales del lead (Nombre, Mes, Fecha, Campaña, Medio, Ciudad, Agente, Odoo, Landing).'
+          'Solo el administrador puede modificar los datos principales del lead (Nombre, Mes, Fecha, Campaña, Medio, Ciudad, Agente, Odoo, Landing).',
+          'En la ficha, el botón "Editar datos" de una cita permite corregir o borrar el nombre del estudiante, el correo y la edad sin tocar la fecha ni el estado.'
         ]
       },
       {
@@ -4217,16 +4226,20 @@ async function loadLeadAppointments(leadId, lead) {
         summary: 'Crear, marcar el resultado y reprogramar citas de un lead agendado.',
         steps: [
           'Solo un lead con gestión Agendado o AGENDADO DATADURA puede tener citas. Con cualquier otra gestión el formulario aparece oculto y el servidor también lo rechaza.',
-          'En la ficha del lead, sección Citas, elige Fecha y hora, añade una nota opcional y, si eres administrador, el asesor. Pulsa "Crear cita".',
+          'Todas las asesoras ven el calendario completo de citas del equipo: sirve para saber quién atiende a quién. Lo que cambia por asesora es la gestión.',
+          'Solo la asesora asignada a la cita (o un administrador) puede modificarla: el resto ve la información en solo lectura, sin botones de edición.',
+          'En la ficha del lead, sección Citas, elige Fecha y hora, añade una nota opcional, el nombre del estudiante, un correo de contacto y su edad, y, si eres administrador, el asesor. Pulsa "Crear cita".',
           'Marca el resultado con los botones "Asistió", "No asistió" y "Cancelada". Cada cambio queda registrado en el historial de la cita.',
-          'Para reprogramar, escribe la nueva Fecha y hora y pulsa "Reprogramar": la cita anterior queda como REPROGRAMADA y se crea una cita nueva enlazada a ella, sin sobrescribirla.',
+          'Para reprogramar, escribe la nueva Fecha y hora y pulsa "Reprogramar": la cita anterior queda como REPROGRAMADA y se crea una cita nueva enlazada a ella, sin sobrescribirla. La nueva cita conserva la marca Data Dura y los datos del estudiante.',
           'Un lead puede tener varias citas, cada una con su propio estado; todas se listan ordenadas en la ficha.',
           'Al cambiar la gestión del lead, las citas ya creadas se conservan aunque el lead deje de estar agendado.'
         ],
         notes: [
           'No se crea ninguna cita al lead si su gestión no es Agendado o AGENDADO DATADURA.',
           'Los estados posibles de una cita son PROGRAMADA, ASISTIO, NO_ASISTIO, CANCELADA y REPROGRAMADA.',
-          'El resultado se puede marcar solo mientras la cita está PROGRAMADA.'
+          'El resultado se puede marcar solo mientras la cita está PROGRAMADA.',
+          'Nombre del estudiante, correo de contacto y edad son opcionales: si no los tienes al agendar, el botón "Editar datos" los completa más tarde.',
+          'La tabla de la pestaña Citas no muestra la columna Medio para dejar espacio a Estudiante, Correo y Edad, pero el filtro por Medio sigue disponible.'
         ]
       },
       {
@@ -4236,7 +4249,8 @@ async function loadLeadAppointments(leadId, lead) {
         steps: [
           'Abre la pestaña Reporte de la barra superior.',
           'Elige la Fecha del reporte: se muestra un bloque por cada asesora del día, con su total gestionados.',
-          'Los bloques por canal real de cada gestión y los indicadores (Agendados hoy, Asistieron hoy, No asistieron hoy, Inscritos e Inscritos Data Dura) se rellenan solos.',
+          'Los bloques por canal real de cada gestión y los indicadores (Agendados hoy, Asistieron hoy, No asistió hoy, Inscritos e Inscritos Data Dura) se rellenan solos.',
+          'Registrar un lead también cuenta como gestión: cada alta manual suma una vez en Leads gestionados del día en que la creaste.',
           'En cada bloque, Problemas o bloqueos y Observaciones adicionales se guardan por asesora y fecha (zona horaria de Miami) con los botones Guardar y Eliminar.',
           'Como agente solo puedes editar tu propio bloque del día actual; en fechas anteriores tu vista es de solo lectura.',
           'Como administrador puedes editar y borrar cualquier bloque en cualquier fecha.',
@@ -4244,6 +4258,8 @@ async function loadLeadAppointments(leadId, lead) {
         ],
         notes: [
           'Agendados hoy cuenta las citas en la fecha elegida, y Asistieron / No asistieron dependen del resultado marcado en cada cita.',
+          'Una cita ASISTIO cuenta como Visita; una cita PROGRAMADA de un lead AGENDADO DATADURA cuenta en Agendados Data Dura.',
+          'Llamada WhatsApp cuenta una sola vez, dentro del total de llamadas, y es una categoría distinta de Llamada.',
           'Los Inscritos Data Dura son los leads inscritos cuyo Mes de origen es distinto del mes actual.',
           'Al guardar en un bloque ajeno, administración escribe en nombre de la asesora y el bloque sigue siendo de ella.'
         ]
@@ -4254,10 +4270,10 @@ async function loadLeadAppointments(leadId, lead) {
         summary: 'Panel Citas, tasa de asistencia y datos históricos de 2025.',
         steps: [
           'En la pestaña Citas, el rango Desde / Hasta filtra por la fecha de la cita, no por el mes del lead.',
-          'Filtra por Resultado, Campaña y Medio. El filtro Asesor solo aparece si eres administrador.',
+          'Filtra por Resultado, Campaña y Medio. El filtro Asesor aparece para administradores y supervisores.',
           'Las métricas (Total citas, PROGRAMADA, ASISTIO, NO_ASISTIO, CANCELADA, REPROGRAMADA y Tasa asistencia) se recalculan con los filtros aplicados. La tasa divide ASISTIO entre ASISTIO + NO_ASISTIO.',
           'La columna Mes origen muestra el mes del lead, mientras que la cita se cuenta por su propia fecha: una cita de septiembre de un lead de agosto cuenta en septiembre.',
-          'Como agente solo ves tus propias citas; como administrador ves las de todos los asesores.',
+          'Todas las asesoras ven las citas de todo el equipo; la columna Asesor permite saber a quién pertenece cada una.',
           'Los datos históricos de 2025 son de solo lectura: se consultan en Gráficos Históricos y en la ficha, pero no se editan.'
         ],
         notes: [
@@ -4295,12 +4311,31 @@ async function loadLeadAppointments(leadId, lead) {
         ]
       },
       {
+        id: 'ayuda-campanas',
+        title: 'Campañas',
+        summary: 'Resultados por campaña, comparación mensual y exportación a CSV.',
+        steps: [
+          'Abre la pestaña Campañas para ver el rendimiento de cada campaña con su alcance, gasto y resultados.',
+          'Los resultados de Meta (Leads Nuevos, Agendados, Asistieron, Inscritos) se leen de la fuente de la campaña y los contadores del CRM se añaden a la misma fila.',
+          'Agendados Meses Ant. son los leads agendados de meses anteriores que todavía no se han inscrito: indica cuántos quedan pendientes de cerrar.',
+          'La comparación mensual permite ver los totales por mes y el coste por resultado (gasto dividido entre leads nuevos).',
+          'El botón de CSV descarga la tabla actual con los mismos datos que ves en pantalla.',
+          'Solo quien tiene permiso de campañas puede editar sus datos; el resto ve la sección en solo lectura.'
+        ],
+        notes: [
+          'Un lead cuenta una sola vez por campaña aunque haya cambiado de gestión varias veces.',
+          'Si una campaña todavía no tiene datos, aparece con los contadores en cero para no confundir con un fallo de carga.'
+        ]
+      },
+      {
         id: 'ayuda-seguridad-roles',
         title: 'Seguridad y roles',
         summary: 'Qué puede ver y hacer un administrador y un agente.',
         steps: [
           'El administrador ve todos los leads, puede filtrar por asesor, editar los datos principales, gestionar Catálogos y abrir el botón Usuarios.',
-          'El agente solo ve y gestiona sus propios leads y sus propias citas; el filtro Asesor no le aparece.',
+          'Las asesoras ven la información compartida del equipo: los leads del CRM y el calendario completo de citas.',
+          'Lo que sí es individual es la gestión: una asesora solo puede editar datos, marcar resultados o reprogramar las citas que tiene asignadas; las demás las ven en solo lectura.',
+          'El filtro Asesor del panel de Citas y del Reporte aparece para administradores y supervisores.',
           'La protección real está en Supabase (RLS y funciones de la base de datos), no solo en la interfaz: ocultar un botón no es la medida de seguridad.',
           'Las cuentas se controlan desde Usuarios: activa, desactiva y asigna el rol de admin o agente.',
           'Una cuenta desactivada pierde el acceso: la sesión se cierra y la pantalla vuelve al inicio de sesión.',

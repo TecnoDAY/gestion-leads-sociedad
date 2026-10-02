@@ -1231,6 +1231,7 @@
             <label class="block font-medium text-slate-300 mb-1">Tipo de Última Gestión</label>
             <select id="editUltimaGestion" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
               <option value="Llamada">Llamada</option>
+              <option value="Llamada Data Dura">Llamada Data Dura</option>
               <option value="WhatsApp">WhatsApp</option>
               <option value="Llamada y WhatsApp">Llamada y WhatsApp</option>
               <option value="Instagram">Instagram</option>
@@ -1246,7 +1247,8 @@
           </div>
 
            <!-- OBSERVACIONES -->
-           <div class="sm:col-span-2"><label class="block font-medium text-slate-300 mb-1">Nombre</label><input id="editNombre" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"></div>
+           <div><label class="block font-medium text-slate-300 mb-1">Nombre</label><input id="editNombre" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"></div>
+           <div><label class="block font-medium text-slate-300 mb-1">Teléfono / WhatsApp</label><input id="editTelefono" type="text" onblur="this.value=formatPhone(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500" placeholder="Ej: 1 (786) 555-1234"></div>
            <div class="sm:col-span-2">
             <label class="block font-medium text-slate-300 mb-1">Historial de Observaciones & Notas</label>
             <textarea id="editObservaciones" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono text-xs"></textarea>
@@ -1267,7 +1269,6 @@
           <div class="flex items-center gap-2 text-sm font-semibold text-white"><i data-lucide="settings-2" class="w-4 h-4 text-indigo-400"></i>Datos principales del lead</div>
           <p class="text-[11px] text-slate-400">Solo el administrador puede modificar estos campos.</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div><label class="block font-medium text-slate-300 mb-1">Teléfono</label><input id="editTelefono" type="text" onblur="this.value=formatPhone(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
             <div><label class="block font-medium text-slate-300 mb-1">Mes</label><input id="editMes" type="text" list="mesList" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
             <div><label class="block font-medium text-slate-300 mb-1">Fecha</label><input id="editFecha" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
             <div><label class="block font-medium text-slate-300 mb-1">Campaña</label><input id="editCampana" type="text" list="campanaEditList" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
@@ -3495,8 +3496,21 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       document.getElementById('editFechaUltima').value = hoyFormatted;
       
       const ultimaGestion = getField(lead, 'ULTIMA GESTION');
-      if (document.getElementById('editUltimaGestion')) {
-        document.getElementById('editUltimaGestion').value = ultimaGestion || 'Llamada y WhatsApp';
+      const ultimaSelect = document.getElementById('editUltimaGestion');
+      if (ultimaSelect) {
+        const value = ultimaGestion || 'Llamada y WhatsApp';
+        // Conserva valores históricos que ya no estén en las opciones.
+        let found = false;
+        for (let opt of ultimaSelect.options) {
+          if (opt.value.trim().toLowerCase() === value.trim().toLowerCase()) { found = true; break; }
+        }
+        if (!found) {
+          const customOpt = document.createElement('option');
+          customOpt.value = value;
+          customOpt.innerText = value;
+          ultimaSelect.appendChild(customOpt);
+        }
+        ultimaSelect.value = value;
       }
 
       document.getElementById('editUltimoAgente').value = getField(lead, 'ULTIMO AGENTE ') || getField(lead, 'Agente ') || 'Asesor';
@@ -3504,8 +3518,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const adminFields = document.getElementById('adminLeadFields');
       adminFields?.classList.toggle('hidden', !isAdmin);
       document.getElementById('editNombre').value = getField(lead, 'Nombre');
+      const editTel = document.getElementById('editTelefono');
+      editTel.value = getField(lead, 'Telefono');
+      if (editTel.dataset) editTel.dataset.original = editTel.value;
       if (isAdmin) {
-        document.getElementById('editTelefono').value = getField(lead, 'Telefono');
         document.getElementById('editMes').value = getField(lead, 'Mes');
         document.getElementById('editFecha').value = getField(lead, 'Fecha');
         document.getElementById('editCampana').value = getField(lead, 'Campaña');
@@ -3583,6 +3599,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         "ULTIMA GESTION": document.getElementById('editUltimaGestion')?.value || 'Llamada',
         "OBSERVACIONES": document.getElementById('editObservaciones')?.value.trim() || ''
       };
+      // Teléfono editable por asesoras; se envía solo si cambió, para no
+      // bloquear guardados con teléfonos históricos vacíos o inválidos.
+      const telInput = document.getElementById('editTelefono');
+      const telNuevo = formatPhone(telInput?.value.trim() || '');
+      const telOriginal = formatPhone(telInput?.dataset?.original || '');
+      if (telNuevo !== telOriginal) updatedFields["Telefono"] = telNuevo;
       if (isAdmin) {
         Object.assign(updatedFields, {
           "Telefono": formatPhone(document.getElementById('editTelefono')?.value.trim() || ''),
@@ -3949,7 +3971,7 @@ async function loadLeadAppointments(leadId, lead) {
       const generation = sessionGeneration, viewGeneration = viewLeadGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
       const { data, error } = await fetchPagedResult(() => supabaseClient
         .from('lead_gestiones')
-        .select('id, fecha_gestion, gestion_anterior, gestion_nueva, canal, autor_name, created_at')
+        .select('id, fecha_gestion, gestion_anterior, gestion_nueva, canal, is_data_dura, autor_name, created_at')
         .eq('lead_id', leadId));
       if (generation !== sessionGeneration || viewGeneration !== viewLeadGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt || String(currentViewId) !== String(leadId)) return;
       if (error) {
@@ -3976,7 +3998,7 @@ async function loadLeadAppointments(leadId, lead) {
           : renderGestionBadge(g.gestion_nueva || '-');
         return `<div class="border-b border-slate-800 last:border-0 pb-2 last:pb-0 space-y-1">
           <div class="flex items-center gap-2 text-[11px]"><span class="text-slate-300 font-medium">${escapeHtml(fecha)}</span>${estados}</div>
-          <div class="text-[11px] text-slate-400">${escapeHtml(g.canal || '-')} · ${escapeHtml(g.autor_name || 'Agente')}</div>
+          <div class="text-[11px] text-slate-400">${escapeHtml((g.is_data_dura === true && String(g.canal||'').trim().toLowerCase() === 'llamada') ? 'Llamada Data Dura' : (g.canal || '-'))} · ${escapeHtml(g.autor_name || 'Agente')}</div>
         </div>`;
       }).join('');
     }

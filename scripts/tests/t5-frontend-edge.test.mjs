@@ -317,10 +317,64 @@ test('modal de edición usa siempre la fecha Miami de hoy', () => {
   c.findLeadByOrigin = () => c.allLeads[0]; c.hideEditAppointmentFields = () => {};
   c.applyEditAppointmentVisibility = () => {}; c.editLeadNeedsAppointment = () => false;
   f.element('editGestion').options = [{ value: '' }];
+  f.element('editUltimaGestion').options = [{ value: '' }];
   c.openEditLeadModal(1, 'actual');
   const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/New_York', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(new Date());
   const today = `${parts.find(p => p.type === 'day').value}/${parts.find(p => p.type === 'month').value}/${parts.find(p => p.type === 'year').value}`;
   assert.equal(f.element('editFechaUltima').value, today);
+});
+
+test('seguimiento: Teléfono visible fuera del bloque admin y selector incluye Llamada Data Dura', () => {
+  const telIndex = html.indexOf('id="editTelefono"');
+  const nombreIndex = html.indexOf('id="editNombre"');
+  const adminIndex = html.indexOf('id="adminLeadFields"');
+  assert.ok(telIndex > -1 && nombreIndex > -1 && adminIndex > -1);
+  // Teléfono acompaña a Nombre en el formulario general, antes del bloque admin.
+  assert.ok(telIndex > nombreIndex && telIndex < adminIndex);
+  const selStart = html.indexOf('id="editUltimaGestion"');
+  const selHtml = html.slice(selStart, selStart + 1500);
+  for (const v of ['Llamada Data Dura', 'Llamada y WhatsApp', 'WhatsApp', 'Instagram', 'Visita Conservatorio'])
+    assert.ok(selHtml.includes(`value="${v}"`), `falta la opción ${v}`);
+});
+
+test('editar lead: Telefono solo se envía cuando cambia; canal manual se respeta', async () => {
+  const f = frontend({ isAdmin: false, editLeadSubmitting: false, editLeadRequestGeneration: 0, editLeadAdvisorGeneration: 0, editLeadPreviousGestion: '', currentEditOrigin: 'actual' });
+  const c = f.context;
+  c.editLeadNeedsAppointment = () => false;
+  c.editSessionValid = () => true;
+  c.formatPhone = v => String(v || '').trim();
+  c.isSupabaseLive = true;
+  c.upsertLeadInState = () => {};
+  c.updateConnectionStatus = () => {};
+  c.closeEditLeadModal = () => {};
+  c.updateEditSubmitState = () => {};
+  c.editUpdateErrorMessage = e => String(e?.message || '');
+  const db = database({ update_lead_followup: { id: 1 } });
+  c.supabaseClient = db;
+  f.element('editLeadId').value = '1';
+  f.element('editGestion').value = 'Información ';
+  f.element('editUltimaGestion').value = 'Llamada Data Dura';
+  await c.handleUpdateLead({ preventDefault() {} });
+  assert.equal(db.rpcCalls.length, 1);
+  assert.equal(db.rpcCalls[0].name, 'update_lead_followup');
+  // Sin dataset (sin cambio) el teléfono no viaja: los históricos no bloquean.
+  assert.equal(db.rpcCalls[0].args.p_fields.Telefono, undefined);
+  assert.equal(db.rpcCalls[0].args.p_fields['ULTIMA GESTION'], 'Llamada Data Dura');
+  f.element('editTelefono').value = '1 (786) 555-1234';
+  f.element('editTelefono').dataset = { original: '' };
+  await c.handleUpdateLead({ preventDefault() {} });
+  assert.equal(db.rpcCalls.length, 2);
+  assert.equal(db.rpcCalls[1].args.p_fields.Telefono, '1 (786) 555-1234');
+});
+
+test('migración canal data dura manual: trigger normaliza, RPC prioriza marca y followup admite Telefono', () => {
+  const sql = readFileSync('supabase/migrations/202610020001_canal_datadura_manual_telefono.sql', 'utf8');
+  assert.match(sql, /add column if not exists is_data_dura boolean/);
+  assert.match(sql, /'llamada data dura'/);
+  // El reporte prioriza la marca manual y solo usa Mes/Fecha en históricos NULL.
+  assert.match(sql, /is_data_dura is true or \(is_data_dura is null and public\._daily_report_data_dura/);
+  assert.match(sql, /"'Nombre', 'Telefono', 'GESTION'"|[']Nombre', 'Telefono', 'GESTION'/);
+  assert.match(sql, /telefono_invalido/);
 });
 
 test('filtros y campos automáticos conservan el orden y readonly en HTML', () => {

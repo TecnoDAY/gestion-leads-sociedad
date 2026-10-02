@@ -507,6 +507,29 @@ test('ayuda: refleja el comportamiento actual y no repite reglas retiradas', () 
     assert.ok(html.includes(`id="${field}"`), `falta el campo ${field} descrito en la ayuda`);
 });
 
+test('inactividad: aviso a 4 min, cierre a 5, multi-pestaña y registro en tabla/RPC dedicadas', () => {
+  // Frontend: banner con countdown, solo para rol agente, y storage compartido.
+  assert.match(html, /id="idleBanner"[^>]*role="alert"/);
+  assert.match(html, /Tu sesión se cerró por 5 minutos de inactividad\./);
+  assert.match(html, /IDLE_WARN_MS = 240000, IDLE_LIMIT_MS = 300000/);
+  assert.match(html, /currentAccess\?\.role === 'agente'/);
+  assert.match(html, /event\.key === IDLE_KEY/);
+  assert.match(html, /signOut\(\{ scope: 'local' \}\)/);
+  // El cierre registra el motivo concreto.
+  assert.match(html, /endAgentSessionLocally\('manual_logout'\)/);
+  assert.match(html, /p_reason: 'idle_timeout'/);
+  assert.match(html, /sessionEndReason = 'session_invalid'/);
+
+  // Migración: tabla con motivos controlados, sin PII extra, retención 90 días.
+  const sql = readFileSync('supabase/migrations/202610020006_agent_sessions.sql', 'utf8');
+  assert.match(sql, /create table if not exists public\.agent_sessions/);
+  assert.match(sql, /end_reason in \('manual_logout', 'idle_timeout', 'session_invalid'\)/);
+  assert.match(sql, /ended_at < now\(\) - interval '90 days'/);
+  assert.match(sql, /if access\.role <> 'agente' then return null/); // solo asesoras
+  assert.match(sql, /if not public\.is_admin_user\(\) then raise exception using errcode = '42501', message = 'admin_required'/);
+  assert.doesNotMatch(sql, /ip_address|user_agent/);
+});
+
 test('migración de detalles de cita: columnas, p_details, validación, edición y reschedule conservador', () => {
   const sql = readFileSync('supabase/migrations/202610020002_appointment_student_details.sql', 'utf8');
   assert.match(sql, /add column if not exists student_name text/);

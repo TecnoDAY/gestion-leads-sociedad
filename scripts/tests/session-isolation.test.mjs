@@ -20,7 +20,8 @@ function extractFunction(name) {
 const names = ['clearSessionState', 'closeInvalidSession', 'validateCurrentSession', 'loadCurrentAccess',
   'setAppAuthenticated', 'enterAuthenticatedSession', 'handleSignOut', 'setDashboardTabState', 'switchTab',
   'closeViewLeadModal', 'openViewLeadModal', 'findLeadByOrigin', 'getField', 'escapeHtml', 'escapeAttr',
-  'fetchRowsByIdCursor', 'fetchPagedResult', 'loadLeadNotes', 'loadLeadGestiones'];
+  'fetchRowsByIdCursor', 'fetchPagedResult', 'loadLeadNotes', 'loadLeadGestiones',
+  'stopIdleTracking', 'endAgentSessionLocally', 'startAgentActivityTracking'];
 const sessionCacheNames = ['loadHistoricoData', 'performLoadHistoricoData', 'loadLeadsData', 'performLoadLeadsData',
   'getExactLeadsCount', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'consolidateLeadsById',
   'compareLeadIdsDescending', 'withOrigin', 'haveSameLeadIds', 'loadCatalogs', 'refreshCatalogs',
@@ -101,6 +102,8 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     newLeadRequestGeneration: 0, newLeadAdvisorGeneration: 0, newLeadSubmitting: false, editLeadRequestGeneration: 0,
     editLeadAdvisorGeneration: 0, editLeadSubmitting: false, editLeadPreviousGestion: '', editAdvisorsLoading: false,
     citasRequestGeneration: 0, reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [],
+    agentSessionId: null, idleWarnTimer: null, idleTickTimer: null, idleListenersOn: false, idleLastTouchSent: 0,
+    localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     campanasRequestGeneration: 0, campanasData: [], campaignStatsMap: new Map(), currentMainTab: 'dashboard',
     helpReturnFocus: null, histCharts: {}, resetCitasPanel() {}, miamiToday: () => '2026-09-30',
     setupRealtimeListener: async () => true, loadLeadsData: async () => true, refreshCatalogs: async () => {},
@@ -108,7 +111,7 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     formatPhone: value => value, normalizePhone: value => value, renderGestionBadge: () => '', isAgendadoGestion: () => false,
     loadLeadAppointments: async () => {},
     catalogRows: { mes: [], campana: [], medio: [], gestion: [], agente: [] },
-    showLoadingState() {}, updateConnectionStatus() {}, showToast() {},
+    showLoadingState() {}, updateConnectionStatus() {}, showToast() {}, clearTimeout() {}, window: {},
   });
   const renders = [];
   for (const name of ['populateCatalogSelects', 'populateFilterOptions', 'applyFilters']) {

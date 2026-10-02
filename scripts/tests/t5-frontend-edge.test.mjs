@@ -32,7 +32,7 @@ const names = [
   'activeCatalogValues', 'catalogOptions', 'parseFechaLead', 'normalizeLeadMonth', 'leadReportDate', 'isInscritoDataDura',
   'histMonthKey', 'histMonthLabel', 'sortHistMonthKeys', 'normalizeGestion', 'groupGestionEstado', 'readHistRange',
   'filterHistoricalLeads', 'populateHistoricalFilterOptions', 'computeHistoricalAggregates', 'escapeHtml', 'escapeAttr',
-  'loadReporteDiario', 'csvReporteField', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
+  'loadReporteDiario', 'renderReporteV2', 'csvReporteField', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
   'exportReporteDiarioCSV', 'exportCampanasCSV', 'campaignCosteResultado', 'campaignTotals', 'loadCampanas',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
   'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal'
@@ -76,7 +76,7 @@ function frontend(extra = {}) {
     sessionGeneration: 1, currentMainTab: 'citas', isAdmin: false, isSupervisor: false,
     citasRequestGeneration: 0, citasCache: [], citasRangeKey: '', leadAppointmentsCache: [], leadNotesCache: [], leadGestionesCache: [],
     viewLeadGeneration: 1, currentViewId: 1, dashRangeGen: 0, filterDebounceTimer: null,
-    reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], campanasData: [],
+  reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], reporteAsesorasDisponibles: [], campanasData: [],
     campanasRequestGeneration: 0, campanasLoading: false, campanasContextMonth: '', campaignStatsMap: new Map(),
     allLeads: [], allHistorico: [], filteredLeads: [], dataSource: 'actual', currentPage: 1, authorizedUsersList: [],
     catalogRows: { agente: [], campana: [], medio: [], gestion: [], mes: [] },
@@ -91,7 +91,7 @@ function database(tables, { fail, hook, maxRows = 1000 } = {}) {
   const calls = [], rpcCalls = [];
   return {
     calls, rpcCalls,
-    async rpc(name, args) { rpcCalls.push({ name, args }); return { data: (tables[name] || []).map(r => ({ ...r })), error: null }; },
+    async rpc(name, args) { rpcCalls.push({ name, args }); const value = typeof tables[name] === 'function' ? tables[name](args) : tables[name]; return { data: Array.isArray(value) ? value.map(r => ({ ...r })) : value, error: null }; },
     from(table) {
       const query = { table, filters: [], orders: [], columns: '*', range: null };
       const builder = {
@@ -542,100 +542,36 @@ test('histórico renderiza KPIs y tabla aunque Chart.js no esté disponible', ()
   assert.match(f.element('histMonthlyTableBody').innerHTML, /ENERO 2025/);
 });
 
-test('reporte diario real calcula Data Dura para la fecha seleccionada, no para hoy ni para el histórico', async () => {
-  const leads = [
-    { id: 1, Mes: 'MARZO', Fecha: '1/3/2026' },
-    { id: 2, Mes: 'MARZO', Fecha: '1/3/2026' },
-    { id: 3, Mes: 'MARZO', Fecha: '1/3/2025' },
-    { id: 4, Mes: 'FEBRERO', Fecha: '1/2/2026' },
-    { id: 5, Mes: 'OTRO' },
-    { id: 6, Mes: 'FEBRERO', Fecha: '1/2/2025' },
-  ];
-  const dates = ['2026-03-05', '2026-02-05', '2025-03-05'];
-  const gestiones = dates.flatMap((fecha, index) => leads.map(l => ({ id: index * leads.length + l.id, lead_id: l.id, autor_name: 'Test', fecha_gestion: fecha, gestion_nueva: l.id === 6 ? 'AGENDADO' : 'INSCRITO' })));
-  const citas = dates.map((fecha, index) => ({ id: index + 1, advisor_name: 'Test', status: 'CANCELADA', scheduled_at: `${fecha}T12:00:00.000Z` }));
-  const f = frontend({ supabaseClient: database({ leads, lead_gestiones: gestiones, lead_appointments: citas }), currentMainTab: 'reporte' });
-  for (const [index, fecha] of dates.entries()) {
-    f.element('reporteFecha').value = fecha;
-    await f.context.loadReporteDiario();
-    assert.equal(f.context.reporteDayData.length, 1);
-    const block = f.context.reporteDayData[0];
-    assert.equal(block.inscritos, 5, fecha);
-    assert.equal(block.inscritosDura, [2, 3, 3][index], fecha);
-    assert.equal(block.agendados, 1, 'conserva el conteo diario previo de citas');
-  }
-});
-
-function reportFixture(options = {}) {
-  const gestiones = rows(1205, { autor_name: 'Test', fecha_gestion: '2026-03-05', gestion_nueva: 'INSCRITO', created_at: '2026-03-05' }).map(r => ({ ...r, lead_id: r.id }));
-  const leads = rows(1205, { Mes: 'MARZO', Fecha: '1/3/2026', Medio: 'Whatsapp' });
-  leads[0].Fecha = '1/3/2025'; leads[1].Mes = 'FEBRERO';
-  const db = database({ leads, lead_gestiones: gestiones, lead_appointments: rows(1205, { status: 'CANCELADA', scheduled_at: '2026-03-05T12:00:00.000Z', advisor_name: 'Test' }), daily_report_notes: [{ id: 1, report_date: '2026-03-05', autor_name: 'Test' }] }, options);
+function reportFixture(report, notes = []) {
+  const db = database({ daily_management_report: report, daily_report_notes: notes });
   const f = frontend({ supabaseClient: db, currentMainTab: 'reporte' });
   f.element('reporteFecha').value = '2026-03-05';
   return { ...f, db };
 }
+const advisor = (name, id, n = 1) => ({ autor_name: name, autor_user_id: id, gestionados: n, llamadas: { total: n + 1 }, citas: { total_agendados: n + 2, visitas: n + 3 }, inscritos: { total: n + 4 }, procedencia: { Whatsapp: n } });
 
-test('reporte real: pagina gestiones/citas/joins, consulta Mes/Fecha y no cambia Agendados', async () => {
-  const { context: c, db } = reportFixture();
-  await c.loadReporteDiario();
-  assert.equal(c.reporteDayData.length, 1);
-  assert.equal(c.reporteDayData[0].gestionados, 1205);
-  assert.equal(c.reporteDayData[0].inscritos, 1205);
-  assert.equal(c.reporteDayData[0].inscritosDura, 2);
-  assert.equal(c.reporteDayData[0].agendados, 1205, 'canceladas siguen contando como antes');
-  assert.ok(db.calls.filter(q => q.table === 'leads').every(q => q.columns.includes('Mes') && q.columns.includes('Fecha')));
+test('reporte RPC usa la fecha y pinta los cinco KPIs', async () => {
+  const f = reportFixture({ asesoras: [advisor('Ana', 'a', 2), advisor('Bea', 'b', 3)] }); await f.context.loadReporteDiario();
+  assert.deepEqual(plain(f.db.rpcCalls[0]), { name: 'daily_management_report', args: { p_fecha: '2026-03-05', p_autor_user_id: null } });
+  assert.match(f.element('reporteAuto').innerHTML, /Leads gestionados.*5/); assert.match(f.element('reporteAuto').innerHTML, /Total llamadas.*7/); assert.match(f.element('reporteAuto').innerHTML, /Total agendados.*9/); assert.match(f.element('reporteAuto').innerHTML, /Visitas.*11/); assert.match(f.element('reporteAuto').innerHTML, /Total inscritos.*13/);
 });
-
-test('reporte agrupa por canal real y usa Sin canal cuando falta', async () => {
-  const gestiones = [
-    { id: 1, lead_id: 1, autor_name: 'Test', fecha_gestion: '2026-03-05', gestion_nueva: 'CONTACTO', canal: 'Llamada' },
-    { id: 2, lead_id: 2, autor_name: 'Test', fecha_gestion: '2026-03-05', gestion_nueva: 'CONTACTO', canal: null },
-  ];
-  const db = database({ leads: [{ id: 1, Medio: 'Whatsapp' }, { id: 2, Medio: 'Whatsapp' }], lead_gestiones: gestiones });
-  const f = frontend({ supabaseClient: db, currentMainTab: 'reporte' }); f.element('reporteFecha').value = '2026-03-05';
-  await f.context.loadReporteDiario();
-  assert.deepEqual(Object.fromEntries(Object.entries(f.context.reporteDayData[0].groups).map(([k, v]) => [k, v.length])), { Llamada: 1, 'Sin canal': 1 });
+test('comparativa RPC muestra campos y detalle las cuatro tablas y notas', async () => {
+  const f = reportFixture({ asesoras: [advisor('Ana', 'a')] }, [{ id: 4, autor_name: 'Ana', problemas: 'p', observaciones: 'o' }]); await f.context.loadReporteDiario(); const html = f.element('reporteAuto').innerHTML;
+  for (const text of ['Ana', 'Procedencia', 'Llamadas', 'Citas y resultados', 'Inscripciones', 'p', 'o']) assert.match(html, new RegExp(text));
 });
-
-test('reporte excluye citas data dura de agendados, pero conserva asistencia', async () => {
-  const f = reportFixture();
-  const appointments = [{ id: 1, advisor_name: 'Test', status: 'ASISTIO', scheduled_at: '2026-03-05T12:00:00.000Z', is_data_dura: true }, { id: 2, advisor_name: 'Test', status: 'NO_ASISTIO', scheduled_at: '2026-03-05T12:00:00.000Z', is_data_dura: false }];
-  f.context.supabaseClient = database({ leads: [], lead_gestiones: [], lead_appointments: appointments, daily_report_notes: [] });
-  await f.context.loadReporteDiario();
-  assert.equal(f.context.reporteDayData[0].agendados, 1); assert.equal(f.context.reporteDayData[0].asistieron, 1); assert.equal(f.context.reporteDayData[0].noAsistieron, 1);
+test('filtro de asesora reconsulta RPC y deja una sola fila', async () => {
+  const f = reportFixture(args => ({ asesoras: [advisor('Ana', 'a'), advisor('Bea', 'b')].filter(x => !args.p_autor_user_id || x.autor_user_id === args.p_autor_user_id) })); await f.context.loadReporteDiario(); f.element('reporteAsesora').value = 'a'; await f.context.loadReporteDiario();
+  assert.deepEqual(plain(f.db.rpcCalls.at(-1).args), { p_fecha: '2026-03-05', p_autor_user_id: 'a' }); assert.match(f.element('reporteAuto').innerHTML, /Ana/); assert.doesNotMatch(f.element('reporteAuto').innerHTML, /Bea/);
 });
-
-test('groupGestionEstado separa variantes data dura', () => {
-  const { context: c } = frontend();
-  assert.equal(c.groupGestionEstado('AGENDADO DATA DURA'), 'AGENDADO DATA DURA');
-  assert.equal(c.groupGestionEstado('AGENDADO DATADURA'), 'AGENDADO DATA DURA');
-  assert.equal(c.groupGestionEstado('AGENDADO'), 'AGENDADO');
+test('CSV del reporte v2 exporta columnas nuevas y totaliza los bloques visibles', async () => {
+  const a = { ...advisor('Ana', 'a', 2), procedencia: { WhatsApp: 1, 'Facebook/Instagram': 2, CogniTalking: 3, 'Directo o Referido': 4, Otros: 5 }, llamadas: { del_dia: 1, data_dura: 2, llamada_whatsapp: 3, total: 6 }, citas: { agendados_dia: 1, agendados_data_dura: 2, total_agendados: 3, visitas: 4, no_asistieron: 5, canceladas: 6, reprogramadas: 7 }, inscritos: { del_dia: 1, data_dura: 2, total: 3 } };
+  const f = reportFixture({ asesoras: [a, { ...a, autor_name: 'Bea', autor_user_id: 'b' }] }); await f.context.loadReporteDiario(); f.context.exportReporteDiarioCSV();
+  const text = new TextDecoder().decode(await f.downloads[0].blob.arrayBuffer()); const rows = decodeCSV(text.slice(1));
+  assert.deepEqual(rows[4].slice(0, 3), ['Asesora', 'Leads gestionados', 'WhatsApp']); assert.ok(rows[4].includes('Problemas')); assert.deepEqual(rows.at(-1).slice(0, 3), ['TOTAL', '4', '2']);
 });
-
-test('reporte reintenta citas sin is_data_dura si el esquema aún no existe', async () => {
-  const f = reportFixture({ fail: q => q.table === 'lead_appointments' && q.columns.includes('is_data_dura') ? { code: '42703', message: 'missing column' } : false });
-  await f.context.loadReporteDiario();
-  const calls = f.db.calls.filter(q => q.table === 'lead_appointments');
-  assert.ok(calls.length >= 2); assert.ok(calls.some(q => !q.columns.includes('is_data_dura'))); assert.equal(f.context.reporteDayData[0].agendados, 1205);
-});
-
-test('reporte: notas >1000 recuperadas y error segunda página advierte sin parcial', async () => {
-  const db = database({ daily_report_notes: rows(1205, { report_date: '2026-03-05', autor_name: 'Test' }) });
-  const f = frontend({ supabaseClient: db, currentMainTab: 'reporte' }); f.element('reporteFecha').value = '2026-03-05';
-  await f.context.loadReporteDiario();
-  assert.equal(f.context.reporteDayData[0].nota.id, 1);
-  const errorCase = reportFixture({ fail: q => q.table === 'lead_gestiones' && q.filters.length > 1 });
-  await errorCase.context.loadReporteDiario();
-  assert.equal(errorCase.context.reporteDayData[0].gestionados, 0);
-  assert.match(errorCase.element('reporteAviso').textContent, /Gestiones no disponibles/);
-});
-
-test('reporte: cambio de sesión no restaura datos viejos ni en error', async () => {
-  let c;
-  const f = reportFixture({ hook: q => { if (q.table === 'leads') { c.sessionGeneration++; c.reporteDayData = [{ advisor: 'new' }]; } }, fail: q => q.table === 'leads' }); c = f.context;
-  await c.loadReporteDiario();
-  assert.equal(c.reporteDayData[0].advisor, 'new');
+test('reporte RPC vacío, cargando y error muestran estado sin romper', async () => {
+  const empty = reportFixture({ asesoras: [] }); await empty.context.loadReporteDiario(); assert.match(empty.element('reporteAuto').innerHTML, /Sin gestiones/);
+  const failed = reportFixture(null); failed.db.rpc = async () => ({ data: null, error: { message: 'rpc failed' } }); await failed.context.loadReporteDiario(); assert.match(failed.element('reporteAuto').innerHTML, /No se pudo cargar/);
 });
 
 test('Campañas: estadísticas >1000 paginadas, RPC JSONB completo y año/mes intactos', async () => {

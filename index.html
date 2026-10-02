@@ -249,7 +249,7 @@
     <div id="reporteDiario" class="hidden max-w-5xl mx-auto bg-white text-slate-800 rounded-xl border border-slate-300 shadow-lg p-5 sm:p-7 space-y-5">
       <div class="border-b-2 border-indigo-600 pb-3 flex flex-wrap justify-between gap-3 items-end">
         <div><div class="flex items-center gap-1.5"><h1 class="text-2xl font-bold text-indigo-900">Reporte Diario de Trabajo</h1><button type="button" onclick="openHelpModal('ayuda-reporte-diario')" title="Ayuda: reporte diario" aria-label="Ayuda sobre el reporte diario" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-200 hover:bg-indigo-600 text-[10px] font-bold text-slate-700 hover:text-white align-middle cursor-pointer shrink-0">?</button></div><p id="reporteFechaTexto" class="text-base text-slate-600"></p></div>
-        <div class="flex flex-wrap gap-2 items-center text-sm"><label>Fecha <input id="reporteFecha" type="date" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"></label><button type="button" id="reporteBtnCsv" onclick="exportReporteDiarioCSV()" class="px-3 py-1.5 rounded bg-slate-700 text-white text-sm font-semibold hover:bg-indigo-600 cursor-pointer">Descargar CSV</button></div>
+        <div class="flex flex-wrap gap-2 items-center text-sm"><label>Fecha <input id="reporteFecha" type="date" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"></label><label>Asesora <select id="reporteAsesora" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"><option value="">Todas las asesoras</option></select></label><button type="button" id="reporteBtnCsv" onclick="exportReporteDiarioCSV()" class="px-3 py-1.5 rounded bg-slate-700 text-white text-sm font-semibold hover:bg-indigo-600 cursor-pointer">Descargar CSV</button></div>
       </div>
        <div id="reporteAviso" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">Los cambios en Problemas y Observaciones se guardan por asesora y fecha (zona horaria de Miami).</div>
       <div id="reporteAuto" class="space-y-3"></div>
@@ -1432,8 +1432,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
      let sessionGeneration = 0;
      let viewLeadGeneration = 0;
      let reporteRequestGeneration = 0;
-     let reporteDayAdvisors = [];
-     let reporteDayData = [];
+      let reporteDayAdvisors = [];
+      let reporteDayNotes = [];
+      let reporteDayData = [];
+      let reporteAsesorasDisponibles = [];
+      let reporteDayData2 = [];
      let isTrafficker = false;
      let isSupervisor = false;
      // Fuente unica de "puede editar campanas": admin, trafficker o supervisor.
@@ -5141,31 +5144,18 @@ async function loadLeadAppointments(leadId, lead) {
       loadReporteDiario();
     }
 
-    // Render de un bloque por asesora: gestiones por medio, indicadores y
-    // campos manuales guardados por (fecha, asesora). Administración edita
-    // siempre; una asesora solo edita su bloque y solo hoy (Miami).
-    function renderReporteBloque(b, i, fecha, hoy) {
-      const editable = isAdmin || (b.advisor === currentAccess?.nombre && fecha === hoy);
-      const nota = b.nota || null;
-      const medioHtml = Object.entries(b.groups).map(([medio, rows]) => {
-        const counts = {};
-        rows.forEach(g => { const key = groupGestionEstado(String(g.gestion_nueva || '').trim().replace(/\s+/g, ' ').toUpperCase()); counts[key] = (counts[key] || 0) + 1; });
-        const lines = Object.entries(counts).sort((x, y) => y[1] - x[1]).filter(([, n]) => n).map(([s, n]) => `<div class="flex justify-between border-b border-slate-100 py-0.5 text-sm"><span>${escapeHtml(s)}</span><strong>${n}</strong></div>`).join('');
-        return `<div class="border-b border-slate-100 pb-1.5 mb-1.5 last:border-0 last:mb-0"><div class="flex justify-between text-sm font-semibold text-slate-700"><span>${escapeHtml(medio)}</span><span>${rows.length}</span></div>${lines}</div>`;
+    function renderReporteV2(bloques, notas = []) {
+      const nmap = new Map(notas.map(n => [n.autor_name, n]));
+      const num = (o, k) => Number(o?.[k]) || 0;
+       const total = bloques.reduce((a, b) => { a.g += num(b,'gestionados'); a.l += Number(b.llamadas?.total) || 0; a.c += Number(b.citas?.total_agendados) || 0; a.v += Number(b.citas?.visitas) || 0; a.i += Number(b.inscritos?.total) || 0; return a; }, {g:0,l:0,c:0,v:0,i:0});
+      const cell = (label, value) => `<div class="border border-slate-200 rounded p-2 text-center"><div class="text-xs text-slate-500">${label}</div><strong class="text-lg text-indigo-900">${value}</strong></div>`;
+      const table = (title, rows) => `<div><h5 class="font-semibold text-indigo-900">${title}</h5><table class="w-full text-sm"><tbody>${rows.map(([l,v]) => `<tr class="border-b border-slate-100"><td class="py-1">${l}</td><td class="py-1 text-right font-semibold">${v}</td></tr>`).join('')}</tbody></table></div>`;
+      const blocks = bloques.map((b, i) => { const p=b.procedencia||{}, l=b.llamadas||{}, c=b.citas||{}, ins=b.inscritos||{}, note=nmap.get(b.autor_name)||null; const pt=Object.values(p).reduce((a,v)=>a+(Number(v)||0),0); const editable=isAdmin || (b.autor_name===currentAccess?.nombre && document.getElementById('reporteFecha')?.value===miamiToday());
+        const manual=editable ? `<textarea id="reporte-problemas-${i}" class="reporte-manual w-full border rounded p-2" rows="3">${escapeHtml(note?.problemas||'')}</textarea><textarea id="reporte-obs-${i}" class="reporte-manual w-full border rounded p-2" rows="3">${escapeHtml(note?.observaciones||'')}</textarea><button id="reporte-save-${i}" onclick="saveReporteNota(${i})" class="px-3 py-1 rounded bg-indigo-600 text-white">Guardar</button>${note?.id ? '<button id="reporte-delete-'+i+'" onclick="deleteReporteNota('+i+')" class="px-3 py-1 rounded border">Eliminar</button>' : ''}` : `<p class="text-sm">${escapeHtml(note?.problemas||'')} ${escapeHtml(note?.observaciones||'')}</p>`;
+       const detailTables = table('Procedencia', [['WhatsApp',num(p,'WhatsApp')],['Facebook/Instagram',num(p,'Facebook/Instagram')],['CogniTalking',num(p,'CogniTalking')],['Directo o Referido',num(p,'Directo o Referido')],['Otros',num(p,'Otros')],['Total',pt]]) + table('Llamadas', [['Del día',num(l,'del_dia')],['Data Dura',num(l,'data_dura')],['Llamada y WhatsApp',num(l,'llamada_whatsapp')],['Total',num(l,'total')]]) + table('Citas y resultados', [['Agendados del día',num(c,'agendados_dia')],['Agendados Data Dura',num(c,'agendados_data_dura')],['Total agendados',num(c,'total_agendados')],['Visitas',num(c,'visitas')],['No asistieron',num(c,'no_asistieron')],['Canceladas',num(c,'canceladas')],['Reprogramadas',num(c,'reprogramadas')]]) + table('Inscripciones', [['Del día',num(ins,'del_dia')],['Data Dura',num(ins,'data_dura')],['Total',num(ins,'total')]]);
+        return `<details class="border border-slate-300 rounded p-3" ${i?'':'open'}><summary class="cursor-pointer font-bold text-indigo-900">${escapeHtml(b.autor_name||b.advisor||'Sin asesora')} — ${num(b.gestionados)} leads</summary><div class="grid md:grid-cols-4 gap-4 mt-3">${detailTables}</div><div class="mt-3 space-y-2"><label class="text-sm">Problemas u observaciones</label>${manual}</div></details>`;
       }).join('');
-      const indicadores = [['Agendados hoy', b.agendados], ['Asistieron hoy', b.asistieron], ['No asistieron hoy', b.noAsistieron], ['Inscritos', b.inscritos], ['Inscritos Data Dura', b.inscritosDura]];
-      const indicadoresHtml = `<div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">${indicadores.map(([l, n]) => `<div class="border border-slate-200 rounded p-1.5"><div class="text-xs text-slate-500">${l}</div><strong class="text-lg text-indigo-900">${n}</strong></div>`).join('')}</div>`;
-      const manualHtml = editable
-        ? `<div class="grid sm:grid-cols-2 gap-3 text-sm"><label class="block">Problemas o bloqueos<textarea id="reporte-problemas-${i}" class="reporte-manual w-full border rounded p-2 min-h-24" rows="4" placeholder="Sin problemas reportados">${escapeHtml(nota?.problemas || '')}</textarea></label><label class="block">Observaciones adicionales<textarea id="reporte-obs-${i}" class="reporte-manual w-full border rounded p-2 min-h-24" rows="4" placeholder="Sin observaciones">${escapeHtml(nota?.observaciones || '')}</textarea></label></div><div class="flex flex-wrap gap-2"><button type="button" id="reporte-save-${i}" onclick="saveReporteNota(${i})" class="px-3 py-1.5 rounded bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 cursor-pointer">Guardar</button>${nota?.id ? `<button type="button" id="reporte-delete-${i}" onclick="deleteReporteNota(${i})" class="px-3 py-1.5 rounded border border-rose-400 text-rose-600 text-sm font-semibold hover:bg-rose-50 cursor-pointer">Eliminar</button>` : ''}</div>`
-        : `<div class="grid sm:grid-cols-2 gap-3 text-sm"><label class="block">Problemas o bloqueos<textarea id="reporte-problemas-${i}" class="reporte-manual w-full border rounded p-2 min-h-24" rows="4" readonly>${escapeHtml(nota?.problemas || '')}</textarea></label><label class="block">Observaciones adicionales<textarea id="reporte-obs-${i}" class="reporte-manual w-full border rounded p-2 min-h-24" rows="4" readonly>${escapeHtml(nota?.observaciones || '')}</textarea></label></div><p class="text-xs text-slate-400">Solo lectura: editable por la asesora hoy o por administración.</p>`;
-      return `<div class="border border-slate-300 rounded p-3 space-y-2"><div class="flex flex-wrap justify-between items-baseline gap-2 border-b-2 border-indigo-100 pb-2"><h3 class="font-bold text-indigo-900">${escapeHtml(b.advisor)}</h3><span class="text-sm text-slate-500">Total gestionados: <strong class="text-lg text-indigo-900">${b.gestionados}</strong></span></div>${medioHtml || '<div class="text-slate-400 text-sm">Sin gestiones</div>'}${indicadoresHtml}${manualHtml}</div>`;
-    }
-
-    // Resumen TOTAL del día: suma de los bloques por asesora.
-    function renderReporteTotal(bloques) {
-      const total = bloques.reduce((acc, b) => ({ gestionados: acc.gestionados + b.gestionados, agendados: acc.agendados + b.agendados, asistieron: acc.asistieron + b.asistieron, noAsistieron: acc.noAsistieron + b.noAsistieron, inscritos: acc.inscritos + b.inscritos, inscritosDura: acc.inscritosDura + b.inscritosDura }), { gestionados: 0, agendados: 0, asistieron: 0, noAsistieron: 0, inscritos: 0, inscritosDura: 0 });
-      const kpis = [['Total gestionados', total.gestionados], ['Agendados hoy', total.agendados], ['Asistieron hoy', total.asistieron], ['No asistieron hoy', total.noAsistieron], ['Inscritos', total.inscritos], ['Inscritos Data Dura', total.inscritosDura]];
-      return `<div class="border-2 border-indigo-600 rounded p-3 space-y-2"><div class="flex flex-wrap justify-between items-baseline gap-2"><h3 class="font-bold text-lg text-indigo-900">TOTAL del día</h3><span class="text-xs text-slate-500">${bloques.length} ${bloques.length === 1 ? 'asesora' : 'asesoras'}</span></div><div class="grid grid-cols-2 sm:grid-cols-6 gap-2 text-center">${kpis.map(([l, n]) => `<div class="border border-slate-200 rounded p-1.5"><div class="text-xs text-slate-500">${l}</div><strong class="text-lg text-indigo-900">${n}</strong></div>`).join('')}</div></div>`;
+      return `<section class="border-2 border-indigo-600 rounded p-3 space-y-2"><h3 class="font-bold text-lg text-indigo-900">Resumen general</h3><div class="grid grid-cols-2 sm:grid-cols-5 gap-2">${cell('Leads gestionados',total.g)}${cell('Total llamadas',total.l)}${cell('Total agendados',total.c)}${cell('Visitas',total.v)}${cell('Total inscritos',total.i)}</div></section><section class="space-y-2"><h3 class="font-bold text-lg text-indigo-900">Comparativa por asesora</h3>${blocks||'<p class="text-slate-500">Sin gestiones para esta fecha.</p>'}</section>`;
     }
 
     async function loadReporteDiario() {
@@ -5180,90 +5170,20 @@ async function loadLeadAppointments(leadId, lead) {
       const auto = document.getElementById('reporteAuto');
       if (auto) auto.innerHTML = '<div class="text-slate-500">Cargando reporte…</div>';
       const reporteAvisoBase = 'Los cambios en Problemas y Observaciones se guardan por asesora y fecha (zona horaria de Miami).';
-      const reporteWarnings = [];
-      const hoy = miamiToday();
-      const render = bloques => {
-        reporteDayAdvisors = bloques.map(b => b.advisor);
-        reporteDayData = bloques;
-        if (!auto) return;
-        auto.innerHTML = bloques.length ? bloques.map((b, i) => renderReporteBloque(b, i, fecha, hoy)).join('') + renderReporteTotal(bloques) : '<div class="text-slate-500">Sin datos para esta fecha.</div>';
-      };
-      const collectNombres = (citas, notas, gestiones) => {
-        const nombres = new Set();
-        activeCatalogValues('agente').forEach(n => { if (n) nombres.add(n); });
-        gestiones.forEach(g => { if (g.autor_name) nombres.add(g.autor_name); });
-        notas.forEach(n => { if (n.autor_name) nombres.add(n.autor_name); });
-        citas.forEach(c => { if (c.advisor_name) nombres.add(c.advisor_name); });
-        return [...nombres].sort((a, b) => a.localeCompare(b, 'es'));
-      };
-      const buildBloques = (gestiones, citas, notas, leads) => {
-        const notasPorAutor = new Map(notas.map(n => [n.autor_name, n]));
-        const uuidPorNombre = new Map();
-        notas.forEach(n => { if (n.autor_name && n.autor_user_id) uuidPorNombre.set(n.autor_name, n.autor_user_id); });
-        citas.forEach(c => { if (c.advisor_name && c.advisor_user_id && !uuidPorNombre.has(c.advisor_name)) uuidPorNombre.set(c.advisor_name, c.advisor_user_id); });
-        const matchCita = (c, nombre, uuid) => c.advisor_user_id ? (uuid ? c.advisor_user_id === uuid : c.advisor_name === nombre) : c.advisor_name === nombre;
-        return collectNombres(citas, notas, gestiones).map(nombre => {
-          const gestionesAsesora = gestiones.filter(g => g.autor_name === nombre);
-           const groups = {};
-          let inscritos = 0, inscritosDura = 0;
-          gestionesAsesora.forEach(g => {
-             const lead = leads.get(g.lead_id) || {};
-             const bucket = String(g.canal || '').trim() || 'Sin canal';
-             if (!groups[bucket]) groups[bucket] = [];
-            groups[bucket].push(g);
-            const estado = String(g.gestion_nueva || '').trim().toUpperCase(), old = isInscritoDataDura(lead, fecha);
-            if (estado.startsWith('INSCRIT')) { inscritos++; if (old) inscritosDura++; }
-          });
-          const citasAsesora = citas.filter(c => matchCita(c, nombre, nombre === currentAccess?.nombre ? userId : uuidPorNombre.get(nombre)));
-          const nota = notasPorAutor.get(nombre) || null;
-           return { advisor: nombre, groups, gestionados: gestionesAsesora.length, agendados: citasAsesora.filter(c => c.is_data_dura !== true).length, asistieron: citasAsesora.filter(c => c.status === 'ASISTIO').length, noAsistieron: citasAsesora.filter(c => c.status === 'NO_ASISTIO').length, inscritos, inscritosDura, nota };
-        });
-      };
-      let citasResult, notasResult;
+      const selected = document.getElementById('reporteAsesora')?.value || null;
       try {
-         const [startISO, endISO] = miamiDayBounds(fecha);
-         const loadCitasReporte = async () => {
-           const withDataDura = await fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id,status,scheduled_at,advisor_name,advisor_user_id,is_data_dura').gte('scheduled_at', startISO).lt('scheduled_at', endISO));
-           return withDataDura.error?.code === '42703'
-             ? fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id,status,scheduled_at,advisor_name,advisor_user_id').gte('scheduled_at', startISO).lt('scheduled_at', endISO))
-             : withDataDura;
-         };
-        if (!startISO) reporteWarnings.push('No se pudo calcular el rango Miami para las citas.');
-        const resultados = await Promise.allSettled([
-          fetchPagedResult(() => supabaseClient.from('lead_gestiones').select('id,lead_id,gestion_nueva,canal,autor_name,created_at').eq('fecha_gestion', fecha)),
-           startISO ? loadCitasReporte() : Promise.resolve({ data: [], error: null }),
-          fetchPagedResult(() => supabaseClient.from('daily_report_notes').select('*').eq('report_date', fecha))
-        ]);
+        const [report, notes] = await Promise.all([supabaseClient.rpc('daily_management_report', { p_fecha: fecha, p_autor_user_id: selected }), fetchPagedResult(() => supabaseClient.from('daily_report_notes').select('*').eq('report_date', fecha))]);
         if (!valid()) return;
-        const gestionesResult = resultados[0].status === 'fulfilled' ? resultados[0].value : { error: resultados[0].reason };
-        citasResult = resultados[1].status === 'fulfilled' ? resultados[1].value : { error: resultados[1].reason };
-        notasResult = resultados[2].status === 'fulfilled' ? resultados[2].value : { error: resultados[2].reason };
-        const gestionesError = gestionesResult.error, citasError = citasResult.error, notasError = notasResult.error;
-        if (gestionesError) reporteWarnings.push('Gestiones no disponibles para el autollenado.');
-        if (citasError) reporteWarnings.push('Citas no disponibles hasta aplicar la migración.');
-        if (notasError) reporteWarnings.push('Notas del día no disponibles hasta aplicar la migración.');
-        const gestiones = gestionesError ? [] : (gestionesResult.data || []);
-        const citas = citasError ? [] : (citasResult.data || []);
-        const notas = notasError ? [] : (notasResult.data || []);
-        let leads = new Map(), gestionError = gestionesError;
-        if (!gestionError && gestiones.length) {
-          const ids = [...new Set(gestiones.map(g => g.lead_id).filter(Boolean))];
-          const leadsResult = await fetchRowsByIds('leads', 'id,Medio,Mes,Fecha', ids);
-          if (!valid()) return;
-          gestionError = leadsResult.error;
-          if (!gestionError) leads = new Map((leadsResult.data || []).map(l => [l.id, l]));
-        }
-        if (gestionError && !gestionesError) { reporteWarnings.push('Gestiones no disponibles para el autollenado.'); throw gestionError; }
-        render(buildBloques(gestiones, citas, notas, leads));
+        if (report.error) throw report.error;
+        const bloques = Array.isArray(report.data?.asesoras) ? report.data.asesoras : [];
+        const advisors = bloques.map(b=>({ id:b.autor_user_id||'', name:b.autor_name||'' })).filter(v=>v.name);
+        reporteAsesorasDisponibles = advisors.concat(activeCatalogValues('agente').filter(n=>!advisors.some(v=>v.name===n)).map(name=>({id:'',name}))).sort((a,b)=>a.name.localeCompare(b.name,'es'));
+        const select=document.getElementById('reporteAsesora'); if(select) select.innerHTML='<option value="">Todas las asesoras</option>'+reporteAsesorasDisponibles.map(v=>`<option value="${escapeAttr(v.id)}">${escapeHtml(v.name)}</option>`).join(''); if(select) select.value=selected||'';
+        reporteDayAdvisors=bloques.map(b=>b.autor_name); reporteDayNotes=notes.error?[]:notes.data||[]; reporteDayData=reporteDayData2=bloques;
+        if(auto) auto.innerHTML=renderReporteV2(bloques, notes.error?[]:notes.data||[]);
       } catch (error) {
-        console.warn('No se pudo cargar el reporte diario:', error);
-        if (!valid()) return;
-        reporteWarnings.push('No se pudo completar el autollenado del reporte.');
-        const citas = citasResult && !citasResult.error ? (citasResult.data || []) : [];
-        const notas = notasResult && !notasResult.error ? (notasResult.data || []) : [];
-        render(buildBloques([], citas, notas, new Map()));
+        if(valid()&&auto) auto.innerHTML='<div class="rounded border border-rose-300 bg-rose-50 p-3 text-rose-700">No se pudo cargar el reporte diario. Intenta nuevamente.</div>';
       }
-      if (valid()) { const aviso = document.getElementById('reporteAviso'); if (aviso) aviso.textContent = [reporteAvisoBase, ...reporteWarnings].join(' '); }
     }
 
     async function saveReporteNota(i) {
@@ -5298,7 +5218,7 @@ async function loadLeadAppointments(leadId, lead) {
 
     async function deleteReporteNota(i) {
       const autor = reporteDayAdvisors[i];
-      const noteId = reporteDayData[i]?.nota?.id;
+      const noteId = reporteDayNotes.find(n => n.autor_name === autor)?.id;
       if (!autor || !noteId || !supabaseClient) return;
       const generation = sessionGeneration;
       const botones = [`reporte-save-${i}`, `reporte-delete-${i}`].map(id => document.getElementById(id)).filter(Boolean);
@@ -5350,16 +5270,23 @@ async function loadLeadAppointments(leadId, lead) {
     function exportReporteDiarioCSV() {
       if (!reporteDayData.length) { showToast('No hay datos para exportar', 'warning'); return; }
       const fecha = document.getElementById('reporteFecha')?.value || miamiToday();
-      const headers = ['Asesora', 'Total Gestionados', 'Agendados hoy', 'Asistieron hoy', 'No asistieron hoy', 'Inscritos', 'Inscritos Data Dura', 'Problemas', 'Observaciones'];
-      const sumas = { gestionados: 0, agendados: 0, asistieron: 0, noAsistieron: 0, inscritos: 0, inscritosDura: 0 };
-      const lineas = ['Reporte Diario de Trabajo', `Fecha: ${fecha}`, `Generado: ${miamiToday()} Miami`, '', headers.join(',')];
+      const headers = ['Asesora', 'Leads gestionados', 'WhatsApp', 'Facebook/Instagram', 'CogniTalking', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada y WhatsApp', 'Total llamadas', 'Agendados del día', 'Agendados Data Dura', 'Total agendados', 'Visitas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Inscritos del día', 'Inscritos Data Dura', 'Total inscritos', 'Problemas', 'Observaciones'];
+      const keys = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosTotal', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'inscritosDia', 'inscritosDura', 'inscritosTotal'];
+      const sumas = Object.fromEntries(keys.map(k => [k, 0]));
+      const selected = document.getElementById('reporteAsesora');
+      const filtro = selected?.value ? (selected.options[selected.selectedIndex]?.textContent || '') : '';
+      const lineas = ['Reporte Diario de Trabajo', `Fecha: ${fecha}`, `Generado: ${miamiToday()} Miami`, ...(filtro ? [`Filtro: ${filtro}`] : []), '', headers.map(csvReporteField).join(',')];
       reporteDayData.forEach((b, i) => {
-        sumas.gestionados += b.gestionados; sumas.agendados += b.agendados; sumas.asistieron += b.asistieron; sumas.noAsistieron += b.noAsistieron; sumas.inscritos += b.inscritos; sumas.inscritosDura += b.inscritosDura;
-        const problemas = document.getElementById(`reporte-problemas-${i}`)?.value || '';
-        const observaciones = document.getElementById(`reporte-obs-${i}`)?.value || '';
-        lineas.push([csvReporteField(b.advisor), csvReporteField(b.gestionados), csvReporteField(b.agendados), csvReporteField(b.asistieron), csvReporteField(b.noAsistieron), csvReporteField(b.inscritos), csvReporteField(b.inscritosDura), csvReporteField(problemas), csvReporteField(observaciones)].join(','));
+        const p = b.procedencia || {}, l = b.llamadas || {}, c = b.citas || {}, ins = b.inscritos || {};
+        const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, l.total, c.agendados_dia, c.agendados_data_dura, c.total_agendados, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, ins.del_dia, ins.data_dura, ins.total].map(v => Number(v) || 0);
+        values.forEach((v, n) => { sumas[keys[n]] += v; });
+        const notes = typeof reporteDayNotes === 'undefined' ? [] : reporteDayNotes;
+        const note = notes.find(n => n.autor_name === (b.autor_name ?? b.advisor)) || b.nota || {};
+        const problemas = document.getElementById(`reporte-problemas-${i}`)?.value ?? note.problemas ?? '';
+        const observaciones = document.getElementById(`reporte-obs-${i}`)?.value ?? note.observaciones ?? '';
+        lineas.push([b.autor_name ?? b.advisor, ...values, problemas, observaciones].map(csvReporteField).join(','));
       });
-      lineas.push([csvReporteField('TOTAL'), csvReporteField(sumas.gestionados), csvReporteField(sumas.agendados), csvReporteField(sumas.asistieron), csvReporteField(sumas.noAsistieron), csvReporteField(sumas.inscritos), csvReporteField(sumas.inscritosDura), csvReporteField(''), csvReporteField('')].join(','));
+      lineas.push(['TOTAL', ...keys.map(k => sumas[k]), '', ''].map(csvReporteField).join(','));
       downloadCSV(lineas.join('\n'), `Reporte_Diario_${fecha}.csv`);
       showToast('Reporte diario exportado a CSV', 'success');
     }

@@ -405,6 +405,18 @@ test('appointmentDetailsFrom recoge y recorta los tres campos opcionales', () =>
   assert.deepEqual(plain(c.appointmentDetailsFrom('sinCampos')), { student_name: '', contact_email: '', student_age: '' });
 });
 
+test('citas: lectura compartida para el equipo y botones de edición solo para asesora asignada o admin', () => {
+  const sql = readFileSync('supabase/migrations/202610020003_citas_lectura_equipo.sql', 'utf8').split('-- Rollback')[0];
+  assert.match(sql, /using \(public\.is_active_user\(\) and public\.is_crm_user\(\)\)/);
+  assert.doesNotMatch(sql, /advisor_user_id = auth\.uid\(\)/);
+  // Las escrituras siguen restringidas por RPC; el frontend oculta los botones.
+  assert.match(html, /canEdit = isAdmin \|\| a\.advisor_user_id === currentUser\?\.id/);
+  assert.match(html, /\$\{canEdit \? `<button data-appointment-id="\$\{id\}" onclick="editAppointmentDetails/);
+  assert.match(html, /\$\{scheduled && canEdit \?/);
+  assert.match(html, /\(isAdmin \|\| r\.advisor_user_id === currentUser\?\.id\) \? `<button onclick="editAppointmentDetails/);
+  // La ficha necesita advisor_user_id para calcular canEdit.
+  assert.match(html, /advisor_name, advisor_user_id, notes, rescheduled_from_id/);
+});
 test('migración de detalles de cita: columnas, p_details, validación, edición y reschedule conservador', () => {
   const sql = readFileSync('supabase/migrations/202610020002_appointment_student_details.sql', 'utf8');
   assert.match(sql, /add column if not exists student_name text/);

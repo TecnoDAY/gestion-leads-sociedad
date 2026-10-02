@@ -35,7 +35,7 @@ const names = [
   'loadReporteDiario', 'renderReporteV2', 'csvReporteField', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
   'exportReporteDiarioCSV', 'exportCampanasCSV', 'campaignCosteResultado', 'campaignTotals', 'loadCampanas',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
-  'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal'
+  'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom'
 ];
 const frontendSource = [...constants, ...names.map(extractFunction)].join('\n');
 
@@ -375,6 +375,53 @@ test('migración canal data dura manual: trigger normaliza, RPC prioriza marca y
   assert.match(sql, /is_data_dura is true or \(is_data_dura is null and public\._daily_report_data_dura/);
   assert.match(sql, /"'Nombre', 'Telefono', 'GESTION'"|[']Nombre', 'Telefono', 'GESTION'/);
   assert.match(sql, /telefono_invalido/);
+});
+
+test('citas: los tres formularios piden estudiante, correo y edad opcionales', () => {
+  for (const prefix of ['newAppointment', 'editAppointment', 'leadAppointment']) {
+    for (const field of ['StudentName', 'ContactEmail', 'StudentAge']) {
+      assert.ok(html.includes(`id="${prefix}${field}"`), `falta ${prefix}${field}`);
+    }
+  }
+  // La pestaña Citas muestra las tres columnas y el botón de edición.
+  assert.match(html, /<th class="p-3 text-left">Estudiante<\/th>/);
+  assert.match(html, /<th class="p-3 text-left">Correo<\/th>/);
+  assert.match(html, /<th class="p-3 text-left">Edad<\/th>/);
+  assert.match(html, /onclick="editAppointmentDetails\(\$\{r\.id\}\)"/);
+  // La ficha consulta los nuevos campos y permite editarlos.
+  assert.match(html, /student_name, contact_email, student_age/);
+  assert.match(html, /rpc\('update_lead_appointment_details'/);
+});
+
+test('appointmentDetailsFrom recoge y recorta los tres campos opcionales', () => {
+  const { context: c, element } = frontend();
+  element('newAppointmentStudentName').value = '  Ana Luz  ';
+  element('newAppointmentContactEmail').value = ' familia@correo.com ';
+  element('newAppointmentStudentAge').value = ' 10 ';
+  assert.deepEqual(plain(c.appointmentDetailsFrom('newAppointment')), {
+    student_name: 'Ana Luz', contact_email: 'familia@correo.com', student_age: '10'
+  });
+  // Prefijo sin campos/prefijo distinto devuelve cadenas vacías (sin error).
+  assert.deepEqual(plain(c.appointmentDetailsFrom('sinCampos')), { student_name: '', contact_email: '', student_age: '' });
+});
+
+test('migración de detalles de cita: columnas, p_details, validación, edición y reschedule conservador', () => {
+  const sql = readFileSync('supabase/migrations/202610020002_appointment_student_details.sql', 'utf8');
+  assert.match(sql, /add column if not exists student_name text/);
+  assert.match(sql, /add column if not exists contact_email text/);
+  assert.match(sql, /add column if not exists student_age smallint/);
+  assert.match(sql, /appointment_email_invalid/);
+  assert.match(sql, /appointment_age_invalid/);
+  // Validación de edad acotada 0-120.
+  assert.match(sql, /v_age < 0 or v_age > 120/);
+  // Las tres rutas de creación reciben p_details hacia la RPC central.
+  assert.match(sql, /create function public\.create_lead_appointment\(p_lead_id bigint, p_scheduled_at timestamptz, p_notes text default '', p_advisor_user_id uuid default null, p_details jsonb/);
+  assert.match(sql, /perform public\.create_lead_appointment\(created\.id, p_scheduled_at, p_notes, p_advisor_user_id, p_details\)/);
+  assert.match(sql, /perform public\.create_lead_appointment\(updated\.id, p_scheduled_at, p_notes, p_advisor_user_id, p_details\)/);
+  // Corrección posterior sólo para asesor asignado o admin.
+  assert.match(sql, /create or replace function public\.update_lead_appointment_details/);
+  // Reschedule conserva Data Dura y los datos del estudiante (regresión corregida).
+  assert.match(sql, /old_appointment\.is_data_dura, old_appointment\.student_name, old_appointment\.contact_email, old_appointment\.student_age/);
 });
 
 test('filtros y campos automáticos conservan el orden y readonly en HTML', () => {

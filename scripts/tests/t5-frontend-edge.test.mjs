@@ -530,6 +530,31 @@ test('inactividad: aviso a 4 min, cierre a 5, multi-pestaña y registro en tabla
   assert.doesNotMatch(sql, /ip_address|user_agent/);
 });
 
+test('citas por sede: requerida en las 3 rutas, filro/KPIs, corrección y reporte desglosado', () => {
+  const sql = readFileSync('supabase/migrations/202610020007_appointment_campus.sql', 'utf8');
+  assert.match(sql, /add column if not exists campus text/);
+  assert.match(sql, /add constraint lead_appointments_campus_check check \(campus in \('DORAL', 'WESTON'\)\)/);
+  assert.match(sql, /campus_invalid/);
+  assert.match(sql, /create or replace function public\.update_lead_appointment_campus\(p_id bigint, p_campus text\)/);
+  assert.match(sql, /'agendados_doral'/);
+  assert.match(sql, /'agendados_weston_data_dura'/);
+  // El reschedule conserva la sede (regresión corregida desde que existía el campo).
+  assert.match(sql, /old_appointment\.campus/);
+
+  // Frontend: radios obligatorios en las tres rutas
+  for (const prefix of ['newAppointment', 'editAppointment', 'leadAppointment'])
+    assert.match(html, new RegExp(`name="${prefix + 'Campus'}" value="DORAL" required`));
+  // Se rechaza la cita nueva sin sede
+  assert.match(html, /appointmentCampusFrom\('newAppointment'\)/);
+  assert.match(html, /appointmentCampusFrom\('editAppointment'\)/);
+  assert.match(html, /appointmentCampusFrom\('leadAppointment'\)/);
+  // Tabla, filtro y KPIs por sede; corrección con RPC dedicada
+  assert.match(html, /<th class="p-3 text-left">Sede<\/th>/);
+  assert.match(html, /id="citasSede"/);
+  assert.match(html, /\['Doral',rows\.filter\(r=>r\.campus==='DORAL'&&!r\.is_data_dura\)\.length\]/);
+  assert.match(html, /update_lead_appointment_campus/);
+});
+
 test('migración de detalles de cita: columnas, p_details, validación, edición y reschedule conservador', () => {
   const sql = readFileSync('supabase/migrations/202610020002_appointment_student_details.sql', 'utf8');
   assert.match(sql, /add column if not exists student_name text/);

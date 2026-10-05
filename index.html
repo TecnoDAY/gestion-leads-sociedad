@@ -4173,6 +4173,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       };
     }
     function appointmentDate(value) { const d = new Date(value); return Number.isNaN(d.getTime()) ? null : d; }
+    function appointmentCampusFrom(prefix) { return document.querySelector(`input[name="${prefix}Campus"]:checked`)?.value || ''; }
      function appointmentLocal(value) { const d = appointmentDate(value); return d ? d.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) : '-'; }
       function appointmentBadge(status) { const s = String(status || ''); return `<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[11px] font-semibold">${escapeHtml(s || '-')}</span>`; }
        function appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) { return generation === sessionGeneration && viewGeneration === viewLeadGeneration && String(currentViewId) === String(leadId) && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo; }

@@ -36,7 +36,8 @@ const names = [
   'exportReporteDiarioCSV', 'exportCampanasCSV', 'campaignCosteResultado', 'campaignTotals', 'loadCampanas',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
   'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'syncNewLeadMes',
-  'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentDate',
+  'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentDate', 'appointmentCampusFrom',
+  'toggleNewAppointmentFields', 'isAgendadoGestion', 'setBlockControls',
   'normalizePhone', 'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn'
 ];
 const frontendSource = [...constants, ...names.map(extractFunction)].join('\n');
@@ -46,6 +47,7 @@ function frontend(extra = {}) {
   const element = id => {
     if (!elements.has(id)) elements.set(id, {
       value: '', _innerHTML: '', textContent: '', innerText: '', options: [{ value: '' }],
+      querySelectorAll: () => [],
       get innerHTML() { return this._innerHTML; },
       set innerHTML(value) { this._innerHTML = value; this.options = []; this.value = ''; },
        classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
@@ -81,6 +83,7 @@ function frontend(extra = {}) {
   reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], reporteAsesorasDisponibles: [], campanasData: [],
     campanasRequestGeneration: 0, campanasLoading: false, campanasContextMonth: '', campaignStatsMap: new Map(),
     allLeads: [], allHistorico: [], filteredLeads: [], dataSource: 'actual', currentPage: 1, authorizedUsersList: [],
+    leadAppointmentAdvisors: [], newLeadSubmitting: false, newLeadRequestGeneration: 0, newLeadAdvisorGeneration: 0,
     catalogRows: { agente: [], campana: [], medio: [], gestion: [], mes: [] },
     ...extra,
   });
@@ -531,6 +534,68 @@ test('inactividad: aviso a 4 min, cierre a 5, multi-pestaña y registro en tabla
   assert.doesNotMatch(sql, /ip_address|user_agent/);
 });
 
+
+test('hotfix campera: appointmentCampusFrom existe y los guardados alcanzan la RPC correcta', async () => {
+  assert.match(html, /function appointmentCampusFrom\(prefix\)/);
+  const radios = [{ value: 'DORAL', checked: false }, { value: 'WESTON', checked: false }];
+  const { context: c } = frontend();
+  c.document.querySelector = sel => sel.startsWith('input[name="newAppointmentCampus"') ? radios.find(r => r.checked) || null : null;
+  assert.equal(c.appointmentCampusFrom('newAppointment'), '');
+  radios[0].checked = true;
+  assert.equal(c.appointmentCampusFrom('newAppointment'), 'DORAL');
+
+  const prepare = radioValue => {
+    radios[0].checked = radioValue === 'DORAL'; radios[1].checked = radioValue === 'WESTON';
+    const db = database({ create_lead: { id: 7 }, create_lead_with_appointment: { id: 9 } });
+    const f = frontend({ supabaseClient: db });
+    const c2 = f.context;
+    const el = f.element;
+    c2.document.querySelector = sel => sel.startsWith('input[name="newAppointmentCampus"') ? radios.find(r => r.checked) || null : null;
+    c2.miamiToday = () => '2026-10-05';
+    c2.formatPhone = v => v;
+    c2.isSupabaseLive = true;
+    c2.upsertLeadInState = () => {};
+    c2.updateConnectionStatus = () => {};
+    c2.closeNewLeadModal = () => {};
+    c2.populateFilterOptions = () => {};
+    c2.applyFilters = () => {};
+    el('newFechaLlegada').value = '2026-10-05';
+    return { db, c: c2, el };
+  };
+
+  // 1) Gestión normal (caso Loli: "Menor 5 años"): no hay campos de cita y debe llegar a create_lead.
+  {
+    const { db, c, el } = prepare(null);
+    el('newGestion').value = 'Menor 5 años';
+    await c.handleCreateLead({ preventDefault() {} });
+    assert.equal(db.rpcCalls.length, 1, 'una sola llamada');
+    assert.equal(db.rpcCalls[0].name, 'create_lead');
+    assert.deepEqual(Object.keys(db.rpcCalls[0].args), ['p_lead']);
+  }
+
+  // 2) Agendado sin sede: no llama al backend y avisa.
+  {
+    const { db, c, el } = prepare(null), shown = [];
+    c.showToast = (...a) => shown.push(a);
+    el('newGestion').value = 'Agendado';
+    el('newAppointmentDate').value = '2026-10-06T18:00';
+    await c.handleCreateLead({ preventDefault() {} });
+    assert.equal(db.rpcCalls.length, 0, 'sin sede no viaja');
+    assert.match(shown.map(t => t[0]).join(' | '), /sede|cita/i);
+  }
+
+  // 3) Agendado con sede: viaja a la RPC atómica con campus.
+  {
+    const { db, c, el } = prepare('WESTON');
+    el('newGestion').value = 'Agendado';
+    el('newAppointmentDate').value = '2026-10-06T18:00';
+    await c.handleCreateLead({ preventDefault() {} });
+    assert.equal(db.rpcCalls.length, 1);
+    assert.equal(db.rpcCalls[0].name, 'create_lead_with_appointment');
+    assert.equal(db.rpcCalls[0].args.p_campus, 'WESTON');
+    assert.equal(db.rpcCalls[0].args.p_lead.GESTION, 'Agendado');
+  }
+});
 
 test('hotfix alta atomica: create_lead_with_appointment usa la interna y los bloques condicionales no rompen otros guardados', () => {
   const sql = readFileSync('supabase/migrations/202610050001_fix_atomic_appointment_creation.sql', 'utf8');

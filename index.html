@@ -1280,6 +1280,12 @@
 
         <p id="editAppointmentAlreadyNotice" class="hidden text-[11px] text-slate-400">Este lead ya estaba agendado, así que no se crea una cita nueva aquí. Las citas adicionales se gestionan desde la ficha del lead.</p>
 
+        <div id="editExistingCampusBlock" class="hidden sm:col-span-2 border border-indigo-500/30 rounded-lg p-3 space-y-2">
+          <p id="editExistingCampusInfo" class="text-[11px] text-slate-400">Cita programada: cargando…</p>
+          <div class="flex items-center gap-3"><span class="text-[11px] text-slate-400">Sede de la cita *</span><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="editExistingCampus" value="DORAL" class="accent-indigo-500"> Doral</label><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="editExistingCampus" value="WESTON" class="accent-indigo-500"> Weston</label></div>
+          <p id="editExistingCampusNotice" class="hidden text-[11px] text-amber-300"></p>
+        </div>
+
         <div id="editAppointmentFields" class="hidden sm:col-span-2 grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end border border-indigo-500/30 rounded-lg p-3">
           <label class="text-[11px] text-slate-400">Fecha y hora de la cita<input id="editAppointmentDate" type="datetime-local" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
           <div class="sm:col-span-3 flex items-center gap-3"><span class="text-[11px] text-slate-400">Sede de la cita *</span><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="editAppointmentCampus" value="DORAL" required class="accent-indigo-500"> Doral</label><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="editAppointmentCampus" value="WESTON" required class="accent-indigo-500"> Weston</label></div>
@@ -3601,13 +3607,47 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // 9. EDITAR / SEGUIMIENTO LEAD (UPDATE)
     // -------------------------------------------------------------
     function editLeadNeedsAppointment() { return !isAgendadoGestion(editLeadPreviousGestion) && isAgendadoGestion(document.getElementById('editGestion')?.value); }
+    let editExistingAppointment = null;
+    // El lead ya era Agendado y sigue Agendado: no se crea cita nueva, pero la
+    // cita PROGRAMADA existente se puede sedar (o corregir de sede) aqui.
+    function editLeadStaysAgendado() { return isAgendadoGestion(editLeadPreviousGestion) && isAgendadoGestion(document.getElementById('editGestion')?.value); }
+    function setExistingCampusNotice(message) { const n = document.getElementById('editExistingCampusNotice'); if (!n) return; n.innerText = message || ''; n.classList.toggle('hidden', !message); }
+    async function loadEditExistingAppointment(leadId) {
+      const gen = ++editLeadRequestGeneration, sess = sessionGeneration, uid = currentUser?.id, access = currentAccess?.updated_at;
+      editExistingAppointment = null;
+      const radios = document.querySelectorAll('input[name="editExistingCampus"]');
+      radios.forEach(r => { r.checked = false; r.disabled = true; });
+      setExistingCampusNotice('');
+      const info = document.getElementById('editExistingCampusInfo');
+      const { data, error } = await supabaseClient.from('lead_appointments').select('id,scheduled_at,advisor_name,advisor_user_id,campus').eq('lead_id', Number(leadId)).eq('status', 'PROGRAMADA').order('scheduled_at', { ascending: true });
+      if (gen !== editLeadRequestGeneration) return;
+      if (sessionGeneration !== sess || currentUser?.id !== uid || currentAccess?.updated_at !== access) return;
+      if (document.getElementById('modalEditLead')?.classList.contains('hidden')) return;
+      const appointments = data || [];
+      if (error) { if (info) info.innerText = 'Cita programada: no se pudo cargar'; setExistingCampusNotice('Revisa la sede desde la ficha del lead.'); return; }
+      if (appointments.length !== 1) {
+        if (info) info.innerText = appointments.length ? 'Cita programada: hay varias vigentes' : 'Cita programada: no se encontró ninguna vigente';
+        setExistingCampusNotice(appointments.length ? 'Corrección de sede desde la ficha del lead (hay varias citas programadas).' : 'Si el lead no tiene una cita activa, créala o corrígela desde la ficha.');
+        return;
+      }
+      editExistingAppointment = appointments[0];
+      const fmt = appointmentDate(editExistingAppointment.scheduled_at);
+      if (info) info.innerText = 'Cita programada: ' + (fmt ? fmt.toLocaleString('es-US') : '-') + ' · ' + (editExistingAppointment.advisor_name || '');
+      const mine = isAdmin || editExistingAppointment.advisor_user_id === currentUser?.id;
+      radios.forEach(r => { r.disabled = !mine; r.checked = mine && r.value === editExistingAppointment.campus; });
+      if (!mine) setExistingCampusNotice('Solo la asesora asignada o un administrador pueden cambiar la sede.');
+    }
+
     function editSessionValid(generation, requestGeneration, userId, accessUpdatedAt) { return generation === sessionGeneration && requestGeneration === editLeadRequestGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && !document.getElementById('modalEditLead')?.classList.contains('hidden'); }
     function editAppointmentSubmitBlocked() { return editLeadNeedsAppointment() && isAdmin && (!leadAppointmentAdvisors.length || !document.getElementById('editAppointmentAdvisor')?.value); }
     function updateEditSubmitState() { const submit = document.getElementById('btnSubmitEditLead'); if (submit && !editLeadSubmitting) submit.disabled = editAppointmentSubmitBlocked(); }
     function applyEditAppointmentVisibility() {
       const needs = editLeadNeedsAppointment(), block = document.getElementById('editAppointmentFields'), date = document.getElementById('editAppointmentDate');
       const already = document.getElementById('editAppointmentAlreadyNotice');
-      if (already) already.classList.toggle('hidden', !(isAgendadoGestion(editLeadPreviousGestion) && isAgendadoGestion(document.getElementById('editGestion')?.value)));
+      const stays = editLeadStaysAgendado();
+      if (already) already.classList.toggle('hidden', !stays);
+      document.getElementById('editExistingCampusBlock')?.classList.toggle('hidden', !stays);
+      if (!stays) { editExistingAppointment = null; setExistingCampusNotice(''); }
       block?.classList.toggle('hidden', !needs);
       if (date) date.required = needs;
       document.getElementById('editAppointmentAdvisorWrap')?.classList.toggle('hidden', !(needs && isAdmin));
@@ -3616,7 +3656,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       updateEditSubmitState();
     }
     function resetEditAppointmentValues() { const date = document.getElementById('editAppointmentDate'); if (date) { date.value = ''; date.required = false; } const note = document.getElementById('editAppointmentNote'); if (note) note.value = ''; const advisor = document.getElementById('editAppointmentAdvisor'); if (advisor) advisor.value = ''; document.querySelectorAll('input[name="editAppointmentCampus"]').forEach(r => { r.checked = false; }); ['StudentName','ContactEmail','StudentAge'].forEach(suffix => { const el = document.getElementById('editAppointment' + suffix); if (el) el.value = ''; }); }
-    function hideEditAppointmentFields() { const block = document.getElementById('editAppointmentFields'); block?.classList.add('hidden'); setBlockControls(block, false); document.getElementById('editAppointmentAdvisorWrap')?.classList.add('hidden'); document.getElementById('editAppointmentAlreadyNotice')?.classList.add('hidden'); resetEditAppointmentValues(); const submit = document.getElementById('btnSubmitEditLead'); if (submit) submit.disabled = false; }
+    function hideEditAppointmentFields() { const block = document.getElementById('editAppointmentFields'); block?.classList.add('hidden'); setBlockControls(block, false); document.getElementById('editAppointmentAdvisorWrap')?.classList.add('hidden'); document.getElementById('editAppointmentAlreadyNotice')?.classList.add('hidden'); document.getElementById('editExistingCampusBlock')?.classList.add('hidden'); document.querySelectorAll('input[name="editExistingCampus"]').forEach(r => { r.checked = false; r.disabled = false; }); document.getElementById('editExistingCampusInfo') && (document.getElementById('editExistingCampusInfo').innerText = 'Cita programada: cargando…'); editExistingAppointment = null; setExistingCampusNotice(''); resetEditAppointmentValues(); const submit = document.getElementById('btnSubmitEditLead'); if (submit) submit.disabled = false; }
     function toggleEditAppointmentFields() { applyEditAppointmentVisibility(); if (editLeadNeedsAppointment()) loadEditAppointmentAdvisors(); }
     async function loadEditAppointmentAdvisors() {
       const select = document.getElementById('editAppointmentAdvisor');
@@ -3731,6 +3771,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         if (window.lucide) lucide.createIcons();
         applyEditAppointmentVisibility();
         if (editLeadNeedsAppointment()) loadEditAppointmentAdvisors();
+        if (editLeadStaysAgendado()) loadEditExistingAppointment(leadId);
       }
     }
 
@@ -3820,6 +3861,21 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
       try {
         if (supabaseClient) {
+          if (!needsAppointment && editLeadStaysAgendado() && editExistingAppointment) {
+            const appt = editExistingAppointment;
+            const mine = isAdmin || appt.advisor_user_id === currentUser.id;
+            const campusRadio = document.querySelector('input[name="editExistingCampus"]:checked');
+            if (mine) {
+              const campus = campusRadio?.value || '';
+              if (!campus) { showToast('Selecciona la sede de la cita', 'warning'); return; }
+              if (campus !== appt.campus) {
+                const { error: campusError } = await supabaseClient.rpc('update_lead_appointment_campus', { p_id: appt.id, p_campus: campus });
+                if (!validRequest()) return;
+                if (campusError) { showToast('No se pudo cambiar la sede: ' + (campusError.message || ''), 'error'); return; }
+                invalidateCitasCache();
+              }
+            }
+          }
           let updated;
           let error;
           if (needsAppointment) {
@@ -4393,6 +4449,7 @@ async function loadLeadAppointments(leadId, lead) {
           'Los estados posibles de una cita son PROGRAMADA, ASISTIO, NO_ASISTIO, CANCELADA y REPROGRAMADA.',
           'El resultado se puede marcar solo mientras la cita está PROGRAMADA.',
           'La sede se eligió al crear la cita; para corregirla después usa el botón "Sede" (asesor asignado o admin) sin tocar el estado ni la fecha.',
+          'Si el lead ya estaba agendado, el formulario Actualizar Seguimiento también muestra la sede de su cita vigente: puedes elegir Doral o Weston allí sin crear una cita nueva.',
           'Nombre del estudiante, correo de contacto y edad son opcionales: si no los tienes al agendar, el botón "Editar datos" los completa más tarde.',
           'La tabla de la pestaña Citas no muestra la columna Medio para dejar espacio a Estudiante, Correo, Edad y Sede, pero los filtros por Medio y Sede siguen disponibles.',
           'Las citas creadas antes de que existiera la sede aparecen como "Sin sede"; no se asignó una sede retroactiva para no inventar información.',

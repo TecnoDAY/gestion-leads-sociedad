@@ -36,6 +36,7 @@ const names = [
   'exportReporteDiarioCSV', 'exportCampanasCSV', 'campaignCosteResultado', 'campaignTotals', 'loadCampanas',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
   'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'syncNewLeadMes',
+  'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentDate',
   'normalizePhone', 'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn'
 ];
 const frontendSource = [...constants, ...names.map(extractFunction)].join('\n');
@@ -47,7 +48,7 @@ function frontend(extra = {}) {
       value: '', _innerHTML: '', textContent: '', innerText: '', options: [{ value: '' }],
       get innerHTML() { return this._innerHTML; },
       set innerHTML(value) { this._innerHTML = value; this.options = []; this.value = ''; },
-       classList: { add() {}, remove() {}, toggle() {} },
+       classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
       appendChild(option) { this.options.push(option); if (option.selected || this.options.length === 1) this.value = option.value; },
       replaceChildren() { this.innerHTML = ''; },
     });
@@ -530,6 +531,66 @@ test('inactividad: aviso a 4 min, cierre a 5, multi-pestaña y registro en tabla
   assert.doesNotMatch(sql, /ip_address|user_agent/);
 });
 
+
+test('hotfix alta atomica: create_lead_with_appointment usa la interna y los bloques condicionales no rompen otros guardados', () => {
+  const sql = readFileSync('supabase/migrations/202610050001_fix_atomic_appointment_creation.sql', 'utf8');
+  assert.match(sql, /create or replace function public\._create_lead_with_gestion\(p_lead jsonb\)/);
+  assert.match(sql, /created := public\._create_lead_with_gestion\(p_lead\);\n  perform public\.create_lead_appointment/);
+  assert.match(sql, /revoke all on function public\._create_lead_with_gestion\(jsonb\) from public, anon, authenticated, service_role/);
+  // La traduccion de errores evita mensajes tecnicos en el navegador.
+  assert.match(html, /function formatSaveError\(error, agendado\)/);
+  assert.match(html, /Correo de contacto no válido/);
+  assert.match(html, /Edad no válida/);
+  assert.match(html, /Asesor no activo|campaign_not_in_catalog/);
+  // Los bloques de cita dentro del formulario no pueden quedar required+ocultos:
+  assert.match(html, /function setBlockControls\(container, disabled\)/);
+  assert.match(html, /setBlockControls\(block, !visible\)/);
+  assert.match(html, /setBlockControls\(block, !needs\)/);
+  assert.match(html, /setBlockControls\(block, false\)/);
+  // Los campos de detalles opcionales se limpian al ocultar la cita.
+  assert.match(html, /document\.getElementById\('newAppointment'\+suffix\)/);
+  assert.match(html, /document\.getElementById\('editAppointment' \+ suffix\)/);
+});
+
+test('editar lead ya agendado: sede de la cita visible y editable sin crear cita nueva', async () => {
+  assert.match(html, /id="editExistingCampusBlock" class="hidden sm:col-span-2 border/);
+  assert.match(html, /name="editExistingCampus" value="DORAL"/);
+  assert.match(html, /name="editExistingCampus" value="WESTON"/);
+  assert.match(html, /loadEditExistingAppointment\(leadId\)/);
+  assert.match(html, /update_lead_appointment_campus', \{ p_id: appt\.id, p_campus: campus \}/);
+  // No duplica citas: sigue mostrándose el aviso "ya estaba agendado".
+  assert.match(html, /id="editAppointmentAlreadyNotice"/);
+
+  // Comportamiento runtime: lead ya agendado con una cita vigente Doral.
+  const d = new Date('2026-03-05T12:00:00.000Z');
+  d.toLocaleString = () => '3/5/2026, 8:00';
+  const appt = { id: 9, lead_id: 1, status: 'PROGRAMADA', scheduled_at: d.toISOString(), advisor_name: 'Ana', advisor_user_id: 'user-test', campus: 'DORAL' };
+  const db = database({ lead_appointments: [appt] });
+  const checked = [];
+  const radios = ['DORAL', 'WESTON'].map((v, i) => ({
+    value: v, _checked: false, disabled: false,
+    set checked(b) { this._checked = b; checked[i] = b; },
+    get checked() { return this._checked; },
+  }));
+  const { context: c, element } = frontend({
+    supabaseClient: db, isAdmin: false,
+    editLeadRequestGeneration: 0, editLeadPreviousGestion: 'AGENDADO',
+  });
+  c.document.querySelectorAll = sel => sel === 'input[name="editExistingCampus"]' ? radios : [];
+  await c.loadEditExistingAppointment(1);
+  assert.deepEqual(checked, [true, false], 'la sede actual queda marcada');
+  assert.equal(c.editExistingAppointment.id, 9);
+
+  // Varios citas vigentes o ninguna: radioses deshabilitadas y aviso.
+  const db2 = database({ lead_appointments: [appt, { ...appt, id: 10 }] });
+  const f2 = frontend({ supabaseClient: db2, editLeadRequestGeneration: 0 });
+  const radios2 = ['DORAL', 'WESTON'].map(v => ({ value: v, checked: false, disabled: false }));
+  f2.context.document.querySelectorAll = () => radios2;
+  await f2.context.loadEditExistingAppointment(1);
+  assert.equal(f2.context.editExistingAppointment, null);
+  assert.ok(radios2.every(r => r.disabled));
+});
+
 test('citas por sede: requerida en las 3 rutas, filro/KPIs, corrección y reporte desglosado', () => {
   const sql = readFileSync('supabase/migrations/202610020007_appointment_campus.sql', 'utf8');
   assert.match(sql, /add column if not exists campus text/);
@@ -553,6 +614,13 @@ test('citas por sede: requerida en las 3 rutas, filro/KPIs, corrección y report
   assert.match(html, /id="citasSede"/);
   assert.match(html, /\['Doral',rows\.filter\(r=>r\.campus==='DORAL'&&!r\.is_data_dura\)\.length\]/);
   assert.match(html, /update_lead_appointment_campus/);
+  // Lead ya Agendado: el modal de Actualizar Seguimiento tambien seda la cita
+  // vigente sin crear otra (bloque con radios reutilizando la RPC existente).
+  assert.match(html, /id="editExistingCampusBlock"/);
+  assert.match(html, /name="editExistingCampus" value="DORAL"/);
+  assert.match(html, /editLeadStaysAgendado\(\)/);
+  assert.match(html, /loadEditExistingAppointment\(leadId\)/);
+  assert.match(html, /update_lead_appointment_campus', \{ p_id: appt\.id, p_campus: campus \}/);
 });
 
 test('migración de detalles de cita: columnas, p_details, validación, edición y reschedule conservador', () => {

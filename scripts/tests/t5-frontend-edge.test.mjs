@@ -36,7 +36,9 @@ const names = [
   'exportReporteDiarioCSV', 'exportCampanasCSV', 'campaignCosteResultado', 'campaignTotals', 'loadCampanas',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
   'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'syncNewLeadMes',
-  'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentDate', 'appointmentCampusFrom',
+  'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentDate', 'appointmentInputISO', 'appointmentLocal', 'appointmentCampusFrom',
+  'createLeadAppointment', 'editAppointmentDetails', 'editAppointmentCampus', 'setLeadAppointmentStatus', 'rescheduleLeadAppointment',
+  'setAppointmentMutationPending',
   'toggleNewAppointmentFields', 'isAgendadoGestion', 'setBlockControls',
   'normalizePhone', 'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn'
 ];
@@ -61,6 +63,8 @@ function frontend(extra = {}) {
     URL: { createObjectURL(blob) { downloads.push({ blob }); return 'blob:synthetic'; }, revokeObjectURL(url) { downloads.at(-1).revoked = url; } },
     document: {
       getElementById: element,
+      querySelector: () => null,
+      querySelectorAll: () => [],
       createElement: tag => {
         if (tag === 'option') return {};
         const download = downloads.at(-1) || {};
@@ -499,6 +503,7 @@ test('ayuda: refleja el comportamiento actual y no repite reglas retiradas', () 
   assert.match(help, /No admite fechas futuras/);
   assert.match(help, /Si el teléfono ya está en la base/);
   assert.match(help, /calendario completo de citas del equipo/);
+  assert.match(help, /zona horaria de Miami/);
   assert.match(help, /Solo la asesora asignada a la cita \(o un administrador\) puede modificarla/);
   assert.match(help, /nombre del estudiante, un correo de contacto y su edad/);
   assert.match(help, /conserva la marca Data Dura y los datos del estudiante/);
@@ -597,6 +602,154 @@ test('hotfix campera: appointmentCampusFrom existe y los guardados alcanzan la R
   }
 });
 
+test('contrato RPC de citas: una asesora envia todos los nombres, incluidos UUID null', async () => {
+  const expectedUpdate = ['p_advisor_user_id','p_campus','p_details','p_fields','p_id','p_notes','p_scheduled_at'];
+  const expectedCreate = ['p_advisor_user_id','p_campus','p_details','p_lead_id','p_notes','p_scheduled_at'];
+  const campus = { value: 'DORAL', checked: true };
+
+  // Información -> Agendado desde Actualizar Seguimiento.
+  {
+    const db = database({ update_lead_with_appointment: { id: 4590, GESTION: 'Agendado' } });
+    const f = frontend({
+      supabaseClient: db, isAdmin: false, editLeadSubmitting: false,
+      editLeadRequestGeneration: 0, editLeadPreviousGestion: 'Información', currentEditOrigin: 'actual',
+    });
+    const c = f.context, el = f.element;
+    c.document.querySelector = sel => sel === 'input[name="editAppointmentCampus"]:checked' ? campus : null;
+    c.editLeadNeedsAppointment = () => true;
+    c.editLeadStaysAgendado = () => false;
+    c.editSessionValid = () => true;
+    c.formatPhone = v => v;
+    c.isSupabaseLive = true;
+    c.upsertLeadInState = () => {};
+    c.updateConnectionStatus = () => {};
+    c.closeEditLeadModal = () => {};
+    c.populateFilterOptions = () => {};
+    c.applyFilters = () => {};
+    c.updateEditSubmitState = () => {};
+    c.formatSaveError = e => e?.message || '';
+    el('editLeadId').value = '4590';
+    el('editGestion').value = 'Agendado';
+    el('editAppointmentDate').value = '2026-10-10T10:00';
+    await c.handleUpdateLead({ preventDefault() {} });
+    assert.equal(db.rpcCalls.length, 1);
+    assert.equal(db.rpcCalls[0].name, 'update_lead_with_appointment');
+    assert.deepEqual(Object.keys(db.rpcCalls[0].args).sort(), expectedUpdate);
+    assert.equal(db.rpcCalls[0].args.p_advisor_user_id, null);
+  }
+
+  // Nueva cita desde la ficha de un lead ya Agendado.
+  {
+    const db = database({ create_lead_appointment: { id: 11 } });
+    const f = frontend({ supabaseClient: db, isAdmin: false, currentViewId: 4590, pendingAppointmentMutations: new Map() });
+    const c = f.context, el = f.element;
+    c.document.querySelector = sel => sel === 'input[name="leadAppointmentCampus"]:checked' ? campus : null;
+    c.invalidateCitasCache = () => {};
+    c.loadLeadAppointments = async () => {};
+    el('leadAppointmentDate').value = '2026-10-11T10:00';
+    await c.createLeadAppointment({ preventDefault() {}, target: { reset() {} } });
+    assert.equal(db.rpcCalls.length, 1);
+    assert.equal(db.rpcCalls[0].name, 'create_lead_appointment');
+    assert.deepEqual(Object.keys(db.rpcCalls[0].args).sort(), expectedCreate);
+    assert.equal(db.rpcCalls[0].args.p_advisor_user_id, null);
+  }
+
+  // El admin usa las mismas firmas, pero envia el asesor elegido.
+  {
+    const db = database({ update_lead_with_appointment: { id: 4590, GESTION: 'Agendado' } });
+    const f = frontend({ supabaseClient: db, isAdmin: true, editLeadSubmitting: false, editLeadRequestGeneration: 0, editLeadPreviousGestion: 'Información', currentEditOrigin: 'actual', leadAppointmentAdvisors: [{ user_id: 'advisor-2' }] });
+    const c = f.context, el = f.element;
+    c.document.querySelector = sel => sel === 'input[name="editAppointmentCampus"]:checked' ? campus : null;
+    Object.assign(c, { editLeadNeedsAppointment: () => true, editLeadStaysAgendado: () => false, editSessionValid: () => true, formatPhone: v => v, isSupabaseLive: true, upsertLeadInState() {}, updateConnectionStatus() {}, closeEditLeadModal() {}, populateFilterOptions() {}, applyFilters() {}, updateEditSubmitState() {}, formatSaveError: e => e?.message || '' });
+    el('editLeadId').value = '4590'; el('editGestion').value = 'Agendado'; el('editAppointmentDate').value = '2026-10-10T10:00'; el('editAppointmentAdvisor').value = 'advisor-2';
+    await c.handleUpdateLead({ preventDefault() {} });
+    assert.deepEqual(Object.keys(db.rpcCalls[0].args).sort(), expectedUpdate);
+    assert.equal(db.rpcCalls[0].args.p_advisor_user_id, 'advisor-2');
+  }
+  {
+    const db = database({ create_lead_appointment: { id: 12 } });
+    const f = frontend({ supabaseClient: db, isAdmin: true, currentViewId: 4590, pendingAppointmentMutations: new Map() });
+    const c = f.context, el = f.element;
+    c.document.querySelector = sel => sel === 'input[name="leadAppointmentCampus"]:checked' ? campus : null;
+    c.invalidateCitasCache = () => {}; c.loadLeadAppointments = async () => {};
+    el('leadAppointmentDate').value = '2026-10-11T10:00'; el('leadAppointmentAdvisor').value = 'advisor-2';
+    await c.createLeadAppointment({ preventDefault() {}, target: { reset() {} } });
+    assert.deepEqual(Object.keys(db.rpcCalls[0].args).sort(), expectedCreate);
+    assert.equal(db.rpcCalls[0].args.p_advisor_user_id, 'advisor-2');
+  }
+});
+
+test('mutaciones de cita ejecutan sus RPC con contratos completos', async () => {
+  const appointment = { id: 21, advisor_user_id: 'user-test', student_name: 'Ana', contact_email: '', student_age: 10, campus: 'DORAL' };
+  const setup = (rpcName, prompts = []) => {
+    const db = database({ [rpcName]: { id: 21 } });
+    const f = frontend({
+      supabaseClient: db, currentViewId: 4590, leadAppointmentsCache: [appointment],
+      pendingAppointmentMutations: new Map(), prompt: () => prompts.shift(),
+    });
+    const c = f.context;
+    c.document.querySelector = () => null;
+    c.invalidateCitasCache = () => {};
+    c.loadLeadAppointments = async () => {};
+    return { db, c, el: f.element };
+  };
+
+  {
+    const { db, c } = setup('update_lead_appointment_details', ['Nicolas', 'nicolas@example.com', '10']);
+    await c.editAppointmentDetails(21);
+    assert.deepEqual(Object.keys(db.rpcCalls[0].args).sort(), ['p_details','p_id']);
+  }
+  {
+    const { db, c } = setup('update_lead_appointment_campus', ['Weston']);
+    await c.editAppointmentCampus(21);
+    assert.deepEqual(Object.keys(db.rpcCalls[0].args).sort(), ['p_campus','p_id']);
+    assert.equal(db.rpcCalls[0].args.p_campus, 'WESTON');
+  }
+  {
+    const { db, c } = setup('set_lead_appointment_status');
+    await c.setLeadAppointmentStatus(21, 'ASISTIO');
+    assert.deepEqual(Object.keys(db.rpcCalls[0].args).sort(), ['p_id','p_notes','p_status']);
+  }
+  {
+    const { db, c, el } = setup('reschedule_lead_appointment');
+    el('reschedule-21').value = '2026-10-12T10:00';
+    await c.rescheduleLeadAppointment(21);
+    assert.deepEqual(Object.keys(db.rpcCalls[0].args).sort(), ['p_id','p_notes','p_scheduled_at']);
+  }
+});
+
+test('seguimiento y cambio de sede se guardan con una sola RPC atomica', async () => {
+  const sql = readFileSync('supabase/migrations/202610050002_atomic_followup_appointment_campus.sql', 'utf8');
+  assert.match(sql, /updated := public\.update_lead_followup\(p_id, p_fields\);[\s\S]*perform public\.update_lead_appointment_campus\(p_appointment_id, p_campus\);/);
+  assert.match(sql, /appointment_lead_id <> p_id/);
+  assert.match(sql, /revoke all on function public\.update_lead_followup_with_appointment_campus[\s\S]*from public, anon/);
+
+  const db = database({ update_lead_followup_with_appointment_campus: { id: 4590, GESTION: 'Agendado' } });
+  const f = frontend({
+    supabaseClient: db, isAdmin: false, editLeadSubmitting: false, editLeadRequestGeneration: 0,
+    editLeadPreviousGestion: 'Agendado', currentEditOrigin: 'actual',
+    editExistingAppointment: { id: 21, advisor_user_id: 'user-test', campus: 'DORAL' },
+  });
+  const c = f.context, el = f.element;
+  c.document.querySelector = sel => sel === 'input[name="editExistingCampus"]:checked' ? { value: 'WESTON' } : null;
+  Object.assign(c, { editLeadNeedsAppointment: () => false, editLeadStaysAgendado: () => true, editSessionValid: () => true, formatPhone: v => v, isSupabaseLive: true, upsertLeadInState() {}, updateConnectionStatus() {}, closeEditLeadModal() {}, populateFilterOptions() {}, applyFilters() {}, updateEditSubmitState() {}, invalidateCitasCache() {}, formatSaveError: e => e?.message || '' });
+  el('editLeadId').value = '4590'; el('editGestion').value = 'Agendado';
+  await c.handleUpdateLead({ preventDefault() {} });
+  assert.equal(db.rpcCalls.length, 1);
+  assert.equal(db.rpcCalls[0].name, 'update_lead_followup_with_appointment_campus');
+  assert.deepEqual(Object.keys(db.rpcCalls[0].args).sort(), ['p_appointment_id','p_campus','p_fields','p_id']);
+});
+
+test('hora de citas se interpreta y se muestra siempre en Miami', () => {
+  const { context: c } = frontend();
+  assert.equal(c.appointmentInputISO('2026-01-15T10:00'), '2026-01-15T15:00:00.000Z');
+  assert.equal(c.appointmentInputISO('2026-07-15T10:00'), '2026-07-15T14:00:00.000Z');
+  assert.equal(c.appointmentInputISO('2026-03-08T02:30'), null, 'hora inexistente por inicio DST');
+  assert.equal(c.appointmentInputISO('2026-11-01T01:30'), null, 'hora ambigua por fin DST');
+  assert.match(c.appointmentLocal('2026-07-15T14:00:00.000Z'), /10:00/);
+  assert.match(c.appointmentLocal('2026-01-15T15:00:00.000Z'), /10:00/);
+});
+
 test('hotfix alta atomica: create_lead_with_appointment usa la interna y los bloques condicionales no rompen otros guardados', () => {
   const sql = readFileSync('supabase/migrations/202610050001_fix_atomic_appointment_creation.sql', 'utf8');
   assert.match(sql, /create or replace function public\._create_lead_with_gestion\(p_lead jsonb\)/);
@@ -622,7 +775,7 @@ test('editar lead ya agendado: sede de la cita visible y editable sin crear cita
   assert.match(html, /name="editExistingCampus" value="DORAL"/);
   assert.match(html, /name="editExistingCampus" value="WESTON"/);
   assert.match(html, /loadEditExistingAppointment\(leadId\)/);
-  assert.match(html, /update_lead_appointment_campus', \{ p_id: appt\.id, p_campus: campus \}/);
+  assert.match(html, /update_lead_followup_with_appointment_campus/);
   // No duplica citas: sigue mostrándose el aviso "ya estaba agendado".
   assert.match(html, /id="editAppointmentAlreadyNotice"/);
 
@@ -685,7 +838,7 @@ test('citas por sede: requerida en las 3 rutas, filro/KPIs, corrección y report
   assert.match(html, /name="editExistingCampus" value="DORAL"/);
   assert.match(html, /editLeadStaysAgendado\(\)/);
   assert.match(html, /loadEditExistingAppointment\(leadId\)/);
-  assert.match(html, /update_lead_appointment_campus', \{ p_id: appt\.id, p_campus: campus \}/);
+  assert.match(html, /update_lead_followup_with_appointment_campus/);
 });
 
 test('migración de detalles de cita: columnas, p_details, validación, edición y reschedule conservador', () => {

@@ -3448,10 +3448,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // 8. CREAR LEAD (INSERT)
     // -------------------------------------------------------------
     function isAgendadoGestion(value) { return String(value || '').trim().toUpperCase().startsWith('AGENDAD'); }
+    // Los bloques condicionales de cita viven dentro del <form>; si siguen
+    // 'required' ocultos bloquean todo el resto del formulario. Se deshabilitan.
+    function setBlockControls(container, disabled) { if (!container) return; container.querySelectorAll('input, textarea, select').forEach(el => { el.disabled = disabled; }); }
     function toggleNewAppointmentFields() {
       const visible=isAgendadoGestion(document.getElementById('newGestion')?.value), block=document.getElementById('newAppointmentFields'), date=document.getElementById('newAppointmentDate');
       block?.classList.toggle('hidden',!visible); if(date) date.required=visible; document.getElementById('newAppointmentAdvisorWrap')?.classList.toggle('hidden',!(visible&&isAdmin));
-      if(!visible){if(date)date.value=''; const n=document.getElementById('newAppointmentNote');if(n)n.value='';const a=document.getElementById('newAppointmentAdvisor');if(a)a.value='';}
+      setBlockControls(block, !visible);
+      if(!visible){if(date)date.value=''; const n=document.getElementById('newAppointmentNote');if(n)n.value='';const a=document.getElementById('newAppointmentAdvisor');if(a)a.value='';['StudentName','ContactEmail','StudentAge'].forEach(suffix=>{const el=document.getElementById('newAppointment'+suffix);if(el)el.value='';});}
       const submit=document.getElementById('btnSubmitNewLead'); if(submit&&!newLeadSubmitting)submit.disabled=visible&&isAdmin&&(!leadAppointmentAdvisors.length||!document.getElementById('newAppointmentAdvisor')?.value);
     }
     function renderAppointmentAdvisorSelect(select, preferredName) { if(!select)return; if(!leadAppointmentAdvisors.length){select.innerHTML='<option value="">No hay asesores activos</option>';select.disabled=true;return;} const chosen=leadAppointmentAdvisors.find(a=>a.nombre===preferredName)||leadAppointmentAdvisors.find(a=>a.user_id===currentUser?.id)||leadAppointmentAdvisors[0]; select.innerHTML='<option value="">Seleccione asesor</option>'+leadAppointmentAdvisors.map(a=>`<option value="${escapeAttr(a.user_id)}" ${chosen?.user_id===a.user_id?'selected':''}>${escapeHtml(a.nombre||a.email||a.user_id)}</option>`).join('');select.disabled=false; }
@@ -3570,7 +3574,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
           if (error) {
             console.error("Error al insertar en Supabase:", error);
-            showToast("Error Supabase: " + error.message, "error");
+            showToast(formatSaveError(error, agendado), "error");
           } else if (data) {
              if (isSupabaseLive) {
                upsertLeadInState(data);
@@ -3607,11 +3611,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       block?.classList.toggle('hidden', !needs);
       if (date) date.required = needs;
       document.getElementById('editAppointmentAdvisorWrap')?.classList.toggle('hidden', !(needs && isAdmin));
+      setBlockControls(block, !needs);
       if (!needs) resetEditAppointmentValues();
       updateEditSubmitState();
     }
-    function resetEditAppointmentValues() { const date = document.getElementById('editAppointmentDate'); if (date) { date.value = ''; date.required = false; } const note = document.getElementById('editAppointmentNote'); if (note) note.value = ''; const advisor = document.getElementById('editAppointmentAdvisor'); if (advisor) advisor.value = ''; }
-    function hideEditAppointmentFields() { document.getElementById('editAppointmentFields')?.classList.add('hidden'); document.getElementById('editAppointmentAdvisorWrap')?.classList.add('hidden'); document.getElementById('editAppointmentAlreadyNotice')?.classList.add('hidden'); resetEditAppointmentValues(); const submit = document.getElementById('btnSubmitEditLead'); if (submit) submit.disabled = false; }
+    function resetEditAppointmentValues() { const date = document.getElementById('editAppointmentDate'); if (date) { date.value = ''; date.required = false; } const note = document.getElementById('editAppointmentNote'); if (note) note.value = ''; const advisor = document.getElementById('editAppointmentAdvisor'); if (advisor) advisor.value = ''; document.querySelectorAll('input[name="editAppointmentCampus"]').forEach(r => { r.checked = false; }); ['StudentName','ContactEmail','StudentAge'].forEach(suffix => { const el = document.getElementById('editAppointment' + suffix); if (el) el.value = ''; }); }
+    function hideEditAppointmentFields() { const block = document.getElementById('editAppointmentFields'); block?.classList.add('hidden'); setBlockControls(block, false); document.getElementById('editAppointmentAdvisorWrap')?.classList.add('hidden'); document.getElementById('editAppointmentAlreadyNotice')?.classList.add('hidden'); resetEditAppointmentValues(); const submit = document.getElementById('btnSubmitEditLead'); if (submit) submit.disabled = false; }
     function toggleEditAppointmentFields() { applyEditAppointmentVisibility(); if (editLeadNeedsAppointment()) loadEditAppointmentAdvisors(); }
     async function loadEditAppointmentAdvisors() {
       const select = document.getElementById('editAppointmentAdvisor');
@@ -3744,12 +3749,19 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       hideEditAppointmentFields();
     }
 
-    function editUpdateErrorMessage(error) {
-      const message = String(error?.message || '');
-      if (message.includes('appointment_required_for_agendado_transition') || message.includes('agendado_transition_required')) return 'Un lead agendado necesita fecha y hora de cita';
-      return 'Error Supabase: ' + message;
+    function formatSaveError(error, agendado) {
+      const m = String(error?.message || '');
+      if (m.includes('appointment_required_for_agendado_transition') || m.includes('agendado_transition_required')) return 'Un lead agendado necesita fecha y hora de cita';
+      if (m.includes('appointment_email_invalid')) return 'Correo de contacto no válido';
+      if (m.includes('appointment_age_invalid')) return 'Edad no válida';
+      if (m.includes('campus_invalid')) return 'Sede no válida';
+      if (m.includes('advisor_not_active')) return 'Asesor no activo';
+      if (m.includes('campaign_not_in_catalog')) return 'Campaña no disponible';
+      if (m.includes('fecha_llegada_invalida')) return 'Fecha de llegada no válida';
+      if (m.includes('scheduled_at_required')) return 'Fecha y hora de cita requeridas';
+      if (m.includes('notes_too_long')) return 'Nota demasiado larga';
+      return 'Error Supabase: ' + m;
     }
-
     async function handleUpdateLead(event) {
       event.preventDefault();
       if (editLeadSubmitting) return;
@@ -3825,7 +3837,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
           if (error) {
             console.error("Error al actualizar en Supabase:", error);
-            showToast(editUpdateErrorMessage(error), "error");
+            showToast(formatSaveError(error, needsAppointment), "error");
           } else {
             showToast(needsAppointment ? "Lead #" + leadId + " agendado y cita registrada" : "Lead #" + leadId + " actualizado en Supabase", "success");
             if (isSupabaseLive) {
@@ -4114,7 +4126,7 @@ async function loadLeadAppointments(leadId, lead) {
       const list = document.getElementById('leadAppointmentsList'); if (!list) return;
       const id = validAppointmentId(leadId); if (!id) return;
         const generation = sessionGeneration, viewGeneration = viewLeadGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
-       const { data, error } = await fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id, lead_id, scheduled_at, status, advisor_name, advisor_user_id, notes, rescheduled_from_id, resolved_at, created_at, student_name, contact_email, student_age').eq('lead_id', id));
+       const { data, error } = await fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id, lead_id, scheduled_at, status, advisor_name, advisor_user_id, notes, rescheduled_from_id, resolved_at, created_at, student_name, contact_email, student_age, campus, is_data_dura').eq('lead_id', id));
         if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return;
        if (error) { console.warn('No se pudieron cargar citas:', error); document.getElementById('leadAppointmentsSection')?.classList.add('hidden'); return; }
        leadAppointmentsCache = (data || []).sort((a, b) => String(b.scheduled_at).localeCompare(String(a.scheduled_at)) || Number(b.id) - Number(a.id));

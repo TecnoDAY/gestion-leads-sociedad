@@ -34,6 +34,7 @@ const names = [
   'filterHistoricalLeads', 'populateHistoricalFilterOptions', 'computeHistoricalAggregates', 'escapeHtml', 'escapeAttr',
   'loadReporteDiario', 'renderReporteV2', 'csvReporteField', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
   'exportReporteDiarioCSV', 'exportCampanasCSV', 'campaignCosteResultado', 'campaignTotals', 'loadCampanas',
+  'saveReporteNota', 'deleteReporteNota', 'reporteNotaErrorMsg',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
   'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'syncNewLeadMes',
   'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentDate', 'appointmentInputISO', 'appointmentLocal', 'appointmentCampusFrom',
@@ -76,7 +77,6 @@ function frontend(extra = {}) {
     showToast: (...args) => toasts.push(args), catalogLabel: x => x,
     fillCitasSelect() {}, renderCitas() {}, renderLeadNotes() {}, renderLeadGestiones() {}, renderLeadAppointments() {},
     updateKpis() {}, renderMatrix() {}, renderTable() {}, renderHistoricalAnalytics() {},
-    renderReporteBloque: () => '', renderReporteTotal: () => '',
     renderCampanas() {}, canEditCampaigns: () => false,
     isAgendadoGestion: value => value.startsWith('AGENDAD'),
     miamiToday: () => '2026-09-30', miamiDayBounds: date => [date + 'T04:00:00.000Z', date + 'T16:00:00.000Z'],
@@ -84,7 +84,7 @@ function frontend(extra = {}) {
     sessionGeneration: 1, currentMainTab: 'citas', isAdmin: false, isSupervisor: false, newPhoneCheckGeneration: 0, newPhoneCheckTimer: null,
     citasRequestGeneration: 0, citasCache: [], citasRangeKey: '', leadAppointmentsCache: [], leadNotesCache: [], leadGestionesCache: [],
     viewLeadGeneration: 1, currentViewId: 1, dashRangeGen: 0, filterDebounceTimer: null,
-  reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], reporteAsesorasDisponibles: [], campanasData: [],
+  reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], reporteDayNotes: [], reporteAsesorasDisponibles: [], reporteLoadedKey: '', campanasData: [],
     campanasRequestGeneration: 0, campanasLoading: false, campanasContextMonth: '', campaignStatsMap: new Map(),
     allLeads: [], allHistorico: [], filteredLeads: [], dataSource: 'actual', currentPage: 1, authorizedUsersList: [],
     leadAppointmentAdvisors: [], newLeadSubmitting: false, newLeadRequestGeneration: 0, newLeadAdvisorGeneration: 0,
@@ -1111,6 +1111,80 @@ test('reporte RPC vacío, cargando y error muestran estado sin romper', async ()
   const failed = reportFixture(null); failed.db.rpc = async () => ({ data: null, error: { message: 'rpc failed' } }); await failed.context.loadReporteDiario(); assert.match(failed.element('reporteAuto').innerHTML, /No se pudo cargar/);
 });
 
+test('CSV reporte: fila TOTAL suma las 24 columnas numericas y cuadra con las 27 cabeceras (regresion sede)', async () => {
+  const full = (uid, name) => ({ autor_user_id: uid, autor_name: name, gestionados: 1, procedencia: { WhatsApp: 1, 'Facebook/Instagram': 1, CogniTalking: 1, 'Directo o Referido': 1, Otros: 1 }, llamadas: { del_dia: 1, data_dura: 1, llamada_whatsapp: 1, total: 3 }, citas: { agendados_dia: 1, agendados_data_dura: 1, agendados_doral: 1, agendados_doral_data_dura: 1, agendados_weston: 1, agendados_weston_data_dura: 1, total_agendados: 2, visitas: 1, no_asistieron: 1, canceladas: 1, reprogramadas: 1 }, inscritos: { del_dia: 1, data_dura: 1, total: 2 } });
+  const f = reportFixture({ asesoras: [full('a', 'Ana'), full('b', 'Bea')] });
+  await f.context.loadReporteDiario(); f.context.exportReporteDiarioCSV();
+  const rows = decodeCSV(new TextDecoder().decode(await f.downloads[0].blob.arrayBuffer()).slice(1));
+  const headers = rows[4], total = rows.at(-1), col = n => Number(total[headers.indexOf(n)]);
+  assert.equal(headers.length, 27); assert.equal(total.length, 27);
+  assert.equal(col('Leads gestionados'), 2); assert.equal(col('Agendados Doral'), 2); assert.equal(col('Agendados Data Dura Weston'), 2);
+  assert.equal(col('Total agendados'), 4); assert.equal(col('Reprogramadas'), 2); assert.equal(col('Inscritos del día'), 2); assert.equal(col('Total inscritos'), 4);
+});
+
+test('export del reporte exige datos coherentes: bloqueado con filtros cambiados o tras error de carga', async () => {
+  const f = reportFixture({ asesoras: [advisor('Ana', 'a')] });
+  await f.context.loadReporteDiario();
+  f.element('reporteFecha').value = '2026-03-06';
+  f.context.exportReporteDiarioCSV();
+  assert.equal(f.downloads.length, 0);
+  assert.match(f.toasts.at(-1)?.[0] || '', /carg(i|á)ndo|Actualiza/i);
+  f.element('reporteFecha').value = '2026-03-05';
+  const origRpc = f.db.rpc.bind(f.db);
+  f.db.rpc = async () => ({ data: null, error: { message: 'down' } });
+  await f.context.loadReporteDiario();
+  f.context.exportReporteDiarioCSV();
+  assert.equal(f.downloads.length, 0);
+  f.db.rpc = origRpc; await f.context.loadReporteDiario();
+  f.context.exportReporteDiarioCSV();
+  assert.equal(f.downloads.length, 1);
+});
+
+test('si falla la lectura de notas, el reporte avisa y desactiva la edicion (sin sobrescribir notas)', async () => {
+  const db = database({ daily_management_report: { asesoras: [advisor('Ana', 'a')] }, daily_report_notes: [] }, { fail: q => q.table === 'daily_report_notes' });
+  const f = frontend({ supabaseClient: db, currentMainTab: 'reporte', isAdmin: true });
+  f.element('reporteFecha').value = '2026-03-05';
+  await f.context.loadReporteDiario();
+  const html = f.element('reporteAuto').innerHTML;
+  assert.match(html, /Ana/);
+  assert.doesNotMatch(html, /reporte-problemas-0/);
+  assert.match(html + (f.element('reporteAviso').textContent || ''), /notas/i);
+});
+
+test('notas emparejadas por autor_user_id: renombre no desvincula, bloque sin uid no editable, delete por id via uid', async () => {
+  const f = reportFixture({ asesoras: [advisor('Ana', 'a'), { ...advisor('SoloCatalogo', '', 1), autor_user_id: '' }] }, [{ id: 9, autor_user_id: 'a', autor_name: 'Ana Antigua', problemas: 'problema-uid-9', observaciones: 'obs-uid-9', report_date: '2026-03-05' }]);
+  f.context.isAdmin = true;
+  await f.context.loadReporteDiario();
+  const html = f.element('reporteAuto').innerHTML;
+  assert.match(html, /problema-uid-9/, 'la nota del uid a se ve aunque el nombre guardado ya no coincida');
+  assert.ok(html.indexOf('problema-uid-9') < html.indexOf('SoloCatalogo'), 'la nota queda en el bloque de Ana');
+  assert.doesNotMatch(html, /reporte-problemas-1/, 'sin uid el admin no edita');
+  await f.context.deleteReporteNota(0);
+  assert.deepEqual(plain(f.db.rpcCalls.find(c => c.name === 'delete_daily_report_note')), { name: 'delete_daily_report_note', args: { p_note_id: 9 } });
+});
+
+test('errores de nota se muestran traducidos, no crudos', async () => {
+  const f = reportFixture({ asesoras: [advisor('Ana', 'a')] });
+  f.context.isAdmin = true;
+  await f.context.loadReporteDiario();
+  const origRpc = f.db.rpc.bind(f.db);
+  f.db.rpc = async (name, args) => name === 'upsert_daily_report_note' ? { data: null, error: { message: 'advisor_name_ambiguous' } } : origRpc(name, args);
+  await f.context.saveReporteNota(0);
+  const aviso = f.element('reporteAviso').textContent || '';
+  assert.doesNotMatch(aviso, /advisor_name_ambiguous|42501|P0002/);
+  assert.match(aviso, /asesora/i);
+  assert.equal(typeof f.context.reporteNotaErrorMsg({ message: 'own_note_today_required' }), 'string');
+  assert.match(f.context.reporteNotaErrorMsg({ message: 'own_note_today_required' }), /hoy/i);
+});
+
+test('reporte: textareas limitados a 5000, aviso accesible, fecha de cabecera civil y nombres de fichero en Miami', () => {
+  assert.match(html, /id="reporteAviso"[^>]*aria-live="polite"/);
+  assert.match(html, /id="reporte-problemas-\$\{i\}"[^>]*maxlength="5000"/);
+  assert.match(html, /`Leads_Sociedad_Actoral_\$\{miamiToday\(\)\}\.csv`/);
+  assert.match(html, /`Historical_Summary_\$\{miamiToday\(\)\}\.csv`/);
+  assert.match(html, /new Date\(`\$\{fecha\}T12:00:00Z`\)/);
+});
+
 test('Campañas: estadísticas >1000 paginadas, RPC JSONB completo y año/mes intactos', async () => {
   const rollup = rows(1205, { leads_nuevos: 1 }).map(r => ({ ...r, campaign_name: `Campaign ${String(r.id).padStart(4, '0')}` }));
   const stats = rollup.map(r => ({ id: r.id, campaign_name: r.campaign_name, anio: 2026, mes: 'MARZO', gasto: 2 }));
@@ -1167,6 +1241,7 @@ for (const exporter of ['exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV', '
   c.filteredLeads = [{ id: 1, Nombre: value }];
   c.allLeads = [{ id: 1, Mes: 'MARZO', Fecha: '1/3/2026', Campaña: value, GESTION: 'INSCRITO' }];
   c.reporteDayData = [{ advisor: value, gestionados: 1, agendados: 1, asistieron: 0, noAsistieron: 0, inscritos: 0, inscritosDura: 0 }];
+  c.reporteLoadedKey = '|'; // exportReporteDiarioCSV solo exporta si los datos corresponden a los filtros visibles
   c.campanasData = [{ name: value, gasto: 1, resultados: 1, alcance: 1, leads_nuevos: 1, agendados: 1, asistieron: 0, inscritos: 0, agendados_previos: 0, pendientes: 0 }];
   c[exporter]();
   assert.equal(f.downloads.length, 1);

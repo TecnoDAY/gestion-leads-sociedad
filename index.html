@@ -251,7 +251,7 @@
         <div><div class="flex items-center gap-1.5"><h1 class="text-2xl font-bold text-indigo-900">Reporte Diario de Trabajo</h1><button type="button" onclick="openHelpModal('ayuda-reporte-diario')" title="Ayuda: reporte diario" aria-label="Ayuda sobre el reporte diario" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-200 hover:bg-indigo-600 text-[10px] font-bold text-slate-700 hover:text-white align-middle cursor-pointer shrink-0">?</button></div><p id="reporteFechaTexto" class="text-base text-slate-600"></p></div>
         <div class="flex flex-wrap gap-2 items-center text-sm"><label>Fecha <input id="reporteFecha" type="date" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"></label><label>Asesora <select id="reporteAsesora" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"><option value="">Todas las asesoras</option></select></label><button type="button" id="reporteBtnCsv" onclick="exportReporteDiarioCSV()" class="px-3 py-1.5 rounded bg-slate-700 text-white text-sm font-semibold hover:bg-indigo-600 cursor-pointer">Descargar CSV</button></div>
       </div>
-       <div id="reporteAviso" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">Los cambios en Problemas y Observaciones se guardan por asesora y fecha (zona horaria de Miami).</div>
+       <div id="reporteAviso" role="status" aria-live="polite" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">Los cambios en Problemas y Observaciones se guardan por asesora y fecha (zona horaria de Miami).</div>
       <div id="reporteAuto" class="space-y-3"></div>
     </div>
 
@@ -1469,7 +1469,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       let reporteDayNotes = [];
       let reporteDayData = [];
       let reporteAsesorasDisponibles = [];
-      let reporteDayData2 = [];
+      let reporteLoadedKey = '';
      let isTrafficker = false;
      let isSupervisor = false;
      // Fuente unica de "puede editar campanas": admin, trafficker o supervisor.
@@ -1524,6 +1524,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       reporteRequestGeneration += 1;
       reporteDayAdvisors = [];
       reporteDayData = [];
+      reporteDayNotes = [];
+      reporteAsesorasDisponibles = [];
+      reporteLoadedKey = '';
       currentUser = null;
       currentAccess = null;
       isAdmin = false;
@@ -1578,6 +1581,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       document.getElementById('reporteDiario')?.classList.add('hidden');
       reporteDayAdvisors = [];
       reporteDayData = [];
+      reporteDayNotes = [];
+      reporteAsesorasDisponibles = [];
+      reporteLoadedKey = '';
       const reporteFecha = document.getElementById('reporteFecha');
         if (reporteFecha) reporteFecha.value = miamiToday();
       const reporteAviso = document.getElementById('reporteAviso');
@@ -4719,7 +4725,7 @@ async function loadLeadAppointments(leadId, lead) {
         getField(l, 'Telefono'), getField(l, 'Campaña'), getField(l, 'Medio'),
         getField(l, 'GESTION'), getField(l, 'Ciudad'), getField(l, 'Agente '), getField(l, 'OBSERVACIONES ')
       ].map(csvReporteField));
-      downloadCSV([headers.join(','), ...rows.map(r => r.join(','))].join('\n'), `Leads_Sociedad_Actoral_${new Date().toISOString().slice(0, 10)}.csv`);
+      downloadCSV([headers.join(','), ...rows.map(r => r.join(','))].join('\n'), `Leads_Sociedad_Actoral_${miamiToday()}.csv`);
       showToast(`${filteredLeads.length.toLocaleString()} leads exportados a CSV`, "success");
     }
 
@@ -4765,7 +4771,7 @@ async function loadLeadAppointments(leadId, lead) {
         ].map(csvReporteField).join(',');
       });
 
-      downloadCSV([headers.join(','), ...rows].join('\n'), `Historical_Summary_${new Date().toISOString().slice(0, 10)}.csv`);
+      downloadCSV([headers.join(','), ...rows].join('\n'), `Historical_Summary_${miamiToday()}.csv`);
       const suffix = rangeActive && excludedNoDate > 0 ? ` (${excludedNoDate.toLocaleString()} sin fecha válida excluidos)` : '';
       showToast(`${activeMonths.length.toLocaleString()} meses exportados a CSV${suffix}`, "success");
     }
@@ -5499,18 +5505,33 @@ async function loadLeadAppointments(leadId, lead) {
       loadReporteDiario();
     }
 
-    function renderReporteV2(bloques, notas = []) {
-      const nmap = new Map(notas.map(n => [n.autor_name, n]));
+    // Traduccion de errores tecnicos de las RPC de notas a mensajes comprensibles.
+    function reporteNotaErrorMsg(error, accion = 'guardar') {
+      const m = String(error?.message || '');
+      if (m.includes('advisor_not_found')) return 'No se encontro una asesora activa con ese nombre';
+      if (m.includes('advisor_name_ambiguous')) return 'Hay varias asesoras activas con ese nombre; corrige el nombre duplicado';
+      if (m.includes('own_note_today_required')) return 'Solo puedes editar tu propia nota y solo la del dia de hoy (Miami)';
+      if (m.includes('report_date_required')) return 'Falta la fecha del reporte';
+      if (m.includes('crm_access_forbidden') || m.includes('active_user_required')) return 'Tu usuario no tiene permiso para esta accion';
+      return `No se pudo ${accion} la nota. Revisa tu conexion e intentalo nuevamente`;
+    }
+
+    function renderReporteV2(bloques, notas = [], notasOk = true) {
+      // La nota pertenece a la asesora por user_id; el nombre es solo el
+      // respaldo para filas antiguas guardadas sin user_id.
+      const byUid = new Map(), byName = new Map();
+      for (const n of notas) (n.autor_user_id ? byUid : byName).set(n.autor_user_id || n.autor_name, n);
+      const noteOf = b => (b.autor_user_id && byUid.get(b.autor_user_id)) || byName.get(b.autor_name) || null;
       const num = (o, k) => Number(o?.[k]) || 0;
        const total = bloques.reduce((a, b) => { a.g += num(b,'gestionados'); a.l += Number(b.llamadas?.total) || 0; a.c += Number(b.citas?.total_agendados) || 0; a.v += Number(b.citas?.visitas) || 0; a.i += Number(b.inscritos?.total) || 0; return a; }, {g:0,l:0,c:0,v:0,i:0});
       const cell = (label, value) => `<div class="border border-slate-200 rounded p-2 text-center"><div class="text-xs text-slate-500">${label}</div><strong class="text-lg text-indigo-900">${value}</strong></div>`;
       const table = (title, rows) => `<div><h5 class="font-semibold text-indigo-900">${title}</h5><table class="w-full text-sm"><tbody>${rows.map(([l,v]) => `<tr class="border-b border-slate-100"><td class="py-1">${l}</td><td class="py-1 text-right font-semibold">${v}</td></tr>`).join('')}</tbody></table></div>`;
-      const blocks = bloques.map((b, i) => { const p=b.procedencia||{}, l=b.llamadas||{}, c=b.citas||{}, ins=b.inscritos||{}, note=nmap.get(b.autor_name)||null; const pt=Object.values(p).reduce((a,v)=>a+(Number(v)||0),0); const editable=isAdmin || (b.autor_name===currentAccess?.nombre && document.getElementById('reporteFecha')?.value===miamiToday());
-        const manual=editable ? `<textarea id="reporte-problemas-${i}" class="reporte-manual w-full border rounded p-2" rows="3">${escapeHtml(note?.problemas||'')}</textarea><textarea id="reporte-obs-${i}" class="reporte-manual w-full border rounded p-2" rows="3">${escapeHtml(note?.observaciones||'')}</textarea><button id="reporte-save-${i}" onclick="saveReporteNota(${i})" class="px-3 py-1 rounded bg-indigo-600 text-white">Guardar</button>${note?.id ? '<button id="reporte-delete-'+i+'" onclick="deleteReporteNota('+i+')" class="px-3 py-1 rounded border">Eliminar</button>' : ''}` : `<p class="text-sm">${escapeHtml(note?.problemas||'')} ${escapeHtml(note?.observaciones||'')}</p>`;
+      const blocks = bloques.map((b, i) => { const p=b.procedencia||{}, l=b.llamadas||{}, c=b.citas||{}, ins=b.inscritos||{}, note=noteOf(b); const pt=Object.values(p).reduce((a,v)=>a+(Number(v)||0),0); const own = b.autor_user_id ? b.autor_user_id === currentUser?.id : b.autor_name === currentAccess?.nombre; const editable=notasOk && ((isAdmin && Boolean(b.autor_user_id)) || (own && document.getElementById('reporteFecha')?.value===miamiToday()));
+        const manual=editable ? `<textarea id="reporte-problemas-${i}" class="reporte-manual w-full border rounded p-2" rows="3" maxlength="5000">${escapeHtml(note?.problemas||'')}</textarea><textarea id="reporte-obs-${i}" class="reporte-manual w-full border rounded p-2" rows="3" maxlength="5000">${escapeHtml(note?.observaciones||'')}</textarea><button id="reporte-save-${i}" onclick="saveReporteNota(${i})" class="px-3 py-1 rounded bg-indigo-600 text-white">Guardar</button>${note?.id ? '<button id="reporte-delete-'+i+'" onclick="deleteReporteNota('+i+')" class="px-3 py-1 rounded border">Eliminar</button>' : ''}` : `<p class="text-sm">${escapeHtml(note?.problemas||'')} ${escapeHtml(note?.observaciones||'')}</p>`;
        const detailTables = table('Procedencia', [['WhatsApp',num(p,'WhatsApp')],['Facebook/Instagram',num(p,'Facebook/Instagram')],['CogniTalking',num(p,'CogniTalking')],['Directo o Referido',num(p,'Directo o Referido')],['Otros',num(p,'Otros')],['Total',pt]]) + table('Llamadas', [['Del día',num(l,'del_dia')],['Data Dura',num(l,'data_dura')],['Llamada WhatsApp',num(l,'llamada_whatsapp')],['Total',num(l,'total')]]) + table('Citas y resultados', [['Agendados del día',num(c,'agendados_dia')],['Agendados Data Dura',num(c,'agendados_data_dura')],['Agendados Doral',num(c,'agendados_doral')],['Agendados Data Dura Doral',num(c,'agendados_doral_data_dura')],['Agendados Weston',num(c,'agendados_weston')],['Agendados Data Dura Weston',num(c,'agendados_weston_data_dura')],['Total agendados',num(c,'total_agendados')],['Visitas',num(c,'visitas')],['No asistieron',num(c,'no_asistieron')],['Canceladas',num(c,'canceladas')],['Reprogramadas',num(c,'reprogramadas')]]) + table('Inscripciones', [['Del día',num(ins,'del_dia')],['Data Dura',num(ins,'data_dura')],['Total',num(ins,'total')]]);
         return `<details class="border border-slate-300 rounded p-3" ${i?'':'open'}><summary class="cursor-pointer font-bold text-indigo-900">${escapeHtml(b.autor_name||b.advisor||'Sin asesora')} — ${num(b.gestionados)} leads</summary><div class="grid md:grid-cols-4 gap-4 mt-3">${detailTables}</div><div class="mt-3 space-y-2"><label class="text-sm">Problemas u observaciones</label>${manual}</div></details>`;
       }).join('');
-      return `<section class="border-2 border-indigo-600 rounded p-3 space-y-2"><h3 class="font-bold text-lg text-indigo-900">Resumen general</h3><div class="grid grid-cols-2 sm:grid-cols-5 gap-2">${cell('Leads gestionados',total.g)}${cell('Total llamadas',total.l)}${cell('Total agendados',total.c)}${cell('Visitas',total.v)}${cell('Total inscritos',total.i)}</div></section><section class="space-y-2"><h3 class="font-bold text-lg text-indigo-900">Comparativa por asesora</h3>${blocks||'<p class="text-slate-500">Sin gestiones para esta fecha.</p>'}</section>`;
+      return `${notasOk ? '' : '<div class="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">No se pudieron cargar las notas guardadas. La edicion esta desactivada para no sobrescribir datos: recarga la pagina o intentalo mas tarde.</div>'}<section class="border-2 border-indigo-600 rounded p-3 space-y-2"><h3 class="font-bold text-lg text-indigo-900">Resumen general</h3><div class="grid grid-cols-2 sm:grid-cols-5 gap-2">${cell('Leads gestionados',total.g)}${cell('Total llamadas',total.l)}${cell('Total agendados',total.c)}${cell('Visitas',total.v)}${cell('Total inscritos',total.i)}</div></section><section class="space-y-2"><h3 class="font-bold text-lg text-indigo-900">Comparativa por asesora</h3>${blocks||'<p class="text-slate-500">Sin gestiones para esta fecha.</p>'}</section>`;
     }
 
     async function loadReporteDiario() {
@@ -5519,13 +5540,15 @@ async function loadLeadAppointments(leadId, lead) {
       if (!fecha) return;
       const token = ++reporteRequestGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
       const valid = () => token === reporteRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'reporte' && document.getElementById('reporteFecha')?.value === fecha;
-      const d = new Date(`${fecha}T12:00:00`);
+      const d = new Date(`${fecha}T12:00:00Z`);
       const fechaTexto = document.getElementById('reporteFechaTexto');
-      if (fechaTexto) fechaTexto.textContent = Number.isNaN(d.getTime()) ? `Fecha: ${fecha}` : `Fecha: ${d.toLocaleDateString('es-ES')} · Día: ${d.toLocaleDateString('es-ES', { weekday: 'long' })}`;
+      // Fecha civil: se formatea en UTC para que la zona del navegador no desplace el dia.
+      if (fechaTexto) fechaTexto.textContent = Number.isNaN(d.getTime()) ? `Fecha: ${fecha}` : `Fecha: ${d.toLocaleDateString('es-ES', { timeZone: 'UTC' })} · Día: ${d.toLocaleDateString('es-ES', { timeZone: 'UTC', weekday: 'long' })}`;
       const auto = document.getElementById('reporteAuto');
       if (auto) auto.innerHTML = '<div class="text-slate-500">Cargando reporte…</div>';
       const reporteAvisoBase = 'Los cambios en Problemas y Observaciones se guardan por asesora y fecha (zona horaria de Miami).';
       const selected = document.getElementById('reporteAsesora')?.value || null;
+      reporteLoadedKey = '';
       try {
         const [report, notes] = await Promise.all([supabaseClient.rpc('daily_management_report', { p_fecha: fecha, p_autor_user_id: selected }), fetchPagedResult(() => supabaseClient.from('daily_report_notes').select('*').eq('report_date', fecha))]);
         if (!valid()) return;
@@ -5534,10 +5557,20 @@ async function loadLeadAppointments(leadId, lead) {
         const advisors = bloques.map(b=>({ id:b.autor_user_id||'', name:b.autor_name||'' })).filter(v=>v.name);
         reporteAsesorasDisponibles = advisors.concat(activeCatalogValues('agente').filter(n=>!advisors.some(v=>v.name===n)).map(name=>({id:'',name}))).sort((a,b)=>a.name.localeCompare(b.name,'es'));
         const select=document.getElementById('reporteAsesora'); if(select) select.innerHTML='<option value="">Todas las asesoras</option>'+reporteAsesorasDisponibles.map(v=>`<option value="${escapeAttr(v.id)}">${escapeHtml(v.name)}</option>`).join(''); if(select) select.value=selected||'';
-        reporteDayAdvisors=bloques.map(b=>b.autor_name); reporteDayNotes=notes.error?[]:notes.data||[]; reporteDayData=reporteDayData2=bloques;
-        if(auto) auto.innerHTML=renderReporteV2(bloques, notes.error?[]:notes.data||[]);
+        if (notes.error) console.warn('No se pudieron cargar las notas del reporte:', notes.error);
+        const notasCargadas = notes.error ? [] : notes.data || [];
+        reporteDayAdvisors=bloques.map(b=>b.autor_name); reporteDayNotes=notasCargadas; reporteDayData=bloques;
+        if(auto) auto.innerHTML=renderReporteV2(bloques, notasCargadas, !notes.error);
+        const reporteAviso = document.getElementById('reporteAviso');
+        if (reporteAviso) reporteAviso.textContent = notes.error ? 'No se pudieron cargar las notas guardadas: la edicion esta desactivada hasta recargar.' : reporteAvisoBase;
+        reporteLoadedKey = `${fecha}|${selected || ''}`;
       } catch (error) {
-        if(valid()&&auto) auto.innerHTML='<div class="rounded border border-rose-300 bg-rose-50 p-3 text-rose-700">No se pudo cargar el reporte diario. Intenta nuevamente.</div>';
+        console.warn('No se pudo cargar el reporte diario:', error);
+        if(valid()){
+          reporteDayData = [];
+          reporteLoadedKey = '';
+          if(auto) auto.innerHTML='<div class="rounded border border-rose-300 bg-rose-50 p-3 text-rose-700">No se pudo cargar el reporte diario. Intenta nuevamente.</div>';
+        }
       }
     }
 
@@ -5555,9 +5588,9 @@ async function loadLeadAppointments(leadId, lead) {
         if (generation !== sessionGeneration) return;
         if (error) {
           console.warn('No se pudo guardar la nota del reporte:', error);
-          showToast(`No se pudo guardar la nota: ${error.message}`, 'error');
+          showToast(reporteNotaErrorMsg(error, 'guardar'), 'error');
           const aviso = document.getElementById('reporteAviso');
-          if (aviso) aviso.textContent = `No se pudo guardar la nota de ${autor}: ${error.message}`;
+          if (aviso) aviso.textContent = `Nota de ${autor}: ${reporteNotaErrorMsg(error, 'guardar')}`;
           return;
         }
         showToast('Nota guardada por asesora y fecha', 'success');
@@ -5565,7 +5598,7 @@ async function loadLeadAppointments(leadId, lead) {
       } catch (error) {
         console.warn('No se pudo guardar la nota del reporte:', error);
         if (generation !== sessionGeneration) return;
-        showToast(`No se pudo guardar la nota: ${error.message}`, 'error');
+        showToast(reporteNotaErrorMsg(error, 'guardar'), 'error');
       } finally {
         if (generation === sessionGeneration) botones.forEach(b => { b.disabled = false; });
       }
@@ -5573,7 +5606,8 @@ async function loadLeadAppointments(leadId, lead) {
 
     async function deleteReporteNota(i) {
       const autor = reporteDayAdvisors[i];
-      const noteId = reporteDayNotes.find(n => n.autor_name === autor)?.id;
+      const bloque = reporteDayData[i] || {};
+      const noteId = reporteDayNotes.find(n => (bloque.autor_user_id && n.autor_user_id === bloque.autor_user_id) || (!n.autor_user_id && n.autor_name === autor))?.id;
       if (!autor || !noteId || !supabaseClient) return;
       const generation = sessionGeneration;
       const botones = [`reporte-save-${i}`, `reporte-delete-${i}`].map(id => document.getElementById(id)).filter(Boolean);
@@ -5583,9 +5617,9 @@ async function loadLeadAppointments(leadId, lead) {
         if (generation !== sessionGeneration) return;
         if (error) {
           console.warn('No se pudo eliminar la nota del reporte:', error);
-          showToast(`No se pudo eliminar la nota: ${error.message}`, 'error');
+          showToast(reporteNotaErrorMsg(error, 'eliminar'), 'error');
           const aviso = document.getElementById('reporteAviso');
-          if (aviso) aviso.textContent = `No se pudo eliminar la nota de ${autor}: ${error.message}`;
+          if (aviso) aviso.textContent = `Nota de ${autor}: ${reporteNotaErrorMsg(error, 'eliminar')}`;
           return;
         }
         showToast('Nota eliminada', 'success');
@@ -5593,7 +5627,7 @@ async function loadLeadAppointments(leadId, lead) {
       } catch (error) {
         console.warn('No se pudo eliminar la nota del reporte:', error);
         if (generation !== sessionGeneration) return;
-        showToast(`No se pudo eliminar la nota: ${error.message}`, 'error');
+        showToast(reporteNotaErrorMsg(error, 'eliminar'), 'error');
       } finally {
         if (generation === sessionGeneration) botones.forEach(b => { b.disabled = false; });
       }
@@ -5623,10 +5657,15 @@ async function loadLeadAppointments(leadId, lead) {
     }
 
     function exportReporteDiarioCSV() {
+      const fecha = document.getElementById('reporteFecha')?.value || '';
+      const asesoraSel = document.getElementById('reporteAsesora')?.value || '';
       if (!reporteDayData.length) { showToast('No hay datos para exportar', 'warning'); return; }
-      const fecha = document.getElementById('reporteFecha')?.value || miamiToday();
+      // Solo exportar los datos que estan en pantalla: nunca una fecha/asesora
+      // que todavia esta cargando o una carga que fallo.
+      if (reporteLoadedKey !== `${fecha}|${asesoraSel}`) { showToast('El reporte esta cargando o los filtros cambiaron. Actualiza y espera a que termine de cargar', 'warning'); return; }
       const headers = ['Asesora', 'Leads gestionados', 'WhatsApp', 'Facebook/Instagram', 'CogniTalking', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Agendados del día', 'Agendados Data Dura', 'Agendados Doral', 'Agendados Data Dura Doral', 'Agendados Weston', 'Agendados Data Dura Weston', 'Total agendados', 'Visitas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Inscritos del día', 'Inscritos Data Dura', 'Total inscritos', 'Problemas', 'Observaciones'];
-      const keys = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosTotal', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'inscritosDia', 'inscritosDura', 'inscritosTotal'];
+      // Las 24 columnas numericas, en el orden exacto de `values`.
+      const keys = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosDoral', 'agendadosDoralDura', 'agendadosWeston', 'agendadosWestonDura', 'agendadosTotal', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'inscritosDia', 'inscritosDura', 'inscritosTotal'];
       const sumas = Object.fromEntries(keys.map(k => [k, 0]));
       const selected = document.getElementById('reporteAsesora');
       const filtro = selected?.value ? (selected.options[selected.selectedIndex]?.textContent || '') : '';
@@ -5636,7 +5675,8 @@ async function loadLeadAppointments(leadId, lead) {
         const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, l.total, c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, ins.del_dia, ins.data_dura, ins.total].map(v => Number(v) || 0);
         values.forEach((v, n) => { sumas[keys[n]] += v; });
         const notes = typeof reporteDayNotes === 'undefined' ? [] : reporteDayNotes;
-        const note = notes.find(n => n.autor_name === (b.autor_name ?? b.advisor)) || b.nota || {};
+        const uid = b.autor_user_id || '';
+        const note = notes.find(n => (uid && n.autor_user_id === uid) || (!n.autor_user_id && n.autor_name === (b.autor_name ?? b.advisor))) || b.nota || {};
         const problemas = document.getElementById(`reporte-problemas-${i}`)?.value ?? note.problemas ?? '';
         const observaciones = document.getElementById(`reporte-obs-${i}`)?.value ?? note.observaciones ?? '';
         lineas.push([b.autor_name ?? b.advisor, ...values, problemas, observaciones].map(csvReporteField).join(','));

@@ -247,12 +247,34 @@
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
     <div id="reporteDiario" class="hidden max-w-5xl mx-auto bg-white text-slate-800 rounded-xl border border-slate-300 shadow-lg p-5 sm:p-7 space-y-5">
+      <label class="flex items-center gap-2 text-sm font-semibold">Vista del reporte
+        <select id="reporteVista" onchange="setReporteVista(this.value)" class="border border-slate-300 rounded px-3 py-2"><option value="diario">Diario</option><option value="periodo">Por período</option></select>
+      </label>
+      <div id="reporteDiarioVista" class="space-y-5">
       <div class="border-b-2 border-indigo-600 pb-3 flex flex-wrap justify-between gap-3 items-end">
         <div><div class="flex items-center gap-1.5"><h1 class="text-2xl font-bold text-indigo-900">Reporte Diario de Trabajo</h1><button type="button" onclick="openHelpModal('ayuda-reporte-diario')" title="Ayuda: reporte diario" aria-label="Ayuda sobre el reporte diario" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-200 hover:bg-indigo-600 text-[10px] font-bold text-slate-700 hover:text-white align-middle cursor-pointer shrink-0">?</button></div><p id="reporteFechaTexto" class="text-base text-slate-600"></p></div>
         <div class="flex flex-wrap gap-2 items-center text-sm"><label>Fecha <input id="reporteFecha" type="date" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"></label><label>Asesora <select id="reporteAsesora" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"><option value="">Todas las asesoras</option></select></label><button type="button" id="reporteBtnCsv" onclick="exportReporteDiarioCSV()" class="px-3 py-1.5 rounded bg-slate-700 text-white text-sm font-semibold hover:bg-indigo-600 cursor-pointer">Descargar CSV</button></div>
       </div>
        <div id="reporteAviso" role="status" aria-live="polite" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">Los cambios en Problemas y Observaciones se guardan por asesora y fecha (zona horaria de Miami).</div>
       <div id="reporteAuto" class="space-y-3"></div>
+      </div>
+      <section id="reportePeriodo" class="hidden space-y-4" aria-label="Reporte por período">
+        <header class="border-b-2 border-indigo-600 pb-3"><h1 class="text-2xl font-bold text-indigo-900">Reporte por período</h1><p class="text-sm text-slate-600">Leads activos por fecha de entrada, desde y hasta inclusive. Gestión actual: no representa el estado histórico al cierre del período.</p></header>
+        <div class="flex flex-wrap gap-3 items-end text-sm">
+          <label>Desde <input id="periodoDesde" type="date" onchange="loadReportePeriodo()" class="border border-slate-300 rounded px-2 py-1"></label>
+          <label>Hasta <input id="periodoHasta" type="date" onchange="loadReportePeriodo()" class="border border-slate-300 rounded px-2 py-1"></label>
+          <button type="button" onclick="loadReportePeriodo()" class="border border-slate-300 rounded px-3 py-1.5">Actualizar</button>
+          <button type="button" id="periodoBtnCsv" onclick="exportReportePeriodoCSV()" class="rounded bg-slate-700 text-white px-3 py-1.5">Descargar CSV</button>
+        </div>
+        <div class="flex flex-wrap gap-2 text-sm" aria-label="Rangos de calendario (Miami)">
+          <button type="button" onclick="setPeriodoPreset('semana')" class="border border-slate-300 rounded px-3 py-1.5">Esta semana (lunes–domingo)</button>
+          <button type="button" onclick="setPeriodoPreset('7d')" class="border border-slate-300 rounded px-3 py-1.5">Últimos 7 días (incluye hoy)</button>
+          <button type="button" onclick="setPeriodoPreset('30d')" class="border border-slate-300 rounded px-3 py-1.5">Últimos 30 días (incluye hoy)</button>
+          <button type="button" onclick="setPeriodoPreset('mes')" class="border border-slate-300 rounded px-3 py-1.5">Mes actual hasta hoy (Miami)</button>
+        </div>
+        <p id="periodoAviso" role="status" aria-live="polite" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800"></p>
+        <div id="periodoBody" class="space-y-4"></div>
+      </section>
     </div>
 
     <!-- ================= VISTA 1: PANEL OPERATIVO ================= -->
@@ -1470,6 +1492,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       let reporteDayData = [];
       let reporteAsesorasDisponibles = [];
       let reporteLoadedKey = '';
+      let periodoRequestGeneration = 0;
+      let periodoData = null;
+      let periodoLoadedKey = '';
+      let reporteVistaActiva = 'diario';
+      // Revisión de datos base (leads/catálogos) consumida por el reporte por
+      // período: sube en cada mutación real; el reporte solo es exportable cuando
+      // lo mostrado coincide con la revisión vigente.
+      let periodoSourceRevision = 0;
+      let periodoLoadedRevision = -1;
+      let periodoRefreshTimer = null;
      let isTrafficker = false;
      let isSupervisor = false;
      // Fuente unica de "puede editar campanas": admin, trafficker o supervisor.
@@ -1522,6 +1554,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       citasRequestGeneration = (citasRequestGeneration || 0) + 1;
       newLeadAdvisorGeneration = (newLeadAdvisorGeneration || 0) + 1;
       reporteRequestGeneration += 1;
+      resetReportePeriodo();
       reporteDayAdvisors = [];
       reporteDayData = [];
       reporteDayNotes = [];
@@ -2247,7 +2280,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       } else if (tab === 'reporte') {
         btnReporte.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
          viewDash.classList.add('hidden'); viewHist.classList.add('hidden'); viewCitas.classList.add('hidden'); viewReporte.classList.remove('hidden');
-         initReporteDiario();
+         setReporteVista(reporteVistaActiva);
       } else if (tab === 'citas') {
         btnCitas.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
         viewDash.classList.add('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.remove('hidden'); initCitasPanel();
@@ -2416,6 +2449,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         { ...(existingLead || {}), ...lead }
       ]);
       totalDatabaseCount = allLeads.length;
+      markPeriodoReportDirty();
       return !existingLead;
     }
 
@@ -2425,6 +2459,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       allLeads = allLeads.filter(lead => String(lead.id) !== String(leadId));
       if (allLeads.length === previousLength) return false;
       totalDatabaseCount = allLeads.length;
+      markPeriodoReportDirty();
       return true;
     }
 
@@ -2656,6 +2691,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (!sessionValid()) return false;
       isLoadingLeads = false;
       pendingRealtimeEvents = [];
+      markPeriodoReportDirty();
 
       try {
         await loadHistoricoData();
@@ -2912,6 +2948,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       populateCatalogSelects();
       populateFilterOptions();
       applyFilters();
+      markPeriodoReportDirty();
     }
 
     function openCatalogsModal() {
@@ -5503,6 +5540,247 @@ async function loadLeadAppointments(leadId, lead) {
       const date = document.getElementById('reporteFecha');
       if (date && !date.value) date.value = miamiToday();
       loadReporteDiario();
+    }
+
+    function resetReportePeriodo() {
+      periodoRequestGeneration += 1;
+      periodoData = null;
+      periodoLoadedKey = '';
+      periodoLoadedRevision = -1;
+      periodoSourceRevision += 1;
+      if (periodoRefreshTimer) { clearTimeout(periodoRefreshTimer); periodoRefreshTimer = null; }
+      reporteVistaActiva = 'diario';
+      ['periodoDesde', 'periodoHasta'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
+      ['periodoBody', 'periodoAviso'].forEach(id => document.getElementById(id)?.replaceChildren());
+      const select = document.getElementById('reporteVista');
+      if (select) select.value = 'diario';
+      document.getElementById('reportePeriodo')?.classList.add('hidden');
+      document.getElementById('reporteDiarioVista')?.classList.remove('hidden');
+      updatePeriodoCsvState();
+    }
+
+    // Estado del botón CSV: solo habilitado cuando lo visible coincide con la
+    // revisión actual de los datos (leads/catálogos) y con el rango cargado.
+    function updatePeriodoCsvState() {
+      const btn = document.getElementById('periodoBtnCsv');
+      if (!btn) return;
+      btn.disabled = !(currentUser && currentAccess?.activo && reporteVistaActiva === 'periodo' && currentMainTab === 'reporte'
+        && periodoData && periodoLoadedKey && periodoLoadedKey === periodoRangeKey() && periodoLoadedRevision === periodoSourceRevision);
+    }
+
+    // Invalida lo calculado/subido por una mutación de leads o catálogos. Solo
+    // recalcula (una vez, con debounce) cuando la vista de período está abierta.
+    function markPeriodoReportDirty() {
+      periodoSourceRevision += 1;
+      periodoData = null;
+      periodoLoadedKey = '';
+      periodoLoadedRevision = -1;
+      updatePeriodoCsvState();
+      if (currentMainTab !== 'reporte' || reporteVistaActiva !== 'periodo') return;
+      const body = document.getElementById('periodoBody');
+      if (body) body.replaceChildren();
+      const aviso = document.getElementById('periodoAviso');
+      if (aviso) aviso.textContent = 'Datos actualizados. Recalculando…';
+      if (periodoRefreshTimer) clearTimeout(periodoRefreshTimer);
+      periodoRefreshTimer = setTimeout(() => {
+        periodoRefreshTimer = null;
+        if (currentMainTab === 'reporte' && reporteVistaActiva === 'periodo') loadReportePeriodo();
+      }, 150);
+    }
+
+    function setReporteVista(vista) {
+      if (!['diario', 'periodo'].includes(vista)) return;
+      reporteVistaActiva = vista;
+      periodoRequestGeneration += 1;
+      document.getElementById('reporteVista').value = vista;
+      document.getElementById('reporteDiarioVista').classList.toggle('hidden', vista !== 'diario');
+      document.getElementById('reportePeriodo').classList.toggle('hidden', vista !== 'periodo');
+      if (vista === 'diario') return initReporteDiario();
+      if (!document.getElementById('periodoDesde').value) return setPeriodoPreset('mes');
+      return loadReportePeriodo();
+    }
+
+    function periodoPresetRange(preset) {
+      const today = miamiToday(), date = new Date(`${today}T12:00:00Z`);
+      const shift = days => { const d = new Date(date); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); };
+      if (preset === 'mes') return [today.slice(0, 7) + '-01', today];
+      if (preset === '7d' || preset === '30d') return [shift(preset === '7d' ? -6 : -29), today];
+      if (preset === 'semana') { const monday = -((date.getUTCDay() + 6) % 7); return [shift(monday), shift(monday + 6)]; }
+      return null;
+    }
+
+    function setPeriodoPreset(preset) {
+      const range = periodoPresetRange(preset);
+      if (!range) return;
+      document.getElementById('periodoDesde').value = range[0];
+      document.getElementById('periodoHasta').value = range[1];
+      return loadReportePeriodo();
+    }
+
+    function periodoRangeKey() {
+      return `${document.getElementById('periodoDesde')?.value || ''}|${document.getElementById('periodoHasta')?.value || ''}`;
+    }
+
+    function periodoValidDate(value) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      const date = new Date(`${value}T12:00:00Z`);
+      return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+    }
+
+    // Resumen por período 100% local y puro (sin DOM ni red): consolida por id,
+    // excluye archivados, filtra por fecha de entrada (parseFechaLead) en rango
+    // inclusivo y cuenta cada lead una vez con su gestión actual. Categorías con
+    // la política canónica de activeCatalogValues/catalogOptions (solo activos,
+    // en orden de catálogo) + observados fuera de catálogo al final (count desc,
+    // lower(label)); matching trim + case-insensitive; vacío → 'Sin definir'.
+    // catalogs: el objeto catalogRows ({ medio, campana, gestion, ... }).
+    function buildPeriodSummary(leads, catalogs, desde, hasta) {
+      if (!periodoValidDate(desde) || !periodoValidDate(hasta) || desde > hasta) throw new Error('period_range_invalid');
+      const desdeTs = Date.parse(`${desde}T00:00:00Z`), hastaTs = Date.parse(`${hasta}T00:00:00Z`);
+      const activos = consolidateLeadsById(leads || []).filter(lead => !lead.archived_at);
+      const norma = value => String(value ?? '').trim().toLocaleLowerCase('es');
+      const nuevaCategoria = kind => {
+        const porClave = new Map();
+        for (const row of catalogs?.[kind] || []) {
+          if (!row?.active) continue;
+          const label = String(row.value ?? '').trim();
+          const clave = norma(label);
+          if (!clave || porClave.has(clave)) continue; // duplicado case-insensitive: gana el primero
+          porClave.set(clave, { label, count: 0 });
+        }
+        return porClave;
+      };
+      const categorias = { medio: nuevaCategoria('medio'), campana: nuevaCategoria('campana'), gestion: nuevaCategoria('gestion') };
+      const extras = { medio: new Map(), campana: new Map(), gestion: new Map() };
+      const celdas = new Map();
+      let fechasInvalidas = 0;
+      const seleccion = [];
+      for (const lead of activos) {
+        const ts = parseFechaLead(lead);
+        if (ts === null) { fechasInvalidas++; continue; } // del conjunto cargado, excluidos
+        if (ts >= desdeTs && ts <= hastaTs) seleccion.push(lead);
+      }
+      const registrar = (kind, rawValue) => {
+        const trimmed = String(rawValue ?? '').trim() || 'Sin definir';
+        const clave = norma(trimmed);
+        const catalogo = categorias[kind].get(clave);
+        if (catalogo) { catalogo.count++; return catalogo.label; }
+        let extra = extras[kind].get(clave);
+        if (!extra) { extra = { label: trimmed, count: 0 }; extras[kind].set(clave, extra); }
+        extra.count++;
+        return extra.label;
+      };
+      // Una sola pasada: medios, campañas, gestiones y matriz salen de esta selección.
+      for (const lead of seleccion) {
+        const medio = registrar('medio', getField(lead, 'Medio'));
+        const campana = registrar('campana', getField(lead, 'Campaña'));
+        const gestion = registrar('gestion', getField(lead, 'GESTION'));
+        const clave = `${gestion}\u0000${campana}`;
+        celdas.set(clave, (celdas.get(clave) || 0) + 1);
+      }
+      const lista = kind => {
+        const resto = [...extras[kind].values()];
+        if (!extras[kind].has('sin definir') && !categorias[kind].has('sin definir')) resto.push({ label: 'Sin definir', count: 0 });
+        resto.sort((a, b) => b.count - a.count || norma(a.label).localeCompare(norma(b.label), 'es'));
+        return [...categorias[kind].values(), ...resto];
+      };
+      const medios = lista('medio'), campanas = lista('campana'), gestiones = lista('gestion');
+      const total = seleccion.length;
+      const matriz = {
+        campanas: campanas.map(r => r.label),
+        filas: gestiones.map(g => ({ label: g.label, counts: campanas.map(c => celdas.get(`${g.label}\u0000${c.label}`) || 0), total: g.count })),
+        totales_columnas: campanas.map(c => c.count),
+      };
+      const summary = { desde, hasta, total, fechas_invalidas: fechasInvalidas, medios, campanas, gestiones, matriz, totales: { medios: total, campanas: total, gestiones: total, matriz: total } };
+      return validatePeriodoSummary(summary, desde, hasta); // comprobaciones internas antes de publicar
+    }
+
+    function validatePeriodoSummary(data, desde, hasta) {
+      const fail = () => { throw new Error('Los totales del reporte no coinciden o la respuesta es inválida. Actualiza e informa al administrador si persiste.'); };
+      const count = n => Number.isSafeInteger(n) && n >= 0;
+      const sum = rows => rows.reduce((total, row) => total + row.count, 0);
+      if (!data || data.desde !== desde || data.hasta !== hasta || !count(data.total) || !count(data.fechas_invalidas)) fail();
+      for (const key of ['medios', 'campanas', 'gestiones']) {
+        const rows = data[key];
+        if (!Array.isArray(rows) || !rows.length || rows.some(r => !r || typeof r.label !== 'string' || !count(r.count)) || new Set(rows.map(r => r.label.toLowerCase())).size !== rows.length || sum(rows) !== data.total || data.totales?.[key] !== data.total) fail();
+      }
+      const m = data.matriz;
+      if (!m || !Array.isArray(m.campanas) || !Array.isArray(m.filas) || !Array.isArray(m.totales_columnas) || m.campanas.length !== data.campanas.length || m.filas.length !== data.gestiones.length || m.totales_columnas.length !== m.campanas.length || data.totales?.matriz !== data.total) fail();
+      m.filas.forEach((row, i) => {
+        if (!row || row.label !== data.gestiones[i].label || !Array.isArray(row.counts) || row.counts.length !== m.campanas.length || !row.counts.every(count) || row.total !== row.counts.reduce((a, b) => a + b, 0) || row.total !== data.gestiones[i].count) fail();
+      });
+      m.campanas.forEach((label, i) => {
+        if (label !== data.campanas[i].label || m.totales_columnas[i] !== data.campanas[i].count || m.filas.reduce((total, r) => total + r.counts[i], 0) !== m.totales_columnas[i]) fail();
+      });
+      return data;
+    }
+
+    async function loadReportePeriodo() {
+      if (periodoRefreshTimer) { clearTimeout(periodoRefreshTimer); periodoRefreshTimer = null; }
+      const token = ++periodoRequestGeneration;
+      periodoData = null;
+      periodoLoadedKey = '';
+      periodoLoadedRevision = -1;
+      const body = document.getElementById('periodoBody'), aviso = document.getElementById('periodoAviso');
+      const desde = document.getElementById('periodoDesde').value, hasta = document.getElementById('periodoHasta').value;
+      body.replaceChildren();
+      if (!periodoValidDate(desde) || !periodoValidDate(hasta) || desde > hasta) { aviso.textContent = 'Rango inválido: elige Desde y Hasta válidos, en orden.'; updatePeriodoCsvState(); return; }
+      if (!supabaseClient || !currentUser || !currentAccess?.activo || currentMainTab !== 'reporte' || reporteVistaActiva !== 'periodo') { updatePeriodoCsvState(); return; }
+      const generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at, key = `${desde}|${hasta}`;
+      const sourceRevision = periodoSourceRevision;
+      const valid = () => token === periodoRequestGeneration && generation === sessionGeneration && sourceRevision === periodoSourceRevision && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'reporte' && reporteVistaActiva === 'periodo' && periodoRangeKey() === key;
+      // 100% local sobre allLeads (sin red): nunca números parciales durante la carga.
+      if (isLoadingLeads || (!allLeads.length && isSupabaseLive !== true)) { aviso.textContent = 'Cargando todos los leads… se actualizará al finalizar.'; updatePeriodoCsvState(); return; }
+      try {
+        const data = buildPeriodSummary(allLeads, catalogRows, desde, hasta);
+        if (!valid()) return;
+        validatePeriodoSummary(data, desde, hasta);
+        body.innerHTML = renderReportePeriodo(data);
+        periodoData = data;
+        periodoLoadedKey = key;
+        periodoLoadedRevision = sourceRevision;
+        aviso.textContent = `${desde} a ${hasta} (inclusive) · ${data.total} leads por fecha de entrada · ${data.fechas_invalidas} sin fecha válida (excluidos). Gestión actual, no histórica al cierre.`;
+        updatePeriodoCsvState();
+      } catch (error) {
+        if (!valid()) return;
+        periodoData = null;
+        periodoLoadedKey = '';
+        periodoLoadedRevision = -1;
+        body.replaceChildren();
+        aviso.textContent = error?.message === 'period_range_invalid' ? 'Rango inválido: elige Desde y Hasta válidos, en orden.' : error?.message || 'No se pudo cargar el reporte. Intenta nuevamente.';
+        updatePeriodoCsvState();
+      }
+    }
+
+    function periodoPct(count, total) { return (total ? count / total * 100 : 0).toFixed(2) + '%'; }
+
+    function renderReportePeriodo(data) {
+      const table = (title, rows) => `<section class="border border-slate-300 rounded p-3"><h2 class="font-bold text-indigo-900 mb-2">${title}</h2><table class="w-full text-sm"><thead><tr><th scope="col" class="text-left">Categoría</th><th scope="col" class="text-right">Leads</th><th scope="col" class="text-right">%</th></tr></thead><tbody>${rows.map(r => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(r.label)}</th><td class="text-right">${r.count}</td><td class="text-right">${periodoPct(r.count, data.total)}</td></tr>`).join('')}</tbody><tfoot><tr class="font-bold"><th scope="row" class="text-left py-2">TOTAL</th><td class="text-right">${data.total}</td><td class="text-right">${periodoPct(data.total, data.total)}</td></tr></tfoot></table></section>`;
+      const m = data.matriz;
+      const cells = counts => counts.map(n => `<td class="px-3 py-2 text-right border-b border-slate-200">${n}</td>`).join('');
+      const sticky = 'sticky left-0 bg-white border-r border-slate-300 px-3 py-2 text-left';
+      return `<div class="grid md:grid-cols-2 gap-4">${table('Resumen general de leads por entrada (Medio)', data.medios)}${table('Resumen general de campañas', data.campanas)}</div>${table('Resumen específico de gestión actual', data.gestiones)}<section class="border border-slate-300 rounded p-3"><h2 class="font-bold text-indigo-900 mb-2">Matriz gestión actual × campaña</h2><div class="overflow-x-auto" tabindex="0" role="region" aria-label="Matriz gestión por campaña, desplazable"><table class="min-w-full text-sm"><thead><tr><th scope="col" class="${sticky}">Gestión</th>${m.campanas.map(label => `<th scope="col" class="px-3 py-2 whitespace-nowrap">${escapeHtml(label)}</th>`).join('')}<th scope="col" class="px-3 py-2">Total</th></tr></thead><tbody>${m.filas.map(r => `<tr><th scope="row" class="${sticky} font-normal whitespace-nowrap">${escapeHtml(r.label)}</th>${cells(r.counts)}<td class="px-3 py-2 text-right font-bold">${r.total}</td></tr>`).join('')}</tbody><tfoot><tr class="font-bold"><th scope="row" class="${sticky}">TOTAL</th>${cells(m.totales_columnas)}<td class="px-3 py-2 text-right">${data.total}</td></tr></tfoot></table></div></section>`;
+    }
+
+    function exportReportePeriodoCSV() {
+      if (!currentUser || !currentAccess?.activo || reporteVistaActiva !== 'periodo' || currentMainTab !== 'reporte' || !periodoData || periodoLoadedKey !== periodoRangeKey()) { showToast('El reporte no está cargado o el rango cambió. Actualiza antes de exportar.', 'warning'); return; }
+      if (periodoLoadedRevision !== periodoSourceRevision) { showToast('Los datos cambiaron y el reporte se está actualizando. Espera un momento y vuelve a intentarlo.', 'warning'); updatePeriodoCsvState(); return; }
+      const d = periodoData, lines = [], row = values => lines.push(values.map(csvReporteField).join(','));
+      row(['Reporte por período']);
+      row(['Desde (inclusive)', d.desde, 'Hasta (inclusive)', d.hasta]);
+      row(['Gestión actual; no estado histórico al cierre del período']);
+      row(['Generado (Miami)', miamiToday()]);
+      row(['Leads sin fecha válida (excluidos)', d.fechas_invalidas]);
+      for (const [title, rows] of [['Resumen general de leads por entrada (Medio)', d.medios], ['Resumen general de campañas', d.campanas], ['Resumen específico de gestión actual', d.gestiones]]) {
+        row([]); row([title]); row(['Categoría', 'Leads', '%']);
+        rows.forEach(r => row([r.label, r.count, periodoPct(r.count, d.total)]));
+        row(['TOTAL', d.total, periodoPct(d.total, d.total)]);
+      }
+      row([]); row(['Matriz gestión actual × campaña']); row(['Gestión', ...d.matriz.campanas, 'Total']);
+      d.matriz.filas.forEach(r => row([r.label, ...r.counts, r.total]));
+      row(['TOTAL', ...d.matriz.totales_columnas, d.total]);
+      downloadCSV(lines.join('\n'), `Reporte_Periodo_${d.desde}_${d.hasta}.csv`);
+      showToast('Reporte por período exportado a CSV', 'success');
     }
 
     // Traduccion de errores tecnicos de las RPC de notas a mensajes comprensibles.

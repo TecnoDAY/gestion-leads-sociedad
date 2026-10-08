@@ -21,6 +21,10 @@ const names = ['clearSessionState', 'closeInvalidSession', 'validateCurrentSessi
   'setAppAuthenticated', 'enterAuthenticatedSession', 'handleSignOut', 'setDashboardTabState', 'switchTab',
   'closeViewLeadModal', 'openViewLeadModal', 'findLeadByOrigin', 'getField', 'escapeHtml', 'escapeAttr',
   'fetchRowsByIdCursor', 'fetchPagedResult', 'loadLeadNotes', 'loadLeadGestiones',
+  'resetReportePeriodo', 'setReporteVista', 'periodoPresetRange', 'setPeriodoPreset', 'periodoRangeKey', 'periodoValidDate',
+  'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'renderReportePeriodo', 'periodoPct',
+  'markPeriodoReportDirty', 'updatePeriodoCsvState',
+  'consolidateLeadsById', 'compareLeadIdsDescending', 'parseFechaLead',
   'stopIdleTracking', 'endAgentSessionLocally', 'startAgentActivityTracking'];
 const sessionCacheNames = ['loadHistoricoData', 'performLoadHistoricoData', 'loadLeadsData', 'performLoadLeadsData',
   'getExactLeadsCount', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'consolidateLeadsById',
@@ -102,6 +106,8 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     newLeadRequestGeneration: 0, newLeadAdvisorGeneration: 0, newLeadSubmitting: false, editLeadRequestGeneration: 0,
     editLeadAdvisorGeneration: 0, editLeadSubmitting: false, editLeadPreviousGestion: '', editAdvisorsLoading: false,
     citasRequestGeneration: 0, reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [],
+    periodoRequestGeneration: 0, periodoData: null, periodoLoadedKey: '', reporteVistaActiva: 'diario',
+    periodoSourceRevision: 0, periodoLoadedRevision: -1, periodoRefreshTimer: null,
     agentSessionId: null, idleWarnTimer: null, idleTickTimer: null, idleListenersOn: false, idleLastTouchSent: 0,
     localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     campanasRequestGeneration: 0, campanasData: [], campaignStatsMap: new Map(), currentMainTab: 'dashboard',
@@ -126,6 +132,41 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
       : new Promise(resolve => queryWaiters.push({ index, resolve })),
     emit: (event, id) => callback(event, id ? { user: user(id) } : null), signOuts: () => signOuts };
 }
+
+test('período: cierre real de sesión limpia controles y estado cargado; B parte de cero', async () => {
+  const f = frontend(), c = f.c;
+  c.currentUser = user('A'); c.currentAccess = access('A'); c.currentMainTab = 'reporte'; c.reporteVistaActiva = 'periodo';
+  c.isSupabaseLive = true;
+  c.allLeads = [{ id: 1, Fecha: '01/10/2026', Medio: 'Instagram', 'Campaña': 'Demo', GESTION: 'Cierre' }];
+  f.element('periodoDesde').value = '2026-10-01'; f.element('periodoHasta').value = '2026-10-07';
+  await c.loadReportePeriodo();
+  assert.equal(c.periodoData.total, 1); assert.equal(c.periodoLoadedKey, '2026-10-01|2026-10-07');
+  c.clearSessionState();
+  assert.equal(c.periodoData, null); assert.equal(c.periodoLoadedKey, ''); assert.equal(c.reporteVistaActiva, 'diario');
+  assert.equal(f.element('reporteVista').value, 'diario'); assert.equal(f.element('periodoDesde').value, '');
+  assert.equal(f.element('periodoHasta').value, ''); assert.equal(f.element('periodoAviso').textContent, '');
+  assert.equal(f.element('reportePeriodo').classList.contains('hidden'), true);
+  assert.equal(f.element('reporteDiarioVista').classList.contains('hidden'), false);
+  // La sesión siguiente no hereda fechas ni datos del período de A.
+  c.currentUser = user('B'); c.currentAccess = access('B'); c.currentMainTab = 'reporte'; c.reporteVistaActiva = 'periodo';
+  c.isSupabaseLive = true; c.allLeads = [];
+  f.element('periodoDesde').value = '2026-10-01'; f.element('periodoHasta').value = '2026-10-07';
+  await c.loadReportePeriodo();
+  assert.equal(c.periodoData.total, 0); assert.equal(c.periodoLoadedKey, '2026-10-01|2026-10-07');
+});
+
+test('período: selector real alterna wrappers y mes por defecto sin mover controles diarios', async () => {
+  const f = frontend(), c = f.c;
+  f.element('reporteFecha').value = '2026-09-29'; f.element('reporteAsesora').value = 'advisor-A';
+  await c.setReporteVista('periodo');
+  assert.equal(f.element('reporteDiarioVista').classList.contains('hidden'), true);
+  assert.equal(f.element('reportePeriodo').classList.contains('hidden'), false);
+  assert.equal(f.element('periodoDesde').value, '2026-09-01'); assert.equal(f.element('periodoHasta').value, '2026-09-30');
+  await c.setReporteVista('diario');
+  assert.equal(f.element('reporteDiarioVista').classList.contains('hidden'), false);
+  assert.equal(f.element('reportePeriodo').classList.contains('hidden'), true);
+  assert.equal(f.element('reporteFecha').value, '2026-09-29'); assert.equal(f.element('reporteAsesora').value, 'advisor-A');
+});
 
 for (const stage of ['getSession', 'is_active_user', 'user_access']) {
   for (const boundary of ['logout', 'account']) {

@@ -35,6 +35,9 @@ const names = [
   'loadReporteDiario', 'renderReporteV2', 'csvReporteField', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
   'exportReporteDiarioCSV', 'exportCampanasCSV', 'campaignCosteResultado', 'campaignTotals', 'loadCampanas',
   'saveReporteNota', 'deleteReporteNota', 'reporteNotaErrorMsg',
+  'resetReportePeriodo', 'setReporteVista', 'periodoPresetRange', 'setPeriodoPreset', 'periodoRangeKey', 'periodoValidDate',
+  'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'periodoPct', 'renderReportePeriodo', 'exportReportePeriodoCSV', 'initReporteDiario',
+  'markPeriodoReportDirty', 'updatePeriodoCsvState', 'upsertLeadInState', 'removeLeadFromState',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
   'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'syncNewLeadMes',
   'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentDate', 'appointmentInputISO', 'appointmentLocal', 'appointmentCampusFrom',
@@ -84,7 +87,10 @@ function frontend(extra = {}) {
     sessionGeneration: 1, currentMainTab: 'citas', isAdmin: false, isSupervisor: false, newPhoneCheckGeneration: 0, newPhoneCheckTimer: null,
     citasRequestGeneration: 0, citasCache: [], citasRangeKey: '', leadAppointmentsCache: [], leadNotesCache: [], leadGestionesCache: [],
     viewLeadGeneration: 1, currentViewId: 1, dashRangeGen: 0, filterDebounceTimer: null,
-  reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], reporteDayNotes: [], reporteAsesorasDisponibles: [], reporteLoadedKey: '', campanasData: [],
+   reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], reporteDayNotes: [], reporteAsesorasDisponibles: [], reporteLoadedKey: '', campanasData: [],
+    periodoRequestGeneration: 0, periodoData: null, periodoLoadedKey: '', reporteVistaActiva: 'diario',
+    periodoSourceRevision: 0, periodoLoadedRevision: -1, periodoRefreshTimer: null,
+    isLoadingLeads: false, isSupabaseLive: true,
     campanasRequestGeneration: 0, campanasLoading: false, campanasContextMonth: '', campaignStatsMap: new Map(),
     allLeads: [], allHistorico: [], filteredLeads: [], dataSource: 'actual', currentPage: 1, authorizedUsersList: [],
     leadAppointmentAdvisors: [], newLeadSubmitting: false, newLeadRequestGeneration: 0, newLeadAdvisorGeneration: 0,
@@ -140,6 +146,336 @@ function database(tables, { fail, hook, maxRows = 1000 } = {}) {
 
 const rows = (count, data = {}) => Array.from({ length: count }, (_, i) => ({ id: i + 1, ...data }));
 const plain = value => JSON.parse(JSON.stringify(value));
+
+// Sintetico: no representa octubre real ni el total de una imagen de Sheets.
+const periodCatalogs = () => ({
+  medio: [
+    { value: 'Instagram', active: true },
+    { value: 'instagram ', active: true }, // duplicado case-insensitive: una sola fila
+    { value: 'Cero', active: true },       // catálogo sin leads: se conserva en cero
+    { value: 'Apagado', active: false },   // inactivo: no abre categoría
+  ],
+  campana: [
+    { value: '=Campaña <demo>', active: true },
+    { value: 'Cero', active: true },
+  ],
+  gestion: [
+    { value: 'Contactado', active: true },
+    { value: 'Mudo', active: true },
+  ],
+});
+const periodLeads = () => [
+  { id: 1, Fecha: '2026-10-01', Medio: ' instagram ', 'Campaña': '=campaña <demo>', GESTION: 'contactado' }, // límite desde, trim/ci → catálogo
+  { id: 2, Fecha: '7/10/2026', Medio: 'Instagram', 'Campaña': '=Campaña <demo>', GESTION: 'Sin respuesta' },  // límite hasta, gestión extra
+  { id: 2, Fecha: '07/10/2026' },                                                                           // id duplicado: cuenta una vez
+  { id: 3, Fecha: '07-10-2026', Medio: '', 'Campaña': '', GESTION: '' },                                     // vacíos → Sin definir
+  { id: 4, Fecha: 'basura', Medio: 'Instagram', 'Campaña': '=Campaña <demo>', GESTION: 'Mudo' },             // fecha inválida → excluido
+  { id: 5, Fecha: '2026-09-30', Medio: 'Instagram', 'Campaña': '=Campaña <demo>', GESTION: 'Mudo' },         // justo antes del rango
+  { id: 6, Fecha: '2026-10-06', Medio: 'panfleto', 'Campaña': 'zz-extra', GESTION: 'Contactado' },          // extras fuera de catálogo
+  { id: 7, Fecha: '2026-10-07', Medio: 'Instagram', 'Campaña': '=Campaña <demo>', GESTION: 'Mudo', archived_at: '2026-10-08T00:00:00Z' }, // archivado: excluido
+  { id: 8, Fecha: '2026-10-08', Medio: 'Instagram', 'Campaña': '=Campaña <demo>', GESTION: 'Mudo' },         // justo después del rango
+];
+function periodFrontend(extra = {}) {
+  const f = frontend({ currentMainTab: 'reporte', reporteVistaActiva: 'periodo', miamiToday: () => '2026-10-07', supabaseClient: periodoSinRed().supabaseClient, ...extra });
+  f.element('periodoDesde').value = '2026-10-01'; f.element('periodoHasta').value = '2026-10-07';
+  return f;
+}
+const periodoSinRed = () => { const rpcCalls = []; return { rpcCalls, supabaseClient: { rpc: (...args) => { rpcCalls.push(args); throw new Error('no debe haber red'); } } }; };
+
+test('buildPeriodSummary: catálogo+extras, dedup id, archivados, límites y matriz coherentes', () => {
+  const f = frontend();
+  const data = f.context.buildPeriodSummary(periodLeads(), periodCatalogs(), '2026-10-01', '2026-10-07');
+  assert.equal(data.total, 4);
+  assert.equal(data.fechas_invalidas, 1);
+  assert.equal(data.desde, '2026-10-01'); assert.equal(data.hasta, '2026-10-07');
+  assert.deepEqual(plain(data.medios), [
+    { label: 'Instagram', count: 2 }, { label: 'Cero', count: 0 }, { label: 'panfleto', count: 1 }, { label: 'Sin definir', count: 1 },
+  ]);
+  assert.deepEqual(plain(data.campanas), [
+    { label: '=Campaña <demo>', count: 2 }, { label: 'Cero', count: 0 }, { label: 'Sin definir', count: 1 }, { label: 'zz-extra', count: 1 },
+  ]);
+  assert.deepEqual(plain(data.gestiones), [
+    { label: 'Contactado', count: 2 }, { label: 'Mudo', count: 0 }, { label: 'Sin definir', count: 1 }, { label: 'Sin respuesta', count: 1 },
+  ]);
+  assert.deepEqual(plain(data.matriz), {
+    campanas: ['=Campaña <demo>', 'Cero', 'Sin definir', 'zz-extra'],
+    totales_columnas: [2, 0, 1, 1],
+    filas: [
+      { label: 'Contactado', counts: [1, 0, 0, 1], total: 2 },
+      { label: 'Mudo', counts: [0, 0, 0, 0], total: 0 },
+      { label: 'Sin definir', counts: [0, 0, 1, 0], total: 1 },
+      { label: 'Sin respuesta', counts: [1, 0, 0, 0], total: 1 },
+    ],
+  });
+  assert.deepEqual(plain(data.totales), { medios: 4, campanas: 4, gestiones: 4, matriz: 4 });
+  f.context.validatePeriodoSummary(data, '2026-10-01', '2026-10-07');
+});
+
+test('buildPeriodSummary: rango invertido o inválido lanza period_range_invalid', () => {
+  const f = frontend();
+  for (const [a, b] of [['2026-10-08', '2026-10-07'], ['2026-02-30', '2026-10-07'], ['2026-10-31', ''], ['mal', '2026-10-07'], ['', '']]) {
+    assert.throws(() => f.context.buildPeriodSummary(periodLeads(), periodCatalogs(), a, b), err => err.message === 'period_range_invalid');
+  }
+});
+
+test('buildPeriodSummary: período vacío total 0, catálogo en cero y pct 0.00%', () => {
+  const f = frontend();
+  // Fechas válidas fuera de rango no cuentan como sin fecha; archivados no cuentan nunca.
+  const data = f.context.buildPeriodSummary([
+    { id: 1, Fecha: '2025-01-15', Medio: 'Instagram', 'Campaña': '=Campaña <demo>', GESTION: 'Mudo' },
+    { id: 2, Fecha: 'basura', Medio: 'Instagram', 'Campaña': '=Campaña <demo>', GESTION: 'Mudo' },
+    { id: 3, Fecha: 'basura', archived_at: '2026-01-01T00:00:00Z', Medio: 'Instagram', 'Campaña': 'X', GESTION: 'Y' },
+  ], periodCatalogs(), '2026-10-01', '2026-10-07');
+  assert.equal(data.total, 0); assert.equal(data.fechas_invalidas, 1);
+  assert.deepEqual(plain(data.medios), [{ label: 'Instagram', count: 0 }, { label: 'Cero', count: 0 }, { label: 'Sin definir', count: 0 }]);
+  assert.deepEqual(plain(data.matriz.totales_columnas), [0, 0, 0]);
+  assert.deepEqual(plain(data.matriz.filas), [
+    { label: 'Contactado', counts: [0, 0, 0], total: 0 },
+    { label: 'Mudo', counts: [0, 0, 0], total: 0 },
+    { label: 'Sin definir', counts: [0, 0, 0], total: 0 },
+  ]);
+  assert.equal(f.context.periodoPct(0, 0), '0.00%');
+  f.context.validatePeriodoSummary(data, '2026-10-01', '2026-10-07');
+});
+
+test('período: cálculo local sin RPC; cuatro secciones, ceros, escape y aviso', async () => {
+  const { rpcCalls, supabaseClient } = periodoSinRed();
+  const f = periodFrontend({ supabaseClient, allLeads: periodLeads(), catalogRows: periodCatalogs() });
+  await f.context.loadReportePeriodo();
+  assert.equal(rpcCalls.length, 0);
+  const body = f.element('periodoBody').innerHTML;
+  assert.equal((body.match(/<section/g) || []).length, 4);
+  assert.match(body, /Cero/); assert.match(body, /0\.00%/); assert.match(body, /50\.00%/); assert.match(body, /100\.00%/);
+  assert.match(body, /&lt;demo&gt;/); assert.doesNotMatch(body, /<demo>/);
+  assert.match(body, /overflow-x-auto/); assert.match(body, /sticky left-0/);
+  assert.match(f.element('periodoAviso').textContent, /2026-10-01 a 2026-10-07 \(inclusive\) · 4 leads por fecha de entrada · 1 sin fecha válida \(excluidos\)\./);
+  assert.match(f.element('periodoAviso').textContent, /no histórica al cierre/);
+  assert.equal(f.context.periodoLoadedKey, '2026-10-01|2026-10-07');
+  assert.equal(f.context.periodoData.total, 4);
+});
+
+test('período: total cero conserva categorías, cuatro totales y CSV exportable', async () => {
+  const f = periodFrontend({ allLeads: [], catalogRows: periodCatalogs() });
+  await f.context.loadReportePeriodo();
+  assert.doesNotMatch(f.element('periodoBody').innerHTML, /NaN|Infinity|100\.00%/);
+  assert.equal((f.element('periodoBody').innerHTML.match(/TOTAL/g) || []).length, 4);
+  assert.match(f.element('periodoAviso').textContent, /· 0 leads por fecha de entrada · 0 sin fecha válida \(excluidos\)/);
+  f.context.exportReportePeriodoCSV(); assert.equal(f.downloads.length, 1);
+});
+
+test('período: rango invertido, ausente o fecha imposible invalida cache sin red', async () => {
+  const { rpcCalls, supabaseClient } = periodoSinRed();
+  const f = periodFrontend({ supabaseClient, allLeads: periodLeads(), catalogRows: periodCatalogs() });
+  for (const [a, b] of [['2026-10-08', '2026-10-07'], ['', '2026-10-07'], ['2026-02-30', '2026-10-07'], ['mal', '2026-10-07']]) {
+    f.context.periodoData = { total: 1 }; f.context.periodoLoadedKey = 'old';
+    f.element('periodoDesde').value = a; f.element('periodoHasta').value = b;
+    await f.context.loadReportePeriodo();
+    assert.match(f.element('periodoAviso').textContent, /Rango inválido/);
+    assert.equal(f.context.periodoData, null); assert.equal(f.context.periodoLoadedKey, '');
+    assert.equal(f.element('periodoBody').innerHTML, '');
+  }
+  assert.equal(rpcCalls.length, 0);
+});
+
+test('período: resumen incoherente o malformado nunca se publica', async () => {
+  const changes = [d => d.totales.medios++, d => d.medios[0].count++, d => d.matriz.filas[0].counts[0]++, d => d.matriz.totales_columnas[0]++, d => d.matriz.campanas.reverse(), d => d.hasta = '2026-10-08', d => d.total = -1, d => d.gestiones = null];
+  for (const change of changes) {
+    const f = periodFrontend({ allLeads: [], catalogRows: periodCatalogs() });
+    const data = f.context.buildPeriodSummary([], periodCatalogs(), '2026-10-01', '2026-10-07');
+    change(data);
+    f.context.buildPeriodSummary = () => data;
+    await f.context.loadReportePeriodo();
+    assert.match(f.element('periodoAviso').textContent, /totales del reporte no coinciden/);
+    assert.equal(f.context.periodoData, null); assert.equal(f.context.periodoLoadedKey, '');
+    assert.equal(f.element('periodoBody').innerHTML, '');
+    f.context.exportReportePeriodoCSV(); assert.equal(f.downloads.length, 0);
+  }
+});
+
+test('período: carga incompleta o sin conexión muestra aviso sin datos parciales', async () => {
+  for (const extra of [{ isLoadingLeads: true, allLeads: periodLeads() }, { isLoadingLeads: false, isSupabaseLive: false, allLeads: [] }]) {
+    const f = periodFrontend(extra);
+    await f.context.loadReportePeriodo();
+    assert.match(f.element('periodoAviso').textContent, /Cargando todos los leads/);
+    assert.equal(f.context.periodoData, null);
+    assert.equal(f.element('periodoBody').innerHTML, '');
+  }
+});
+
+test('período: cálculo obsoleto (rango cambiado en curso) no reemplaza al nuevo', async () => {
+  const f = periodFrontend({ allLeads: periodLeads(), catalogRows: periodCatalogs() });
+  const real = f.context.buildPeriodSummary;
+  let once = false;
+  f.context.buildPeriodSummary = (...args) => {
+    const data = real(...args);
+    if (!once) { once = true; f.element('periodoHasta').value = '2026-10-06'; f.context.loadReportePeriodo(); }
+    return data;
+  };
+  await f.context.loadReportePeriodo();
+  assert.equal(f.context.periodoLoadedKey, '2026-10-01|2026-10-06');
+  assert.equal(f.context.periodoData.total, 2);
+});
+
+test('período: cambios de sesión, acceso, pestaña, vista y filtros durante el cálculo descartan el resultado', async () => {
+  for (const change of [f => f.context.sessionGeneration++, f => f.context.currentUser.id = 'other', f => f.context.currentAccess.updated_at = 'v2', f => f.context.currentAccess.activo = false, f => f.context.currentMainTab = 'dashboard', f => f.context.reporteVistaActiva = 'diario', f => f.element('periodoDesde').value = '2026-10-02']) {
+    const f = periodFrontend({ allLeads: periodLeads(), catalogRows: periodCatalogs() });
+    const real = f.context.buildPeriodSummary;
+    f.context.buildPeriodSummary = (...args) => { const data = real(...args); change(f); return data; };
+    f.element('periodoAviso').textContent = 'nueva vista';
+    await f.context.loadReportePeriodo();
+    assert.equal(f.context.periodoData, null);
+    assert.equal(f.element('periodoAviso').textContent, 'nueva vista');
+  }
+});
+
+test('período: sin sesión, acceso, pestaña o vista correcta no publica datos', async () => {
+  for (const mutate of [f => f.context.supabaseClient = null, f => f.context.currentUser = null, f => f.context.currentAccess = { activo: false, updated_at: 'v1' }, f => f.context.currentMainTab = 'dashboard', f => f.context.reporteVistaActiva = 'diario']) {
+    const f = periodFrontend({ allLeads: periodLeads(), catalogRows: periodCatalogs() });
+    mutate(f);
+    f.element('periodoAviso').textContent = 'previo';
+    await f.context.loadReportePeriodo();
+    assert.equal(f.context.periodoData, null);
+    assert.equal(f.element('periodoAviso').textContent, 'previo');
+  }
+});
+
+test('período: error period_range_invalid se traduce y excepción limpia datos previos', async () => {
+  const f = periodFrontend({ allLeads: periodLeads(), catalogRows: periodCatalogs(), periodoData: { total: 1 }, periodoLoadedKey: '2026-10-01|2026-10-07' });
+  f.context.buildPeriodSummary = () => { throw new Error('period_range_invalid'); };
+  await f.context.loadReportePeriodo();
+  assert.match(f.element('periodoAviso').textContent, /Rango inválido/);
+  assert.equal(f.context.periodoData, null); assert.equal(f.context.periodoLoadedKey, '');
+  f.context.exportReportePeriodoCSV(); assert.equal(f.downloads.length, 0);
+  const boom = periodFrontend({ allLeads: [], catalogRows: periodCatalogs() });
+  boom.context.buildPeriodSummary = () => { throw new Error('boom inesperado'); };
+  await boom.context.loadReportePeriodo();
+  assert.equal(boom.element('periodoAviso').textContent, 'boom inesperado');
+  assert.equal(boom.context.periodoData, null);
+});
+
+test('período: CSV usa rango cargado, cuatro secciones, ceros, totales y neutraliza fórmulas (sin RPC)', async () => {
+  const { rpcCalls, supabaseClient } = periodoSinRed();
+  const f = periodFrontend({ supabaseClient, allLeads: periodLeads(), catalogRows: periodCatalogs() });
+  await f.context.loadReportePeriodo();
+  f.element('periodoHasta').value = '2026-10-08'; f.context.exportReportePeriodoCSV(); assert.equal(f.downloads.length, 0);
+  f.element('periodoHasta').value = '2026-10-07'; f.context.exportReportePeriodoCSV();
+  assert.equal(f.downloads[0].download, 'Reporte_Periodo_2026-10-01_2026-10-07.csv');
+  const csv = await f.downloads[0].blob.text();
+  assert.match(csv, /Desde \(inclusive\).*2026-10-01.*Hasta \(inclusive\).*2026-10-07/);
+  assert.match(csv, /Gestión actual; no estado histórico/); assert.match(csv, /"'=Campaña <demo>"/);
+  assert.match(csv, /"Cero","0","0\.00%"/); assert.equal((csv.match(/"TOTAL"/g) || []).length, 4);
+  assert.match(csv, /"Leads sin fecha válida \(excluidos\)","1"/);
+  f.context.currentAccess.activo = false; f.context.exportReportePeriodoCSV(); assert.equal(f.downloads.length, 1);
+  assert.equal(rpcCalls.length, 0);
+});
+
+test('período: presets calendario Miami incluyen hoy, semana lunes-domingo y cambio de año', async () => {
+  const f = periodFrontend(); f.context.loadReportePeriodo = async () => {};
+  for (const [preset, expected] of [['mes', ['2026-10-01', '2026-10-07']], ['semana', ['2026-10-05', '2026-10-11']], ['7d', ['2026-10-01', '2026-10-07']], ['30d', ['2026-09-08', '2026-10-07']]]) {
+    await f.context.setPeriodoPreset(preset);
+    assert.deepEqual([f.element('periodoDesde').value, f.element('periodoHasta').value], expected);
+  }
+  f.context.miamiToday = () => '2027-01-03';
+  assert.deepEqual(plain(f.context.periodoPresetRange('semana')), ['2026-12-28', '2027-01-03']);
+  assert.deepEqual(plain(f.context.periodoPresetRange('7d')), ['2026-12-28', '2027-01-03']);
+  f.context.miamiToday = () => '2024-03-01';
+  assert.deepEqual(plain(f.context.periodoPresetRange('7d')), ['2024-02-24', '2024-03-01']);
+});
+
+test('período: selector aislado y reset descartan cargas sin modificar cache diario', async () => {
+  const f = periodFrontend({ reporteDayData: [{ marker: 'diario' }] });
+  f.context.initReporteDiario = () => { f.context.dailyInit = true; };
+  f.context.loadReportePeriodo = async () => { f.context.periodInit = true; };
+  await f.context.setReporteVista('diario'); assert.equal(f.context.dailyInit, true);
+  await f.context.setReporteVista('periodo'); assert.equal(f.context.periodInit, true);
+  f.context.periodoData = { total: 1 }; f.context.periodoLoadedKey = 'loaded';
+  const generation = f.context.periodoRequestGeneration;
+  f.context.resetReportePeriodo();
+  assert.ok(f.context.periodoRequestGeneration > generation);
+  assert.equal(f.context.reporteVistaActiva, 'diario'); assert.equal(f.context.periodoData, null);
+  assert.equal(f.context.periodoLoadedKey, ''); assert.equal(f.element('periodoDesde').value, '');
+  assert.deepEqual(plain(f.context.reporteDayData), [{ marker: 'diario' }]);
+  assert.match(extractFunction('clearSessionState'), /resetReportePeriodo\(\)/);
+  assert.match(extractFunction('switchTab'), /setReporteVista\(reporteVistaActiva\)/);
+});
+
+test('período: mutación de leads con vista abierta invalida pantalla/CSV y programa un solo recálculo', async () => {
+  const f = periodFrontend({ allLeads: periodLeads(), catalogRows: periodCatalogs() });
+  await f.context.loadReportePeriodo();
+  assert.equal(f.context.periodoLoadedRevision, 0);
+  assert.equal(f.element('periodoBtnCsv').disabled, false);
+  const timersBefore = f.timers.length;
+  f.context.upsertLeadInState({ id: 999, Fecha: '03/10/2026', Medio: 'Whatsapp', 'Campaña': 'Campaña A', GESTION: 'Agendado', Nombre: 'X' });
+  f.context.upsertLeadInState({ id: 998, Fecha: '03/10/2026', Medio: 'Whatsapp', 'Campaña': 'Campaña A', GESTION: 'Interesado', Nombre: 'Y' });
+  // Pantalla y CSV invalidados inmediatamente (nada obsoleto visible/exportable).
+  assert.equal(f.context.periodoData, null);
+  assert.equal(f.context.periodoLoadedRevision, -1);
+  assert.equal(f.element('periodoBody').innerHTML, '');
+  assert.match(f.element('periodoAviso').textContent, /Recalculando/);
+  assert.equal(f.element('periodoBtnCsv').disabled, true);
+  f.context.exportReportePeriodoCSV();
+  assert.equal(f.downloads.length, 0);
+  // Debounce: cada upsert programa un temporizador; solo el último recalcula.
+  assert.ok(f.timers.length > timersBefore);
+  f.timers.at(-1)();
+  await Promise.resolve();
+  assert.equal(f.context.periodoData.total, 6);
+  assert.equal(f.context.periodoLoadedRevision, f.context.periodoSourceRevision);
+  assert.equal(f.element('periodoBtnCsv').disabled, false);
+  f.context.exportReportePeriodoCSV();
+  assert.equal(f.downloads.length, 1);
+});
+
+test('período: mutación con vista oculta solo invalida y no programa recálculo', async () => {
+  const f = periodFrontend({ allLeads: periodLeads(), catalogRows: periodCatalogs(), reporteVistaActiva: 'diario' });
+  f.element('periodoBody').innerHTML = 'intocable';
+  const timersBefore = f.timers.length;
+  f.context.upsertLeadInState({ id: 999, Fecha: '03/10/2026', Medio: 'Whatsapp', Nombre: 'X' });
+  assert.equal(f.context.periodoSourceRevision, 1);
+  assert.equal(f.timers.length, timersBefore);
+  assert.equal(f.element('periodoBody').innerHTML, 'intocable');
+  assert.equal(f.element('periodoBtnCsv').disabled, true);
+  f.context.removeLeadFromState(999);
+  assert.equal(f.context.periodoSourceRevision, 2);
+  assert.equal(f.timers.length, timersBefore);
+});
+
+test('período: revisión cambiada durante el cálculo descarta la publicación y el CSV la exige', async () => {
+  const f = periodFrontend({ allLeads: periodLeads(), catalogRows: periodCatalogs() });
+  const real = f.context.buildPeriodSummary;
+  f.context.buildPeriodSummary = (...args) => { const data = real(...args); f.context.periodoSourceRevision += 1; return data; };
+  await f.context.loadReportePeriodo();
+  assert.equal(f.context.periodoData, null);
+  assert.equal(f.context.periodoLoadedRevision, -1);
+  // Recalculo limpio: publica con la revisión vigente y habilita el CSV.
+  f.context.buildPeriodSummary = real;
+  await f.context.loadReportePeriodo();
+  assert.equal(f.context.periodoLoadedRevision, f.context.periodoSourceRevision);
+  assert.equal(f.element('periodoBtnCsv').disabled, false);
+  // Revisión desactualizada bloquea la exportación aunque el rango coincida.
+  f.context.periodoSourceRevision += 1;
+  f.context.exportReportePeriodoCSV();
+  assert.equal(f.downloads.length, 0);
+  assert.match(f.toasts.at(-1)[0], /datos cambiaron/);
+  assert.equal(f.element('periodoBtnCsv').disabled, true);
+});
+
+test('período: carga y reset cancelan el recálculo pendiente; wiring en puntos centrales', async () => {
+  const f = periodFrontend({ allLeads: periodLeads(), catalogRows: periodCatalogs(), reporteVistaActiva: 'diario' });
+  f.context.reporteVistaActiva = 'periodo';
+  f.context.markPeriodoReportDirty();
+  assert.notEqual(f.context.periodoRefreshTimer, null);
+  f.context.resetReportePeriodo();
+  assert.equal(f.context.periodoRefreshTimer, null);
+  assert.equal(f.context.periodoLoadedRevision, -1);
+  assert.equal(f.element('periodoBtnCsv').disabled, true);
+  // Los cuatro puntos centrales (mutación de leads, fin de carga y refresco de
+  // catálogos) deben invocar la invalidación única.
+  for (const name of ['upsertLeadInState', 'removeLeadFromState', 'performLoadLeadsData', 'refreshCatalogs']) {
+    assert.match(extractFunction(name), /markPeriodoReportDirty\(\)/, name);
+  }
+});
+
 
 test('cursor existente reutilizado: >2000 filas, sin duplicados y orden estable', async () => {
   const db = database({ leads: rows(2005), leads_historico: rows(1205) });

@@ -36,7 +36,7 @@ Modo: off | Fuente: default | Runner: no disponible. Checks funcionales y SQL es
 - [x] T1 preflight y migración de unicidad parcial (SQL local, NO aplicada en remoto)
 - [x] T2 bloqueo UI fail-closed y mensaje de cita existente (conectado a la carga de citas)
 - [x] T3 RPC admin de borrado y botón confirmado en ficha y panel Citas (solo admin)
-- [~] T4 verificación local completa; falta aplicar y verificar en remoto
+- [x] T4 verificación local y despliegue remoto verificado
 
 ## Criterios de aceptación
 - [x] Índice único parcial creado localmente; permite cero o una `PROGRAMADA`; varias históricas siguen permitidas.
@@ -49,13 +49,12 @@ Modo: off | Fuente: default | Runner: no disponible. Checks funcionales y SQL es
 - [x] Doble envío no crea ni borra dos veces.
 - [x] Reprogramación sigue funcionando con el índice.
 - [x] build/lint/node-check y preflight remoto verdes.
-- [ ] Aplicar RPC + índice único en Supabase (requiere migración remota autorizada).
-- [ ] Prueba manual del borrado por el equipo.
+- [x] RPC e índice único aplicados y verificados en Supabase remoto.
+- [ ] Prueba manual del borrado por el equipo (pendiente del humano).
 
 ## Estado real (verificado, no declarado)
-- Remoto: `lead_appointments_one_programmed_per_lead_uidx` **ausente**; `delete_lead_appointment(bigint)` **ausente**; 0 leads con más de una `PROGRAMADA`.
-- Por tanto la regla **aún no está implantada**: hasta aplicar las migraciones, nada impide dos `PROGRAMADA` y el botón Eliminar devolverá error.
-- El commit `0bef23c` decía "permite borrado admin" describiendo intentions, no comportamiento.
+- El commit `0bef23c` decía "permite borrado admin" describiendo intención, no comportamiento: la UI no tenía botón y las migraciones no estaban aplicadas.
+- Resuelto en `5a0ffc5` (frontend) y en el despliegue remoto descrito abajo.
 
 ## Decisiones aceptadas
 - Regla como máximo una, no exactamente una.
@@ -99,9 +98,19 @@ Modo: off | Fuente: default | Runner: no disponible. Checks funcionales y SQL es
 
 
 
+## Despliegue remoto (2026-10-09, autorizado por el humano)
+- Pre-flight: 0 duplicados, 9 `PROGRAMADA` de 22 citas, `is_admin_user()` presente, FK reales `lead_appointment_events` CASCADE y `rescheduled_from_id` SET NULL (coinciden con lo asumido).
+- `apply_migration` `202610080002_delete_lead_appointment_admin` (versión 20261009110902) y `202610080001_one_programmed_appointment_per_lead` (versión 20261009111045).
+- RPC releída: `SECURITY DEFINER`, `search_path=public`, cuerpo idéntico al fichero local; `anon` sin EXECUTE, `authenticated` con EXECUTE.
+- Índice releído: `CREATE UNIQUE INDEX ... (lead_id) WHERE (status = 'PROGRAMADA')`.
+- Prueba negativa del guard: `delete_lead_appointment(-1)` → `42501 admin_required` (rechaza antes de tocar datos).
+- Prueba del índice: insertar 2ª `PROGRAMADA` en lead 5 → `23505 lead_appointments_one_programmed_per_lead_uidx`; revertido con ROLLBACK.
+- Contra-prueba: insertar 2ª `CANCELADA` en el mismo lead → permitido (el índice no restringe históricas).
+- Estado final tras revertir: 22 citas, 9 `PROGRAMADA`, 4 `CANCELADA`, 0 duplicados, 6056 leads, 35 eventos, 9 notas. Sin efectos secundarios.
+
 ## Progreso
-- Estado: frontend completo y verificado en local; falta el despliegue de las dos migraciones.
-- Última tarea: T4 (parcial).
+- Estado: frontend completo y regla implantada en remoto.
+- Última tarea: T4.
 - Verificación local: `check-app` OK, `npm run lint` OK, `npm run build` OK, `npm test` 242/242 JS + 11/11 Python, `git diff --check` limpio.
 - Siguiente paso: aplicar `202610080002` (RPC) y `202610080001` (índice) en Supabase, repreguntar duplicados y probar el borrado manual.
 - Bloqueos: el despliegue remoto requiere autorización explícita del humano.

@@ -24,15 +24,27 @@ function extractFunctions(name) {
 }
 
 for (const url of [
-  'https://cdn.tailwindcss.com/3.4.17',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2',
   'https://unpkg.com/lucide@1.49.0/dist/umd/lucide.min.js',
-  'https://cdn.jsdelivr.net/npm/chart.js@4.5.1',
 ]) {
   test(`runtime frontend fija ${url}`, () => {
     assert.ok(html.includes(`<script src="${url}"></script>`));
   });
 }
+
+// Tailwind: compilado por Vite desde src/index.css, nunca el CDN de runtime.
+test('Tailwind se compila en el build y no se carga desde el CDN', () => {
+  assert.ok(!html.includes('cdn.tailwindcss.com'));
+  assert.ok(html.includes('<link rel="stylesheet" href="/src/index.css"'));
+  assert.ok(readFileSync(new URL('src/index.css', root), 'utf8').includes('@import "tailwindcss";'));
+});
+
+// Chart.js: mismo CDN y misma version, pero se descarga al abrir la pestaña
+// Historico en vez de bloquear el arranque del panel.
+test('Chart.js conserva la version fijada y se carga de forma diferida', () => {
+  assert.ok(html.includes("'https://cdn.jsdelivr.net/npm/chart.js@4.5.1'"));
+  assert.ok(!html.includes('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>'));
+});
 
 for (const name of ['authorize-user', 'change-user-email', 'meta-whatsapp-webhook']) {
   test(`${name} conserva createClient ESM en Supabase 2.117.1`, () => {

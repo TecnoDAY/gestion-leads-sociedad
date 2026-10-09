@@ -17,31 +17,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'monospace'],
-          },
-          colors: {
-            brand: {
-              50: '#eef2ff',
-              100: '#e0e7ff',
-              400: '#818cf8',
-              500: '#6366f1',
-              600: '#4f46e5',
-              700: '#4338ca',
-            }
-          }
-        }
-      }
-    };
-  </script>
+  <!-- Tailwind CSS compilado por Vite (src/index.css); antes se usaba el CDN de runtime -->
+  <link rel="stylesheet" href="/src/index.css" />
 
   <!-- Supabase JS v2 CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2"></script>
@@ -49,8 +26,8 @@
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@1.49.0/dist/umd/lucide.min.js"></script>
 
-  <!-- Chart.js CDN for Historical Analytics -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+  <!-- Chart.js NO se carga aquí: solo lo usa la pestaña Histórico y se
+       descarga al abrirla (ensureChartJs), para no bloquear el arranque. -->
 
   <style>
     /* Custom scrollbar and table aesthetics */
@@ -2225,6 +2202,23 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     let currentMainTab = 'dashboard';
       let citasCache = [], citasRangeKey = '', citasRequestGeneration = 0;
       const histCharts = {};      // Registro de instancias de Chart.js
+      // Chart.js solo lo usa la pestaña Histórico: se descarga al abrirla para
+      // no bloquear el arranque del panel. Si falla, renderHistoricalAnalytics
+      // ya avisa y deja KPIs y tabla funcionando. La promesa se memoriza en la
+      // propia funcion, sin variables de modulo.
+      function ensureChartJs() {
+        if (window.Chart) return Promise.resolve(true);
+        if (!ensureChartJs.promise) {
+          ensureChartJs.promise = new Promise((resolver) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.5.1';
+            script.onload = () => resolver(true);
+            script.onerror = () => { ensureChartJs.promise = null; resolver(false); };
+            document.head.appendChild(script);
+          });
+        }
+        return ensureChartJs.promise;
+      }
       function updateChartTheme() {
         if (!window.Chart) return;
         const light = document.documentElement.dataset.theme === 'light';
@@ -2327,7 +2321,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         viewDash.classList.add('hidden');
         viewHist.classList.remove('hidden');
          viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden');
-        renderHistoricalAnalytics();
+        ensureChartJs().then(() => { if (currentMainTab === 'historico') renderHistoricalAnalytics(); });
       }
 
       [btnDash, btnHist, btnReporte, btnCitas].forEach(button => button.classList.toggle('hidden', isTrafficker));

@@ -19,6 +19,7 @@ function extractFunction(name) {
 }
 const names = ['clearSessionState', 'closeInvalidSession', 'validateCurrentSession', 'loadCurrentAccess',
   'setAppAuthenticated', 'enterAuthenticatedSession', 'handleSignOut', 'setDashboardTabState', 'switchTab',
+  'ensureChartJs',
   'closeViewLeadModal', 'openViewLeadModal', 'findLeadByOrigin', 'getField', 'escapeHtml', 'escapeAttr',
   'updateLeadAppointmentCreateState', 'setBlockControls', 'isAgendadoGestion',
   'fetchRowsByIdCursor', 'fetchPagedResult', 'loadLeadNotes', 'loadLeadGestiones',
@@ -97,7 +98,9 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     },
   };
   const c = vm.createContext({
-    console: { warn() {}, log() {}, error() {} }, window: {}, document: { body: element('body'), getElementById: element, querySelectorAll: () => [] },
+    console: { warn() {}, log() {}, error() {} }, window: {}, document: { body: element('body'), getElementById: element, querySelectorAll: () => [],
+      // Carga diferida de Chart.js: el stub crea el <script> pero nunca dispara onload/onerror.
+      createElement: () => ({ setAttribute() {}, addEventListener() {} }), head: { appendChild() {} } },
     setTimeout: fn => timers.push(fn), supabaseClient: client,
     sessionGeneration: 0, viewLeadGeneration: 0, authValidationPromise: null, sessionInitializationPromise: null,
     currentUser: null, currentAccess: null, isAdmin: false, isTrafficker: false, isSupervisor: false, isSupabaseLive: false,

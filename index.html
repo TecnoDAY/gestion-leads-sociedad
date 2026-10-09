@@ -403,8 +403,8 @@
         <div class="min-w-[150px]">
           <label class="block text-xs font-medium text-slate-400 mb-1">Origen</label>
           <select id="dataSourceFilter" onchange="setDataSource(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
-            <option value="actual" selected>Leads actuales</option>
             <option value="historico">Histórico 2025</option>
+            <option value="actual" selected>Leads actuales</option>
             <option value="todos">Todos</option>
           </select>
         </div>
@@ -882,7 +882,7 @@
     <div id="viewCitas" class="hidden space-y-5">
       <div class="glass-card rounded-2xl p-4 sm:p-6 border border-slate-700/80 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2"><div><h2 class="text-xl font-bold text-white">Citas</h2><p id="citasCount" class="text-xs text-slate-400">0 citas</p></div><button onclick="resetCitasFilters()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700">Limpiar</button></div>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs"><label>Desde<input id="citasDesde" type="date" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></label><label>Hasta<input id="citasHasta" type="date" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></label><label>Resultado<select id="citasResultado" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"><option value="">Todos</option><option value="PROGRAMADA">Programada</option><option value="ASISTIO">Asistió</option><option value="NO_ASISTIO">No asistió</option><option value="CANCELADA">Cancelada</option><option value="REPROGRAMADA">Reprogramada</option></select></label><label>Sede<select id="citasSede" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"><option value="">Todas</option><option value="DORAL">Doral</option><option value="WESTON">Weston</option><option value="sin">Sin sede</option></select></label><label>Campaña<select id="citasCampana" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label><label>Medio<select id="citasMedio" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label><label id="citasAsesorWrap" class="hidden">Asesor<select id="citasAsesor" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label></div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs"><label>Desde<input id="citasDesde" type="date" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></label><label>Hasta<input id="citasHasta" type="date" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></label><label>Resultado<select id="citasResultado" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"><option value="">Todos</option><option value="ASISTIO">Asistió</option><option value="CANCELADA">Cancelada</option><option value="NO_ASISTIO">No asistió</option><option value="PROGRAMADA">Programada</option><option value="REPROGRAMADA">Reprogramada</option></select></label><label>Sede<select id="citasSede" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"><option value="">Todas</option><option value="DORAL">Doral</option><option value="sin">Sin sede</option><option value="WESTON">Weston</option></select></label><label>Campaña<select id="citasCampana" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label><label>Medio<select id="citasMedio" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label><label id="citasAsesorWrap" class="hidden">Asesor<select id="citasAsesor" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label></div>
       </div>
       <div id="citasKpis" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2"></div>
       <div class="glass-card rounded-2xl border border-slate-700/80 overflow-x-auto"><table class="w-full min-w-[900px] text-xs"><thead class="bg-slate-800 text-slate-300"><tr><th class="p-3 text-left">Fecha/hora</th><th class="p-3 text-left">Lead</th><th class="p-3 text-left">Estudiante</th><th class="p-3 text-left">Correo</th><th class="p-3 text-left">Edad</th><th class="p-3 text-left">Sede</th><th class="p-3 text-left">Asesor</th><th class="p-3 text-left">Campaña</th><th class="p-3 text-left">Mes origen</th><th class="p-3 text-left">Resultado</th><th></th></tr></thead><tbody id="citasTableBody" class="divide-y divide-slate-800"></tbody></table></div>
@@ -976,7 +976,7 @@
       <form id="formAuthorizeUser" onsubmit="handleAuthorizeUser(event)" class="space-y-3 text-xs">
         <input id="authorizeEmail" type="email" required placeholder="correo@ejemplo.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
         <input id="authorizeName" type="text" required maxlength="120" placeholder="Nombre" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
-        <select id="authorizeRole" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"><option value="agente">Agente</option><option value="trafficker">Trafficker</option><option value="supervisor">Supervisor</option><option value="admin">Administrador</option></select>
+        <select id="authorizeRole" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"><option value="admin">Administrador</option><option value="agente" selected>Agente</option><option value="supervisor">Supervisor</option><option value="trafficker">Trafficker</option></select>
         <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Autorizar y enviar invitación</button>
       </form>
       <p class="text-[11px] text-slate-400">Se envía un correo de invitación para que la persona verifique su correo y defina su propia contraseña. Aquí solo se guarda el correo, el nombre, el rol y el estado.</p>
@@ -1020,11 +1020,11 @@
       </div>
 
       <select id="catalogKind" onchange="renderCatalogList()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
-        <option value="mes">Mes</option>
-        <option value="campana">Campaña</option>
-        <option value="medio">Medio</option>
-        <option value="gestion">Gestión</option>
         <option value="agente">Agente</option>
+        <option value="campana">Campaña</option>
+        <option value="gestion">Gestión</option>
+        <option value="medio">Medio</option>
+        <option value="mes" selected>Mes</option>
       </select>
 
       <div class="flex items-center gap-2">
@@ -1153,23 +1153,23 @@
           <div>
             <label class="block font-medium text-slate-300 mb-1">Medio</label>
             <select id="newMedio" onchange="syncNewUltimaGestion()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
-              <option value="Whatsapp">Whatsapp</option>
+              <option value="CogniTalkign">CogniTalkign</option>
               <option value="Instagram">Instagram</option>
               <option value="Lead Directo">Lead Directo</option>
               <option value="Referidos Andres">Referidos Andres</option>
-              <option value="CogniTalkign">CogniTalkign</option>
+              <option value="Whatsapp" selected>Whatsapp</option>
             </select>
           </div>
 
           <div>
             <label class="block font-medium text-slate-300 mb-1">Tipo de gestión inicial</label>
             <select id="newUltimaGestion" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
-              <option value="WhatsApp">WhatsApp</option>
+              <option value="Instagram">Instagram</option>
               <option value="Llamada">Llamada</option>
               <option value="Llamada Data Dura">Llamada Data Dura</option>
               <option value="Llamada y WhatsApp">Llamada WhatsApp</option>
-              <option value="Instagram">Instagram</option>
               <option value="Visita Conservatorio">Visita Conservatorio</option>
+              <option value="WhatsApp" selected>WhatsApp</option>
             </select>
           </div>
 
@@ -1178,15 +1178,15 @@
             <label class="block font-medium text-slate-300 mb-1">Gestión Inicial</label>
             <div class="flex items-center gap-1.5"><button type="button" onclick="openHelpModal('ayuda-nuevo-lead')" title="Ayuda: gestión inicial" aria-label="Ayuda sobre la gestión inicial del lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button><span class="text-[11px] text-slate-400">Agendado o AGENDADO DATADURA exige cita.</span></div>
             <select id="newGestion" onchange="toggleNewAppointmentFields()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
-              <option value="Información ">Información</option>
               <option value="Agendado">Agendado</option>
+              <option value="Información " selected>Información</option>
               <option value="INSCRITO">INSCRITO</option>
+              <option value="Llamar en otro momento ">Llamar en otro momento</option>
               <option value="No Contesta">No Contesta</option>
-              <option value="Vive Lejos">Vive Lejos</option>
+              <option value="No Procede">No Procede</option>
               <option value="No puede costearlo">No puede costearlo</option>
               <option value="Repetido ">Repetido</option>
-              <option value="No Procede">No Procede</option>
-              <option value="Llamar en otro momento ">Llamar en otro momento</option>
+              <option value="Vive Lejos">Vive Lejos</option>
             </select>
           </div>
 
@@ -1253,20 +1253,20 @@
             <label class="block font-medium text-slate-300 mb-1">Estatus de Gestión *</label>
             <div class="flex items-center gap-1.5"><button type="button" onclick="openHelpModal('ayuda-gestionar-lead')" title="Ayuda: cambiar la gestión" aria-label="Ayuda sobre el cambio de gestión de un lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-amber-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button><span class="text-[11px] text-slate-400">Información → Agendado crea la cita en el mismo guardado.</span></div>
             <select id="editGestion" onchange="toggleEditAppointmentFields()" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 font-semibold focus:outline-none focus:border-amber-500">
-              <option value="INSCRITO">INSCRITO (Cerrado)</option>
               <option value="Agendado">Agendado (Cita / Visita)</option>
-              <option value="Información ">Información</option>
-              <option value="No Contesta">No Contesta</option>
-              <option value="Vive Lejos">Vive Lejos</option>
-              <option value="No puede costearlo">No puede costearlo</option>
-              <option value="Llamar en otro momento ">Llamar en otro momento</option>
-              <option value="PROXIMAS INSCRIPCIONES">PROXIMAS INSCRIPCIONES</option>
-              <option value="No Procede">No Procede</option>
-              <option value="Repetido ">Repetido</option>
               <option value="Colgo">Colgo</option>
               <option value="En visto">En visto</option>
+              <option value="Información ">Información</option>
+              <option value="INSCRITO">INSCRITO (Cerrado)</option>
+              <option value="Llamar en otro momento ">Llamar en otro momento</option>
               <option value="Menor 5 años">Menor 5 años</option>
+              <option value="No Contesta">No Contesta</option>
+              <option value="No Procede">No Procede</option>
+              <option value="No puede costearlo">No puede costearlo</option>
               <option value="Numero Invalido ">Numero Invalido</option>
+              <option value="PROXIMAS INSCRIPCIONES">PROXIMAS INSCRIPCIONES</option>
+              <option value="Repetido ">Repetido</option>
+              <option value="Vive Lejos">Vive Lejos</option>
             </select>
           </div>
 
@@ -1287,12 +1287,12 @@
           <div>
             <label class="block font-medium text-slate-300 mb-1">Tipo de Última Gestión</label>
             <select id="editUltimaGestion" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
+              <option value="Instagram">Instagram</option>
               <option value="Llamada">Llamada</option>
               <option value="Llamada Data Dura">Llamada Data Dura</option>
-              <option value="WhatsApp">WhatsApp</option>
               <option value="Llamada y WhatsApp">Llamada WhatsApp</option>
-              <option value="Instagram">Instagram</option>
               <option value="Visita Conservatorio">Visita Conservatorio</option>
+              <option value="WhatsApp">WhatsApp</option>
             </select>
           </div>
 
@@ -2341,7 +2341,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     function citasDateDefaults() { const today=miamiToday(); return [`${today.slice(0,7)}-01`, today]; }
     function clearCitasResults() { citasRequestGeneration += 1; citasCache=[]; citasRangeKey=''; ['citasKpis','citasTableBody','citasAviso','citasCount'].forEach(id=>document.getElementById(id)?.replaceChildren()); ['citasResultado','citasCampana','citasSede','citasMedio','citasAsesor'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';}); }
     function resetCitasFilters() { const [a,b]=citasDateDefaults(); document.getElementById('citasDesde').value=a; document.getElementById('citasHasta').value=b; clearCitasResults(); loadCitas(); }
-    function fillCitasSelect(id, values, keep=true) { const e=document.getElementById(id), old=e.value; e.innerHTML='<option value="">Todos</option>'+values.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(catalogLabel(v))}</option>`).join(''); if(keep && values.includes(old)) e.value=old; }
+    function fillCitasSelect(id, values, keep=true) { const e=document.getElementById(id), old=e.value, sorted=sortAlphaEs(values); e.innerHTML='<option value="">Todos</option>'+sorted.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(catalogLabel(v))}</option>`).join(''); if(keep && sorted.includes(old)) e.value=old; }
     async function initCitasPanel() { const desde=document.getElementById('citasDesde'); if(!desde.value) { const [a,b]=citasDateDefaults(); desde.value=a; document.getElementById('citasHasta').value=b; } if(isAdmin || isSupervisor) document.getElementById('citasAsesorWrap').classList.remove('hidden'); ['citasDesde','citasHasta'].forEach(id=>document.getElementById(id).onchange=loadCitas); ['citasResultado','citasCampana','citasSede','citasMedio','citasAsesor'].forEach(id=>document.getElementById(id).onchange=renderCitas); await loadCitas(); }
     async function loadCitas() {
       if (!supabaseClient || !currentUser || !currentAccess?.activo) return;
@@ -2405,6 +2405,29 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     function catalogLabel(v) {
       const s = String(v ?? '').trim().replace(/\s+/g, ' ');
       return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
+    }
+
+    // Orden alfabético canónico de opciones y categorías: español, sin
+    // distinguir mayúsculas ni acentos, numérico para valores mixtos ('15'<'20').
+    // Solo presentación: nunca muta las colecciones que recibe.
+    function compareAlphaEs(a, b) {
+      return String(a ?? '').localeCompare(String(b ?? ''), 'es', { sensitivity: 'base', numeric: true });
+    }
+    function sortAlphaEs(values) { return [...(values || [])].sort(compareAlphaEs); }
+
+    // Meses: orden cronológico canónico (MONTH_CHRONO), nunca alfabético;
+    // valores no reconocidos al final en orden alfabético junto a 'OTRO'.
+    function sortMonthCatalog(values) {
+      const norma = v => String(v ?? '').trim().replace(/\s+/g, ' ').toUpperCase();
+      const byNorma = new Map();
+      (values || []).forEach(v => { const k = norma(v); if (k && !byNorma.has(k)) byNorma.set(k, v); });
+      const out = [], usados = new Set();
+      MONTH_CHRONO.forEach(m => { const v = byNorma.get(m); if (v !== undefined) { out.push(v); usados.add(m); } });
+      const resto = [...byNorma.keys()].filter(k => !usados.has(k) && k !== 'OTRO').map(k => byNorma.get(k));
+      sortAlphaEs(resto).forEach(v => out.push(v));
+      const otro = byNorma.get('OTRO');
+      if (otro !== undefined) out.push(otro);
+      return out;
     }
 
     // Helpers de teléfono: comparar siempre con dígitos; formatear solo números de EE. UU.
@@ -2899,15 +2922,17 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       return (catalogRows[kind] || []).filter(r => r.active).map(r => r.value);
     }
 
-    // Opciones de un filtro: valores activos del catálogo (en orden) + valores
-    // presentes en los datos que el catálogo no conoce. Un valor desactivado en
-    // el catálogo queda oculto aunque aparezca en los leads.
+    // Opciones de un filtro: valores activos del catálogo + valores presentes
+    // en los datos que el catálogo no conoce. Un valor desactivado en el
+    // catálogo queda oculto aunque aparezca en los leads. Orden de salida:
+    // alfabético en español; el kind 'mes' mantiene el orden cronológico.
     function catalogOptions(kind, dataValues) {
       const known = new Set((catalogRows[kind] || []).map(r => r.value));
       // Los valores de los datos pueden venir repetidos (p. ej. la misma campaña
       // en varias citas) y no hay que convertirlos en varias opciones del menú.
-      const extra = (dataValues || []).filter(v => !known.has(v)).sort();
-      return [...new Set([...activeCatalogValues(kind), ...extra])];
+      const extra = (dataValues || []).filter(v => !known.has(v));
+      const all = [...new Set([...activeCatalogValues(kind), ...extra])];
+      return kind === 'mes' ? sortMonthCatalog(all) : sortAlphaEs(all);
     }
 
     // Rellena un <select> desde el catálogo preservando la selección actual
@@ -2939,10 +2964,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     function populateCatalogSelects() {
-      const mes = activeCatalogValues('mes');
-      const campana = activeCatalogValues('campana');
-      const medio = activeCatalogValues('medio');
-      const gestion = activeCatalogValues('gestion');
+      // Mes conserva orden cronológico; el resto de catálogos sale alfabético.
+      const mes = sortMonthCatalog(activeCatalogValues('mes'));
+      const campana = sortAlphaEs(activeCatalogValues('campana'));
+      const medio = sortAlphaEs(activeCatalogValues('medio'));
+      const gestion = sortAlphaEs(activeCatalogValues('gestion'));
       // Formulario Nuevo
       fillSelectFromCatalog('newMes', mes);
       fillSelectFromCatalog('newCampana', campana);
@@ -2954,7 +2980,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       fillDatalistFromCatalog('campanaEditList', campana);
       fillDatalistFromCatalog('medioList', medio);
       // Asesores (compartido por Nuevo y Editar)
-      fillDatalistFromCatalog('agenteList', activeCatalogValues('agente'));
+      fillDatalistFromCatalog('agenteList', sortAlphaEs(activeCatalogValues('agente')));
     }
 
     async function refreshCatalogs() {
@@ -3223,19 +3249,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         campanasMap.set(c, (campanasMap.get(c) || 0) + 1);
       });
 
-      const priorityOrder = ['INSCRITO', 'Agendado', 'Información ', 'Información', 'Interesado', 'No Contesta', 'Vive Lejos', 'No Procede', 'No puede costearlo'];
-      const sortedGestiones = Array.from(gestionesMap.keys()).sort((a, b) => {
-        const idxA = priorityOrder.indexOf(a);
-        const idxB = priorityOrder.indexOf(b);
-        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-        if (idxA !== -1) return -1;
-        if (idxB !== -1) return 1;
-        return (gestionesMap.get(b) || 0) - (gestionesMap.get(a) || 0);
-      });
+      // Matriz ordenada alfabéticamente (filas y columnas); solo presentación.
+      const sortedGestiones = Array.from(gestionesMap.keys()).sort(compareAlphaEs);
 
       const sortedCampanas = Array.from(campanasMap.keys())
         .filter(c => c !== '')
-        .sort((a, b) => (campanasMap.get(b) || 0) - (campanasMap.get(a) || 0));
+        .sort(compareAlphaEs);
 
       let headerHtml = `<tr>
         <th class="px-4 py-3 bg-slate-950 font-bold text-slate-200 border-r border-slate-800">Estatus (GESTIÓN)</th>`;
@@ -3522,7 +3541,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if(!visible){if(date)date.value=''; const n=document.getElementById('newAppointmentNote');if(n)n.value='';const a=document.getElementById('newAppointmentAdvisor');if(a)a.value='';['StudentName','ContactEmail','StudentAge'].forEach(suffix=>{const el=document.getElementById('newAppointment'+suffix);if(el)el.value='';});}
       const submit=document.getElementById('btnSubmitNewLead'); if(submit&&!newLeadSubmitting)submit.disabled=visible&&isAdmin&&(!leadAppointmentAdvisors.length||!document.getElementById('newAppointmentAdvisor')?.value);
     }
-    function renderAppointmentAdvisorSelect(select, preferredName) { if(!select)return; if(!leadAppointmentAdvisors.length){select.innerHTML='<option value="">No hay asesores activos</option>';select.disabled=true;return;} const chosen=leadAppointmentAdvisors.find(a=>a.nombre===preferredName)||leadAppointmentAdvisors.find(a=>a.user_id===currentUser?.id)||leadAppointmentAdvisors[0]; select.innerHTML='<option value="">Seleccione asesor</option>'+leadAppointmentAdvisors.map(a=>`<option value="${escapeAttr(a.user_id)}" ${chosen?.user_id===a.user_id?'selected':''}>${escapeHtml(a.nombre||a.email||a.user_id)}</option>`).join('');select.disabled=false; }
+    function renderAppointmentAdvisorSelect(select, preferredName) { if(!select)return; if(!leadAppointmentAdvisors.length){select.innerHTML='<option value="">No hay asesores activos</option>';select.disabled=true;return;} const chosen=leadAppointmentAdvisors.find(a=>a.nombre===preferredName)||leadAppointmentAdvisors.find(a=>a.user_id===currentUser?.id)||leadAppointmentAdvisors[0]; const ordered=[...leadAppointmentAdvisors].sort((a,b)=>compareAlphaEs(a.nombre||a.email||a.user_id,b.nombre||b.email||b.user_id)); select.innerHTML='<option value="">Seleccione asesor</option>'+ordered.map(a=>`<option value="${escapeAttr(a.user_id)}" ${chosen?.user_id===a.user_id?'selected':''}>${escapeHtml(a.nombre||a.email||a.user_id)}</option>`).join('');select.disabled=false; }
     async function loadNewLeadAppointmentAdvisors() { const select=document.getElementById('newAppointmentAdvisor'); if(!isAdmin||!select){toggleNewAppointmentFields();return;} const gen=sessionGeneration, token=++newLeadAdvisorGeneration, uid=currentUser?.id, access=currentAccess?.updated_at; if(leadAppointmentAdvisors.length){renderAppointmentAdvisorSelect(select,document.getElementById('newAgente')?.value.trim());toggleNewAppointmentFields();return;} select.disabled=true;const {data,error}=await supabaseClient.rpc('admin_manage_user_access',{p_action:'list'}); if(gen!==sessionGeneration||token!==newLeadAdvisorGeneration||currentUser?.id!==uid||currentAccess?.updated_at!==access||document.getElementById('modalNewLead')?.classList.contains('hidden'))return; if(error){select.innerHTML='<option value="">No se pudieron cargar asesores</option>';toggleNewAppointmentFields();return;} leadAppointmentAdvisors=(data||[]).filter(a=>a.activo===true);renderAppointmentAdvisorSelect(select,document.getElementById('newAgente')?.value.trim());toggleNewAppointmentFields(); }
     // Aviso informativo de teléfono existente; nunca bloquea la creación y no
     // muestra datos del duplicado, solo el número de oportunidades registradas.
@@ -5221,13 +5240,13 @@ async function deleteLeadAppointment(id) {
       });
 
       const campOptions = ['<option value="">Todas las Campañas</option>'];
-      Array.from(campanas).sort().forEach(c => {
+      Array.from(campanas).sort(compareAlphaEs).forEach(c => {
         campOptions.push(`<option value="${escapeAttr(c)}" ${c === currentCamp ? 'selected' : ''}>${escapeHtml(catalogLabel(c))}</option>`);
       });
       campanaSelect.innerHTML = campOptions.join('');
 
       const agentOptions = ['<option value="">Todos los Asesores</option>'];
-      catalogOptions('agente', Array.from(agentes).sort()).forEach(a => {
+      catalogOptions('agente', Array.from(agentes)).forEach(a => {
         agentOptions.push(`<option value="${escapeAttr(a)}" ${a === currentAgent ? 'selected' : ''}>${escapeHtml(catalogLabel(a))}</option>`);
       });
       agenteSelect.innerHTML = agentOptions.join('');
@@ -5756,9 +5775,9 @@ async function deleteLeadAppointment(id) {
     // Resumen por período 100% local y puro (sin DOM ni red): consolida por id,
     // excluye archivados, filtra por fecha de entrada (parseFechaLead) en rango
     // inclusivo y cuenta cada lead una vez con su gestión actual. Categorías con
-    // la política canónica de activeCatalogValues/catalogOptions (solo activos,
-    // en orden de catálogo) + observados fuera de catálogo al final (count desc,
-    // lower(label)); matching trim + case-insensitive; vacío → 'Sin definir'.
+    // la política canónica de activeCatalogValues/catalogOptions (solo activos)
+    // + observados fuera de catálogo; la salida se ordena alfabéticamente en
+    // español; matching trim + case-insensitive; vacío → 'Sin definir'.
     // catalogs: el objeto catalogRows ({ medio, campana, gestion, ... }).
     function buildPeriodSummary(leads, catalogs, desde, hasta) {
       if (!periodoValidDate(desde) || !periodoValidDate(hasta) || desde > hasta) throw new Error('period_range_invalid');
@@ -5807,8 +5826,8 @@ async function deleteLeadAppointment(id) {
       const lista = kind => {
         const resto = [...extras[kind].values()];
         if (!extras[kind].has('sin definir') && !categorias[kind].has('sin definir')) resto.push({ label: 'Sin definir', count: 0 });
-        resto.sort((a, b) => b.count - a.count || norma(a.label).localeCompare(norma(b.label), 'es'));
-        return [...categorias[kind].values(), ...resto];
+        // Todo orden alfabético (categorías de catálogo y extras juntas).
+        return [...categorias[kind].values(), ...resto].sort((a, b) => compareAlphaEs(a.label, b.label));
       };
       const medios = lista('medio'), campanas = lista('campana'), gestiones = lista('gestion');
       const total = seleccion.length;
@@ -5930,12 +5949,13 @@ async function deleteLeadAppointment(id) {
       const row = (label, value) => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(label)}</th><td class="text-right">${value}</td></tr>`;
       const table = (title, rows) => `<section class="border border-slate-300 rounded p-3"><h3 class="font-bold text-indigo-900 mb-2">${title}</h3><table class="w-full text-sm"><tbody>${rows}</tbody></table></section>`;
       const g = data.gestiones, q = data.canales, c = data.citas;
-      const porEstado = g.por_estado.length ? `<section class="border border-slate-300 rounded p-3"><h3 class="font-bold text-indigo-900 mb-2">Gestiones por estado (leads únicos / eventos)</h3><table class="w-full text-sm"><tbody>${g.por_estado.map(r => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(r.label)}</th><td class="text-right">${r.leads}</td><td class="text-right">${r.eventos}</td></tr>`).join('')}</tbody></table></section>` : '';
+      const porEstadoOrdenado = [...g.por_estado].sort((a, b) => compareAlphaEs(a.label, b.label));
+      const porEstado = porEstadoOrdenado.length ? `<section class="border border-slate-300 rounded p-3"><h3 class="font-bold text-indigo-900 mb-2">Gestiones por estado (leads únicos / eventos)</h3><table class="w-full text-sm"><tbody>${porEstadoOrdenado.map(r => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(r.label)}</th><td class="text-right">${r.leads}</td><td class="text-right">${r.eventos}</td></tr>`).join('')}</tbody></table></section>` : '';
       return `<div class="border-t-2 border-indigo-600 pt-3"><h2 class="text-lg font-bold text-indigo-900">Actividad realizada en el período</h2><p class="text-xs text-slate-500 mb-2">Gestiones por día trabajado y citas por fecha programada (Miami). Independiente de los cuadros de entrada.</p></div>`
         + `<div class="grid md:grid-cols-3 gap-4">`
-        + table('Gestiones', row('Total de gestiones', g.total_eventos) + row('Leads únicos gestionados', g.leads_unicos) + row('Pasados a Agendado', g.agendados_normales) + row('Pasados a Agendado Data Dura', g.agendados_data_dura) + row('Pasados a Inscrito', g.inscritos_normales) + row('Pasados a Inscrito Data Dura', g.inscritos_data_dura))
-        + table('Canales', row('Llamadas', q.llamadas_normales) + row('Llamadas Data Dura', q.llamadas_data_dura) + row('Llamada y WhatsApp', q.llamada_whatsapp) + row('WhatsApp', q.whatsapp) + row('Otros/sin canal', q.otros))
-        + table('Citas (fecha programada)', row('Programadas normales', c.programadas_normales) + row('Programadas Data Dura', c.programadas_data_dura) + row('Asistieron', c.asistieron) + row('No asistieron', c.no_asistieron) + row('Canceladas', c.canceladas) + row('Reprogramadas', c.reprogramadas) + row('Doral normal / DD', `${c.doral_normal} / ${c.doral_data_dura}`) + row('Weston normal / DD', `${c.weston_normal} / ${c.weston_data_dura}`) + row('Sin sede (históricas)', c.sin_sede))
+        + table('Gestiones', row('Leads únicos gestionados', g.leads_unicos) + row('Pasados a Agendado', g.agendados_normales) + row('Pasados a Agendado Data Dura', g.agendados_data_dura) + row('Pasados a Inscrito', g.inscritos_normales) + row('Pasados a Inscrito Data Dura', g.inscritos_data_dura) + row('Total de gestiones', g.total_eventos))
+        + table('Canales', row('Llamada y WhatsApp', q.llamada_whatsapp) + row('Llamadas', q.llamadas_normales) + row('Llamadas Data Dura', q.llamadas_data_dura) + row('Otros/sin canal', q.otros) + row('WhatsApp', q.whatsapp))
+        + table('Citas (fecha programada)', row('Asistieron', c.asistieron) + row('Canceladas', c.canceladas) + row('Doral normal / DD', `${c.doral_normal} / ${c.doral_data_dura}`) + row('No asistieron', c.no_asistieron) + row('Programadas Data Dura', c.programadas_data_dura) + row('Programadas normales', c.programadas_normales) + row('Reprogramadas', c.reprogramadas) + row('Sin sede (históricas)', c.sin_sede) + row('Weston normal / DD', `${c.weston_normal} / ${c.weston_data_dura}`))
         + `</div>${porEstado}`;
     }
 
@@ -5967,14 +5987,13 @@ async function deleteLeadAppointment(id) {
       row(['TOTAL', ...d.matriz.totales_columnas, d.total]);
       const ga = a.gestiones, qa = a.canales, ca = a.citas;
       row([]); row(['Actividad realizada en el período (gestiones por fecha trabajada)']); row(['Métrica', 'Cantidad']);
-      row(['Total de gestiones', ga.total_eventos]); row(['Leads únicos gestionados', ga.leads_unicos]); row(['Pasados a Agendado', ga.agendados_normales]); row(['Pasados a Agendado Data Dura', ga.agendados_data_dura]); row(['Pasados a Inscrito', ga.inscritos_normales]); row(['Pasados a Inscrito Data Dura', ga.inscritos_data_dura]);
+      row(['Leads únicos gestionados', ga.leads_unicos]); row(['Pasados a Agendado', ga.agendados_normales]); row(['Pasados a Agendado Data Dura', ga.agendados_data_dura]); row(['Pasados a Inscrito', ga.inscritos_normales]); row(['Pasados a Inscrito Data Dura', ga.inscritos_data_dura]); row(['Total de gestiones', ga.total_eventos]);
       row([]); row(['Gestiones por estado']); row(['Estado', 'Leads únicos', 'Eventos']);
-      ga.por_estado.forEach(r => row([r.label, r.leads, r.eventos]));
+      [...ga.por_estado].sort((a, b) => compareAlphaEs(a.label, b.label)).forEach(r => row([r.label, r.leads, r.eventos]));
       row([]); row(['Canales de la actividad']); row(['Canal', 'Cantidad']);
-      row(['Llamadas', qa.llamadas_normales]); row(['Llamadas Data Dura', qa.llamadas_data_dura]); row(['Llamada y WhatsApp', qa.llamada_whatsapp]); row(['WhatsApp', qa.whatsapp]); row(['Otros/sin canal', qa.otros]);
+      row(['Llamada y WhatsApp', qa.llamada_whatsapp]); row(['Llamadas', qa.llamadas_normales]); row(['Llamadas Data Dura', qa.llamadas_data_dura]); row(['Otros/sin canal', qa.otros]); row(['WhatsApp', qa.whatsapp]);
       row([]); row(['Agenda (citas por fecha programada)']); row(['Estado', 'Cantidad']);
-      row(['Programadas normales', ca.programadas_normales]); row(['Programadas Data Dura', ca.programadas_data_dura]); row(['Asistieron', ca.asistieron]); row(['No asistieron', ca.no_asistieron]); row(['Canceladas', ca.canceladas]); row(['Reprogramadas', ca.reprogramadas]);
-      row(['Doral normal', ca.doral_normal]); row(['Doral Data Dura', ca.doral_data_dura]); row(['Weston normal', ca.weston_normal]); row(['Weston Data Dura', ca.weston_data_dura]); row(['Sin sede (históricas)', ca.sin_sede]);
+      row(['Asistieron', ca.asistieron]); row(['Canceladas', ca.canceladas]); row(['Doral normal', ca.doral_normal]); row(['Doral Data Dura', ca.doral_data_dura]); row(['No asistieron', ca.no_asistieron]); row(['Programadas Data Dura', ca.programadas_data_dura]); row(['Programadas normales', ca.programadas_normales]); row(['Reprogramadas', ca.reprogramadas]); row(['Sin sede (históricas)', ca.sin_sede]); row(['Weston normal', ca.weston_normal]); row(['Weston Data Dura', ca.weston_data_dura]);
       downloadCSV(lines.join('\n'), `Reporte_Periodo_${d.desde}_${d.hasta}.csv`);
       showToast('Reporte por período exportado a CSV', 'success');
     }
@@ -6248,7 +6267,7 @@ async function deleteLeadAppointment(id) {
         tbody.innerHTML = '<tr><td colspan="13" class="p-4 text-center text-slate-400">Sin datos para este mes.</td></tr>';
         return;
       }
-      const estadoOptions = sel => ['activa', 'pausada', 'finalizada'].map(e => `<option value="${e}"${e === sel ? ' selected' : ''}>${e.charAt(0).toUpperCase() + e.slice(1)}</option>`).join('');
+      const estadoOptions = sel => ['activa', 'finalizada', 'pausada'].map(e => `<option value="${e}"${e === sel ? ' selected' : ''}>${e.charAt(0).toUpperCase() + e.slice(1)}</option>`).join('');
       const numCell = (field, val) => esEditor
         ? `<input type="number" min="0" step="0.01" data-field="${field}" value="${val}" oninput="recalcCampaignRow(this)" class="w-24 rounded border border-slate-600 bg-slate-800 px-2 py-1 text-right text-slate-100">`
         : `<span class="font-mono">${val}</span>`;

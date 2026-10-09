@@ -26,7 +26,7 @@ const names = ['clearSessionState', 'closeInvalidSession', 'validateCurrentSessi
   'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'renderReportePeriodo', 'periodoPct',
   'markPeriodoReportDirty', 'updatePeriodoCsvState',
   'loadPeriodoActividad', 'validatePeriodoActividad', 'renderPeriodoActividad',
-  'consolidateLeadsById', 'compareLeadIdsDescending', 'parseFechaLead',
+  'consolidateLeadsById', 'compareLeadIdsDescending', 'parseFechaLead', 'compareAlphaEs', 'sortAlphaEs',
   'stopIdleTracking', 'endAgentSessionLocally', 'startAgentActivityTracking'];
 const sessionCacheNames = ['loadHistoricoData', 'performLoadHistoricoData', 'loadLeadsData', 'performLoadLeadsData',
   'getExactLeadsCount', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'consolidateLeadsById',

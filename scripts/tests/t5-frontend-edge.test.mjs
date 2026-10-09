@@ -29,7 +29,7 @@ const names = [
   'fetchRowsByIdCursor', 'fetchPagedResult', 'fetchRowsByIds', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor',
   'loadCitas', 'clearCitasResults', 'validAppointmentId', 'appointmentSessionValid', 'loadLeadAppointments',
   'loadLeadNotes', 'loadLeadGestiones', 'applyFilters', 'resetAllFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
-  'activeCatalogValues', 'catalogOptions', 'parseFechaLead', 'normalizeLeadMonth', 'leadReportDate', 'isInscritoDataDura',
+  'activeCatalogValues', 'catalogOptions', 'compareAlphaEs', 'sortAlphaEs', 'sortMonthCatalog', 'parseFechaLead', 'normalizeLeadMonth', 'leadReportDate', 'isInscritoDataDura',
   'histMonthKey', 'histMonthLabel', 'sortHistMonthKeys', 'normalizeGestion', 'groupGestionEstado', 'readHistRange',
   'filterHistoricalLeads', 'populateHistoricalFilterOptions', 'computeHistoricalAggregates', 'escapeHtml', 'escapeAttr',
   'loadReporteDiario', 'renderReporteV2', 'csvReporteField', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
@@ -202,7 +202,7 @@ test('buildPeriodSummary: catálogo+extras, dedup id, archivados, límites y mat
   assert.equal(data.fechas_invalidas, 1);
   assert.equal(data.desde, '2026-10-01'); assert.equal(data.hasta, '2026-10-07');
   assert.deepEqual(plain(data.medios), [
-    { label: 'Instagram', count: 2 }, { label: 'Cero', count: 0 }, { label: 'panfleto', count: 1 }, { label: 'Sin definir', count: 1 },
+    { label: 'Cero', count: 0 }, { label: 'Instagram', count: 2 }, { label: 'panfleto', count: 1 }, { label: 'Sin definir', count: 1 },
   ]);
   assert.deepEqual(plain(data.campanas), [
     { label: '=Campaña <demo>', count: 2 }, { label: 'Cero', count: 0 }, { label: 'Sin definir', count: 1 }, { label: 'zz-extra', count: 1 },
@@ -240,7 +240,7 @@ test('buildPeriodSummary: período vacío total 0, catálogo en cero y pct 0.00%
     { id: 3, Fecha: 'basura', archived_at: '2026-01-01T00:00:00Z', Medio: 'Instagram', 'Campaña': 'X', GESTION: 'Y' },
   ], periodCatalogs(), '2026-10-01', '2026-10-07');
   assert.equal(data.total, 0); assert.equal(data.fechas_invalidas, 1);
-  assert.deepEqual(plain(data.medios), [{ label: 'Instagram', count: 0 }, { label: 'Cero', count: 0 }, { label: 'Sin definir', count: 0 }]);
+  assert.deepEqual(plain(data.medios), [{ label: 'Cero', count: 0 }, { label: 'Instagram', count: 0 }, { label: 'Sin definir', count: 0 }]);
   assert.deepEqual(plain(data.matriz.totales_columnas), [0, 0, 0]);
   assert.deepEqual(plain(data.matriz.filas), [
     { label: 'Contactado', counts: [0, 0, 0], total: 0 },
@@ -427,6 +427,30 @@ test('período: selector aislado y reset descartan cargas sin modificar cache di
   assert.deepEqual(plain(f.context.reporteDayData), [{ marker: 'diario' }]);
   assert.match(extractFunction('clearSessionState'), /resetReportePeriodo\(\)/);
   assert.match(extractFunction('switchTab'), /setReporteVista\(reporteVistaActiva\)/);
+});
+
+test('orden alfabético canónico: acentos, mayúsculas y meses cronológicos', () => {
+  const f = frontend();
+  // compareAlphaEs: insensible a mayúsculas/acentos, numérico para tamaños.
+  assert.deepEqual(['Doral', 'árabe', 'Weston', 'sin sede', '100'].sort(f.context.compareAlphaEs), ['100', 'árabe', 'Doral', 'sin sede', 'Weston']);
+  assert.deepEqual(['15', '100', '20'].sort(f.context.compareAlphaEs), ['15', '20', '100']);
+  // sortMonthCatalog: calendario ENERO→DICIEMBRE, desconocidos al final, OTRO último.
+  assert.deepEqual(plain(f.context.sortMonthCatalog(['OTRO', 'OCTUBRE', 'ENERO', 'septiembre ', 'OTRA COSA'])),
+    ['ENERO', 'septiembre ', 'OCTUBRE', 'OTRA COSA', 'OTRO']);
+  // catalogOptions: todo alfabético, catálogo ∪ datos, sin perder la selección.
+  f.context.catalogRows = { campana: [{ value: 'Weston', active: true }, { value: 'Acuario', active: true }, { value: 'Zzz oculto', active: false }], medio: [], gestion: [], agente: [], mes: [] };
+  assert.deepEqual(plain(f.context.catalogOptions('campana', ['Doral', 'weston-distinto'])), ['Acuario', 'Doral', 'Weston', 'weston-distinto']);
+  assert.deepEqual(plain(f.context.catalogOptions('mes', ['MARZO', 'ENERO'])), ['ENERO', 'MARZO']);
+  // buildPeriodSummary: catálogo y extras salen ordenados alfabéticamente.
+  const data = f.context.buildPeriodSummary(
+    [{ id: 1, Fecha: '01/10/2026', Medio: 'zMedio', 'Campaña': 'zCampaña', GESTION: 'zGestión' }],
+    { medio: [{ value: 'aMedio', active: true }], campana: [{ value: 'aCampaña', active: true }], gestion: [{ value: 'aGestión', active: true }], agente: [], mes: [] },
+    '2026-10-01', '2026-10-07');
+  assert.deepEqual(plain(data.medios.map(r => r.label)), ['aMedio', 'Sin definir', 'zMedio']);
+  assert.deepEqual(plain(data.campanas.map(r => r.label)), ['aCampaña', 'Sin definir', 'zCampaña']);
+  assert.deepEqual(plain(data.gestiones.map(r => r.label)), ['aGestión', 'Sin definir', 'zGestión']);
+  assert.deepEqual(plain(data.matriz.campanas), plain(data.campanas.map(r => r.label)));
+  assert.deepEqual(plain(data.matriz.filas.map(r => r.label)), plain(data.gestiones.map(r => r.label)));
 });
 
 test('período: mutación de leads con vista abierta invalida pantalla/CSV y programa un solo recálculo', async () => {

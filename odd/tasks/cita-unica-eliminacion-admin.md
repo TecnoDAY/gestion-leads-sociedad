@@ -33,10 +33,10 @@ Excluye: commit/push, aplicación remota automática, soft-delete, recuperación
 Modo: off | Fuente: default | Runner: no disponible. Checks funcionales y SQL estático obligatorios.
 
 ## Tareas
-- [x] T1 preflight y migración de unicidad parcial
-- [x] T2 bloqueo UI y mensaje de cita existente
-- [x] T3 RPC admin de borrado y botón confirmado
-- [x] T4 verificación local y remota (build, lint, node-check, tests: todos verdes)
+- [x] T1 preflight y migración de unicidad parcial (SQL local, NO aplicada en remoto)
+- [x] T2 bloqueo UI fail-closed y mensaje de cita existente (conectado a la carga de citas)
+- [x] T3 RPC admin de borrado y botón confirmado en ficha y panel Citas (solo admin)
+- [~] T4 verificación local completa; falta aplicar y verificar en remoto
 
 ## Criterios de aceptación
 - [x] Índice único parcial creado localmente; permite cero o una `PROGRAMADA`; varias históricas siguen permitidas.
@@ -45,9 +45,17 @@ Modo: off | Fuente: default | Runner: no disponible. Checks funcionales y SQL es
 - [x] UI comienza bloqueada durante carga; ante error permanece bloqueada (fail-closed).
 - [x] Conflicto 23505 del índice se traduce específicamente, recarga citas y no resetea formulario.
 - [x] Solo admin ve Eliminar; confirmación irreversible; RPC valida `is_admin_user()`.
+- [x] La UI no borra el lead: la RPC solo borra la cita indicada.
 - [x] Doble envío no crea ni borra dos veces.
 - [x] Reprogramación sigue funcionando con el índice.
 - [x] build/lint/node-check y preflight remoto verdes.
+- [ ] Aplicar RPC + índice único en Supabase (requiere migración remota autorizada).
+- [ ] Prueba manual del borrado por el equipo.
+
+## Estado real (verificado, no declarado)
+- Remoto: `lead_appointments_one_programmed_per_lead_uidx` **ausente**; `delete_lead_appointment(bigint)` **ausente**; 0 leads con más de una `PROGRAMADA`.
+- Por tanto la regla **aún no está implantada**: hasta aplicar las migraciones, nada impide dos `PROGRAMADA` y el botón Eliminar devolverá error.
+- El commit `0bef23c` decía "permite borrado admin" describiendo intentions, no comportamiento.
 
 ## Decisiones aceptadas
 - Regla como máximo una, no exactamente una.
@@ -92,7 +100,8 @@ Modo: off | Fuente: default | Runner: no disponible. Checks funcionales y SQL es
 
 
 ## Progreso
-- Estado: implementación completada y verificada en local (build, lint, node-check, npm test: 236/236 pass).
-- Última tarea: T4.
-- Siguiente paso: humano ejecuta migración local en Supabase remoto, prueba manual y decide commit/push.
-- Bloqueos: ninguno pendiente en local; verificación remota depende de despliegue humano.
+- Estado: frontend completo y verificado en local; falta el despliegue de las dos migraciones.
+- Última tarea: T4 (parcial).
+- Verificación local: `check-app` OK, `npm run lint` OK, `npm run build` OK, `npm test` 242/242 JS + 11/11 Python, `git diff --check` limpio.
+- Siguiente paso: aplicar `202610080002` (RPC) y `202610080001` (índice) en Supabase, repreguntar duplicados y probar el borrado manual.
+- Bloqueos: el despliegue remoto requiere autorización explícita del humano.

@@ -20,6 +20,7 @@ function extractFunction(name) {
 const names = ['clearSessionState', 'closeInvalidSession', 'validateCurrentSession', 'loadCurrentAccess',
   'setAppAuthenticated', 'enterAuthenticatedSession', 'handleSignOut', 'setDashboardTabState', 'switchTab',
   'closeViewLeadModal', 'openViewLeadModal', 'findLeadByOrigin', 'getField', 'escapeHtml', 'escapeAttr',
+  'updateLeadAppointmentCreateState', 'setBlockControls', 'isAgendadoGestion',
   'fetchRowsByIdCursor', 'fetchPagedResult', 'loadLeadNotes', 'loadLeadGestiones',
   'resetReportePeriodo', 'setReporteVista', 'periodoPresetRange', 'setPeriodoPreset', 'periodoRangeKey', 'periodoValidDate',
   'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'renderReportePeriodo', 'periodoPct',
@@ -50,6 +51,7 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
   function element(id) {
     if (elements.has(id)) return elements.get(id);
     const el = { className: '', innerHTML: '', textContent: '', value: '', reset() {},
+      querySelector: () => null, querySelectorAll: () => [],
       replaceChildren() { this.innerHTML = ''; this.textContent = ''; } };
     el.classList = {
       contains: name => el.className.split(/\s+/).includes(name),

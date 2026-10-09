@@ -12,3 +12,8 @@ opencode.json
 
 # Artefactos locales de la CLI de Supabase
 supabase/.temp/
+
+# Artefactos de herramientas y cachés locales
+__pycache__/
+*.pyc
+deno.lock

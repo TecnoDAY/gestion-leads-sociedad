@@ -43,18 +43,18 @@ const names = [
   'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'syncNewLeadMes', 'syncNewUltimaGestion',
   'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentDate', 'appointmentInputISO', 'appointmentLocal', 'appointmentCampusFrom',
   'createLeadAppointment', 'editAppointmentDetails', 'editAppointmentCampus', 'setLeadAppointmentStatus', 'rescheduleLeadAppointment',
-  'setAppointmentMutationPending',
+  'setAppointmentMutationPending', 'updateLeadAppointmentCreateState', 'deleteLeadAppointment',
   'toggleNewAppointmentFields', 'isAgendadoGestion', 'setBlockControls',
   'normalizePhone', 'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn'
 ];
-const frontendSource = [...constants, ...names.map(extractFunction)].join('\n');
+const frontendSource = ['let leadAppointmentCreateBlocked = true;', ...constants, ...names.map(extractFunction)].join('\n');
 
 function frontend(extra = {}) {
   const elements = new Map(), downloads = [], timers = [], toasts = [];
   const element = id => {
     if (!elements.has(id)) elements.set(id, {
       value: '', _innerHTML: '', textContent: '', innerText: '', options: [{ value: '' }],
-      querySelectorAll: () => [],
+      querySelector: () => null, querySelectorAll: () => [],
       get innerHTML() { return this._innerHTML; },
       set innerHTML(value) { this._innerHTML = value; this.options = []; this.value = ''; },
        classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
@@ -1788,4 +1788,143 @@ test('Auth: página llena exacta exige consultar página vacía final', async ()
   const e = edge('authorize-user', { users: rows(2000, { email: 'other@example.test' }) });
   assert.equal((await e.request({ email: 'target@example.test', role: 'agente' })).status, 202);
   assert.deepEqual(e.calls, [1, 2, 3]); assert.equal(e.upserts.length, 0);
+});
+
+// ---------------------------------------------------------------------------
+// Una sola cita PROGRAMADA por lead (indice unico parcial) y borrado admin.
+// La garantia real esta en la migracion; aqui se comprueba que el formulario
+// nunca se ofrece sin conocer el estado y que el borrado toca una sola cita.
+// ---------------------------------------------------------------------------
+const citaCancelada = { id: 31, lead_id: 7, scheduled_at: '2026-10-24T18:10:00.000Z', status: 'CANCELADA', advisor_name: 'Loli', campus: 'DORAL', student_name: 'Gillary Meza' };
+const citaProgramada = { id: 32, lead_id: 7, scheduled_at: '2026-10-24T14:00:00.000Z', status: 'PROGRAMADA', advisor_name: 'Loli', campus: 'DORAL', student_name: 'Gillary Meza' };
+const bloqueadoEn = c => vm.runInContext('leadAppointmentCreateBlocked', c);
+
+test('cita unica: el formulario se abre fail-closed y solo con cero PROGRAMADA', () => {
+  // isAgendadoGestion se reasigna en el contexto: llega extractada desde el HTML.
+  const estado = (phase, cache, agendado = true) => {
+    const f = frontend({ leadAppointmentsCache: cache });
+    f.context.isAgendadoGestion = () => agendado;
+    f.context.updateLeadAppointmentCreateState({ GESTION: 'AGENDADO' }, phase);
+    return { bloqueado: bloqueadoEn(f.context), aviso: f.element('leadAppointmentNotice').textContent };
+  };
+  // Mientras no se sabe si hay cita activa, el formulario esta cerrado.
+  assert.equal(estado('loading', []).bloqueado, true);
+  assert.match(estado('loading', []).aviso, /Comprobando/);
+  // Ante error de lectura tambien: fail-closed, no fail-open.
+  assert.equal(estado('error', []).bloqueado, true);
+  assert.match(estado('error', []).aviso, /No se pudo verificar/);
+  // Con una PROGRAMADA sigue cerrado y explica como desbloquear.
+  const conActiva = estado('ready', [citaProgramada, citaCancelada]);
+  assert.equal(conActiva.bloqueado, true);
+  assert.match(conActiva.aviso, /ya tiene una cita programada/);
+  // Sin PROGRAMADA se abre; las historicas no bloquean.
+  const soloHistoricas = estado('ready', [citaCancelada]);
+  assert.equal(soloHistoricas.bloqueado, false);
+  // Un lead no agendado no puede crear citas.
+  assert.equal(estado('ready', [], false).bloqueado, true);
+});
+
+test('cita admin: eliminar borra una sola cita, con confirmacion explicita', async () => {
+  const base = (over = {}) => frontend({
+    supabaseClient: database({}), isAdmin: true, currentViewId: 7,
+    pendingAppointmentMutations: new Map(), leadAppointmentsCache: [citaProgramada, citaCancelada], ...over,
+  });
+  const preparar = c => { c.invalidateCitasCache = () => {}; c.loadLeadAppointments = async () => {}; return c; };
+
+  // Un no-admin no llega a la RPC aunque se saltase el boton.
+  {
+    const f = base({ isAdmin: false }), c = preparar(f.context);
+    c.confirm = () => true;
+    await c.deleteLeadAppointment(31);
+    assert.deepEqual(c.supabaseClient.rpcCalls, []);
+    assert.match(f.toasts.at(-1)[0], /administrador/i);
+  }
+  // Cancelar la confirmacion no borra nada y la cita exacta queda identificada.
+  {
+    const f = base(), c = preparar(f.context);
+    let aviso = '';
+    c.confirm = texto => { aviso = texto; return false; };
+    await c.deleteLeadAppointment(31);
+    assert.deepEqual(c.supabaseClient.rpcCalls, []);
+    assert.match(aviso, /CANCELADA/);
+    assert.match(aviso, /Loli/);
+    assert.match(aviso, /demas citas/);
+    assert.match(aviso, /no se puede deshacer/i);
+  }
+  // Admin confirma: una sola llamada y con el id de la cita elegida.
+  {
+    const f = base(), c = preparar(f.context);
+    c.confirm = () => true;
+    await c.deleteLeadAppointment(31);
+    assert.deepEqual(c.supabaseClient.rpcCalls.map(r => [r.name, r.args.p_id]), [['delete_lead_appointment', 31]]);
+  }
+  // Id invalido o mutacion en vuelo: nada llega a la RPC.
+  {
+    const f = base(), c = preparar(f.context);
+    c.confirm = () => true;
+    await c.deleteLeadAppointment(0);
+    await c.deleteLeadAppointment('abc');
+    await c.deleteLeadAppointment(null);
+    await c.deleteLeadAppointment(31);
+    c.pendingAppointmentMutations.set(31, Symbol());
+    await c.deleteLeadAppointment(31);
+    assert.deepEqual(c.supabaseClient.rpcCalls.map(r => r.args.p_id), [31]);
+  }
+  // admin_required del servidor se traduce y no borra.
+  {
+    const rpcCalls = [];
+    const denegado = { rpc: async (name, args) => { rpcCalls.push({ name, args }); return { data: null, error: { message: 'admin_required' } }; } };
+    const f = base({ supabaseClient: denegado }), c = preparar(f.context);
+    c.confirm = () => true;
+    await c.deleteLeadAppointment(31);
+    assert.equal(rpcCalls.length, 1);
+    assert.match(f.toasts.at(-1)[0], /administrador/i);
+  }
+});
+
+test('cita unica: el conflicto 23505 se traduce y recarga sin crear', async () => {
+  const rpcCalls = [];
+  const db = { rpc: async (name, args) => { rpcCalls.push({ name, args }); return { data: null, error: { code: '23505', message: 'duplicate key value violates unique constraint "lead_appointments_one_programmed_per_lead_uidx"' } }; } };
+  const f = frontend({ supabaseClient: db, isAdmin: false, currentViewId: 7, pendingAppointmentMutations: new Map() });
+  const c = f.context, el = f.element;
+  c.document.querySelector = sel => sel === 'input[name="leadAppointmentCampus"]:checked' ? { value: 'DORAL' } : null;
+  c.invalidateCitasCache = () => {};
+  let recargas = 0;
+  c.loadLeadAppointments = async () => { recargas += 1; };
+  el('leadAppointmentDate').value = '2026-01-15T10:00';
+  await c.createLeadAppointment({ preventDefault() {}, target: { reset() {} } });
+  assert.equal(rpcCalls.length, 1);
+  assert.equal(rpcCalls[0].name, 'create_lead_appointment');
+  assert.equal(recargas, 1, 'debe releer las citas tras el conflicto');
+  assert.match(f.toasts.at(-1)[0], /ya tiene una cita programada/i);
+  assert.equal(bloqueadoEn(c), true, 'el formulario sigue cerrado tras el conflicto');
+});
+
+test('cita unica: la UI no duplica funciones ni expone el borrado a no-admin', () => {
+  const occurrences = nombre => (script.match(new RegExp(`(?:async\\s+)?function\\s+${nombre}\\s*\\(`, 'g')) || []).length;
+  assert.equal(occurrences('deleteLeadAppointment'), 1);
+  assert.equal(occurrences('updateLeadAppointmentCreateState'), 1);
+  assert.equal(occurrences('loadLeadAppointments'), 1);
+  // El boton de borrar solo se emite dentro de una rama de administrador.
+  const botones = [...script.matchAll(/onclick="deleteLeadAppointment\(/g)];
+  assert.equal(botones.length, 2, 'uno en la ficha y otro en la tabla de Citas');
+  for (const match of botones) {
+    const previo = script.slice(Math.max(0, match.index - 160), match.index);
+    assert.match(previo, /isAdmin \?/, 'el boton de borrar debe quedar tras una comprobacion de isAdmin');
+  }
+});
+
+test('migraciones de cita unica: indice parcial y RPC admin sin privilege escalation', () => {
+  const indice = readFileSync('supabase/migrations/202610080001_one_programmed_appointment_per_lead.sql', 'utf8');
+  assert.match(indice, /create unique index if not exists lead_appointments_one_programmed_per_lead_uidx/);
+  assert.match(indice, /where status = 'PROGRAMADA'/, 'el indice debe ser parcial: las historicas siguen libres');
+  assert.match(indice, /having count\(\*\) > 1/, 'abortar ante duplicados, nunca reconciliar solo');
+  assert.match(indice, /raise exception using errcode = '23505'/);
+
+  const rpc = readFileSync('supabase/migrations/202610080002_delete_lead_appointment_admin.sql', 'utf8');
+  assert.match(rpc, /security definer set search_path = public/, 'search_path fijo: evita hijack de funcion');
+  assert.match(rpc, /if not public\.is_admin_user\(\) then[\s\S]*raise exception using errcode = '42501'/);
+  assert.match(rpc, /delete from public\.lead_appointments\s+where id = p_id/, 'borra solo la cita indicada');
+  assert.doesNotMatch(rpc, /delete from public\.leads/, 'nunca borra el lead');
+  assert.match(rpc, /revoke all on function public\.delete_lead_appointment\(bigint\) from public, anon/);
 });

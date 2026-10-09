@@ -126,6 +126,16 @@
       background-color: #f8fafc !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important;
     }
     #reporteDiario input::placeholder, #reporteDiario textarea::placeholder { color: #64748b !important; opacity: 1; }
+
+    /* Ayudas del reporte por período: burbuja accesible con ratón (:hover),
+       teclado (:focus-within) y toque (:active). Puro CSS, sin JS ni dependencias. */
+    .periodo-tip { position: relative; display: inline-flex; vertical-align: middle; }
+    .periodo-tip-btn { display: inline-flex; align-items: center; justify-content: center; width: .875rem; height: .875rem; border-radius: 9999px; font-size: .625rem; line-height: 1; font-weight: 700; background-color: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; cursor: help; padding: 0; flex-shrink: 0; }
+    .periodo-tip-btn:hover { background-color: #4338ca; color: #fff; border-color: #4338ca; }
+    .periodo-tip-panel { position: absolute; left: 0; bottom: calc(100% + .375rem); z-index: 40; width: max-content; max-width: min(15rem, calc(100vw - 1.5rem)); padding: .5rem .625rem; border-radius: .5rem; font-size: .75rem; font-weight: 400; line-height: 1.1rem; text-align: left; white-space: normal; background-color: #0f172a; color: #fff; border: 1px solid #475569; box-shadow: 0 10px 15px -3px rgb(0 0 0 / .35); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .12s ease; }
+    .periodo-tip:hover .periodo-tip-panel, .periodo-tip:focus-within .periodo-tip-panel, .periodo-tip:active .periodo-tip-panel { opacity: 1; visibility: visible; }
+    .periodo-tip-panel::after { content: ''; position: absolute; top: 100%; left: .5rem; border: .3125rem solid transparent; border-top-color: #0f172a; }
+    @media (prefers-reduced-motion: reduce) { .periodo-tip-panel { transition: none; } }
   </style>
   <script>
     (() => {
@@ -259,7 +269,11 @@
       <div id="reporteAuto" class="space-y-3"></div>
       </div>
       <section id="reportePeriodo" class="hidden space-y-4" aria-label="Reporte por período">
-        <header class="border-b-2 border-indigo-600 pb-3"><h1 class="text-2xl font-bold text-indigo-900">Reporte por período</h1><p class="text-sm text-slate-600">Leads activos por fecha de entrada, desde y hasta inclusive. Gestión actual: no representa el estado histórico al cierre del período.</p></header>
+        <header class="border-b-2 border-indigo-600 pb-3"><h1 class="text-2xl font-bold text-indigo-900">Reporte por período</h1><p class="text-sm text-slate-600">Leads activos por fecha de entrada, desde y hasta inclusive. Gestión actual: no representa el estado histórico al cierre del período.</p>
+          <div class="mt-2 grid gap-2 sm:grid-cols-2 text-xs">
+            <p class="rounded border border-slate-300 bg-white p-2 text-slate-700"><strong class="text-indigo-900">Leads por fecha de entrada:</strong> leads activos cuya Fecha de entrada cayó entre Desde y Hasta (incluidos). La gestión que se muestra es la actual del lead, no la que tenía al cerrar el período.</p>
+            <p class="rounded border border-slate-300 bg-white p-2 text-slate-700"><strong class="text-indigo-900">Actividad realizada en el período:</strong> gestiones registradas entre las fechas elegidas y citas contadas por su fecha programada (Miami).</p>
+          </div></header>
         <div class="flex flex-wrap gap-3 items-end text-sm">
           <label>Desde <input id="periodoDesde" type="date" onchange="loadReportePeriodo()" class="border border-slate-300 rounded px-2 py-1"></label>
           <label>Hasta <input id="periodoHasta" type="date" onchange="loadReportePeriodo()" class="border border-slate-300 rounded px-2 py-1"></label>
@@ -5945,26 +5959,49 @@ async function deleteLeadAppointment(id) {
       if (valid()) updatePeriodoCsvState();
     }
 
+    function periodoTip(key) {
+      const tips = {
+        medios: 'Leads activos cuya fecha de entrada cae dentro del rango elegido, contados por su Medio de entrada. Cada lead aparece una sola vez.',
+        campanas: 'Leads activos cuya fecha de entrada cae dentro del rango elegido, agrupados por la Campaña con la que entraron. Cada lead aparece una sola vez.',
+        leads: 'Personas activas dadas de alta entre las fechas Desde y Hasta (incluidas). Cada lead se cuenta una vez por resumen.',
+        pct: 'Porcentaje sobre el total de leads que entraron en el período seleccionado.',
+        gestionActual: 'Estado de gestión que tiene el lead HOY, no el que tenía cuando entró ni al cerrar el período.',
+        matriz: 'Cruza la Campaña de entrada del lead con su gestión actual. Cada celda es un lead único.',
+        gestiones: 'Registros de gestión creados entre las fechas del período. Un mismo lead puede tener varias gestiones, por eso el total de gestiones puede superar al de leads únicos.',
+        canales: 'Cantidad de gestiones realizadas por cada canal durante el período. Llamada y WhatsApp y Llamadas Data Dura se cuentan aparte.',
+        citas: 'Citas contadas por su fecha programada en zona horaria de Miami. "Normal" y "DD" (Data Dura) se muestran como normal / Data Dura.',
+        dd: 'DD = Data Dura: leads cuyo mes de origen es distinto al mes del período. Es una clasificación aparte del estado.',
+        estadoTabla: 'Leads únicos cuenta personas distintas; Total de gestiones suma todos los intentos. Un mismo lead puede repetirse en varios estados, por eso la columna de leads únicos no se debe sumar.',
+        leadsUnicos: 'Personas distintas que quedaron en este estado durante el período. Cada lead se cuenta una sola vez en esta fila.',
+        totalGestiones: 'Registros de gestión con este estado en el período. Un mismo lead puede generar varias filas en diferentes estados, así que la suma puede superar al total de leads gestionados.',
+        actividad: 'Dos análisis: leads por fecha de entrada (cuadros de arriba) y actividad realizada durante el rango (gestiones y citas programadas).',
+      };
+      const text = tips[key];
+      if (!text) return '';
+      return `<span class="periodo-tip"><button type="button" class="periodo-tip-btn" aria-label="Ayuda sobre este dato del reporte por período" aria-describedby="pt-${escapeAttr(key)}">i</button><span class="periodo-tip-panel" role="tooltip" id="pt-${escapeAttr(key)}">${escapeHtml(text)}</span></span>`;
+    }
+
     function renderPeriodoActividad(data) {
       const row = (label, value) => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(label)}</th><td class="text-right">${value}</td></tr>`;
-      const table = (title, rows) => `<section class="border border-slate-300 rounded p-3"><h3 class="font-bold text-indigo-900 mb-2">${title}</h3><table class="w-full text-sm"><tbody>${rows}</tbody></table></section>`;
+      const rowTip = (label, value, tip) => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(label)}${periodoTip(tip)}</th><td class="text-right">${value}</td></tr>`;
+      const table = (title, rows, tip) => `<section class="border border-slate-300 rounded p-3"><h3 class="font-bold text-indigo-900 mb-2">${title}${periodoTip(tip)}</h3><table class="w-full text-sm"><tbody>${rows}</tbody></table></section>`;
       const g = data.gestiones, q = data.canales, c = data.citas;
       const porEstadoOrdenado = [...g.por_estado].sort((a, b) => compareAlphaEs(a.label, b.label));
-      const porEstado = porEstadoOrdenado.length ? `<section class="border border-slate-300 rounded p-3"><h3 class="font-bold text-indigo-900 mb-2">Gestiones por estado (leads únicos / eventos)</h3><table class="w-full text-sm"><tbody>${porEstadoOrdenado.map(r => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(r.label)}</th><td class="text-right">${r.leads}</td><td class="text-right">${r.eventos}</td></tr>`).join('')}</tbody></table></section>` : '';
-      return `<div class="border-t-2 border-indigo-600 pt-3"><h2 class="text-lg font-bold text-indigo-900">Actividad realizada en el período</h2><p class="text-xs text-slate-500 mb-2">Gestiones por día trabajado y citas por fecha programada (Miami). Independiente de los cuadros de entrada.</p></div>`
+      const porEstado = porEstadoOrdenado.length ? `<section class="border border-slate-300 rounded p-3"><div class="flex items-center gap-1.5 mb-1"><h3 class="font-bold text-indigo-900">Gestiones por estado${periodoTip('estadoTabla')}</h3></div><p class="text-xs text-slate-600 mb-2"><strong>Leads únicos</strong> cuenta personas distintas. <strong>Total de gestiones</strong> suma todos los intentos. Un mismo lead puede repetirse en varios estados, por eso la columna de leads únicos no se debe sumar.</p><table class="w-full text-sm"><thead><tr><th scope="col" class="text-left py-1 font-normal">Estado</th><th scope="col" class="text-right py-1 font-normal">Leads únicos${periodoTip('leadsUnicos')}</th><th scope="col" class="text-right py-1 font-normal">Total de gestiones${periodoTip('totalGestiones')}</th></tr></thead><tbody>${porEstadoOrdenado.map(r => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(r.label)}</th><td class="text-right">${r.leads}</td><td class="text-right">${r.eventos}</td></tr>`).join('')}</tbody></table></section>` : '';
+      return `<div class="border-t-2 border-indigo-600 pt-3"><h2 class="text-lg font-bold text-indigo-900">Actividad realizada en el período${periodoTip('actividad')}</h2><p class="text-xs text-slate-500 mb-2">Gestiones por día trabajado y citas por fecha programada (Miami). Independiente de los cuadros de entrada.</p></div>`
         + `<div class="grid md:grid-cols-3 gap-4">`
-        + table('Gestiones', row('Leads únicos gestionados', g.leads_unicos) + row('Pasados a Agendado', g.agendados_normales) + row('Pasados a Agendado Data Dura', g.agendados_data_dura) + row('Pasados a Inscrito', g.inscritos_normales) + row('Pasados a Inscrito Data Dura', g.inscritos_data_dura) + row('Total de gestiones', g.total_eventos))
-        + table('Canales', row('Llamada y WhatsApp', q.llamada_whatsapp) + row('Llamadas', q.llamadas_normales) + row('Llamadas Data Dura', q.llamadas_data_dura) + row('Otros/sin canal', q.otros) + row('WhatsApp', q.whatsapp))
-        + table('Citas (fecha programada)', row('Asistieron', c.asistieron) + row('Canceladas', c.canceladas) + row('Doral normal / DD', `${c.doral_normal} / ${c.doral_data_dura}`) + row('No asistieron', c.no_asistieron) + row('Programadas Data Dura', c.programadas_data_dura) + row('Programadas normales', c.programadas_normales) + row('Reprogramadas', c.reprogramadas) + row('Sin sede (históricas)', c.sin_sede) + row('Weston normal / DD', `${c.weston_normal} / ${c.weston_data_dura}`))
+        + table('Gestiones', row('Leads únicos gestionados', g.leads_unicos) + row('Pasados a Agendado', g.agendados_normales) + row('Pasados a Agendado Data Dura', g.agendados_data_dura) + row('Pasados a Inscrito', g.inscritos_normales) + row('Pasados a Inscrito Data Dura', g.inscritos_data_dura) + row('Total de gestiones', g.total_eventos), 'gestiones')
+        + table('Canales', row('Llamada y WhatsApp', q.llamada_whatsapp) + row('Llamadas', q.llamadas_normales) + row('Llamadas Data Dura', q.llamadas_data_dura) + row('Otros/sin canal', q.otros) + row('WhatsApp', q.whatsapp), 'canales')
+        + table('Citas (fecha programada)', row('Asistieron', c.asistieron) + row('Canceladas', c.canceladas) + rowTip('Doral: normal / Data Dura', `${c.doral_normal} / ${c.doral_data_dura}`, 'dd') + row('No asistieron', c.no_asistieron) + row('Programadas Data Dura', c.programadas_data_dura) + row('Programadas normales', c.programadas_normales) + row('Reprogramadas', c.reprogramadas) + row('Sin sede (históricas)', c.sin_sede) + rowTip('Weston: normal / Data Dura', `${c.weston_normal} / ${c.weston_data_dura}`, 'dd'), 'citas')
         + `</div>${porEstado}`;
     }
 
     function renderReportePeriodo(data) {
-      const table = (title, rows) => `<section class="border border-slate-300 rounded p-3"><h2 class="font-bold text-indigo-900 mb-2">${title}</h2><table class="w-full text-sm"><thead><tr><th scope="col" class="text-left">Categoría</th><th scope="col" class="text-right">Leads</th><th scope="col" class="text-right">%</th></tr></thead><tbody>${rows.map(r => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(r.label)}</th><td class="text-right">${r.count}</td><td class="text-right">${periodoPct(r.count, data.total)}</td></tr>`).join('')}</tbody><tfoot><tr class="font-bold"><th scope="row" class="text-left py-2">TOTAL</th><td class="text-right">${data.total}</td><td class="text-right">${periodoPct(data.total, data.total)}</td></tr></tfoot></table></section>`;
+      const table = (title, rows, tip) => `<section class="border border-slate-300 rounded p-3"><h2 class="font-bold text-indigo-900 mb-2">${title}${periodoTip(tip)}</h2><table class="w-full text-sm"><thead><tr><th scope="col" class="text-left">Categoría</th><th scope="col" class="text-right">Leads${periodoTip('leads')}</th><th scope="col" class="text-right">%${periodoTip('pct')}</th></tr></thead><tbody>${rows.map(r => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(r.label)}</th><td class="text-right">${r.count}</td><td class="text-right">${periodoPct(r.count, data.total)}</td></tr>`).join('')}</tbody><tfoot><tr class="font-bold"><th scope="row" class="text-left py-2">TOTAL</th><td class="text-right">${data.total}</td><td class="text-right">${periodoPct(data.total, data.total)}</td></tr></tbody></table></section>`;
       const m = data.matriz;
       const cells = counts => counts.map(n => `<td class="px-3 py-2 text-right border-b border-slate-200">${n}</td>`).join('');
       const sticky = 'sticky left-0 bg-white border-r border-slate-300 px-3 py-2 text-left';
-      return `<div class="grid md:grid-cols-2 gap-4">${table('Resumen general de leads por entrada (Medio)', data.medios)}${table('Resumen general de campañas', data.campanas)}</div>${table('Resumen específico de gestión actual', data.gestiones)}<section class="border border-slate-300 rounded p-3"><h2 class="font-bold text-indigo-900 mb-2">Matriz gestión actual × campaña</h2><div class="overflow-x-auto" tabindex="0" role="region" aria-label="Matriz gestión por campaña, desplazable"><table class="min-w-full text-sm"><thead><tr><th scope="col" class="${sticky}">Gestión</th>${m.campanas.map(label => `<th scope="col" class="px-3 py-2 whitespace-nowrap">${escapeHtml(label)}</th>`).join('')}<th scope="col" class="px-3 py-2">Total</th></tr></thead><tbody>${m.filas.map(r => `<tr><th scope="row" class="${sticky} font-normal whitespace-nowrap">${escapeHtml(r.label)}</th>${cells(r.counts)}<td class="px-3 py-2 text-right font-bold">${r.total}</td></tr>`).join('')}</tbody><tfoot><tr class="font-bold"><th scope="row" class="${sticky}">TOTAL</th>${cells(m.totales_columnas)}<td class="px-3 py-2 text-right">${data.total}</td></tr></tfoot></table></div></section>`;
+      return `<div class="grid md:grid-cols-2 gap-4">${table('Resumen general de leads por entrada (Medio)', data.medios, 'medios')}${table('Resumen general de campañas', data.campanas, 'campanas')}</div>${table('Resumen específico de gestión actual', data.gestiones, 'gestionActual')}<section class="border border-slate-300 rounded p-3"><h2 class="font-bold text-indigo-900 mb-2">Matriz gestión actual × campaña${periodoTip('matriz')}</h2><div class="overflow-x-auto" tabindex="0" role="region" aria-label="Matriz gestión por campaña, desplazable"><table class="min-w-full text-sm"><thead><tr><th scope="col" class="${sticky}">Gestión</th>${m.campanas.map(label => `<th scope="col" class="px-3 py-2 whitespace-nowrap">${escapeHtml(label)}</th>`).join('')}<th scope="col" class="px-3 py-2">Total</th></tr></thead><tbody>${m.filas.map(r => `<tr><th scope="row" class="${sticky} font-normal whitespace-nowrap">${escapeHtml(r.label)}</th>${cells(r.counts)}<td class="px-3 py-2 text-right font-bold">${r.total}</td></tr>`).join('')}</tbody><tfoot><tr class="font-bold"><th scope="row" class="${sticky}">TOTAL</th>${cells(m.totales_columnas)}<td class="px-3 py-2 text-right">${data.total}</td></tr></tfoot></table></div></section>`;
     }
 
     function exportReportePeriodoCSV() {
@@ -5988,12 +6025,13 @@ async function deleteLeadAppointment(id) {
       const ga = a.gestiones, qa = a.canales, ca = a.citas;
       row([]); row(['Actividad realizada en el período (gestiones por fecha trabajada)']); row(['Métrica', 'Cantidad']);
       row(['Leads únicos gestionados', ga.leads_unicos]); row(['Pasados a Agendado', ga.agendados_normales]); row(['Pasados a Agendado Data Dura', ga.agendados_data_dura]); row(['Pasados a Inscrito', ga.inscritos_normales]); row(['Pasados a Inscrito Data Dura', ga.inscritos_data_dura]); row(['Total de gestiones', ga.total_eventos]);
-      row([]); row(['Gestiones por estado']); row(['Estado', 'Leads únicos', 'Eventos']);
+      row([]); row(['Gestiones por estado']); row(['Estado', 'Leads únicos', 'Total de gestiones']);
       [...ga.por_estado].sort((a, b) => compareAlphaEs(a.label, b.label)).forEach(r => row([r.label, r.leads, r.eventos]));
+      row(['Nota: Leads únicos cuenta personas distintas; Total de gestiones suma todos los intentos. Un mismo lead puede repetirse en varios estados, por eso los leads únicos no se suman.']);
       row([]); row(['Canales de la actividad']); row(['Canal', 'Cantidad']);
-      row(['Llamada y WhatsApp', qa.llamada_whatsapp]); row(['Llamadas', qa.llamadas_normales]); row(['Llamadas Data Dura', qa.llamadas_data_dura]); row(['Otros/sin canal', qa.otros]); row(['WhatsApp', qa.whatsapp]);
+      row(['Llamada y WhatsApp', qa.llamada_whatsapp]); row(['Llamadas', qa.llamadas_normales]); row(['Llamadas Data Dura', qa.llamadas_data_dura]); row(['Otros o sin canal', qa.otros]); row(['WhatsApp', qa.whatsapp]);
       row([]); row(['Agenda (citas por fecha programada)']); row(['Estado', 'Cantidad']);
-      row(['Asistieron', ca.asistieron]); row(['Canceladas', ca.canceladas]); row(['Doral normal', ca.doral_normal]); row(['Doral Data Dura', ca.doral_data_dura]); row(['No asistieron', ca.no_asistieron]); row(['Programadas Data Dura', ca.programadas_data_dura]); row(['Programadas normales', ca.programadas_normales]); row(['Reprogramadas', ca.reprogramadas]); row(['Sin sede (históricas)', ca.sin_sede]); row(['Weston normal', ca.weston_normal]); row(['Weston Data Dura', ca.weston_data_dura]);
+      row(['Asistieron', ca.asistieron]); row(['Canceladas', ca.canceladas]); row(['Doral: programadas normales', ca.doral_normal]); row(['Doral: programadas Data Dura', ca.doral_data_dura]); row(['No asistieron', ca.no_asistieron]); row(['Programadas Data Dura', ca.programadas_data_dura]); row(['Programadas normales', ca.programadas_normales]); row(['Reprogramadas', ca.reprogramadas]); row(['Sin sede (históricas)', ca.sin_sede]); row(['Weston: programadas normales', ca.weston_normal]); row(['Weston: programadas Data Dura', ca.weston_data_dura]);
       downloadCSV(lines.join('\n'), `Reporte_Periodo_${d.desde}_${d.hasta}.csv`);
       showToast('Reporte por período exportado a CSV', 'success');
     }

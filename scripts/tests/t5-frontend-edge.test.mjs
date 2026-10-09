@@ -38,7 +38,7 @@ const names = [
   'resetReportePeriodo', 'setReporteVista', 'periodoPresetRange', 'setPeriodoPreset', 'periodoRangeKey', 'periodoValidDate',
   'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'periodoPct', 'renderReportePeriodo', 'exportReportePeriodoCSV', 'initReporteDiario',
   'markPeriodoReportDirty', 'updatePeriodoCsvState', 'upsertLeadInState', 'removeLeadFromState',
-  'loadPeriodoActividad', 'validatePeriodoActividad', 'renderPeriodoActividad',
+  'loadPeriodoActividad', 'validatePeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
   'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'syncNewLeadMes', 'syncNewUltimaGestion',
   'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentDate', 'appointmentInputISO', 'appointmentLocal', 'appointmentCampusFrom',
@@ -397,6 +397,46 @@ test('período: CSV usa rango cargado, cuatro secciones, ceros, totales, neutral
   assert.match(csv, /"AGENDADO","2","2"/);
   f.context.currentAccess.activo = false; f.context.exportReportePeriodoCSV(); assert.equal(f.downloads.length, 1);
   assert.ok(rpcCalls.every(([name]) => name === 'management_period_summary'));
+});
+
+test('período: ayudas y encabezados explican leads únicos vs gestiones sin cambiar cifras', async () => {
+  const f = periodFrontend({ allLeads: periodLeads(), catalogRows: periodCatalogs() });
+  const tip = f.context.periodoTip('leads');
+  assert.match(tip, /periodo-tip/); assert.match(tip, /periodo-tip-btn/);
+  assert.match(tip, /periodo-tip-panel/); assert.match(tip, /role="tooltip"/);
+  assert.match(tip, /aria-describedby="pt-leads"/); assert.match(tip, /id="pt-leads"/);
+  assert.match(tip, /Personas activas|Cada lead se cuenta una vez/i); assert.match(tip, /<button type="button"/);
+  assert.equal(f.context.periodoTip('clave-inexistente'), '');
+
+  const htmlActividad = f.context.renderPeriodoActividad(periodoActividadFixture());
+  assert.doesNotMatch(htmlActividad, /\(leads únicos \/ eventos\)/);
+  assert.match(htmlActividad, /Estado<\/th><th[^>]*>Leads únicos/);
+  assert.match(htmlActividad, /Total de gestiones/); assert.match(htmlActividad, /no se debe sumar/);
+  assert.match(htmlActividad, /AGENDADO<\/th><td[^>]*>2<\/td><td[^>]*>2<\/td>/);
+  for (const id of ['pt-gestiones', 'pt-canales', 'pt-citas', 'pt-estadoTabla', 'pt-leadsUnicos', 'pt-totalGestiones', 'pt-dd', 'pt-actividad']) assert.match(htmlActividad, new RegExp(id));
+
+  const htmlCohorte = f.context.renderReportePeriodo(f.context.buildPeriodSummary(periodLeads(), periodCatalogs(), '2026-10-01', '2026-10-07'));
+  assert.ok((htmlCohorte.match(/class="periodo-tip/g) || []).length >= 4);
+  for (const id of ['pt-medios', 'pt-campanas', 'pt-gestionActual', 'pt-matriz', 'pt-leads', 'pt-pct']) assert.match(htmlCohorte, new RegExp(id));
+  assert.ok((htmlCohorte.match(/<section/g) || []).length === 4);
+
+  const actividad = periodoConActividad();
+  const csvFrontend = periodFrontend({ supabaseClient: actividad.supabaseClient, allLeads: periodLeads(), catalogRows: periodCatalogs() });
+  await csvFrontend.context.loadReportePeriodo(); await settle();
+  csvFrontend.context.exportReportePeriodoCSV();
+  const csv = await csvFrontend.downloads[0].blob.text();
+  assert.match(csv, /"Estado","Leads únicos","Total de gestiones"/);
+  assert.doesNotMatch(csv, /"Estado","Leads únicos","Eventos"/);
+  assert.match(csv, /"AGENDADO","2","2"/); assert.match(csv, /"Otros o sin canal","0"/);
+  assert.match(csv, /"Doral: programadas normales","1"/); assert.match(csv, /"Doral: programadas Data Dura","1"/);
+  // Las dos sedes deben exportar cifra, nunca celda vacía (placeholder = undefined = "").
+  assert.match(csv, /"Weston: programadas normales","2"/); assert.match(csv, /"Weston: programadas Data Dura","0"/);
+  assert.doesNotMatch(csv, /"Weston: programadas (normales|Data Dura)",""/);
+  assert.match(csv, /"Nota: Leads únicos cuenta personas distintas; Total de gestiones suma todos los intentos\./);
+
+  assert.match(html, /periodo-tip-panel\s*\{/);
+  assert.match(html, /\.periodo-tip:focus-within \.periodo-tip-panel/);
+  assert.match(html, /Leads por fecha de entrada:/);
 });
 
 test('período: presets calendario Miami incluyen hoy, semana lunes-domingo y cambio de año', async () => {

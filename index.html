@@ -4270,6 +4270,39 @@ async function loadLeadAppointments(leadId, lead) {
       async function setLeadAppointmentStatus(id, status) { const appointmentId = validAppointmentId(id); if (!appointmentId || pendingAppointmentMutations.has(appointmentId)) return; const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at; const operationToken = Symbol(); pendingAppointmentMutations.set(appointmentId, operationToken); setAppointmentMutationPending(appointmentId, true); try { const { error } = await supabaseClient.rpc('set_lead_appointment_status', { p_id: appointmentId, p_status: status, p_notes: '' }); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { showToast('No se pudo actualizar la cita', 'error'); return; } invalidateCitasCache(); await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita actualizada', 'success'); } catch (err) { if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) { console.warn('No se pudo actualizar la cita:', err); showToast('No se pudo actualizar la cita', 'error'); } } finally { if (pendingAppointmentMutations.get(appointmentId) === operationToken) pendingAppointmentMutations.delete(appointmentId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.querySelector(`[data-appointment-id="${appointmentId}"]`)) setAppointmentMutationPending(appointmentId, false); } }
        async function rescheduleLeadAppointment(id) { const appointmentId = validAppointmentId(id); const scheduledAt = appointmentInputISO(document.getElementById(`reschedule-${appointmentId}`)?.value); if (!appointmentId || !scheduledAt || pendingAppointmentMutations.has(appointmentId)) { showToast('Fecha y hora de Miami no válidas', 'warning'); return; } const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at; const operationToken = Symbol(); pendingAppointmentMutations.set(appointmentId, operationToken); setAppointmentMutationPending(appointmentId, true); try { const { error } = await supabaseClient.rpc('reschedule_lead_appointment', { p_id: appointmentId, p_scheduled_at: scheduledAt, p_notes: '' }); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { showToast('No se pudo reprogramar la cita', 'error'); return; } invalidateCitasCache(); await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita reprogramada', 'success'); } catch (err) { if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) { console.warn('No se pudo reprogramar la cita:', err); showToast('No se pudo reprogramar la cita', 'error'); } } finally { if (pendingAppointmentMutations.get(appointmentId) === operationToken) pendingAppointmentMutations.delete(appointmentId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.querySelector(`[data-appointment-id="${appointmentId}"]`)) setAppointmentMutationPending(appointmentId, false); } }
 
+// T2: estado del formulario de creacion de citas de la ficha del lead.
+// Fail-closed: mientras no se demuestre lo contrario, el formulario queda bloqueado.
+function updateLeadAppointmentCreateState(lead, loadError) {
+  const createWrap = document.getElementById('leadAppointmentCreate');
+  const notice = document.getElementById('leadAppointmentNotice');
+  if (!createWrap || !notice) return;
+  const submit = createWrap.querySelector('[data-appointment-create]');
+  const block = () => { setBlockControls(createWrap, true); if (submit) submit.disabled = true; };
+  const unblock = () => { setBlockControls(createWrap, false); if (submit) submit.disabled = false; };
+  const showNotice = message => { notice.textContent = message; notice.classList.remove('hidden'); notice.classList.add('text-[11px]', 'text-slate-500'); };
+  if (loadError) {
+    createWrap.classList.add('hidden');
+    block();
+    showNotice('No se pudo verificar si hay una cita programada.');
+    return;
+  }
+  if (!isAgendadoGestion(getField(lead || {}, 'GESTION'))) {
+    createWrap.classList.add('hidden');
+    block();
+    showNotice('El lead no está agendado; no se pueden crear nuevas citas.');
+    return;
+  }
+  if (leadAppointmentsCache.some(a => String(a.status) === 'PROGRAMADA')) {
+    block();
+    showNotice('Este lead ya tiene una cita programada. Gestiona esa cita (Asistió / No asistió / Cancelar / Reprogramar) antes de crear otra.');
+    return;
+  }
+  createWrap.classList.remove('hidden');
+  unblock();
+  notice.classList.add('hidden');
+  notice.classList.remove('text-[11px]', 'text-slate-500');
+}
+
     // -------------------------------------------------------------
     // Notas de equipo (lead_notes): append-only vía RPC; editar/borrar solo admin.
     // -------------------------------------------------------------

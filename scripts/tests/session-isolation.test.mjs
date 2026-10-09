@@ -24,6 +24,7 @@ const names = ['clearSessionState', 'closeInvalidSession', 'validateCurrentSessi
   'resetReportePeriodo', 'setReporteVista', 'periodoPresetRange', 'setPeriodoPreset', 'periodoRangeKey', 'periodoValidDate',
   'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'renderReportePeriodo', 'periodoPct',
   'markPeriodoReportDirty', 'updatePeriodoCsvState',
+  'loadPeriodoActividad', 'validatePeriodoActividad', 'renderPeriodoActividad',
   'consolidateLeadsById', 'compareLeadIdsDescending', 'parseFechaLead',
   'stopIdleTracking', 'endAgentSessionLocally', 'startAgentActivityTracking'];
 const sessionCacheNames = ['loadHistoricoData', 'performLoadHistoricoData', 'loadLeadsData', 'performLoadLeadsData',
@@ -108,6 +109,7 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     citasRequestGeneration: 0, reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [],
     periodoRequestGeneration: 0, periodoData: null, periodoLoadedKey: '', reporteVistaActiva: 'diario',
     periodoSourceRevision: 0, periodoLoadedRevision: -1, periodoRefreshTimer: null,
+    periodoActividadData: null, periodoActividadKey: '', periodoActividadGeneration: 0,
     agentSessionId: null, idleWarnTimer: null, idleTickTimer: null, idleListenersOn: false, idleLastTouchSent: 0,
     localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     campanasRequestGeneration: 0, campanasData: [], campaignStatsMap: new Map(), currentMainTab: 'dashboard',

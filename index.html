@@ -274,6 +274,7 @@
         </div>
         <p id="periodoAviso" role="status" aria-live="polite" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800"></p>
         <div id="periodoBody" class="space-y-4"></div>
+        <div id="periodoActividad" class="space-y-4" aria-label="Actividad realizada en el período"></div>
       </section>
     </div>
 
@@ -1151,12 +1152,24 @@
           <!-- Medio -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Medio</label>
-            <select id="newMedio" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+            <select id="newMedio" onchange="syncNewUltimaGestion()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
               <option value="Whatsapp">Whatsapp</option>
               <option value="Instagram">Instagram</option>
               <option value="Lead Directo">Lead Directo</option>
               <option value="Referidos Andres">Referidos Andres</option>
               <option value="CogniTalkign">CogniTalkign</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Tipo de gestión inicial</label>
+            <select id="newUltimaGestion" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="Llamada">Llamada</option>
+              <option value="Llamada Data Dura">Llamada Data Dura</option>
+              <option value="Llamada y WhatsApp">Llamada WhatsApp</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Visita Conservatorio">Visita Conservatorio</option>
             </select>
           </div>
 
@@ -1502,6 +1515,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       let periodoSourceRevision = 0;
       let periodoLoadedRevision = -1;
       let periodoRefreshTimer = null;
+      let periodoActividadData = null;
+      let periodoActividadKey = '';
+      let periodoActividadGeneration = 0;
      let isTrafficker = false;
      let isSupervisor = false;
      // Fuente unica de "puede editar campanas": admin, trafficker o supervisor.
@@ -3583,6 +3599,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }
     }
 
+    // La procedencia sugiere el canal inicial, pero la asesora puede cambiarlo.
+    function syncNewUltimaGestion() {
+      const medio = (document.getElementById('newMedio')?.value || '').toLowerCase();
+      if (medio.includes('whatsapp')) {
+        const select = document.getElementById('newUltimaGestion');
+        if (select) select.value = 'WhatsApp';
+      }
+    }
+
     async function handleCreateLead(event) {
       event.preventDefault();
       if (newLeadSubmitting) return;
@@ -3603,6 +3628,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         "Campaña": document.getElementById('newCampana')?.value || 'Sin definir',
         "Medio": document.getElementById('newMedio')?.value || 'Whatsapp',
         "GESTION": document.getElementById('newGestion')?.value || 'Información ',
+        "ULTIMA GESTION": document.getElementById('newUltimaGestion')?.value || 'WhatsApp',
         "AGENTE": isAdmin ? (document.getElementById('newAgente')?.value.trim() || currentAccess.nombre || 'Agente') : currentAccess.nombre,
         "Ciudad": document.getElementById('newCiudad')?.value.trim() || '',
         "OBSERVACIONES": document.getElementById('newObservaciones')?.value.trim() || 'Nuevo lead registrado desde el panel.'
@@ -5581,10 +5607,13 @@ function updateLeadAppointmentCreateState(lead, loadError) {
       periodoLoadedKey = '';
       periodoLoadedRevision = -1;
       periodoSourceRevision += 1;
+      periodoActividadData = null;
+      periodoActividadKey = '';
+      periodoActividadGeneration += 1;
       if (periodoRefreshTimer) { clearTimeout(periodoRefreshTimer); periodoRefreshTimer = null; }
       reporteVistaActiva = 'diario';
       ['periodoDesde', 'periodoHasta'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
-      ['periodoBody', 'periodoAviso'].forEach(id => document.getElementById(id)?.replaceChildren());
+      ['periodoBody', 'periodoAviso', 'periodoActividad'].forEach(id => document.getElementById(id)?.replaceChildren());
       const select = document.getElementById('reporteVista');
       if (select) select.value = 'diario';
       document.getElementById('reportePeriodo')?.classList.add('hidden');
@@ -5598,7 +5627,8 @@ function updateLeadAppointmentCreateState(lead, loadError) {
       const btn = document.getElementById('periodoBtnCsv');
       if (!btn) return;
       btn.disabled = !(currentUser && currentAccess?.activo && reporteVistaActiva === 'periodo' && currentMainTab === 'reporte'
-        && periodoData && periodoLoadedKey && periodoLoadedKey === periodoRangeKey() && periodoLoadedRevision === periodoSourceRevision);
+        && periodoData && periodoActividadData && periodoLoadedKey && periodoLoadedKey === periodoRangeKey()
+        && periodoActividadKey === periodoLoadedKey && periodoLoadedRevision === periodoSourceRevision);
     }
 
     // Invalida lo calculado/subido por una mutación de leads o catálogos. Solo
@@ -5608,10 +5638,14 @@ function updateLeadAppointmentCreateState(lead, loadError) {
       periodoData = null;
       periodoLoadedKey = '';
       periodoLoadedRevision = -1;
+      periodoActividadData = null;
+      periodoActividadKey = '';
+      periodoActividadGeneration += 1;
       updatePeriodoCsvState();
       if (currentMainTab !== 'reporte' || reporteVistaActiva !== 'periodo') return;
       const body = document.getElementById('periodoBody');
       if (body) body.replaceChildren();
+      document.getElementById('periodoActividad')?.replaceChildren();
       const aviso = document.getElementById('periodoAviso');
       if (aviso) aviso.textContent = 'Datos actualizados. Recalculando…';
       if (periodoRefreshTimer) clearTimeout(periodoRefreshTimer);
@@ -5754,7 +5788,12 @@ function updateLeadAppointmentCreateState(lead, loadError) {
       periodoData = null;
       periodoLoadedKey = '';
       periodoLoadedRevision = -1;
+      periodoActividadData = null;
+      periodoActividadKey = '';
+      periodoActividadGeneration += 1;
       const body = document.getElementById('periodoBody'), aviso = document.getElementById('periodoAviso');
+      const actividadBox = document.getElementById('periodoActividad');
+      if (actividadBox) actividadBox.replaceChildren();
       const desde = document.getElementById('periodoDesde').value, hasta = document.getElementById('periodoHasta').value;
       body.replaceChildren();
       if (!periodoValidDate(desde) || !periodoValidDate(hasta) || desde > hasta) { aviso.textContent = 'Rango inválido: elige Desde y Hasta válidos, en orden.'; updatePeriodoCsvState(); return; }
@@ -5774,6 +5813,7 @@ function updateLeadAppointmentCreateState(lead, loadError) {
         periodoLoadedRevision = sourceRevision;
         aviso.textContent = `${desde} a ${hasta} (inclusive) · ${data.total} leads por fecha de entrada · ${data.fechas_invalidas} sin fecha válida (excluidos). Gestión actual, no histórica al cierre.`;
         updatePeriodoCsvState();
+        loadPeriodoActividad(desde, hasta);
       } catch (error) {
         if (!valid()) return;
         periodoData = null;
@@ -5787,6 +5827,59 @@ function updateLeadAppointmentCreateState(lead, loadError) {
 
     function periodoPct(count, total) { return (total ? count / total * 100 : 0).toFixed(2) + '%'; }
 
+    function validatePeriodoActividad(data, desde, hasta) {
+      const fail = () => { throw new Error('La actividad del período devolvió una respuesta inválida. Actualiza e inténtalo nuevamente.'); };
+      const count = n => Number.isSafeInteger(Number(n)) && Number(n) >= 0;
+      if (!data || data.desde !== desde || data.hasta !== hasta) fail();
+      for (const key of ['gestiones', 'canales', 'citas']) if (!data[key] || typeof data[key] !== 'object') fail();
+      const g = data.gestiones, q = data.canales, c = data.citas;
+      if (![g.total_eventos, g.leads_unicos, g.agendados_normales, g.agendados_data_dura, g.inscritos_normales, g.inscritos_data_dura].every(count)) fail();
+      if (![q.llamadas_normales, q.llamadas_data_dura, q.llamada_whatsapp, q.whatsapp, q.otros].every(count)) fail();
+      if (![c.programadas_normales, c.programadas_data_dura, c.asistieron, c.no_asistieron, c.canceladas, c.reprogramadas, c.doral_normal, c.doral_data_dura, c.weston_normal, c.weston_data_dura, c.sin_sede].every(count)) fail();
+      if (!Array.isArray(g.por_estado) || g.por_estado.some(r => !r || typeof r.label !== 'string' || !count(r.eventos) || !count(r.leads))) fail();
+      return data;
+    }
+
+    async function loadPeriodoActividad(desde, hasta) {
+      const token = ++periodoActividadGeneration;
+      periodoActividadData = null;
+      periodoActividadKey = '';
+      const box = document.getElementById('periodoActividad');
+      if (box) box.innerHTML = '<div class="text-slate-500 text-sm">Cargando actividad del período…</div>';
+      updatePeriodoCsvState();
+      if (!supabaseClient || !currentUser || !currentAccess?.activo || currentMainTab !== 'reporte' || reporteVistaActiva !== 'periodo') return;
+      const generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at, key = `${desde}|${hasta}`;
+      const valid = () => token === periodoActividadGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'reporte' && reporteVistaActiva === 'periodo' && periodoRangeKey() === key;
+      try {
+        const { data, error } = await supabaseClient.rpc('management_period_summary', { p_desde: desde, p_hasta: hasta });
+        if (!valid()) return;
+        if (error) throw new Error(String(error.message || '').includes('crm_access_forbidden') ? 'Tu usuario no tiene permiso para este reporte.' : 'No se pudo cargar la actividad. Revisa la conexión e inténtalo con Actualizar.');
+        validatePeriodoActividad(data, desde, hasta);
+        if (box) box.innerHTML = renderPeriodoActividad(data);
+        periodoActividadData = data;
+        periodoActividadKey = key;
+      } catch (error) {
+        if (!valid()) return;
+        periodoActividadData = null;
+        periodoActividadKey = '';
+        if (box) box.innerHTML = `<div class="rounded border border-rose-300 bg-rose-50 p-3 text-rose-700 text-sm flex flex-wrap items-center gap-2">${escapeHtml(error?.message || 'No se pudo cargar la actividad del período.')}<button type="button" onclick="loadReportePeriodo()" class="px-2 py-1 rounded border border-rose-400 hover:bg-rose-100">Reintentar</button></div>`;
+      }
+      if (valid()) updatePeriodoCsvState();
+    }
+
+    function renderPeriodoActividad(data) {
+      const row = (label, value) => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(label)}</th><td class="text-right">${value}</td></tr>`;
+      const table = (title, rows) => `<section class="border border-slate-300 rounded p-3"><h3 class="font-bold text-indigo-900 mb-2">${title}</h3><table class="w-full text-sm"><tbody>${rows}</tbody></table></section>`;
+      const g = data.gestiones, q = data.canales, c = data.citas;
+      const porEstado = g.por_estado.length ? `<section class="border border-slate-300 rounded p-3"><h3 class="font-bold text-indigo-900 mb-2">Gestiones por estado (leads únicos / eventos)</h3><table class="w-full text-sm"><tbody>${g.por_estado.map(r => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(r.label)}</th><td class="text-right">${r.leads}</td><td class="text-right">${r.eventos}</td></tr>`).join('')}</tbody></table></section>` : '';
+      return `<div class="border-t-2 border-indigo-600 pt-3"><h2 class="text-lg font-bold text-indigo-900">Actividad realizada en el período</h2><p class="text-xs text-slate-500 mb-2">Gestiones por día trabajado y citas por fecha programada (Miami). Independiente de los cuadros de entrada.</p></div>`
+        + `<div class="grid md:grid-cols-3 gap-4">`
+        + table('Gestiones', row('Total de gestiones', g.total_eventos) + row('Leads únicos gestionados', g.leads_unicos) + row('Pasados a Agendado', g.agendados_normales) + row('Pasados a Agendado Data Dura', g.agendados_data_dura) + row('Pasados a Inscrito', g.inscritos_normales) + row('Pasados a Inscrito Data Dura', g.inscritos_data_dura))
+        + table('Canales', row('Llamadas', q.llamadas_normales) + row('Llamadas Data Dura', q.llamadas_data_dura) + row('Llamada y WhatsApp', q.llamada_whatsapp) + row('WhatsApp', q.whatsapp) + row('Otros/sin canal', q.otros))
+        + table('Citas (fecha programada)', row('Programadas normales', c.programadas_normales) + row('Programadas Data Dura', c.programadas_data_dura) + row('Asistieron', c.asistieron) + row('No asistieron', c.no_asistieron) + row('Canceladas', c.canceladas) + row('Reprogramadas', c.reprogramadas) + row('Doral normal / DD', `${c.doral_normal} / ${c.doral_data_dura}`) + row('Weston normal / DD', `${c.weston_normal} / ${c.weston_data_dura}`) + row('Sin sede (históricas)', c.sin_sede))
+        + `</div>${porEstado}`;
+    }
+
     function renderReportePeriodo(data) {
       const table = (title, rows) => `<section class="border border-slate-300 rounded p-3"><h2 class="font-bold text-indigo-900 mb-2">${title}</h2><table class="w-full text-sm"><thead><tr><th scope="col" class="text-left">Categoría</th><th scope="col" class="text-right">Leads</th><th scope="col" class="text-right">%</th></tr></thead><tbody>${rows.map(r => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(r.label)}</th><td class="text-right">${r.count}</td><td class="text-right">${periodoPct(r.count, data.total)}</td></tr>`).join('')}</tbody><tfoot><tr class="font-bold"><th scope="row" class="text-left py-2">TOTAL</th><td class="text-right">${data.total}</td><td class="text-right">${periodoPct(data.total, data.total)}</td></tr></tfoot></table></section>`;
       const m = data.matriz;
@@ -5798,7 +5891,8 @@ function updateLeadAppointmentCreateState(lead, loadError) {
     function exportReportePeriodoCSV() {
       if (!currentUser || !currentAccess?.activo || reporteVistaActiva !== 'periodo' || currentMainTab !== 'reporte' || !periodoData || periodoLoadedKey !== periodoRangeKey()) { showToast('El reporte no está cargado o el rango cambió. Actualiza antes de exportar.', 'warning'); return; }
       if (periodoLoadedRevision !== periodoSourceRevision) { showToast('Los datos cambiaron y el reporte se está actualizando. Espera un momento y vuelve a intentarlo.', 'warning'); updatePeriodoCsvState(); return; }
-      const d = periodoData, lines = [], row = values => lines.push(values.map(csvReporteField).join(','));
+      if (!periodoActividadData || periodoActividadKey !== periodoLoadedKey) { showToast('La actividad del período aún no está cargada. Espera o reintenta con Actualizar antes de exportar.', 'warning'); updatePeriodoCsvState(); return; }
+      const d = periodoData, a = periodoActividadData, lines = [], row = values => lines.push(values.map(csvReporteField).join(','));
       row(['Reporte por período']);
       row(['Desde (inclusive)', d.desde, 'Hasta (inclusive)', d.hasta]);
       row(['Gestión actual; no estado histórico al cierre del período']);
@@ -5812,6 +5906,16 @@ function updateLeadAppointmentCreateState(lead, loadError) {
       row([]); row(['Matriz gestión actual × campaña']); row(['Gestión', ...d.matriz.campanas, 'Total']);
       d.matriz.filas.forEach(r => row([r.label, ...r.counts, r.total]));
       row(['TOTAL', ...d.matriz.totales_columnas, d.total]);
+      const ga = a.gestiones, qa = a.canales, ca = a.citas;
+      row([]); row(['Actividad realizada en el período (gestiones por fecha trabajada)']); row(['Métrica', 'Cantidad']);
+      row(['Total de gestiones', ga.total_eventos]); row(['Leads únicos gestionados', ga.leads_unicos]); row(['Pasados a Agendado', ga.agendados_normales]); row(['Pasados a Agendado Data Dura', ga.agendados_data_dura]); row(['Pasados a Inscrito', ga.inscritos_normales]); row(['Pasados a Inscrito Data Dura', ga.inscritos_data_dura]);
+      row([]); row(['Gestiones por estado']); row(['Estado', 'Leads únicos', 'Eventos']);
+      ga.por_estado.forEach(r => row([r.label, r.leads, r.eventos]));
+      row([]); row(['Canales de la actividad']); row(['Canal', 'Cantidad']);
+      row(['Llamadas', qa.llamadas_normales]); row(['Llamadas Data Dura', qa.llamadas_data_dura]); row(['Llamada y WhatsApp', qa.llamada_whatsapp]); row(['WhatsApp', qa.whatsapp]); row(['Otros/sin canal', qa.otros]);
+      row([]); row(['Agenda (citas por fecha programada)']); row(['Estado', 'Cantidad']);
+      row(['Programadas normales', ca.programadas_normales]); row(['Programadas Data Dura', ca.programadas_data_dura]); row(['Asistieron', ca.asistieron]); row(['No asistieron', ca.no_asistieron]); row(['Canceladas', ca.canceladas]); row(['Reprogramadas', ca.reprogramadas]);
+      row(['Doral normal', ca.doral_normal]); row(['Doral Data Dura', ca.doral_data_dura]); row(['Weston normal', ca.weston_normal]); row(['Weston Data Dura', ca.weston_data_dura]); row(['Sin sede (históricas)', ca.sin_sede]);
       downloadCSV(lines.join('\n'), `Reporte_Periodo_${d.desde}_${d.hasta}.csv`);
       showToast('Reporte por período exportado a CSV', 'success');
     }
@@ -5839,10 +5943,10 @@ function updateLeadAppointmentCreateState(lead, loadError) {
       const table = (title, rows) => `<div><h5 class="font-semibold text-indigo-900">${title}</h5><table class="w-full text-sm"><tbody>${rows.map(([l,v]) => `<tr class="border-b border-slate-100"><td class="py-1">${l}</td><td class="py-1 text-right font-semibold">${v}</td></tr>`).join('')}</tbody></table></div>`;
       const blocks = bloques.map((b, i) => { const p=b.procedencia||{}, l=b.llamadas||{}, c=b.citas||{}, ins=b.inscritos||{}, note=noteOf(b); const pt=Object.values(p).reduce((a,v)=>a+(Number(v)||0),0); const own = b.autor_user_id ? b.autor_user_id === currentUser?.id : b.autor_name === currentAccess?.nombre; const editable=notasOk && ((isAdmin && Boolean(b.autor_user_id)) || (own && document.getElementById('reporteFecha')?.value===miamiToday()));
         const manual=editable ? `<textarea id="reporte-problemas-${i}" class="reporte-manual w-full border rounded p-2" rows="3" maxlength="5000">${escapeHtml(note?.problemas||'')}</textarea><textarea id="reporte-obs-${i}" class="reporte-manual w-full border rounded p-2" rows="3" maxlength="5000">${escapeHtml(note?.observaciones||'')}</textarea><button id="reporte-save-${i}" onclick="saveReporteNota(${i})" class="px-3 py-1 rounded bg-indigo-600 text-white">Guardar</button>${note?.id ? '<button id="reporte-delete-'+i+'" onclick="deleteReporteNota('+i+')" class="px-3 py-1 rounded border">Eliminar</button>' : ''}` : `<p class="text-sm">${escapeHtml(note?.problemas||'')} ${escapeHtml(note?.observaciones||'')}</p>`;
-       const detailTables = table('Procedencia', [['WhatsApp',num(p,'WhatsApp')],['Facebook/Instagram',num(p,'Facebook/Instagram')],['CogniTalking',num(p,'CogniTalking')],['Directo o Referido',num(p,'Directo o Referido')],['Otros',num(p,'Otros')],['Total',pt]]) + table('Llamadas', [['Del día',num(l,'del_dia')],['Data Dura',num(l,'data_dura')],['Llamada WhatsApp',num(l,'llamada_whatsapp')],['Total',num(l,'total')]]) + table('Citas y resultados', [['Agendados del día',num(c,'agendados_dia')],['Agendados Data Dura',num(c,'agendados_data_dura')],['Agendados Doral',num(c,'agendados_doral')],['Agendados Data Dura Doral',num(c,'agendados_doral_data_dura')],['Agendados Weston',num(c,'agendados_weston')],['Agendados Data Dura Weston',num(c,'agendados_weston_data_dura')],['Total agendados',num(c,'total_agendados')],['Visitas',num(c,'visitas')],['No asistieron',num(c,'no_asistieron')],['Canceladas',num(c,'canceladas')],['Reprogramadas',num(c,'reprogramadas')]]) + table('Inscripciones', [['Del día',num(ins,'del_dia')],['Data Dura',num(ins,'data_dura')],['Total',num(ins,'total')]]);
-        return `<details class="border border-slate-300 rounded p-3" ${i?'':'open'}><summary class="cursor-pointer font-bold text-indigo-900">${escapeHtml(b.autor_name||b.advisor||'Sin asesora')} — ${num(b.gestionados)} leads</summary><div class="grid md:grid-cols-4 gap-4 mt-3">${detailTables}</div><div class="mt-3 space-y-2"><label class="text-sm">Problemas u observaciones</label>${manual}</div></details>`;
+       const detailTables = table('Procedencia', [['WhatsApp',num(p,'WhatsApp')],['Facebook/Instagram',num(p,'Facebook/Instagram')],['Directo o Referido',num(p,'Directo o Referido')],['Total',pt]]) + table('Canales', [['Llamada',num(b.canales,'llamada')],['Llamada Data Dura',num(b.canales,'data_dura')],['Llamada y WhatsApp',num(b.canales,'llamada_whatsapp')],['WhatsApp',num(b.canales,'whatsapp')],['Instagram',num(b.canales,'instagram')],['Visita Conservatorio',num(b.canales,'visita')],['Sin clasificar',num(b.canales,'sin_clasificar')],['Total',num(b.canales,'total')]]) + table('Detalle WhatsApp', [['WhatsApp nuevos hoy',num(b.whatsapp,'nuevos')],['WhatsApp gestionados hoy',num(b.whatsapp,'gestionados')],['Total WhatsApp',num(b.whatsapp,'total')]]) + table('Citas y resultados', [['Agendados hoy',num(c,'agendados_gestionados_dia')],['Agendados Data Dura',num(c,'agendados_gestionados_data_dura')],['Agendados Doral',num(c,'agendados_doral')],['Agendados Data Dura Doral',num(c,'agendados_doral_data_dura')],['Agendados Weston',num(c,'agendados_weston')],['Agendados Data Dura Weston',num(c,'agendados_weston_data_dura')],['Total agendados',num(c,'total_agendados')],['Visitas',num(c,'visitas')],['No asistieron',num(c,'no_asistieron')],['Canceladas',num(c,'canceladas')],['Reprogramadas',num(c,'reprogramadas')]]) + table('Inscripciones', [['Del día',num(ins,'del_dia')],['Data Dura',num(ins,'data_dura')],['Total',num(ins,'total')]]);
+         return `<details class="border border-slate-300 rounded p-3" ${i?'':'open'}><summary class="cursor-pointer font-bold text-indigo-900">${escapeHtml(b.autor_name||b.advisor||'Sin asesora')} — ${num(b,'gestionados')} gestiones</summary><div class="grid md:grid-cols-4 gap-4 mt-3">${detailTables}</div><div class="mt-3 space-y-2"><label class="text-sm">Problemas u observaciones</label>${manual}</div></details>`;
       }).join('');
-      return `${notasOk ? '' : '<div class="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">No se pudieron cargar las notas guardadas. La edicion esta desactivada para no sobrescribir datos: recarga la pagina o intentalo mas tarde.</div>'}<section class="border-2 border-indigo-600 rounded p-3 space-y-2"><h3 class="font-bold text-lg text-indigo-900">Resumen general</h3><div class="grid grid-cols-2 sm:grid-cols-5 gap-2">${cell('Leads gestionados',total.g)}${cell('Total llamadas',total.l)}${cell('Total agendados',total.c)}${cell('Visitas',total.v)}${cell('Total inscritos',total.i)}</div></section><section class="space-y-2"><h3 class="font-bold text-lg text-indigo-900">Comparativa por asesora</h3>${blocks||'<p class="text-slate-500">Sin gestiones para esta fecha.</p>'}</section>`;
+      return `${notasOk ? '' : '<div class="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">No se pudieron cargar las notas guardadas. La edicion esta desactivada para no sobrescribir datos: recarga la pagina o intentalo mas tarde.</div>'}<section class="border-2 border-indigo-600 rounded p-3 space-y-2"><h3 class="font-bold text-lg text-indigo-900">Resumen general</h3><div class="grid grid-cols-2 sm:grid-cols-5 gap-2">${cell('Gestiones realizadas',total.g)}${cell('Total llamadas',total.l)}${cell('Total agendados',total.c)}${cell('Visitas',total.v)}${cell('Total inscritos',total.i)}</div></section><section class="space-y-2"><h3 class="font-bold text-lg text-indigo-900">Comparativa por asesora</h3>${blocks||'<p class="text-slate-500">Sin gestiones para esta fecha.</p>'}</section>`;
     }
 
     async function loadReporteDiario() {
@@ -5974,16 +6078,16 @@ function updateLeadAppointmentCreateState(lead, loadError) {
       // Solo exportar los datos que estan en pantalla: nunca una fecha/asesora
       // que todavia esta cargando o una carga que fallo.
       if (reporteLoadedKey !== `${fecha}|${asesoraSel}`) { showToast('El reporte esta cargando o los filtros cambiaron. Actualiza y espera a que termine de cargar', 'warning'); return; }
-      const headers = ['Asesora', 'Leads gestionados', 'WhatsApp', 'Facebook/Instagram', 'CogniTalking', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Agendados del día', 'Agendados Data Dura', 'Agendados Doral', 'Agendados Data Dura Doral', 'Agendados Weston', 'Agendados Data Dura Weston', 'Total agendados', 'Visitas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Inscritos del día', 'Inscritos Data Dura', 'Total inscritos', 'Problemas', 'Observaciones'];
-      // Las 24 columnas numericas, en el orden exacto de `values`.
-      const keys = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosDoral', 'agendadosDoralDura', 'agendadosWeston', 'agendadosWestonDura', 'agendadosTotal', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'inscritosDia', 'inscritosDura', 'inscritosTotal'];
+      const headers = ['Asesora', 'Gestiones realizadas', 'WhatsApp', 'Facebook/Instagram', 'CogniTalking', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Agendados del día', 'Agendados Data Dura', 'Agendados Doral', 'Agendados Data Dura Doral', 'Agendados Weston', 'Agendados Data Dura Weston', 'Total agendados', 'Visitas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Inscritos del día', 'Inscritos Data Dura', 'Total inscritos', 'Pasados a Agendado hoy', 'Pasados a Agendado Data Dura hoy', 'WhatsApp nuevos hoy', 'WhatsApp gestionados hoy', 'Total WhatsApp', 'Canal Instagram', 'Canal Visita Conservatorio', 'Sin clasificar', 'Total canales', 'Problemas', 'Observaciones'];
+      // Las 33 columnas numericas, en el orden exacto de `values`.
+      const keys = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosDoral', 'agendadosDoralDura', 'agendadosWeston', 'agendadosWestonDura', 'agendadosTotal', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'inscritosDia', 'inscritosDura', 'inscritosTotal', 'agendadosGestionadosDia', 'agendadosGestionadosDura', 'whatsappNuevos', 'whatsappGestionados', 'whatsappTotal', 'canalInstagram', 'canalVisita', 'canalSinClasificar', 'canalesTotal'];
       const sumas = Object.fromEntries(keys.map(k => [k, 0]));
       const selected = document.getElementById('reporteAsesora');
       const filtro = selected?.value ? (selected.options[selected.selectedIndex]?.textContent || '') : '';
       const lineas = ['Reporte Diario de Trabajo', `Fecha: ${fecha}`, `Generado: ${miamiToday()} Miami`, ...(filtro ? [`Filtro: ${filtro}`] : []), '', headers.map(csvReporteField).join(',')];
       reporteDayData.forEach((b, i) => {
         const p = b.procedencia || {}, l = b.llamadas || {}, c = b.citas || {}, ins = b.inscritos || {};
-        const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, l.total, c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, ins.del_dia, ins.data_dura, ins.total].map(v => Number(v) || 0);
+        const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, l.total, c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, ins.del_dia, ins.data_dura, ins.total, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, (b.whatsapp||{}).nuevos, (b.whatsapp||{}).gestionados, (b.whatsapp||{}).total, (b.canales||{}).instagram, (b.canales||{}).visita, (b.canales||{}).sin_clasificar, (b.canales||{}).total].map(v => Number(v) || 0);
         values.forEach((v, n) => { sumas[keys[n]] += v; });
         const notes = typeof reporteDayNotes === 'undefined' ? [] : reporteDayNotes;
         const uid = b.autor_user_id || '';

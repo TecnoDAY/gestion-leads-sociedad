@@ -38,8 +38,9 @@ const names = [
   'resetReportePeriodo', 'setReporteVista', 'periodoPresetRange', 'setPeriodoPreset', 'periodoRangeKey', 'periodoValidDate',
   'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'periodoPct', 'renderReportePeriodo', 'exportReportePeriodoCSV', 'initReporteDiario',
   'markPeriodoReportDirty', 'updatePeriodoCsvState', 'upsertLeadInState', 'removeLeadFromState',
+  'loadPeriodoActividad', 'validatePeriodoActividad', 'renderPeriodoActividad',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
-  'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'syncNewLeadMes',
+  'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'syncNewLeadMes', 'syncNewUltimaGestion',
   'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentDate', 'appointmentInputISO', 'appointmentLocal', 'appointmentCampusFrom',
   'createLeadAppointment', 'editAppointmentDetails', 'editAppointmentCampus', 'setLeadAppointmentStatus', 'rescheduleLeadAppointment',
   'setAppointmentMutationPending',
@@ -90,6 +91,7 @@ function frontend(extra = {}) {
    reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], reporteDayNotes: [], reporteAsesorasDisponibles: [], reporteLoadedKey: '', campanasData: [],
     periodoRequestGeneration: 0, periodoData: null, periodoLoadedKey: '', reporteVistaActiva: 'diario',
     periodoSourceRevision: 0, periodoLoadedRevision: -1, periodoRefreshTimer: null,
+    periodoActividadData: null, periodoActividadKey: '', periodoActividadGeneration: 0,
     isLoadingLeads: false, isSupabaseLive: true,
     campanasRequestGeneration: 0, campanasLoading: false, campanasContextMonth: '', campaignStatsMap: new Map(),
     allLeads: [], allHistorico: [], filteredLeads: [], dataSource: 'actual', currentPage: 1, authorizedUsersList: [],
@@ -181,6 +183,16 @@ function periodFrontend(extra = {}) {
   return f;
 }
 const periodoSinRed = () => { const rpcCalls = []; return { rpcCalls, supabaseClient: { rpc: (...args) => { rpcCalls.push(args); throw new Error('no debe haber red'); } } }; };
+// Arriba probamos la cohorte sin red; la actividad del periodo SI usa una RPC
+// agregada (management_period_summary): par clientes de test para ambos modos.
+const periodoActividadFixture = (desde = '2026-10-01', hasta = '2026-10-07') => ({
+  desde, hasta,
+  gestiones: { total_eventos: 9, leads_unicos: 4, agendados_normales: 2, agendados_data_dura: 1, inscritos_normales: 3, inscritos_data_dura: 0, por_estado: [{ label: 'AGENDADO', eventos: 2, leads: 2 }] },
+  canales: { llamadas_normales: 5, llamadas_data_dura: 2, llamada_whatsapp: 1, whatsapp: 1, otros: 0 },
+  citas: { programadas_normales: 3, programadas_data_dura: 2, asistieron: 4, no_asistieron: 1, canceladas: 0, reprogramadas: 0, doral_normal: 1, doral_data_dura: 1, weston_normal: 2, weston_data_dura: 0, sin_sede: 1 },
+});
+const periodoConActividad = () => { const rpcCalls = []; return { rpcCalls, supabaseClient: { rpc: (name, args) => { rpcCalls.push([name, args]); if (name !== 'management_period_summary') throw new Error('rpc inesperada: ' + name); return Promise.resolve({ data: periodoActividadFixture(args.p_desde, args.p_hasta), error: null }); } } }; };
+const settle = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
 
 test('buildPeriodSummary: catálogo+extras, dedup id, archivados, límites y matriz coherentes', () => {
   const f = frontend();
@@ -242,7 +254,9 @@ test('período: cálculo local sin RPC; cuatro secciones, ceros, escape y aviso'
   const { rpcCalls, supabaseClient } = periodoSinRed();
   const f = periodFrontend({ supabaseClient, allLeads: periodLeads(), catalogRows: periodCatalogs() });
   await f.context.loadReportePeriodo();
-  assert.equal(rpcCalls.length, 0);
+  // La cohorte no toca la red; la actividad intenta UNA sola RPC agregada y su
+  // fallo no borra los cuatro cuadros.
+  assert.ok(rpcCalls.every(([name]) => name === 'management_period_summary'));
   const body = f.element('periodoBody').innerHTML;
   assert.equal((body.match(/<section/g) || []).length, 4);
   assert.match(body, /Cero/); assert.match(body, /0\.00%/); assert.match(body, /50\.00%/); assert.match(body, /100\.00%/);
@@ -255,8 +269,10 @@ test('período: cálculo local sin RPC; cuatro secciones, ceros, escape y aviso'
 });
 
 test('período: total cero conserva categorías, cuatro totales y CSV exportable', async () => {
-  const f = periodFrontend({ allLeads: [], catalogRows: periodCatalogs() });
+  const { supabaseClient } = periodoConActividad();
+  const f = periodFrontend({ supabaseClient, allLeads: [], catalogRows: periodCatalogs() });
   await f.context.loadReportePeriodo();
+  await settle();
   assert.doesNotMatch(f.element('periodoBody').innerHTML, /NaN|Infinity|100\.00%/);
   assert.equal((f.element('periodoBody').innerHTML.match(/TOTAL/g) || []).length, 4);
   assert.match(f.element('periodoAviso').textContent, /· 0 leads por fecha de entrada · 0 sin fecha válida \(excluidos\)/);
@@ -353,10 +369,19 @@ test('período: error period_range_invalid se traduce y excepción limpia datos 
   assert.equal(boom.context.periodoData, null);
 });
 
-test('período: CSV usa rango cargado, cuatro secciones, ceros, totales y neutraliza fórmulas (sin RPC)', async () => {
-  const { rpcCalls, supabaseClient } = periodoSinRed();
+test('período: CSV usa rango cargado, cuatro secciones, ceros, totales, neutraliza fórmulas y añade actividad+agenda', async () => {
+  const { rpcCalls, supabaseClient } = periodoConActividad();
   const f = periodFrontend({ supabaseClient, allLeads: periodLeads(), catalogRows: periodCatalogs() });
   await f.context.loadReportePeriodo();
+  // Bloqueo mientras la actividad no se ha resuelto (RPC pendiente).
+  let actividadResolve; const pending = new Promise(res => { actividadResolve = res; });
+  f.context.supabaseClient = { rpc: () => pending };
+  await f.context.loadReportePeriodo();
+  f.context.exportReportePeriodoCSV(); assert.equal(f.downloads.length, 0);
+  assert.match(f.toasts.at(-1)[0], /actividad del período aún no está cargada/);
+  actividadResolve({ data: periodoActividadFixture(), error: null });
+  await settle();
+  f.context.supabaseClient = supabaseClient;
   f.element('periodoHasta').value = '2026-10-08'; f.context.exportReportePeriodoCSV(); assert.equal(f.downloads.length, 0);
   f.element('periodoHasta').value = '2026-10-07'; f.context.exportReportePeriodoCSV();
   assert.equal(f.downloads[0].download, 'Reporte_Periodo_2026-10-01_2026-10-07.csv');
@@ -365,8 +390,12 @@ test('período: CSV usa rango cargado, cuatro secciones, ceros, totales y neutra
   assert.match(csv, /Gestión actual; no estado histórico/); assert.match(csv, /"'=Campaña <demo>"/);
   assert.match(csv, /"Cero","0","0\.00%"/); assert.equal((csv.match(/"TOTAL"/g) || []).length, 4);
   assert.match(csv, /"Leads sin fecha válida \(excluidos\)","1"/);
+  assert.match(csv, /"Actividad realizada en el período/);
+  assert.match(csv, /"Pasados a Agendado Data Dura","1"/);
+  assert.match(csv, /"Programadas Data Dura","2"/);
+  assert.match(csv, /"AGENDADO","2","2"/);
   f.context.currentAccess.activo = false; f.context.exportReportePeriodoCSV(); assert.equal(f.downloads.length, 1);
-  assert.equal(rpcCalls.length, 0);
+  assert.ok(rpcCalls.every(([name]) => name === 'management_period_summary'));
 });
 
 test('período: presets calendario Miami incluyen hoy, semana lunes-domingo y cambio de año', async () => {
@@ -400,8 +429,10 @@ test('período: selector aislado y reset descartan cargas sin modificar cache di
 });
 
 test('período: mutación de leads con vista abierta invalida pantalla/CSV y programa un solo recálculo', async () => {
-  const f = periodFrontend({ allLeads: periodLeads(), catalogRows: periodCatalogs() });
+  const { supabaseClient } = periodoConActividad();
+  const f = periodFrontend({ supabaseClient, allLeads: periodLeads(), catalogRows: periodCatalogs() });
   await f.context.loadReportePeriodo();
+  await settle();
   assert.equal(f.context.periodoLoadedRevision, 0);
   assert.equal(f.element('periodoBtnCsv').disabled, false);
   const timersBefore = f.timers.length;
@@ -419,6 +450,7 @@ test('período: mutación de leads con vista abierta invalida pantalla/CSV y pro
   assert.ok(f.timers.length > timersBefore);
   f.timers.at(-1)();
   await Promise.resolve();
+  await settle();
   assert.equal(f.context.periodoData.total, 6);
   assert.equal(f.context.periodoLoadedRevision, f.context.periodoSourceRevision);
   assert.equal(f.element('periodoBtnCsv').disabled, false);
@@ -441,7 +473,8 @@ test('período: mutación con vista oculta solo invalida y no programa recálcul
 });
 
 test('período: revisión cambiada durante el cálculo descarta la publicación y el CSV la exige', async () => {
-  const f = periodFrontend({ allLeads: periodLeads(), catalogRows: periodCatalogs() });
+  const { supabaseClient } = periodoConActividad();
+  const f = periodFrontend({ supabaseClient, allLeads: periodLeads(), catalogRows: periodCatalogs() });
   const real = f.context.buildPeriodSummary;
   f.context.buildPeriodSummary = (...args) => { const data = real(...args); f.context.periodoSourceRevision += 1; return data; };
   await f.context.loadReportePeriodo();
@@ -450,6 +483,7 @@ test('período: revisión cambiada durante el cálculo descarta la publicación 
   // Recalculo limpio: publica con la revisión vigente y habilita el CSV.
   f.context.buildPeriodSummary = real;
   await f.context.loadReportePeriodo();
+  await settle();
   assert.equal(f.context.periodoLoadedRevision, f.context.periodoSourceRevision);
   assert.equal(f.element('periodoBtnCsv').disabled, false);
   // Revisión desactualizada bloquea la exportación aunque el rango coincida.
@@ -821,7 +855,7 @@ test('badge Nuevo: fecha de llegada del mes/año Miami actual, no de otros meses
 
 test('canal Llamada WhatsApp: etiqueta visible nueva, valor y conteo canónicos intactos', () => {
   assert.match(html, /<option value="Llamada y WhatsApp">Llamada WhatsApp<\/option>/);
-  assert.match(html, /\['Llamada WhatsApp',num\(l,'llamada_whatsapp'\)\]/);
+  assert.match(html, /\['Llamada y WhatsApp',num\(b\.canales,'llamada_whatsapp'\)\]/);
   assert.match(html, /'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas'/);
   // El historial traduce el canal almacenado a la nueva etiqueta.
   assert.match(html, /String\(g\.canal \|\| ''\) === 'Llamada y WhatsApp' \? 'Llamada WhatsApp'/);
@@ -1145,6 +1179,29 @@ test('editar lead ya agendado: sede de la cita visible y editable sin crear cita
   assert.ok(radios2.every(r => r.disabled));
 });
 
+test('data dura sync: trigger solo toca citas PROGRAMADA, corrección guardada y RPCs con permisos', () => {
+  const sql = readFileSync('supabase/migrations/202610090001_data_dura_appointment_sync.sql', 'utf8');
+  // Trigger: convive con los existentes, AFTER UPDATE OF GESTION, solo PROGRAMADA.
+  assert.match(sql, /after update of "GESTION" on public\.leads/i);
+  assert.match(sql, /where lead_id = new\.id and status = 'PROGRAMADA'/);
+  assert.match(sql, /like 'AGENDAD%DATA%DURA%'/);
+  assert.match(sql, /is distinct from/);
+  // Corrección guardada: espera exactamente 1 caso a true y 0 a false; aborta si no.
+  assert.match(sql, /v_to_true <> 1 or v_to_false <> 0/);
+  assert.match(sql, /dd_appointment_fix_incomplete/);
+  // RPC actividad: agregada, permisos y scope temporal correcto.
+  assert.match(sql, /create or replace function public\.management_period_summary\(p_desde date, p_hasta date\)/);
+  assert.match(sql, /g\.fecha_gestion between p_desde and p_hasta/);
+  assert.match(sql, /scheduled_at at time zone 'America\/New_York'/);
+  assert.match(sql, /revoke all on function public\.management_period_summary\(date, date\) from public, anon/);
+  assert.match(sql, /grant execute on function public\.management_period_summary\(date, date\) to authenticated/);
+  assert.doesNotMatch(sql, /"Nombre"|"Telefono"|gestion_anterior/); // sin PII ni texto libre en salidas
+  // Diario: solo aditivo (claves nuevas, resto intacto).
+  assert.match(sql, /'agendados_gestionados_dia'/);
+  assert.match(sql, /'agendados_gestionados_data_dura'/);
+  assert.match(sql, /count\(distinct lead_id\)/);
+});
+
 test('citas por sede: requerida en las 3 rutas, filro/KPIs, corrección y reporte desglosado', () => {
   const sql = readFileSync('supabase/migrations/202610020007_appointment_campus.sql', 'utf8');
   assert.match(sql, /add column if not exists campus text/);
@@ -1426,11 +1483,12 @@ const advisor = (name, id, n = 1) => ({ autor_name: name, autor_user_id: id, ges
 test('reporte RPC usa la fecha y pinta los cinco KPIs', async () => {
   const f = reportFixture({ asesoras: [advisor('Ana', 'a', 2), advisor('Bea', 'b', 3)] }); await f.context.loadReporteDiario();
   assert.deepEqual(plain(f.db.rpcCalls[0]), { name: 'daily_management_report', args: { p_fecha: '2026-03-05', p_autor_user_id: null } });
-  assert.match(f.element('reporteAuto').innerHTML, /Leads gestionados.*5/); assert.match(f.element('reporteAuto').innerHTML, /Total llamadas.*7/); assert.match(f.element('reporteAuto').innerHTML, /Total agendados.*9/); assert.match(f.element('reporteAuto').innerHTML, /Visitas.*11/); assert.match(f.element('reporteAuto').innerHTML, /Total inscritos.*13/);
+  assert.match(f.element('reporteAuto').innerHTML, /Gestiones realizadas.*5/); assert.match(f.element('reporteAuto').innerHTML, /Total llamadas.*7/); assert.match(f.element('reporteAuto').innerHTML, /Total agendados.*9/); assert.match(f.element('reporteAuto').innerHTML, /Visitas.*11/); assert.match(f.element('reporteAuto').innerHTML, /Total inscritos.*13/);
 });
-test('comparativa RPC muestra campos y detalle las cuatro tablas y notas', async () => {
+test('comparativa RPC muestra campos y detalle las cinco tablas y notas', async () => {
   const f = reportFixture({ asesoras: [advisor('Ana', 'a')] }, [{ id: 4, autor_name: 'Ana', problemas: 'p', observaciones: 'o' }]); await f.context.loadReporteDiario(); const html = f.element('reporteAuto').innerHTML;
-  for (const text of ['Ana', 'Procedencia', 'Llamadas', 'Citas y resultados', 'Inscripciones', 'p', 'o']) assert.match(html, new RegExp(text));
+  for (const text of ['Ana', 'Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas y resultados', 'Inscripciones', 'p', 'o']) assert.match(html, new RegExp(text));
+  assert.match(html, /Ana — 1 gestiones/); // gestiones del bloque, sin la clave vieja rota
 });
 test('filtro de asesora reconsulta RPC y deja una sola fila', async () => {
   const f = reportFixture(args => ({ asesoras: [advisor('Ana', 'a'), advisor('Bea', 'b')].filter(x => !args.p_autor_user_id || x.autor_user_id === args.p_autor_user_id) })); await f.context.loadReporteDiario(); f.element('reporteAsesora').value = 'a'; await f.context.loadReporteDiario();
@@ -1440,22 +1498,81 @@ test('CSV del reporte v2 exporta columnas nuevas y totaliza los bloques visibles
   const a = { ...advisor('Ana', 'a', 2), procedencia: { WhatsApp: 1, 'Facebook/Instagram': 2, CogniTalking: 3, 'Directo o Referido': 4, Otros: 5 }, llamadas: { del_dia: 1, data_dura: 2, llamada_whatsapp: 3, total: 6 }, citas: { agendados_dia: 1, agendados_data_dura: 2, total_agendados: 3, visitas: 4, no_asistieron: 5, canceladas: 6, reprogramadas: 7 }, inscritos: { del_dia: 1, data_dura: 2, total: 3 } };
   const f = reportFixture({ asesoras: [a, { ...a, autor_name: 'Bea', autor_user_id: 'b' }] }); await f.context.loadReporteDiario(); f.context.exportReporteDiarioCSV();
   const text = new TextDecoder().decode(await f.downloads[0].blob.arrayBuffer()); const rows = decodeCSV(text.slice(1));
-  assert.deepEqual(rows[4].slice(0, 3), ['Asesora', 'Leads gestionados', 'WhatsApp']); assert.ok(rows[4].includes('Problemas')); assert.deepEqual(rows.at(-1).slice(0, 3), ['TOTAL', '4', '2']);
+  assert.deepEqual(rows[4].slice(0, 3), ['Asesora', 'Gestiones realizadas', 'WhatsApp']); assert.ok(rows[4].includes('Problemas')); assert.deepEqual(rows.at(-1).slice(0, 3), ['TOTAL', '4', '2']);
 });
 test('reporte RPC vacío, cargando y error muestran estado sin romper', async () => {
   const empty = reportFixture({ asesoras: [] }); await empty.context.loadReporteDiario(); assert.match(empty.element('reporteAuto').innerHTML, /Sin gestiones/);
   const failed = reportFixture(null); failed.db.rpc = async () => ({ data: null, error: { message: 'rpc failed' } }); await failed.context.loadReporteDiario(); assert.match(failed.element('reporteAuto').innerHTML, /No se pudo cargar/);
 });
 
-test('CSV reporte: fila TOTAL suma las 24 columnas numericas y cuadra con las 27 cabeceras (regresion sede)', async () => {
-  const full = (uid, name) => ({ autor_user_id: uid, autor_name: name, gestionados: 1, procedencia: { WhatsApp: 1, 'Facebook/Instagram': 1, CogniTalking: 1, 'Directo o Referido': 1, Otros: 1 }, llamadas: { del_dia: 1, data_dura: 1, llamada_whatsapp: 1, total: 3 }, citas: { agendados_dia: 1, agendados_data_dura: 1, agendados_doral: 1, agendados_doral_data_dura: 1, agendados_weston: 1, agendados_weston_data_dura: 1, total_agendados: 2, visitas: 1, no_asistieron: 1, canceladas: 1, reprogramadas: 1 }, inscritos: { del_dia: 1, data_dura: 1, total: 2 } });
+test('CSV reporte: fila TOTAL suma las 33 columnas numericas y cuadra con las 36 cabeceras (gestion, agenda, whatsapp y canales)', async () => {
+  const full = (uid, name) => ({ autor_user_id: uid, autor_name: name, gestionados: 1, procedencia: { WhatsApp: 1, 'Facebook/Instagram': 1, CogniTalking: 1, 'Directo o Referido': 1, Otros: 1 }, llamadas: { del_dia: 1, data_dura: 1, llamada_whatsapp: 1, total: 3 }, whatsapp: { nuevos: 1, gestionados: 1, total: 2 }, canales: { llamada: 1, data_dura: 1, llamada_whatsapp: 1, whatsapp: 2, instagram: 0, visita: 0, sin_clasificar: 0, total: 5 }, citas: { agendados_dia: 1, agendados_data_dura: 1, agendados_gestionados_dia: 2, agendados_gestionados_data_dura: 1, agendados_doral: 1, agendados_doral_data_dura: 1, agendados_weston: 1, agendados_weston_data_dura: 1, total_agendados: 2, visitas: 1, no_asistieron: 1, canceladas: 1, reprogramadas: 1 }, inscritos: { del_dia: 1, data_dura: 1, total: 2 } });
   const f = reportFixture({ asesoras: [full('a', 'Ana'), full('b', 'Bea')] });
   await f.context.loadReporteDiario(); f.context.exportReporteDiarioCSV();
   const rows = decodeCSV(new TextDecoder().decode(await f.downloads[0].blob.arrayBuffer()).slice(1));
   const headers = rows[4], total = rows.at(-1), col = n => Number(total[headers.indexOf(n)]);
-  assert.equal(headers.length, 27); assert.equal(total.length, 27);
-  assert.equal(col('Leads gestionados'), 2); assert.equal(col('Agendados Doral'), 2); assert.equal(col('Agendados Data Dura Weston'), 2);
+  assert.equal(headers.length, 36); assert.equal(total.length, 36);
+  assert.equal(col('Gestiones realizadas'), 2); assert.equal(col('Agendados Doral'), 2); assert.equal(col('Agendados Data Dura Weston'), 2);
   assert.equal(col('Total agendados'), 4); assert.equal(col('Reprogramadas'), 2); assert.equal(col('Inscritos del día'), 2); assert.equal(col('Total inscritos'), 4);
+  assert.equal(col('Pasados a Agendado hoy'), 4); assert.equal(col('Pasados a Agendado Data Dura hoy'), 2);
+  assert.equal(col('WhatsApp nuevos hoy'), 2); assert.equal(col('WhatsApp gestionados hoy'), 2); assert.equal(col('Total WhatsApp'), 4);
+  assert.equal(col('Total canales'), 10);
+  const panel = f.element('reporteAuto').innerHTML;
+  assert.match(panel, /Agendados hoy/);
+  assert.doesNotMatch(panel, /programadas hoy/);
+  assert.match(panel, /WhatsApp nuevos hoy/); assert.match(panel, /Total WhatsApp/);
+  assert.match(panel, /Canales/); assert.match(panel, /Sin clasificar/); assert.match(panel, /Detalle WhatsApp/);
+  // comparativa: total por asesora desde el contenido real del bloque.
+  assert.match(panel, /Ana — 1 gestiones/);
+  // Procedencia: CogniTalking y Otros ocultos en pantalla (siguen en CSV).
+  assert.doesNotMatch(panel, /CogniTalking/);
+  assert.match(panel, /Directo o Referido/);
+});
+
+test('canales: migracion cierra la contabilidad (canales excluyentes, fallback y reconciliacion guardada)', () => {
+  const sql = readFileSync('supabase/migrations/202610090003_canal_cierre_contable_reporte.sql', 'utf8');
+  // Bloque canales excluyente con total construido como suma de partes.
+  assert.match(sql, /'canales', jsonb_build_object/);
+  assert.match(sql, /'sin_clasificar', blocks\.c_sin_clasificar/);
+  assert.match(sql, /blocks\.wa_nuevos \+ blocks\.wa_gestionados \+ blocks\.c_instagram \+ blocks\.c_visita \+ blocks\.c_sin_clasificar/);
+  // Instagram y visita contados solo por canal (no procedencia).
+  assert.match(sql, /canal = 'instagram'/);
+  assert.match(sql, /canal = 'visita conservatorio'/);
+  // Fallback de creacion: solo canal vacio + procedencia whatsapp.
+  assert.match(sql, /btrim\(coalesce\(v_canal, ''\)\) = '' and lower\(btrim\(coalesce\(created\."Medio", ''\)\)\) in \('whatsapp', 'whatsapp nuevo'\)/);
+  // Reconciliacion guardada: solo iniciales sin canal con medio whatsapp; verifica remanente 0.
+  assert.match(sql, /update public\.lead_gestiones g set canal = 'WhatsApp'/);
+  assert.match(sql, /g\.gestion_anterior is null\s+and btrim\(coalesce\(g\.canal, ''\)\) = ''/);
+  assert.match(sql, /whatsapp_canal_fix_incomplete/);
+  // Funciones y permisos consistentes.
+  assert.match(sql, /create or replace function public\._create_lead_with_gestion\(p_lead jsonb\)/);
+  assert.match(sql, /grant execute on function public\.daily_management_report\(date, uuid\) to authenticated/);
+  // Sin PII en las salidas.
+  assert.doesNotMatch(sql, /"Nombre"|"Telefono"/);
+});
+
+test('whatsapp gestión: canal inicial en crear, preselección por Medio y RPC con bloque aditivo', () => {
+  const f = frontend({});
+  // Preselección: Medio WhatsApp (o variante) fija la gestión inicial WhatsApp.
+  f.element('newMedio').value = 'Whatsapp';
+  f.element('newUltimaGestion').value = 'Llamada';
+  f.context.syncNewUltimaGestion();
+  assert.equal(f.element('newUltimaGestion').value, 'WhatsApp');
+  // Medio no WhatsApp: no toca la elección de la asesora.
+  f.element('newMedio').value = 'Instagram';
+  f.element('newUltimaGestion').value = 'Llamada';
+  f.context.syncNewUltimaGestion();
+  assert.equal(f.element('newUltimaGestion').value, 'Llamada');
+  // SQL: separación nuevos (gestion_anterior IS NULL) vs gestionados, sin duplicar Llamada y WhatsApp.
+  const sql = readFileSync('supabase/migrations/202610090002_whatsapp_gestion_report.sql', 'utf8');
+  assert.match(sql, /gestion_anterior\b/);
+  assert.match(sql, /canal = 'whatsapp' and gestion_anterior is null/);
+  assert.match(sql, /canal = 'whatsapp' and gestion_anterior is not null/);
+  assert.match(sql, /'whatsapp', jsonb_build_object/);
+  assert.match(sql, /'nuevos', blocks\.wa_nuevos/);
+  assert.match(sql, /'gestionados', blocks\.wa_gestionados/);
+  assert.match(sql, /'total', blocks\.wa_nuevos \+ blocks\.wa_gestionados/);
+  assert.match(sql, /revoke all on function public\.daily_management_report\(date, uuid\) from public, anon/);
 });
 
 test('export del reporte exige datos coherentes: bloqueado con filtros cambiados o tras error de carga', async () => {

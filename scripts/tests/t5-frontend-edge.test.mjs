@@ -20,13 +20,14 @@ function extractFunction(name) {
   }
   throw new Error(`No se pudo extraer ${name}`);
 }
-const constants = ['MONTH_CHRONO', 'GESTION_STATE_GROUPS'].map(name => {
+const constants = ['LEADS_BATCH_SIZE', 'MONTH_CHRONO', 'GESTION_STATE_GROUPS'].map(name => {
   const start = script.indexOf(`const ${name} =`);
   return script.slice(start, script.indexOf(';', start) + 1);
 });
 const names = [
-  'getField', 'compareLeadIdsDescending', 'consolidateLeadsById', 'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads',
-  'fetchRowsByIdCursor', 'fetchPagedResult', 'fetchRowsByIds', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor',
+  'getField', 'compareLeadIdsDescending', 'consolidateLeadsById', 'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads', 'getHistoricalBaseLeads',
+  'fetchRowsByIdCursor', 'fetchPagedResult', 'fetchRowsByIds', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'haveSameLeadIds',
+  'performLoadOlderLeads', 'returnToRecentLeads', 'refillLoadedWindow', 'applyRealtimeEvent', 'updateCompleteCacheOnly', 'removeFromCompleteCacheOnly',
   'loadCitas', 'clearCitasResults', 'validAppointmentId', 'appointmentSessionValid', 'loadLeadAppointments',
   'loadLeadNotes', 'loadLeadGestiones', 'applyFilters', 'resetAllFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
   'activeCatalogValues', 'catalogOptions', 'compareAlphaEs', 'sortAlphaEs', 'sortMonthCatalog', 'parseFechaLead', 'normalizeLeadMonth', 'leadReportDate', 'isInscritoDataDura',
@@ -81,7 +82,8 @@ function frontend(extra = {}) {
     window: {}, setTimeout: fn => { timers.push(fn); return timers.length; }, clearTimeout() {},
     showToast: (...args) => toasts.push(args), catalogLabel: x => x,
     fillCitasSelect() {}, renderCitas() {}, renderLeadNotes() {}, renderLeadGestiones() {}, renderLeadAppointments() {},
-    updateKpis() {}, renderMatrix() {}, renderTable() {}, renderHistoricalAnalytics() {},
+    updateKpis() {}, renderMatrix() {}, renderTable() {}, renderHistoricalAnalytics() {}, updateLeadScopeControls() {},
+    refillLoadedWindow() {}, scheduleExactLeadCountRefresh() {},
     renderCampanas() {}, canEditCampaigns: () => false,
     isAgendadoGestion: value => value.startsWith('AGENDAD'),
     miamiToday: () => '2026-09-30', miamiDayBounds: date => [date + 'T04:00:00.000Z', date + 'T16:00:00.000Z'],
@@ -95,11 +97,19 @@ function frontend(extra = {}) {
     periodoActividadData: null, periodoActividadKey: '', periodoActividadGeneration: 0,
     isLoadingLeads: false, isSupabaseLive: true,
     campanasRequestGeneration: 0, campanasLoading: false, campanasContextMonth: '', campaignStatsMap: new Map(),
-    allLeads: [], allHistorico: [], filteredLeads: [], dataSource: 'actual', currentPage: 1, authorizedUsersList: [],
+    allLeads: [], completeCurrentLeads: extra.completeCurrentLeads ?? [], completeCurrentLoaded: extra.completeCurrentLoaded ?? false,
+    loadedLeadTarget: 2000, totalDatabaseCount: (extra.allLeads || []).length, leadDataRevision: 0, refillWindowPromise: null,
+    allHistorico: [], filteredLeads: [], dataSource: 'actual', currentPage: 1, authorizedUsersList: [],
     leadAppointmentAdvisors: [], newLeadSubmitting: false, newLeadRequestGeneration: 0, newLeadAdvisorGeneration: 0,
     catalogRows: { agente: [], campana: [], medio: [], gestion: [], mes: [] },
     ...extra,
   });
+  context.loadCompleteCurrentData = async () => {
+    context.completeCurrentLeads = context.allLeads;
+    context.completeCurrentLoaded = true;
+    return true;
+  };
+  context.loadHistoricoData = async () => true;
   vm.runInContext(frontendSource, context);
   return { context, element, downloads, timers, toasts };
 }
@@ -313,7 +323,7 @@ test('período: carga incompleta o sin conexión muestra aviso sin datos parcial
   for (const extra of [{ isLoadingLeads: true, allLeads: periodLeads() }, { isLoadingLeads: false, isSupabaseLive: false, allLeads: [] }]) {
     const f = periodFrontend(extra);
     await f.context.loadReportePeriodo();
-    assert.match(f.element('periodoAviso').textContent, /Cargando todos los leads/);
+    assert.match(f.element('periodoAviso').textContent, /Cargando leads recientes/);
     assert.equal(f.context.periodoData, null);
     assert.equal(f.element('periodoBody').innerHTML, '');
   }
@@ -329,6 +339,7 @@ test('período: cálculo obsoleto (rango cambiado en curso) no reemplaza al nuev
     return data;
   };
   await f.context.loadReportePeriodo();
+  await settle();
   assert.equal(f.context.periodoLoadedKey, '2026-10-01|2026-10-06');
   assert.equal(f.context.periodoData.total, 2);
 });
@@ -588,6 +599,80 @@ test('cursor existente reutilizado: >2000 filas, sin duplicados y orden estable'
   assert.equal(history.length, 1205);
   assert.equal(c.getLeadOrigin(history[0]), 'historico');
   assert.ok(db.calls.every(q => q.range?.[0] === 0 && q.orders[0][0] === 'id'));
+});
+
+test('ventana inicial: limita a 2000 IDs más altos sin solicitar una página vacía', async () => {
+  const db = database({ leads: rows(6062) });
+  const { context: c } = frontend({ supabaseClient: db });
+  const leads = await c.fetchLeadsByIdCursor('*', { maxRows: 2000 });
+  assert.equal(leads.length, 2000);
+  assert.equal(leads[0].id, 6062);
+  assert.equal(leads.at(-1).id, 4063);
+  assert.equal(db.calls.length, 2);
+});
+
+test('bloques anteriores: agrega los siguientes 2000 y puede volver a la ventana reciente', async () => {
+  const db = database({ leads: rows(6000) });
+  const initial = rows(6000).slice(4000).sort((a, b) => b.id - a.id);
+  const { context: c } = frontend({ supabaseClient: db, allLeads: initial, totalDatabaseCount: 6000, loadedLeadTarget: 2000 });
+  c.getExactLeadsCount = async () => 6000;
+  assert.equal(await c.performLoadOlderLeads(), true);
+  assert.equal(c.allLeads.length, 4000);
+  assert.equal(c.allLeads[0].id, 6000);
+  assert.equal(c.allLeads.at(-1).id, 2001);
+  assert.equal(c.loadedLeadTarget, 4000);
+  await c.returnToRecentLeads();
+  assert.equal(c.allLeads.length, 2000);
+  assert.equal(c.allLeads.at(-1).id, 4001);
+  assert.equal(c.loadedLeadTarget, 2000);
+});
+
+test('Realtime: INSERT desplaza el más antiguo y UPDATE fuera de ventana no entra', () => {
+  const initial = rows(3000).slice(1000).sort((a, b) => b.id - a.id);
+  const { context: c } = frontend({ allLeads: initial, totalDatabaseCount: 6000, loadedLeadTarget: 2000 });
+  assert.equal(c.applyRealtimeEvent({ eventType: 'UPDATE', new: { id: 500, Nombre: 'Antiguo' } }), false);
+  assert.equal(c.allLeads.some(l => l.id === 500), false);
+  assert.equal(c.applyRealtimeEvent({ eventType: 'INSERT', new: { id: 6001, Nombre: 'Nuevo' } }), true);
+  assert.equal(c.allLeads.length, 2000);
+  assert.equal(c.allLeads[0].id, 6001);
+  assert.equal(c.allLeads.some(l => l.id === 1001), false);
+  assert.equal(c.totalDatabaseCount, 6001);
+});
+
+test('editar un lead antiguo cargado bajo demanda no lo mete en la ventana ni altera el total', () => {
+  const recent = rows(2000).map((lead, index) => ({ ...lead, id: 4001 + index })).sort((a, b) => b.id - a.id);
+  const old = { id: 25, Nombre: 'Anterior' };
+  const { context: c } = frontend({
+    allLeads: recent,
+    completeCurrentLeads: [...recent, old],
+    completeCurrentLoaded: true,
+    totalDatabaseCount: 6000,
+    loadedLeadTarget: 2000,
+  });
+  assert.equal(c.upsertLeadInState({ id: 25, Nombre: 'Editado' }), false);
+  assert.equal(c.allLeads.some(l => l.id === 25), false);
+  assert.equal(c.completeCurrentLeads.find(l => l.id === 25).Nombre, 'Editado');
+  assert.equal(c.totalDatabaseCount, 6000);
+});
+
+test('eliminar un lead visible repone el siguiente registro sin superar la ventana', async () => {
+  const db = database({ leads: rows(6000) });
+  const visible = rows(6000).slice(4001).sort((a, b) => b.id - a.id); // 1999: IDs 6000..4002
+  const { context: c } = frontend({ supabaseClient: db, allLeads: visible, totalDatabaseCount: 6000, loadedLeadTarget: 2000 });
+  assert.equal(await c.refillLoadedWindow(), true);
+  assert.equal(c.allLeads.length, 2000);
+  assert.equal(c.allLeads.at(-1).id, 4001);
+});
+
+test('arranque acotado: loader pide 2000 y difiere el histórico; UI explica el alcance', () => {
+  const loader = extractFunction('performLoadLeadsData');
+  assert.match(loader, /maxRows:\s*LEADS_BATCH_SIZE/);
+  assert.doesNotMatch(loader, /loadHistoricoData\s*\(/);
+  assert.match(html, /id="leadScopeLabel"[^>]*>Últimos 2\.000 registros/);
+  assert.match(html, /id="btnLoadOlderLeads"/);
+  assert.match(html, /id="btnRecentLeads"/);
+  assert.match(extractFunction('updateConnectionStatus'), /Supabase en vivo/);
+  assert.doesNotMatch(extractFunction('updateConnectionStatus'), /totalDatabaseCount\.toLocaleString\(\) \+ " leads/);
 });
 
 test('cursor: error segunda página no devuelve un resultado parcial', async () => {
@@ -1352,12 +1437,12 @@ test('opciones por origen actual/histórico/todos y OTRO seleccionable', async (
     allLeads: [{ id: 1, Mes: 'MARZO', Campaña: 'Actual' }],
     allHistorico: [{ id: 1, Mes: 'OTRO', Campaña: 'Anterior' }],
   });
-  c.setDataSource('historico');
+  await c.setDataSource('historico');
   assert.equal(element('filterCampana').options.at(-1).value, 'Anterior');
   assert.equal(element('filterMes').options.at(-1).value, 'OTRO');
-  c.setDataSource('actual');
+  await c.setDataSource('actual');
   assert.equal(element('filterCampana').options.at(-1).value, 'Actual');
-  c.setDataSource('todos');
+  await c.setDataSource('todos');
   assert.ok(element('filterCampana').options.some(o => o.value === 'Anterior'));
   assert.ok(element('filterCampana').options.some(o => o.value === 'Actual'));
   c.dataSource = 'historico'; element('histFilterMes').value = 'OTRO';

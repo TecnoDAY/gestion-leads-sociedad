@@ -280,14 +280,14 @@
       <!-- Total Leads Filtrados -->
       <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
         <div class="flex items-center justify-between text-slate-400">
-          <span class="text-xs font-semibold uppercase tracking-wider">Total Leads Filtrados</span>
+          <span class="text-xs font-semibold uppercase tracking-wider">Leads visibles</span>
           <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400">
             <i data-lucide="users" class="w-4 h-4"></i>
           </div>
         </div>
         <div class="mt-2 flex items-baseline gap-2">
           <span id="kpiTotalLeads" class="text-2xl sm:text-3xl font-bold font-mono text-white tabular-nums">0</span>
-          <span class="text-xs text-slate-400 font-medium" id="kpiTotalSubtitle">filtrados del mes</span>
+          <span class="text-xs text-slate-400 font-medium" id="kpiTotalSubtitle">Últimos registros ingresados</span>
         </div>
       </div>
 
@@ -337,10 +337,13 @@
     <!-- BARRA DE FILTROS AVANZADOS -->
     <section class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm space-y-3">
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2 text-sm font-semibold text-slate-200">
+        <div class="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-200">
           <i data-lucide="filter" class="w-4 h-4 text-indigo-400"></i>
           <span>Filtros Dinámicos en Tiempo Real</span>
-          <span id="activeFiltersCount" class="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 font-mono">Todos los leads</span>
+          <span id="activeFiltersCount" class="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">Sin filtros</span>
+          <span id="leadScopeLabel" class="text-xs text-slate-400 font-normal">Últimos 2.000 registros</span>
+          <button id="btnLoadOlderLeads" type="button" onclick="loadOlderLeads()" class="text-xs px-2 py-1 rounded border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/10 cursor-pointer">Mostrar 2.000 anteriores</button>
+          <button id="btnRecentLeads" type="button" onclick="returnToRecentLeads()" class="hidden text-xs px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700 cursor-pointer">Volver a los últimos 2.000</button>
         </div>
         <button onclick="resetAllFilters()" class="text-xs text-slate-400 hover:text-indigo-400 flex items-center gap-1 transition-colors cursor-pointer">
           <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
@@ -1581,6 +1584,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       pendingPasswordSetup = false;
       isSupabaseLive = false;
       allLeads = [];
+      completeCurrentLeads = [];
+      completeCurrentLoaded = false;
+      completeCurrentLoadPromise = null;
+      olderLeadsLoadPromise = null;
+      loadedLeadTarget = LEADS_BATCH_SIZE;
+      leadDataRevision = 0;
       filteredLeads = [];
       allHistorico = [];
       dataSource = 'actual';
@@ -1599,6 +1608,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       leadAppointmentAdvisors = [];
       loadLeadsPromise = null;
       isLoadingLeads = false;
+      clearTimeout(exactCountRefreshTimer);
+      exactCountRefreshTimer = null;
+      refillWindowPromise = null;
       if (realtimeChannel && supabaseClient) {
         supabaseClient.removeChannel(realtimeChannel);
       }
@@ -2166,7 +2178,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
 
-    let allLeads = [];          // Todos los leads cargados
+    const LEADS_BATCH_SIZE = 2000;
+    let allLeads = [];          // Ventana operativa actual (inicialmente los últimos 2.000)
+    let completeCurrentLeads = []; // Colección completa solo para vistas globales bajo demanda
+    let completeCurrentLoaded = false;
+    let completeCurrentLoadPromise = null;
+    let olderLeadsLoadPromise = null;
+    let loadedLeadTarget = LEADS_BATCH_SIZE;
+    let leadDataRevision = 0;
     let totalDatabaseCount = 0; // Conteo exacto de leads en la base de datos
     let filteredLeads = [];     // Leads filtrados actualmente
     let allHistorico = [];      // Histórico 2025 (solo lectura, tabla leads_historico)
@@ -2197,6 +2216,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     let loadLeadsPromise = null;
     let realtimeChannel = null;
     let realtimeSetupPromise = null;
+    let exactCountRefreshTimer = null;
+    let refillWindowPromise = null;
     let currentPage = 1;
     let pageSize = 20;
     let currentMainTab = 'dashboard';
@@ -2321,11 +2342,27 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         viewDash.classList.add('hidden');
         viewHist.classList.remove('hidden');
          viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden');
-        ensureChartJs().then(() => { if (currentMainTab === 'historico') renderHistoricalAnalytics(); });
+        prepareHistoricalAnalytics();
       }
 
       [btnDash, btnHist, btnReporte, btnCitas].forEach(button => button.classList.toggle('hidden', isTrafficker));
       if (window.lucide) lucide.createIcons();
+    }
+
+    async function prepareHistoricalAnalytics() {
+      const generation = sessionGeneration, userId = currentUser?.id;
+      const chartPromise = ensureChartJs();
+      const loaders = [];
+      if (dataSource !== 'historico') loaders.push(loadCompleteCurrentData());
+      if (dataSource !== 'actual') loaders.push(loadHistoricoData());
+      const results = await Promise.all(loaders);
+      await chartPromise;
+      if (generation !== sessionGeneration || currentUser?.id !== userId || currentMainTab !== 'historico') return;
+      if (results.some(result => result !== true)) {
+        showToast('No se pudieron cargar todos los datos del histórico.', 'error');
+        return;
+      }
+      renderHistoricalAnalytics();
     }
 
     function resetCitasPanel() { citasRequestGeneration += 1; citasCache = []; citasRangeKey = ''; ['citasKpis','citasTableBody','citasAviso','citasCount'].forEach(id => { const e=document.getElementById(id); if(e) e.replaceChildren(); }); }
@@ -2499,11 +2536,31 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (!lead || lead.id === undefined || lead.id === null) return false;
       const leadId = String(lead.id);
       const existingLead = allLeads.find(item => String(item.id) === leadId);
+      const cachedLead = completeCurrentLoaded
+        ? completeCurrentLeads.find(item => String(item.id) === leadId)
+        : undefined;
+      if (!existingLead && cachedLead) {
+        completeCurrentLeads = consolidateLeadsById([
+          ...completeCurrentLeads.filter(item => String(item.id) !== leadId),
+          { ...cachedLead, ...lead }
+        ]);
+        leadDataRevision += 1;
+        markPeriodoReportDirty();
+        return false;
+      }
       allLeads = consolidateLeadsById([
         ...allLeads.filter(item => String(item.id) !== leadId),
         { ...(existingLead || {}), ...lead }
       ]);
-      totalDatabaseCount = allLeads.length;
+      if (allLeads.length > loadedLeadTarget) allLeads.length = loadedLeadTarget;
+      if (completeCurrentLoaded) {
+        completeCurrentLeads = consolidateLeadsById([
+          ...completeCurrentLeads.filter(item => String(item.id) !== leadId),
+          { ...(cachedLead || {}), ...lead }
+        ]);
+      }
+      if (!existingLead) totalDatabaseCount += 1;
+      leadDataRevision += 1;
       markPeriodoReportDirty();
       return !existingLead;
     }
@@ -2512,10 +2569,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (leadId === undefined || leadId === null) return false;
       const previousLength = allLeads.length;
       allLeads = allLeads.filter(lead => String(lead.id) !== String(leadId));
-      if (allLeads.length === previousLength) return false;
-      totalDatabaseCount = allLeads.length;
+      const removedVisible = allLeads.length !== previousLength;
+      let removedCached = false;
+      if (completeCurrentLoaded) {
+        const previousCacheLength = completeCurrentLeads.length;
+        completeCurrentLeads = completeCurrentLeads.filter(lead => String(lead.id) !== String(leadId));
+        removedCached = completeCurrentLeads.length !== previousCacheLength;
+      }
+      if (!removedVisible && !removedCached) return false;
+      totalDatabaseCount = Math.max(0, totalDatabaseCount - 1);
+      leadDataRevision += 1;
       markPeriodoReportDirty();
-      return true;
+      return removedVisible;
     }
 
     // Origen de cada registro: los ids numéricos colisionan entre tablas,
@@ -2537,7 +2602,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     function findLeadByOrigin(origin, leadId) {
       if (leadId === undefined || leadId === null) return undefined;
-      const arr = origin === 'historico' ? allHistorico : allLeads;
+      const arr = origin === 'historico' ? allHistorico : completeCurrentLoaded ? completeCurrentLeads : allLeads;
       return arr.find(l => String(l.id) === String(leadId));
     }
 
@@ -2548,16 +2613,44 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // Base visible según el selector de origen (allLeads sigue siendo solo actuales).
     function getVisibleBaseLeads() {
       if (dataSource === 'historico') return allHistorico;
-      if (dataSource === 'todos') return [...allLeads, ...allHistorico];
+      if (dataSource === 'todos') return [...(completeCurrentLoaded ? completeCurrentLeads : allLeads), ...allHistorico];
       return allLeads;
     }
 
-    function setDataSource(value) {
+    function getHistoricalBaseLeads() {
+      const current = completeCurrentLoaded ? completeCurrentLeads : allLeads;
+      if (dataSource === 'historico') return allHistorico;
+      if (dataSource === 'todos') return [...current, ...allHistorico];
+      return current;
+    }
+
+    async function setDataSource(value) {
+      const previousSource = dataSource;
       dataSource = value === 'historico' ? 'historico' : value === 'todos' ? 'todos' : 'actual';
       const select = document.getElementById('dataSourceFilter');
       if (select && select.value !== dataSource) select.value = dataSource;
+      if (dataSource !== 'actual') {
+        showToast('Cargando datos del origen seleccionado…', 'info');
+        const tasks = [loadHistoricoData()];
+        if (dataSource === 'todos') tasks.push(loadCompleteCurrentData());
+        const results = await Promise.all(tasks);
+        if (results.some(result => result !== true)) {
+          dataSource = previousSource;
+          if (select) select.value = previousSource;
+          showToast('No se pudo cargar el origen completo.', 'error');
+          return;
+        }
+      } else if (currentMainTab === 'historico') {
+        if (!await loadCompleteCurrentData()) {
+          dataSource = previousSource;
+          if (select) select.value = previousSource;
+          return;
+        }
+      }
       populateFilterOptions();
       applyFilters();
+      updateLeadScopeControls();
+      if (currentMainTab === 'historico') renderHistoricalAnalytics();
     }
 
     async function getExactLeadsCount() {
@@ -2573,21 +2666,24 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     // Cursor canónico por id; cada página reconstruye la consulta filtrada.
-    async function fetchRowsByIdCursor(makeQuery) {
+    async function fetchRowsByIdCursor(makeQuery, options = {}) {
       const blockSize = 1000;
       const rows = [];
-      let cursor = null;
+      const maxRows = Number.isFinite(options.maxRows) ? Math.max(0, Math.floor(options.maxRows)) : Infinity;
+      let cursor = options.startAfterId ?? null;
       const cursors = new Set();
       const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
       const sessionValid = () => generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt;
 
       while (true) {
+        if (rows.length >= maxRows) break;
         if (!sessionValid()) throw new Error('La sesión cambió durante la paginación');
         let query = makeQuery();
         if (cursor !== null) query = query.lt('id', cursor);
+        const pageSize = Math.min(blockSize, maxRows - rows.length);
         query = query
           .order('id', { ascending: false })
-          .range(0, blockSize - 1);
+          .range(0, pageSize - 1);
 
         const { data, error } = await query;
         if (!sessionValid()) throw new Error('La sesión cambió durante la paginación');
@@ -2632,8 +2728,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       return { data: rows, error: null };
     }
 
-    async function fetchLeadsByIdCursor(columns = '*') {
-      return consolidateLeadsById(await fetchRowsByIdCursor(() => supabaseClient.from('leads').select(columns).is('archived_at', null)));
+    async function fetchLeadsByIdCursor(columns = '*', options = {}) {
+      return consolidateLeadsById(await fetchRowsByIdCursor(() => supabaseClient.from('leads').select(columns).is('archived_at', null), options));
     }
 
     async function fetchHistoricoByIdCursor() {
@@ -2674,6 +2770,117 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         && leads.every((lead, index) => String(lead.id) === String(idRows[index].id));
     }
 
+    function loadCompleteCurrentData() {
+      if (completeCurrentLoaded) return Promise.resolve(true);
+      if (completeCurrentLoadPromise) return completeCurrentLoadPromise;
+      const loading = performLoadCompleteCurrentData().finally(() => {
+        if (completeCurrentLoadPromise === loading) completeCurrentLoadPromise = null;
+      });
+      completeCurrentLoadPromise = loading;
+      return completeCurrentLoadPromise;
+    }
+
+    async function performLoadCompleteCurrentData() {
+      if (!supabaseClient || !currentUser || !currentAccess?.activo) return false;
+      const generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at;
+      const valid = () => generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        const revision = leadDataRevision;
+        try {
+          const initialCount = await getExactLeadsCount();
+          const rows = await fetchLeadsByIdCursor('*');
+          const ids = await fetchLeadsByIdCursor('id');
+          const finalCount = await getExactLeadsCount();
+          if (!valid()) return false;
+          if (revision !== leadDataRevision || initialCount !== finalCount || rows.length !== finalCount || !haveSameLeadIds(rows, ids)) {
+            if (attempt < 2) continue;
+            throw new Error('La tabla cambió durante la carga completa');
+          }
+          completeCurrentLeads = rows;
+          completeCurrentLoaded = true;
+          totalDatabaseCount = finalCount;
+          return true;
+        } catch (error) {
+          if (!valid()) return false;
+          if (attempt < 2) continue;
+          console.warn('No se pudo cargar la colección completa de leads:', error);
+          showToast('No se pudieron cargar todos los leads. Inténtalo nuevamente.', 'error');
+          return false;
+        }
+      }
+      return false;
+    }
+
+    function updateLeadScopeControls() {
+      const label = document.getElementById('leadScopeLabel');
+      const older = document.getElementById('btnLoadOlderLeads');
+      const recent = document.getElementById('btnRecentLeads');
+      const loaded = allLeads.length;
+      if (label) label.textContent = loadedLeadTarget <= LEADS_BATCH_SIZE
+        ? `Últimos ${Math.min(LEADS_BATCH_SIZE, totalDatabaseCount).toLocaleString()} registros`
+        : `${loaded.toLocaleString()} registros recientes cargados`;
+      if (older) {
+        older.classList.toggle('hidden', loaded >= totalDatabaseCount || dataSource !== 'actual');
+        older.disabled = Boolean(olderLeadsLoadPromise);
+      }
+      if (recent) recent.classList.toggle('hidden', loadedLeadTarget <= LEADS_BATCH_SIZE || dataSource !== 'actual');
+    }
+
+    function loadOlderLeads() {
+      if (olderLeadsLoadPromise) return olderLeadsLoadPromise;
+      const loading = performLoadOlderLeads().finally(() => {
+        if (olderLeadsLoadPromise === loading) olderLeadsLoadPromise = null;
+        updateLeadScopeControls();
+      });
+      olderLeadsLoadPromise = loading;
+      updateLeadScopeControls();
+      return olderLeadsLoadPromise;
+    }
+
+    async function performLoadOlderLeads() {
+      if (!supabaseClient || !currentUser || !currentAccess?.activo || !allLeads.length || allLeads.length >= totalDatabaseCount) return false;
+      const generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at;
+      const valid = () => generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo;
+      const cursor = allLeads[allLeads.length - 1].id;
+      try {
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          const revision = leadDataRevision;
+          const rows = await fetchLeadsByIdCursor('*', { maxRows: LEADS_BATCH_SIZE, startAfterId: cursor });
+          const ids = await fetchLeadsByIdCursor('id', { maxRows: LEADS_BATCH_SIZE, startAfterId: cursor });
+          if (!valid()) return false;
+          if (revision !== leadDataRevision || !haveSameLeadIds(rows, ids)) {
+            if (attempt < 2) continue;
+            throw new Error('El bloque cambió durante la carga');
+          }
+          allLeads = consolidateLeadsById([...allLeads, ...rows]);
+          loadedLeadTarget = allLeads.length;
+          totalDatabaseCount = await getExactLeadsCount();
+          if (!valid()) return false;
+          populateFilterOptions();
+          applyFilters();
+          showToast(`${rows.length.toLocaleString()} leads anteriores cargados`, 'success');
+          return true;
+        }
+      } catch (error) {
+        if (!valid()) return false;
+        console.warn('No se pudo cargar el bloque anterior:', error);
+        showToast('No se pudieron cargar los leads anteriores.', 'error');
+        return false;
+      }
+    }
+
+    async function returnToRecentLeads() {
+      loadedLeadTarget = LEADS_BATCH_SIZE;
+      if (allLeads.length >= Math.min(LEADS_BATCH_SIZE, totalDatabaseCount)) {
+        allLeads = consolidateLeadsById(allLeads).slice(0, LEADS_BATCH_SIZE);
+        populateFilterOptions();
+        applyFilters();
+        updateLeadScopeControls();
+        return true;
+      }
+      return loadLeadsData();
+    }
+
     function loadLeadsData() {
       if (loadLeadsPromise) return loadLeadsPromise;
       const loading = performLoadLeadsData().finally(() => {
@@ -2701,16 +2908,17 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             pendingRealtimeEvents = [];
             const initialCount = await getExactLeadsCount();
             if (!sessionValid()) return false;
-            const loadedLeads = await fetchLeadsByIdCursor('*');
+            const expectedLength = Math.min(initialCount, LEADS_BATCH_SIZE);
+            const loadedLeads = await fetchLeadsByIdCursor('*', { maxRows: LEADS_BATCH_SIZE });
             if (!sessionValid()) return false;
-            const reconciledIds = await fetchLeadsByIdCursor('id');
+            const reconciledIds = await fetchLeadsByIdCursor('id', { maxRows: LEADS_BATCH_SIZE });
             if (!sessionValid()) return false;
             const finalCount = await getExactLeadsCount();
             if (!sessionValid()) return false;
             const changedDuringLoad = pendingRealtimeEvents.length > 0
               || initialCount !== finalCount
-              || loadedLeads.length !== finalCount
-              || reconciledIds.length !== finalCount
+              || loadedLeads.length !== expectedLength
+              || reconciledIds.length !== expectedLength
               || !haveSameLeadIds(loadedLeads, reconciledIds);
 
             if (changedDuringLoad) {
@@ -2720,7 +2928,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
             if (!sessionValid()) return false;
             allLeads = loadedLeads;
+            loadedLeadTarget = LEADS_BATCH_SIZE;
             totalDatabaseCount = finalCount;
+            if (finalCount <= LEADS_BATCH_SIZE) {
+              completeCurrentLeads = loadedLeads;
+              completeCurrentLoaded = true;
+            } else {
+              completeCurrentLeads = [];
+              completeCurrentLoaded = false;
+            }
             isSupabaseLive = true;
             loadedSuccessfully = true;
             console.log("Datos cargados correctamente desde Supabase:", allLeads.length);
@@ -2748,15 +2964,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       pendingRealtimeEvents = [];
       markPeriodoReportDirty();
 
-      try {
-        await loadHistoricoData();
-        if (!sessionValid()) return false;
-      } catch (err) {
-        if (!sessionValid()) return false;
-        console.warn("No se pudo cargar el histórico 2025:", err);
-        if (sessionValid()) showToast("No se pudo cargar el histórico 2025; se muestran solo leads actuales", "warning");
-      }
-
       // T4: no pintar resultados de una sesion ya cerrada/cambiada.
       if (!sessionValid()) return false;
       updateConnectionStatus(loadedSuccessfully
@@ -2764,9 +2971,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         : "offline");
       populateFilterOptions();
       applyFilters();
-      if (currentMainTab === 'historico') {
-        renderHistoricalAnalytics();
-      }
+      updateLeadScopeControls();
       showLoadingState(false);
       return loadedSuccessfully;
     }
@@ -2778,7 +2983,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
       if (status === "online") {
         dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-        text.innerText = "Supabase en vivo (" + totalDatabaseCount.toLocaleString() + " leads)";
+        text.innerText = "Supabase en vivo";
         text.className = "hidden md:inline text-emerald-400 font-semibold";
       } else if (status === "online_empty") {
         dot.className = "w-2 h-2 rounded-full bg-blue-400";
@@ -2790,7 +2995,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         text.className = "hidden md:inline text-amber-400";
       } else {
         dot.className = "w-2 h-2 rounded-full bg-rose-500";
-        text.innerText = "Sin conexión (" + allLeads.length + " leads)";
+        text.innerText = "Sin conexión";
         text.className = "hidden md:inline text-rose-400";
       }
     }
@@ -2846,10 +3051,85 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         return;
       }
       if (!isSupabaseLive) return;
-      if (!applyRealtimeEvent(payload)) return;
+      const changedVisible = applyRealtimeEvent(payload);
+      scheduleExactLeadCountRefresh();
+      if (!changedVisible) return;
       updateConnectionStatus(allLeads.length > 0 ? "online" : "online_empty");
       populateFilterOptions();
       applyFilters();
+      updateLeadScopeControls();
+    }
+
+    function scheduleExactLeadCountRefresh() {
+      clearTimeout(exactCountRefreshTimer);
+      const generation = sessionGeneration, userId = currentUser?.id;
+      exactCountRefreshTimer = setTimeout(async () => {
+        try {
+          const count = await getExactLeadsCount();
+          if (generation !== sessionGeneration || currentUser?.id !== userId) return;
+          totalDatabaseCount = count;
+          updateKpis();
+          updateLeadScopeControls();
+        } catch (error) {
+          console.warn('No se pudo actualizar el conteo exacto:', error);
+        }
+      }, 150);
+    }
+
+    function refillLoadedWindow() {
+      if (refillWindowPromise || !supabaseClient || !currentUser || allLeads.length >= loadedLeadTarget || allLeads.length >= totalDatabaseCount) return refillWindowPromise || Promise.resolve(false);
+      const generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess?.updated_at;
+      const cursor = allLeads.at(-1)?.id ?? null;
+      if (cursor === null) return Promise.resolve(false);
+      const missing = Math.min(loadedLeadTarget - allLeads.length, totalDatabaseCount - allLeads.length);
+      const loading = (async () => {
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          const revision = leadDataRevision;
+          const rows = await fetchLeadsByIdCursor('*', { maxRows: missing, startAfterId: cursor });
+          if (generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt) return false;
+          if (revision !== leadDataRevision) {
+            if (attempt < 2) continue;
+            return false;
+          }
+          allLeads = consolidateLeadsById([...allLeads, ...rows]).slice(0, loadedLeadTarget);
+          populateFilterOptions();
+          applyFilters();
+          updateLeadScopeControls();
+          return true;
+        }
+        return false;
+      })()
+        .catch(error => { console.warn('No se pudo reponer la ventana de leads:', error); return false; })
+        .finally(() => { if (refillWindowPromise === loading) refillWindowPromise = null; });
+      refillWindowPromise = loading;
+      return refillWindowPromise;
+    }
+
+    function updateCompleteCacheOnly(lead) {
+      if (!lead || lead.id === undefined || lead.id === null) return;
+      const id = String(lead.id);
+      if (completeCurrentLoaded) {
+        const previous = completeCurrentLeads.find(item => String(item.id) === id);
+        completeCurrentLeads = consolidateLeadsById([
+          ...completeCurrentLeads.filter(item => String(item.id) !== id),
+          { ...(previous || {}), ...lead }
+        ]);
+      }
+      leadDataRevision += 1;
+      markPeriodoReportDirty();
+    }
+
+    function removeFromCompleteCacheOnly(leadId) {
+      if (leadId === undefined || leadId === null) return false;
+      let removed = false;
+      if (completeCurrentLoaded) {
+        const previousLength = completeCurrentLeads.length;
+        completeCurrentLeads = completeCurrentLeads.filter(lead => String(lead.id) !== String(leadId));
+        removed = completeCurrentLeads.length !== previousLength;
+      }
+      leadDataRevision += 1;
+      markPeriodoReportDirty();
+      return removed;
     }
 
     function applyRealtimeEvent(payload) {
@@ -2860,15 +3140,29 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         return true;
       } else if (payload.eventType === 'UPDATE') {
         if (payload.new && payload.new.id !== undefined && payload.new.id !== null) {
-          if (payload.new.archived_at) return removeLeadFromState(payload.new.id);
+          const visible = allLeads.some(lead => String(lead.id) === String(payload.new.id));
+          if (payload.new.archived_at) {
+            const cached = completeCurrentLoaded && completeCurrentLeads.some(lead => String(lead.id) === String(payload.new.id));
+            const removed = removeLeadFromState(payload.new.id);
+            if (!removed && !cached) removeFromCompleteCacheOnly(payload.new.id);
+            if (removed) refillLoadedWindow();
+            return removed || cached;
+          }
+          if (!visible) {
+            updateCompleteCacheOnly(payload.new);
+            return false;
+          }
           upsertLeadInState(payload.new);
           showToast("Lead #" + payload.new.id + " actualizado", "info");
           return true;
         }
       } else if (payload.eventType === 'DELETE') {
+        const cached = completeCurrentLoaded && completeCurrentLeads.some(lead => String(lead.id) === String(payload.old?.id));
         const removed = removeLeadFromState(payload.old?.id);
-        if (removed) showToast("Lead eliminado", "warning");
-        return removed;
+        if (!removed && !cached) removeFromCompleteCacheOnly(payload.old?.id);
+        if (removed) refillLoadedWindow();
+        if (removed || cached) showToast("Lead eliminado", "warning");
+        return removed || cached;
       }
       return false;
     }
@@ -3184,8 +3478,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const activeFiltersCountEl = document.getElementById('activeFiltersCount');
       if (activeFiltersCountEl) {
         activeFiltersCountEl.innerText = activeCount > 0
-          ? `${filteredLeads.length.toLocaleString()} de ${baseLeads.length.toLocaleString()} (${activeCount} filtro${activeCount > 1 ? 's' : ''})`
-          : `${filteredLeads.length.toLocaleString()} leads en total`;
+          ? `${activeCount} filtro${activeCount > 1 ? 's' : ''} activo${activeCount > 1 ? 's' : ''}`
+          : 'Sin filtros';
       }
 
       currentPage = 1;
@@ -3237,7 +3531,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       document.getElementById('kpiTotalLeads').innerText = total.toLocaleString();
       const kpiTotalSubtitle = document.getElementById('kpiTotalSubtitle');
       if (kpiTotalSubtitle) {
-        kpiTotalSubtitle.innerText = `de ${totalDatabase.toLocaleString()} en BD`;
+        const hasFilters = document.getElementById('activeFiltersCount')?.innerText !== 'Sin filtros';
+        kpiTotalSubtitle.innerText = hasFilters
+          ? `Resultados dentro de ${getVisibleBaseLeads().length.toLocaleString()} cargados`
+          : loadedLeadTarget <= LEADS_BATCH_SIZE ? 'Últimos registros ingresados' : 'Incluye bloques anteriores';
       }
       document.getElementById('kpiAgendados').innerText = agendados.toLocaleString();
       document.getElementById('kpiAgendadosPct').innerText = `${agendadosPct}%`;
@@ -4038,6 +4335,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const { error } = await supabaseClient.rpc('archive_lead', { p_id: leadId });
       if (error) { showToast('No se pudo archivar', 'error'); return; }
       removeLeadFromState(leadId);
+      refillLoadedWindow();
+      scheduleExactLeadCountRefresh();
       populateFilterOptions(); applyFilters();
       showToast('Lead archivado', 'success');
     }
@@ -4073,9 +4372,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const phoneKey = normalizePhone(telefono);
       let repetidosHtml = '';
       let firstEntryHtml = '';
+      const duplicateScopeHtml = completeCurrentLoaded && historicoLoaded ? '' : `
+        <p class="text-[11px] text-slate-500">Las coincidencias telefónicas se revisan sobre los datos cargados. Selecciona el origen “Todos” para comprobar la base completa.</p>`;
       if (phoneKey.length >= 7) {
         const relacionados = [];
-        for (const arr of [allLeads, allHistorico]) {
+        for (const arr of [completeCurrentLoaded ? completeCurrentLeads : allLeads, allHistorico]) {
           for (const l of arr) {
             if (getLeadOrigin(l) === finalOrigin && String(l.id) === String(lead.id)) continue;
             if (normalizePhone(getField(l, 'Telefono')) === phoneKey) relacionados.push(l);
@@ -4206,7 +4507,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Última Gestión</span>
             <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'Fecha Última Gestión ') || '-')}</span>
           </div>
-        </div>${repetidosHtml}
+        </div>${duplicateScopeHtml}${repetidosHtml}
 
         <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-1">
           <span class="text-[11px] uppercase text-slate-400 font-semibold block">Historial de Observaciones</span>
@@ -5007,7 +5308,7 @@ async function deleteLeadAppointment(id) {
         tbody.innerHTML = `<tr>
           <td colspan="9" class="text-center py-12 text-slate-400">
             <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-            <p class="font-medium text-xs">Cargando base de datos desde Supabase (5.810 registros)...</p>
+            <p class="font-medium text-xs">Cargando los últimos 2.000 leads desde Supabase…</p>
           </td>
         </tr>`;
       }
@@ -5180,7 +5481,7 @@ async function deleteLeadAppointment(id) {
       const range = readHistRange();
       const rangeActive = range.from !== null || range.to !== null;
 
-      let data = getVisibleBaseLeads();
+      let data = getHistoricalBaseLeads();
       if (selectedCampana) data = data.filter(l => getField(l, 'Campaña').trim() === selectedCampana);
       if (selectedAgente) data = data.filter(l => getField(l, 'Agente ').trim() === selectedAgente);
       if (selectedAnio === 'SIN-FECHA') {
@@ -5244,7 +5545,7 @@ async function deleteLeadAppointment(id) {
       const anios = new Set();
       let haySinFecha = false;
 
-      getVisibleBaseLeads().forEach(l => {
+      getHistoricalBaseLeads().forEach(l => {
         const c = getField(l, 'Campaña').trim();
         const a = getField(l, 'Agente ').trim();
         if (c) campanas.add(c);
@@ -5895,10 +6196,12 @@ async function deleteLeadAppointment(id) {
       const generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at, key = `${desde}|${hasta}`;
       const sourceRevision = periodoSourceRevision;
       const valid = () => token === periodoRequestGeneration && generation === sessionGeneration && sourceRevision === periodoSourceRevision && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'reporte' && reporteVistaActiva === 'periodo' && periodoRangeKey() === key;
-      // 100% local sobre allLeads (sin red): nunca números parciales durante la carga.
-      if (isLoadingLeads || (!allLeads.length && isSupabaseLive !== true)) { aviso.textContent = 'Cargando todos los leads… se actualizará al finalizar.'; updatePeriodoCsvState(); return; }
+      if (isLoadingLeads || (!allLeads.length && isSupabaseLive !== true)) { aviso.textContent = 'Cargando leads recientes… se actualizará al finalizar.'; updatePeriodoCsvState(); return; }
       try {
-        const data = buildPeriodSummary(allLeads, catalogRows, desde, hasta);
+        const complete = await loadCompleteCurrentData();
+        if (!valid()) return;
+        if (!complete) throw new Error('No se pudo cargar la base completa para el reporte.');
+        const data = buildPeriodSummary(completeCurrentLeads, catalogRows, desde, hasta);
         if (!valid()) return;
         validatePeriodoSummary(data, desde, hasta);
         body.innerHTML = renderReportePeriodo(data);

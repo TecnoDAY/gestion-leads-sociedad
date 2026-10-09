@@ -18,7 +18,7 @@ function extractFunction(name) {
   throw new Error(`No se pudo extraer ${name}`);
 }
 const names = ['clearSessionState', 'closeInvalidSession', 'validateCurrentSession', 'loadCurrentAccess',
-  'setAppAuthenticated', 'enterAuthenticatedSession', 'handleSignOut', 'setDashboardTabState', 'switchTab',
+  'setAppAuthenticated', 'enterAuthenticatedSession', 'handleSignOut', 'setDashboardTabState', 'switchTab', 'prepareHistoricalAnalytics',
   'ensureChartJs',
   'closeViewLeadModal', 'openViewLeadModal', 'findLeadByOrigin', 'getField', 'escapeHtml', 'escapeAttr',
   'updateLeadAppointmentCreateState', 'setBlockControls', 'isAgendadoGestion',
@@ -104,7 +104,9 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     setTimeout: fn => timers.push(fn), supabaseClient: client,
     sessionGeneration: 0, viewLeadGeneration: 0, authValidationPromise: null, sessionInitializationPromise: null,
     currentUser: null, currentAccess: null, isAdmin: false, isTrafficker: false, isSupervisor: false, isSupabaseLive: false,
-    pendingPasswordSetup: false, realtimeChannel: null, realtimeSetupPromise: null, allLeads: [], allHistorico: [],
+    LEADS_BATCH_SIZE: 2000, pendingPasswordSetup: false, realtimeChannel: null, realtimeSetupPromise: null, allLeads: [],
+    completeCurrentLeads: [], completeCurrentLoaded: false, completeCurrentLoadPromise: null, olderLeadsLoadPromise: null,
+    loadedLeadTarget: 2000, leadDataRevision: 0, exactCountRefreshTimer: null, refillWindowPromise: null, allHistorico: [],
     filteredLeads: [], dataSource: 'actual', historicoLoaded: false, historicoLoadPromise: null, currentViewId: null,
     currentViewOrigin: 'actual', currentEditOrigin: 'actual', totalDatabaseCount: 0, pendingRealtimeEvents: [],
     leadNotesCache: [], leadGestionesCache: [], leadAppointmentsCache: [], editingNoteId: null,
@@ -119,14 +121,19 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     campanasRequestGeneration: 0, campanasData: [], campaignStatsMap: new Map(), currentMainTab: 'dashboard',
     helpReturnFocus: null, histCharts: {}, resetCitasPanel() {}, miamiToday: () => '2026-09-30',
-    setupRealtimeListener: async () => true, loadLeadsData: async () => true, refreshCatalogs: async () => {},
+    setupRealtimeListener: async () => true, loadLeadsData: async () => true, loadCompleteCurrentData: async () => true, refreshCatalogs: async () => {},
     initCampanas() {}, initReporteDiario() {}, initCitasPanel() {}, renderHistoricalAnalytics() {}, openSetPassword() {},
     formatPhone: value => value, normalizePhone: value => value, renderGestionBadge: () => '', isAgendadoGestion: () => false,
     loadLeadAppointments: async () => {},
     catalogRows: { mes: [], campana: [], medio: [], gestion: [], agente: [] },
-    showLoadingState() {}, updateConnectionStatus() {}, showToast() {}, clearTimeout() {}, window: {},
+    showLoadingState() {}, updateConnectionStatus() {}, updateLeadScopeControls() {}, showToast() {}, clearTimeout() {}, window: {},
   });
   const renders = [];
+  c.loadCompleteCurrentData = async () => {
+    c.completeCurrentLeads = c.allLeads;
+    c.completeCurrentLoaded = true;
+    return true;
+  };
   for (const name of ['populateCatalogSelects', 'populateFilterOptions', 'applyFilters']) {
     c[name] = () => { renders.push(name); element(name).textContent = JSON.stringify(c.catalogRows); };
   }
@@ -354,7 +361,7 @@ test('rechazo de validación vigente sigue rechazando y libera su promesa', asyn
   assert.equal(f.c.authValidationPromise, null);
 });
 
-for (const loader of ['loadHistoricoData', 'loadLeadsData']) {
+for (const loader of ['loadHistoricoData']) {
   for (const outcome of ['success', 'error', 'reject']) {
     test(`${loader} real: finally antiguo ${outcome} conserva promesa y deduplicación de B`, async () => {
       const f = frontend({ realSessionCaches: true }), { c } = f;
@@ -455,7 +462,6 @@ for (const pausedStage of ['initialCount', 'loadedLeads', 'reconciledIds', 'fina
     await rows('B', [updated]);
     await rows('B', [{ id: 7 }], 'id');
     (await count('B')).resolve({ count: 1, error: null });
-    (await nextQuery('B', { table: 'leads_historico' })).resolve({ data: [], error: null });
     assert.equal(await second, true);
     assert.equal(c.allLeads.length, 1);
     assert.equal(c.allLeads[0].Nombre, 'UPDATED');

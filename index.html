@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gestión de Leads 2026 — Sociedad Actoral</title>
   <meta name="description" content="Panel analítico y operativo de gestión de leads 2026 para Sociedad Actoral. Conexión en tiempo real con Supabase." />
+  <!-- CRM privado: no debe indexarse ni rastrearse -->
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <meta property="og:title" content="Gestión de Leads 2026 — Sociedad Actoral" />
   <meta property="og:description" content="Dashboard analítico con matriz cruzada, KPIs en tiempo real y seguimiento de leads para Sociedad Actoral." />
   <meta property="og:type" content="website" />
@@ -788,7 +791,7 @@
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <i data-lucide="users-check" class="w-4 h-4 text-purple-400"></i>
+                <i data-lucide="user-round-check" class="w-4 h-4 text-purple-400"></i>
                 <span>Cierres por Asesor / Agente</span>
               </h3>
               <p class="text-xs text-slate-400">Total de leads gestionados vs inscritos por asesor</p>
@@ -934,6 +937,8 @@
         <span>Miami — Weston — Doral</span>
         <span>•</span>
         <button onclick="openRlsModal()" class="hover:text-indigo-400 transition-colors cursor-pointer">Seguridad Supabase RLS</button>
+        <span>•</span>
+        <a href="/privacidad.html" class="hover:text-indigo-400 transition-colors">Privacidad</a>
       </div>
     </div>
   </footer>
@@ -958,6 +963,7 @@
       </form>
       <button type="button" onclick="handlePasswordReset()" class="w-full text-[11px] text-slate-400 hover:text-indigo-400 transition-colors cursor-pointer">¿Olvidaste tu contraseña?</button>
       <p id="loginStatus" class="text-xs text-slate-400">La cuenta debe estar autorizada por un administrador.</p>
+      <p class="text-[11px] text-slate-400 text-center">El uso de este panel está sujeto a la <a href="/privacidad.html" class="text-slate-300 underline hover:text-indigo-400 transition-colors">política de privacidad</a>.</p>
     </div>
   </div>
 
@@ -972,6 +978,8 @@
         </div>
       </div>
       <form id="formSetPassword" onsubmit="handleSetPassword(event)" class="space-y-3">
+        <!-- Chromium avisa si un formulario con contraseña no tiene campo de usuario: este modal se abre desde el enlace del correo, asi que el campo va oculto y vacio a proposito. -->
+        <input type="text" id="setPasswordUsername" autocomplete="username" hidden>
         <input id="setPasswordNew" type="password" autocomplete="new-password" required minlength="8" placeholder="Nueva contraseña (mínimo 8 caracteres)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
         <input id="setPasswordConfirm" type="password" autocomplete="new-password" required minlength="8" placeholder="Repite la contraseña" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
         <button type="submit" class="w-full px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Guardar contraseña</button>

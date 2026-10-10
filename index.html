@@ -475,6 +475,11 @@
       #topBrand { visibility: hidden; pointer-events: none; }
     }
     @media (max-width: 639px) {
+      #reportePeriodo .period-controls { display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+      #reportePeriodo .period-controls label, #reportePeriodo .period-controls input { display: block; width: 100%; min-width: 0; }
+      #reportePeriodo .period-controls button, #reportePeriodo .period-presets button { min-height: 2.75rem; }
+      #reportePeriodo .period-presets { display: grid; grid-template-columns: minmax(0, 1fr); }
+      #reportePeriodo .period-presets button { width: 100%; text-align: center; }
       #reporteDiario .report-viewbar { align-items: stretch; }
       #reporteDiario .report-viewbar label { display: grid; width: 100%; gap: .35rem; }
       #reporteDiario .report-viewbar select { width: 100%; }
@@ -529,6 +534,7 @@
       [data-theme="light"] .quick-lead-row .quick-lead-campaign::before, [data-theme="light"] .quick-lead-row .quick-lead-status::before { color: #667085; }
     }
     @media (min-width: 400px) and (max-width: 639px) {
+      #reportePeriodo .period-controls, #reportePeriodo .period-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .dashboard-filter-grid, .dashboard-filter-extra { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .dashboard-filter-grid > div:first-child, .dashboard-filter-extra > div:nth-child(2) { grid-column: 1 / -1; }
     }
@@ -783,13 +789,13 @@
             <p class="rounded border border-slate-300 bg-white p-2 text-slate-700"><strong class="text-indigo-900">Actividad realizada en el período:</strong> gestiones registradas entre las fechas elegidas y citas contadas por su fecha programada (Miami).</p>
           </div>
         </div>
-        <div class="report-controls flex flex-wrap gap-3 items-end text-sm">
+        <div class="period-controls report-controls flex flex-wrap gap-3 items-end text-sm">
           <label>Desde <input id="periodoDesde" type="date" onchange="loadReportePeriodo()" class="block mt-1"></label>
           <label>Hasta <input id="periodoHasta" type="date" onchange="loadReportePeriodo()" class="block mt-1"></label>
           <button type="button" onclick="loadReportePeriodo()" class="border border-slate-300 rounded px-3 py-1.5">Actualizar</button>
           <button type="button" id="periodoBtnCsv" onclick="exportReportePeriodoCSV()" class="rounded bg-slate-700 text-white px-3 py-1.5">Descargar CSV</button>
         </div>
-        <div class="report-presets text-sm" aria-label="Rangos de calendario (Miami)">
+        <div class="period-presets report-presets text-sm" aria-label="Rangos de calendario (Miami)">
           <button type="button" onclick="setPeriodoPreset('semana')" class="border border-slate-300 rounded px-3 py-1.5">Esta semana (lunes–domingo)</button>
           <button type="button" onclick="setPeriodoPreset('7d')" class="border border-slate-300 rounded px-3 py-1.5">Últimos 7 días (incluye hoy)</button>
           <button type="button" onclick="setPeriodoPreset('30d')" class="border border-slate-300 rounded px-3 py-1.5">Últimos 30 días (incluye hoy)</button>

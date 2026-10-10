@@ -1244,6 +1244,15 @@ test('inactividad: aviso a 4 min, cierre a 5, multi-pestaña y registro en tabla
   assert.doesNotMatch(sql, /ip_address|user_agent/);
 });
 
+test('actividad de asesoras: solo una sesion abierta con señal reciente figura activa', () => {
+  const isRecent = vm.runInNewContext(`const IDLE_LIMIT_MS = 300000; ${extractFunction('isRecentAgentSession')}; isRecentAgentSession`);
+  const now = Date.parse('2026-10-10T12:00:00Z');
+  assert.equal(isRecent({ active: true, last_activity_at: '2026-10-10T11:55:01Z' }, now), true);
+  assert.equal(isRecent({ active: true, last_activity_at: '2026-10-10T11:55:00Z' }, now), false);
+  assert.equal(isRecent({ active: false, last_activity_at: '2026-10-10T11:59:00Z' }, now), false);
+  assert.equal(isRecent({ active: true, last_activity_at: 'fecha-invalida' }, now), false);
+});
+
 
 test('hotfix campera: appointmentCampusFrom existe y los guardados alcanzan la RPC correcta', async () => {
   assert.match(html, /function appointmentCampusFrom\(prefix\)/);

@@ -1814,7 +1814,7 @@
         </section>
         <section class="users-section space-y-2">
           <div class="users-session-header flex items-center justify-between gap-3"><h3 class="text-sm font-bold">Actividad de asesoras</h3><button type="button" onclick="loadAgentSessionsReport()" class="users-session-refresh px-2 py-1 rounded border border-slate-300 hover:border-indigo-400 text-[11px] cursor-pointer">Actualizar</button></div>
-          <p class="text-[11px] text-slate-500">Una fila por asesora con la actividad reciente. Las sesiones cerradas se conservan hasta 90 días; no se registran clics ni tecleo.</p>
+          <p class="text-[11px] text-slate-500">Una fila por asesora. «Activa» requiere actividad en los últimos 5 minutos. Las sesiones cerradas se conservan hasta 90 días; no se registran clics ni tecleo.</p>
           <div id="agentSessionsBody" class="text-[11px] text-slate-500"><p>Cargando actividad…</p></div>
         </section>
         <section id="changeEmailBox" class="users-section hidden space-y-2 text-xs">
@@ -2880,6 +2880,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     function idleMiami(ts) { if (!ts) return '-'; const d = new Date(ts); return Number.isNaN(d.getTime()) ? '-' : d.toLocaleString('es-ES', { timeZone: 'America/New_York', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+    function isRecentAgentSession(session, now = Date.now()) {
+      const lastActivity = Date.parse(session.last_activity_at || session.started_at || '');
+      return Boolean(session.active) && Number.isFinite(lastActivity) && now - lastActivity < IDLE_LIMIT_MS;
+    }
     async function loadAgentSessionsReport() {
       const box = document.getElementById('agentSessionsBody'); if (!box || !isAdmin || !supabaseClient) return;
       const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
@@ -2889,17 +2893,20 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (error) { box.innerHTML = '<div role="alert" class="flex flex-wrap items-center gap-2 text-rose-300"><p>No se pudo cargar la actividad.</p><button type="button" onclick="loadAgentSessionsReport()" class="min-h-11 rounded-lg border border-rose-400 px-3 py-2 font-semibold hover:bg-rose-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300">Reintentar</button></div>'; return; }
       const sessions = Array.isArray(data) ? data : [];
       const advisors = new Map();
+      const reportTime = Date.now();
       sessions.forEach(s => {
         const key = s.user_id || s.agent_name;
         const activity = Date.parse(s.last_activity_at || s.ended_at || s.started_at) || 0;
-        const entry = advisors.get(key) || { name: s.agent_name || '-', count: 0, active: false, activity: 0 };
+        const entry = advisors.get(key) || { name: s.agent_name || '-', count: 0, active: false, stale: false, activity: 0 };
         entry.count += 1;
-        entry.active ||= Boolean(s.active);
+        const recent = isRecentAgentSession(s, reportTime);
+        entry.active ||= recent;
+        entry.stale ||= Boolean(s.active) && !recent;
         if (activity > entry.activity) entry.activity = activity;
         advisors.set(key, entry);
       });
       const rows = [...advisors.values()].sort((a, b) => b.activity - a.activity).map(a =>
-        `<div class="users-session-row"><span class="font-semibold">${escapeHtml(a.name)}</span><span class="text-slate-500">Última actividad: ${idleMiami(a.activity)}</span><span class="${a.active ? 'text-emerald-600' : 'text-slate-500'}">${a.active ? 'Activa' : 'Sin sesión activa'}</span><span class="text-slate-500">${a.count} ${a.count === 1 ? 'sesión' : 'sesiones'}</span></div>`
+        `<div class="users-session-row"><span class="font-semibold">${escapeHtml(a.name)}</span><span class="text-slate-500">Última actividad: ${idleMiami(a.activity)}</span><span class="${a.active ? 'text-emerald-600' : a.stale ? 'text-amber-600' : 'text-slate-500'}">${a.active ? 'Activa' : a.stale ? 'Sin actividad reciente' : 'Sin sesión activa'}</span><span class="text-slate-500">${a.count} ${a.count === 1 ? 'sesión' : 'sesiones'}</span></div>`
       ).join('');
       const activeCount = [...advisors.values()].filter(a => a.active).length;
       box.innerHTML = rows

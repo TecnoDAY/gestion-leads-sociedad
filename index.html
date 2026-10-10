@@ -459,6 +459,12 @@
       .lead-detail-header { padding: .9rem 1rem; }
       .lead-detail-content { padding: 1rem; }
       .lead-detail-footer { padding: .75rem 1rem; }
+      .lead-detail-hero { padding: 1rem; }
+      .lead-detail-hero > div:first-child { min-width: 0; }
+      .lead-detail-name { overflow-wrap: anywhere; }
+      .lead-detail-grid .lead-detail-card:nth-child(-n+2) { grid-column: 1 / -1; }
+      .lead-detail-grid .lead-detail-card { padding: .8rem; }
+      .lead-detail-grid .lead-detail-card .lead-detail-value { min-width: 0; white-space: normal; overflow: visible; text-overflow: clip; }
       #modalViewLead .lead-detail-header > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
       #modalViewLead .lead-detail-footer button { min-height: 2.75rem; }
       .lead-note-compose { display: grid; grid-template-columns: minmax(0, 1fr); }
@@ -5307,7 +5313,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           <div>${renderGestionBadge(getField(lead, 'GESTION'))}</div>
         </div>${firstEntryHtml}
 
-        <div class="grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-3 gap-3">
+        <div class="lead-detail-grid grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-3 gap-3">
           <div class="lead-detail-card">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Teléfono / WhatsApp</span>
             <div class="flex items-center gap-1.5 mt-0.5">

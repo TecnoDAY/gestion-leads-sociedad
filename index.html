@@ -475,6 +475,10 @@
       #topBrand { visibility: hidden; pointer-events: none; }
     }
     @media (max-width: 639px) {
+      .historical-chart-scroll { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+      .historical-chart-scroll::before { content: 'Desliza para ver todo el gráfico →'; display: block; margin-bottom: .35rem; color: #64748b; font-size: .7rem; }
+      .historical-chart-scroll > div { min-width: 35rem; }
+      [data-theme="dark"] .historical-chart-scroll::before { color: #94a3b8; }
       .historical-filter-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
       .historical-filter-actions > label { min-width: 0; }
       .historical-filter-actions > label input { width: 100%; min-width: 0; }
@@ -1269,8 +1273,9 @@
             </span>
           </div>
         </div>
-        <div class="relative w-full h-72 sm:h-80">
+        <div class="historical-chart-scroll"><div class="relative w-full h-72 sm:h-80">
           <canvas id="chartMonthlyEvolution"></canvas>
+        </div>
         </div>
       </div>
 
@@ -1287,8 +1292,9 @@
               <p class="text-xs text-slate-400">Porcentaje de leads convertidos en matrícula cada mes</p>
             </div>
           </div>
-          <div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-64">
             <canvas id="chartConversionTrend"></canvas>
+          </div>
           </div>
         </div>
 
@@ -1303,8 +1309,9 @@
               <p class="text-xs text-slate-400">Volumen de leads e inscripciones por programa</p>
             </div>
           </div>
-          <div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-64">
             <canvas id="chartCampaignPerformance"></canvas>
+          </div>
           </div>
         </div>
       </div>
@@ -1338,8 +1345,9 @@
               <p class="text-xs text-slate-400">Total de leads gestionados vs inscritos por asesor</p>
             </div>
           </div>
-          <div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-64">
             <canvas id="chartAgentPerformance"></canvas>
+          </div>
           </div>
         </div>
       </div>
@@ -1357,8 +1365,9 @@
               <p class="text-xs text-slate-400">Barras apiladas de los estados de GESTION de cada mes (top 6 estados + Otros)</p>
             </div>
           </div>
-          <div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-64">
             <canvas id="chartMonthlyStates"></canvas>
+          </div>
           </div>
         </div>
 
@@ -1373,8 +1382,9 @@
               <p class="text-xs text-slate-400">Barras apiladas con las 5 campañas de mayor volumen de leads por mes (resto en Otras)</p>
             </div>
           </div>
-          <div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-64">
             <canvas id="chartMonthlyCampaigns"></canvas>
+          </div>
           </div>
         </div>
       </div>

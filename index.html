@@ -499,6 +499,36 @@
       .quick-lead-status { display: none; }
     }
     @media (max-width: 767px) {
+      .campaigns-table { padding: .75rem; overflow-x: visible; }
+      .campaigns-table table, .campaigns-table tbody { display: block; width: 100%; min-width: 0; }
+      .campaigns-table thead { display: none; }
+      .campaigns-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem 1rem; margin-bottom: .75rem; padding: 1rem; border: 1px solid #e4e7ec; border-radius: .85rem; background: #fff; }
+      .campaigns-table tbody tr:last-child { margin-bottom: 0; }
+      .campaigns-table tbody td { display: block; min-width: 0; padding: 0; text-align: left; overflow-wrap: anywhere; }
+      .campaigns-table tbody td::before { display: block; margin-bottom: .2rem; color: #667085; font-size: .65rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+      .campaigns-table tbody td:nth-child(1)::before { content: 'Campaña'; }
+      .campaigns-table tbody td:nth-child(2)::before { content: 'Estado'; }
+      .campaigns-table tbody td:nth-child(3)::before { content: 'Alcance'; }
+      .campaigns-table tbody td:nth-child(4)::before { content: 'Gasto (USD)'; }
+      .campaigns-table tbody td:nth-child(5)::before { content: 'Resultados Meta'; }
+      .campaigns-table tbody td:nth-child(6)::before { content: 'Coste por resultado'; }
+      .campaigns-table tbody td:nth-child(7)::before { content: 'Leads nuevos'; }
+      .campaigns-table tbody td:nth-child(8)::before { content: 'Agendados'; }
+      .campaigns-table tbody td:nth-child(9)::before { content: 'Asistieron'; }
+      .campaigns-table tbody td:nth-child(10)::before { content: 'Inscritos'; }
+      .campaigns-table tbody td:nth-child(11)::before { content: 'Agendados meses anteriores'; }
+      .campaigns-table tbody td:nth-child(12)::before { content: 'Pendientes'; }
+      .campaigns-table tbody td:nth-child(1), .campaigns-table tbody td:nth-child(13), .campaigns-table tbody td[colspan] { grid-column: 1 / -1; }
+      .campaigns-table tbody td:nth-child(1) { font-weight: 700; font-size: .875rem; }
+      .campaigns-table tbody td:nth-child(13) { display: flex; flex-wrap: wrap; gap: .5rem; padding-top: .7rem; border-top: 1px solid #e4e7ec; }
+      .campaigns-table tbody td:nth-child(13):empty { display: none; }
+      .campaigns-table tbody td:nth-child(13) button { min-height: 2.5rem; padding: .5rem .8rem; }
+      .campaigns-table tbody input, .campaigns-table tbody select { max-width: 100%; min-height: 2.5rem; }
+      .campaigns-table tbody td[colspan]::before { content: none; }
+      [data-theme="dark"] .campaigns-table tbody tr { background: #263348; border-color: #475569; }
+      [data-theme="dark"] .campaigns-table tbody .campaigns-total-row { background: #252449; border-color: #818cf8; }
+      [data-theme="dark"] .campaigns-table tbody td::before { color: #94a3b8; }
+      [data-theme="dark"] .campaigns-table tbody td:nth-child(13) { border-color: #475569; }
       .appointments-table { padding: .75rem; overflow-x: visible; }
       .appointments-table table, .appointments-table tbody { display: block; width: 100%; min-width: 0; }
       .appointments-table thead { display: none; }

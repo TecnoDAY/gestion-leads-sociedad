@@ -1234,11 +1234,12 @@ test('inactividad: aviso a 4 min, cierre a 5, multi-pestaña y registro en tabla
   assert.match(html, /p_reason: 'idle_timeout'/);
   assert.match(html, /sessionEndReason = 'session_invalid'/);
 
-  // Migración: tabla con motivos controlados, sin PII extra, retención 90 días.
+  // Migración inicial: tabla con motivos controlados y sin PII extra.
   const sql = readFileSync('supabase/migrations/202610020006_agent_sessions.sql', 'utf8');
   assert.match(sql, /create table if not exists public\.agent_sessions/);
   assert.match(sql, /end_reason in \('manual_logout', 'idle_timeout', 'session_invalid'\)/);
-  assert.match(sql, /ended_at < now\(\) - interval '90 days'/);
+  const weeklyRetention = readFileSync('supabase/migrations/202610100001_agent_sessions_weekly_retention.sql', 'utf8');
+  assert.equal((weeklyRetention.match(/ended_at < now\(\) - interval '7 days'/g) || []).length, 2);
   assert.match(sql, /if access\.role <> 'agente' then return null/); // solo asesoras
   assert.match(sql, /if not public\.is_admin_user\(\) then raise exception using errcode = '42501', message = 'admin_required'/);
   assert.doesNotMatch(sql, /ip_address|user_agent/);

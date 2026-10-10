@@ -172,11 +172,45 @@
     .login-password-toggle { position: absolute; right: .45rem; top: .45rem; min-height: 1.9rem; padding: 0 .65rem; border-radius: .45rem; background: #f1f3f9; color: #344054; font-size: .7rem; font-weight: 700; cursor: pointer; }
     .login-password-toggle:hover { background: #e4e7f0; }
     #loginStatus { min-height: 1.2rem; }
+    #modalViewLead { background: rgba(10,20,42,.78); }
+    .lead-detail-shell { width: min(100%, 55rem); border: 1px solid rgba(148,163,184,.24); border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
+    .lead-detail-header { padding: 1.1rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: #fff; }
+    .lead-detail-header h3 { color: #17203b; }
+    .lead-detail-header p { color: #667085; }
+    .lead-detail-content { padding: 1.5rem; background: #f7f8fc; color: #17203b; }
+    .lead-detail-hero { border: 1px solid #e3e7f1; border-radius: 1rem; padding: 1.2rem; background: linear-gradient(115deg,#fff 45%,#f0efff); }
+    .lead-detail-hero .lead-detail-name { color: #17203b; font-size: 1.2rem; line-height: 1.4; }
+    .lead-detail-hero .lead-detail-meta { color: #475569; }
+    .lead-detail-card, .lead-detail-section { border: 1px solid #e4e7ec; border-radius: .85rem; background: #fff; }
+    .lead-detail-card { min-width: 0; padding: .9rem; }
+    .lead-detail-card > span:first-child, .lead-detail-section > span:first-child { color: #526174; font-size: .67rem; letter-spacing: .04em; }
+    .lead-detail-card .lead-detail-value { color: #17203b; overflow-wrap: anywhere; }
+    .lead-detail-section { padding: 1rem; }
+    .lead-detail-section p { overflow-wrap: anywhere; }
+    .lead-detail-footer { border-top: 1px solid #e4e7ec; padding: .9rem 1.5rem; background: #fff; }
+    .lead-detail-content textarea, .lead-detail-content input:not([type="radio"]), .lead-detail-content select { background: #fff !important; color: #17203b !important; }
+    .lead-detail-content textarea::placeholder, .lead-detail-content input::placeholder { color: #667085; }
+    [data-theme="dark"] .lead-detail-shell { background: #1e293b; }
+    [data-theme="dark"] .lead-detail-header, [data-theme="dark"] .lead-detail-footer { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .lead-detail-header h3 { color: #fff; }
+    [data-theme="dark"] .lead-detail-header p { color: #94a3b8; }
+    [data-theme="dark"] .lead-detail-content { background: #0f172a; color: #e2e8f0; }
+    [data-theme="dark"] .lead-detail-hero { background: linear-gradient(115deg,#1e293b,#252449); border-color: #334155; }
+    [data-theme="dark"] .lead-detail-hero .lead-detail-name, [data-theme="dark"] .lead-detail-card .lead-detail-value { color: #f8fafc; }
+    [data-theme="dark"] .lead-detail-hero .lead-detail-meta { color: #cbd5e1; }
+    [data-theme="dark"] .lead-detail-card, [data-theme="dark"] .lead-detail-section { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .lead-detail-card > span:first-child, [data-theme="dark"] .lead-detail-section > span:first-child { color: #94a3b8; }
+    [data-theme="dark"] .lead-detail-content textarea, [data-theme="dark"] .lead-detail-content input:not([type="radio"]), [data-theme="dark"] .lead-detail-content select { background: #0f172a !important; color: #f8fafc !important; }
     @media (max-width: 639px) {
       .login-shell { display: block; max-width: 27rem; }
       .login-brand { min-height: 0; padding: 1.2rem 1.5rem; }
       .login-brand-description, .login-brand-footer { display: none; }
       .login-form-panel { padding: 1.5rem; }
+      #modalViewLead { padding: .5rem; }
+      .lead-detail-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; }
+      .lead-detail-header { padding: .9rem 1rem; }
+      .lead-detail-content { padding: 1rem; }
+      .lead-detail-footer { padding: .75rem 1rem; }
     }
     @media (min-width: 1100px) {
       .app-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 45; width: 14rem; display: flex; flex-direction: column; padding: 1.25rem .9rem; background: linear-gradient(180deg, #111f3d, #0b1730); border-right: 1px solid rgba(148,163,184,.14); color: #cbd5e1; }
@@ -1530,24 +1564,24 @@
 
   <!-- ================= MODAL: FICHA DETALLE LEAD ================= -->
   <div id="modalViewLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col">
-      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between shrink-0">
+    <div class="lead-detail-shell overflow-hidden max-h-[90dvh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="viewLeadTitle">
+      <div class="lead-detail-header flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2">
-          <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+          <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
             <i data-lucide="file-text" class="w-4 h-4"></i>
           </div>
-          <h3 class="font-bold text-white text-base">Ficha Integral del Lead</h3>
+          <div><h3 id="viewLeadTitle" class="font-bold text-base">Ficha del lead</h3><p class="text-xs">Información, seguimiento y próximas acciones</p></div>
         </div>
-        <button onclick="closeViewLeadModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
+        <button type="button" onclick="closeViewLeadModal()" aria-label="Cerrar ficha del lead" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="p-6 space-y-4 text-xs overflow-y-auto min-h-0" id="viewLeadContent">
+      <div class="lead-detail-content space-y-4 text-xs overflow-y-auto min-h-0" id="viewLeadContent">
         <!-- Injected by JS -->
       </div>
 
-      <div class="px-6 py-3 border-t border-slate-700/80 bg-slate-900/50 flex justify-end shrink-0">
+      <div class="lead-detail-footer flex justify-end shrink-0">
         <button onclick="closeViewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Cerrar</button>
       </div>
     </div>
@@ -4804,13 +4838,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }
 
       container.innerHTML = `
-        <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-700/80 flex items-start justify-between gap-4">
+        <div class="lead-detail-hero flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <div class="flex items-center gap-2 flex-wrap">
-              <div class="text-base font-bold text-white">${escapeHtml(nombre)}</div>
+              <div class="lead-detail-name font-bold">${escapeHtml(nombre)}</div>
               ${finalOrigin === 'historico' ? '<span class="text-[11px] uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">Histórico 2025</span>' : ''}
             </div>
-            <div class="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
+            <div class="lead-detail-meta text-xs mt-1 flex flex-wrap items-center gap-2">
               <span>ID: #${escapeHtml(String(lead.id))}</span>
               <span>•</span>
               <span>Ingreso: ${escapeHtml(getField(lead, 'Fecha'))} (${escapeHtml(getField(lead, 'Mes'))})</span>
@@ -4819,50 +4853,50 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           <div>${renderGestionBadge(getField(lead, 'GESTION'))}</div>
         </div>${firstEntryHtml}
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+        <div class="grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-3 gap-3">
+          <div class="lead-detail-card">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Teléfono / WhatsApp</span>
             <div class="flex items-center gap-1.5 mt-0.5">
               ${cleanPhone ? `<button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="text-slate-400 opacity-60 cursor-not-allowed"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></button>` : ''}
-              <span class="font-mono text-slate-200">${escapeHtml(telefonoFmt || 'S/N')}</span>
+              <span class="lead-detail-value font-mono">${escapeHtml(telefonoFmt || 'S/N')}</span>
             </div>
           </div>
 
-          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+          <div class="lead-detail-card">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Campaña</span>
-            <span class="font-medium text-slate-200 mt-0.5 block truncate">${escapeHtml(getField(lead, 'Campaña') || '-')}</span>
+            <span class="lead-detail-value font-medium mt-0.5 block truncate">${escapeHtml(getField(lead, 'Campaña') || '-')}</span>
           </div>
 
-          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+          <div class="lead-detail-card">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Medio</span>
-            <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'Medio') || '-')}</span>
+            <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'Medio') || '-')}</span>
           </div>
 
-          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+          <div class="lead-detail-card">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Asesor Principal</span>
-            <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'Agente ') || '-')}</span>
+            <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'Agente ') || '-')}</span>
           </div>
 
-          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+          <div class="lead-detail-card">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Último Asesor</span>
-            <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'ULTIMO AGENTE ') || '-')}</span>
+            <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'ULTIMO AGENTE ') || '-')}</span>
           </div>
 
-          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+          <div class="lead-detail-card">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Última Gestión</span>
-            <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'Fecha Última Gestión ') || '-')}</span>
+            <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'Fecha Última Gestión ') || '-')}</span>
           </div>
         </div>${duplicateScopeHtml}${repetidosHtml}
 
-        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-1">
+        <div class="lead-detail-section space-y-1">
           <span class="text-[11px] uppercase text-slate-400 font-semibold block">Historial de Observaciones</span>
           <p class="text-slate-300 font-mono text-xs whitespace-pre-line leading-relaxed">${escapeHtml(getField(lead, 'OBSERVACIONES ') || 'Sin observaciones registradas.')}</p>
          </div>${finalOrigin === 'historico' ? '' : `
-         <div id="leadGestionesSection" class="hidden bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+         <div id="leadGestionesSection" class="hidden lead-detail-section space-y-2">
            <span class="text-[11px] uppercase text-slate-400 font-semibold block">Historial de gestiones</span>
            <div id="leadGestionesList"><p class="text-[11px] text-slate-500">Cargando historial…</p></div>
          </div>
-         <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+         <div class="lead-detail-section space-y-2">
           <span class="text-[11px] uppercase text-slate-400 font-semibold block">Notas del Equipo</span>
           <div id="leadNotesList" class="space-y-2"><p class="text-[11px] text-slate-500">Cargando notas…</p></div>
           <div class="flex items-start gap-2 pt-1">
@@ -4872,7 +4906,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             </button>
            </div>
          </div>`}
-          ${finalOrigin === 'historico' ? '' : `<div id="leadAppointmentsSection" class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-3">
+          ${finalOrigin === 'historico' ? '' : `<div id="leadAppointmentsSection" class="lead-detail-section space-y-3">
             <div class="flex items-center justify-between gap-2"><span class="text-[11px] uppercase text-slate-400 font-semibold">Citas</span><button type="button" onclick="openHelpModal('ayuda-citas')" title="Ayuda: citas del lead" aria-label="Ayuda sobre la gestión de citas del lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 cursor-pointer shrink-0">?</button></div>
             <div id="leadAppointmentCreate" class="${isAgendadoGestion(getField(lead, 'GESTION')) ? '' : 'hidden'}">
             <form id="leadAppointmentForm" onsubmit="createLeadAppointment(event)" class="grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end">

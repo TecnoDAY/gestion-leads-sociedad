@@ -317,6 +317,24 @@
     #reporteDiario .report-presets button { border-radius: .6rem; background: #f8fafc; color: #344054; }
     #reporteDiario .report-presets button:hover { border-color: #6366f1; color: #4338ca; }
     #reporteAuto > *, #periodoBody > *, #periodoActividad > * { border-radius: .85rem; }
+    #reportePeriodo .period-card { min-width: 0; border: 1px solid #e4e7ec; border-radius: .9rem; padding: 1rem; background: #fff; box-shadow: 0 8px 24px -20px rgba(15,23,42,.4); }
+    #reportePeriodo .period-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+    #reportePeriodo .period-table th, #reportePeriodo .period-table td { padding: .55rem .75rem; border-bottom: 1px solid #e4e7ec; vertical-align: middle; }
+    #reportePeriodo .period-table thead th { background: #f8fafc; color: #475569; font-size: .72rem; font-weight: 700; }
+    #reportePeriodo .period-table tbody th { color: #344054; font-weight: 400; }
+    #reportePeriodo .period-table th:first-child { text-align: left; }
+    #reportePeriodo .period-table th:not(:first-child), #reportePeriodo .period-table td { text-align: center; font-variant-numeric: tabular-nums; }
+    #reportePeriodo .period-table tbody tr:nth-child(even) { background: #f8fafc; }
+    #reportePeriodo .period-table tfoot { background: #eef2ff; font-weight: 700; }
+    #reportePeriodo .period-summary-table th:first-child { width: 60%; }
+    #reportePeriodo .period-activity-table th:first-child { width: 72%; }
+    #reportePeriodo .period-state-table th:first-child { width: 48%; }
+    #reportePeriodo .period-matrix th:first-child { min-width: 14rem; }
+    #reportePeriodo .period-matrix th:not(:first-child), #reportePeriodo .period-matrix td { min-width: 7rem; }
+    #reportePeriodo .period-matrix th[scope="row"] { background: #fff; }
+    #reportePeriodo .period-matrix tbody tr:nth-child(even) th[scope="row"] { background: #f8fafc; }
+    #reportePeriodo .period-matrix tfoot th[scope="row"] { background: #eef2ff; }
+    @media (max-width: 639px) { #reportePeriodo .period-card { padding: .85rem; } #reportePeriodo .period-table th, #reportePeriodo .period-table td { padding: .5rem; } }
     @media (max-width: 900px) { .historical-filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
     @media (max-width: 480px) { .historical-filter-grid { grid-template-columns: 1fr; } }
     @media (max-width: 639px) {
@@ -6806,12 +6824,12 @@ async function deleteLeadAppointment(id) {
     }
 
     function renderPeriodoActividad(data) {
-      const row = (label, value) => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(label)}</th><td class="text-right">${value}</td></tr>`;
-      const rowTip = (label, value, tip) => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(label)}${periodoTip(tip)}</th><td class="text-right">${value}</td></tr>`;
-      const table = (title, rows, tip) => `<section class="border border-slate-300 rounded p-3"><h3 class="font-bold text-indigo-900 mb-2">${title}${periodoTip(tip)}</h3><table class="w-full text-sm"><tbody>${rows}</tbody></table></section>`;
+      const row = (label, value) => `<tr><th scope="row">${escapeHtml(label)}</th><td>${value}</td></tr>`;
+      const rowTip = (label, value, tip) => `<tr><th scope="row">${escapeHtml(label)}${periodoTip(tip)}</th><td>${value}</td></tr>`;
+      const table = (title, rows, tip) => `<section class="period-card"><h3 class="font-bold text-indigo-900 mb-2">${title}${periodoTip(tip)}</h3><table class="period-table period-activity-table"><tbody>${rows}</tbody></table></section>`;
       const g = data.gestiones, q = data.canales, c = data.citas;
       const porEstadoOrdenado = [...g.por_estado].sort((a, b) => compareAlphaEs(a.label, b.label));
-      const porEstado = porEstadoOrdenado.length ? `<section class="border border-slate-300 rounded p-3"><div class="flex items-center gap-1.5 mb-1"><h3 class="font-bold text-indigo-900">Gestiones por estado${periodoTip('estadoTabla')}</h3></div><p class="text-xs text-slate-600 mb-2"><strong>Leads únicos</strong> cuenta personas distintas. <strong>Total de gestiones</strong> suma todos los intentos. Un mismo lead puede repetirse en varios estados, por eso la columna de leads únicos no se debe sumar.</p><table class="w-full text-sm"><thead><tr><th scope="col" class="text-left py-1 font-normal">Estado</th><th scope="col" class="text-right py-1 font-normal">Leads únicos${periodoTip('leadsUnicos')}</th><th scope="col" class="text-right py-1 font-normal">Total de gestiones${periodoTip('totalGestiones')}</th></tr></thead><tbody>${porEstadoOrdenado.map(r => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(r.label)}</th><td class="text-right">${r.leads}</td><td class="text-right">${r.eventos}</td></tr>`).join('')}</tbody></table></section>` : '';
+      const porEstado = porEstadoOrdenado.length ? `<section class="period-card"><div class="flex items-center gap-1.5 mb-1"><h3 class="font-bold text-indigo-900">Gestiones por estado${periodoTip('estadoTabla')}</h3></div><p class="text-xs text-slate-600 mb-2"><strong>Leads únicos</strong> cuenta personas distintas. <strong>Total de gestiones</strong> suma todos los intentos. Un mismo lead puede repetirse en varios estados, por eso la columna de leads únicos no se debe sumar.</p><div class="overflow-x-auto"><table class="period-table period-state-table"><thead><tr><th scope="col">Estado</th><th scope="col">Leads únicos${periodoTip('leadsUnicos')}</th><th scope="col">Total de gestiones${periodoTip('totalGestiones')}</th></tr></thead><tbody>${porEstadoOrdenado.map(r => `<tr><th scope="row">${escapeHtml(r.label)}</th><td>${r.leads}</td><td>${r.eventos}</td></tr>`).join('')}</tbody></table></div></section>` : '';
       return `<div class="border-t-2 border-indigo-600 pt-3"><h2 class="text-lg font-bold text-indigo-900">Actividad realizada en el período${periodoTip('actividad')}</h2><p class="text-xs text-slate-500 mb-2">Gestiones por día trabajado y citas por fecha programada (Miami). Independiente de los cuadros de entrada.</p></div>`
         + `<div class="grid md:grid-cols-3 gap-4">`
         + table('Gestiones', row('Leads únicos gestionados', g.leads_unicos) + row('Pasados a Agendado', g.agendados_normales) + row('Pasados a Agendado Data Dura', g.agendados_data_dura) + row('Pasados a Inscrito', g.inscritos_normales) + row('Pasados a Inscrito Data Dura', g.inscritos_data_dura) + row('Total de gestiones', g.total_eventos), 'gestiones')
@@ -6821,11 +6839,11 @@ async function deleteLeadAppointment(id) {
     }
 
     function renderReportePeriodo(data) {
-      const table = (title, rows, tip) => `<section class="border border-slate-300 rounded p-3"><h2 class="font-bold text-indigo-900 mb-2">${title}${periodoTip(tip)}</h2><table class="w-full text-sm"><thead><tr><th scope="col" class="text-left">Categoría</th><th scope="col" class="text-right">Leads${periodoTip('leads')}</th><th scope="col" class="text-right">%${periodoTip('pct')}</th></tr></thead><tbody>${rows.map(r => `<tr class="border-b border-slate-100"><th scope="row" class="text-left py-1 font-normal">${escapeHtml(r.label)}</th><td class="text-right">${r.count}</td><td class="text-right">${periodoPct(r.count, data.total)}</td></tr>`).join('')}</tbody><tfoot><tr class="font-bold"><th scope="row" class="text-left py-2">TOTAL</th><td class="text-right">${data.total}</td><td class="text-right">${periodoPct(data.total, data.total)}</td></tr></tbody></table></section>`;
+      const table = (title, rows, tip) => `<section class="period-card"><h2 class="font-bold text-indigo-900 mb-2">${title}${periodoTip(tip)}</h2><div class="overflow-x-auto"><table class="period-table period-summary-table"><thead><tr><th scope="col">Categoría</th><th scope="col">Leads${periodoTip('leads')}</th><th scope="col">%${periodoTip('pct')}</th></tr></thead><tbody>${rows.map(r => `<tr><th scope="row">${escapeHtml(r.label)}</th><td>${r.count}</td><td>${periodoPct(r.count, data.total)}</td></tr>`).join('')}</tbody><tfoot><tr><th scope="row">TOTAL</th><td>${data.total}</td><td>${periodoPct(data.total, data.total)}</td></tr></tfoot></table></div></section>`;
       const m = data.matriz;
-      const cells = counts => counts.map(n => `<td class="px-3 py-2 text-center tabular-nums border-b border-slate-200">${n}</td>`).join('');
-      const sticky = 'sticky left-0 bg-white border-r border-slate-300 px-3 py-2 text-left';
-      return `<div class="grid md:grid-cols-2 gap-4">${table('Resumen general de leads por entrada (Medio)', data.medios, 'medios')}${table('Resumen general de campañas', data.campanas, 'campanas')}</div>${table('Resumen específico de gestión actual', data.gestiones, 'gestionActual')}<section class="border border-slate-300 rounded p-3"><h2 class="font-bold text-indigo-900 mb-2">Matriz gestión actual × campaña${periodoTip('matriz')}</h2><div class="overflow-x-auto" tabindex="0" role="region" aria-label="Matriz gestión por campaña, desplazable"><table class="min-w-full text-sm"><thead><tr><th scope="col" class="${sticky}">Gestión</th>${m.campanas.map(label => `<th scope="col" class="px-3 py-2 text-center whitespace-nowrap">${escapeHtml(label)}</th>`).join('')}<th scope="col" class="px-3 py-2 text-center">Total</th></tr></thead><tbody>${m.filas.map(r => `<tr><th scope="row" class="${sticky} font-normal whitespace-nowrap">${escapeHtml(r.label)}</th>${cells(r.counts)}<td class="px-3 py-2 text-center tabular-nums font-bold">${r.total}</td></tr>`).join('')}</tbody><tfoot><tr class="font-bold"><th scope="row" class="${sticky}">TOTAL</th>${cells(m.totales_columnas)}<td class="px-3 py-2 text-center tabular-nums">${data.total}</td></tr></tfoot></table></div></section>`;
+      const cells = counts => counts.map(n => `<td>${n}</td>`).join('');
+      const sticky = 'sticky left-0 border-r border-slate-300 whitespace-nowrap';
+      return `<div class="grid md:grid-cols-2 gap-4">${table('Resumen general de leads por entrada (Medio)', data.medios, 'medios')}${table('Resumen general de campañas', data.campanas, 'campanas')}</div>${table('Resumen específico de gestión actual', data.gestiones, 'gestionActual')}<section class="period-card"><h2 class="font-bold text-indigo-900 mb-2">Matriz gestión actual × campaña${periodoTip('matriz')}</h2><div class="overflow-x-auto" tabindex="0" role="region" aria-label="Matriz gestión por campaña, desplazable"><table class="period-table period-matrix min-w-full"><thead><tr><th scope="col" class="${sticky}">Gestión</th>${m.campanas.map(label => `<th scope="col" class="whitespace-nowrap">${escapeHtml(label)}</th>`).join('')}<th scope="col">Total</th></tr></thead><tbody>${m.filas.map(r => `<tr><th scope="row" class="${sticky}">${escapeHtml(r.label)}</th>${cells(r.counts)}<td class="font-bold">${r.total}</td></tr>`).join('')}</tbody><tfoot><tr><th scope="row" class="${sticky}">TOTAL</th>${cells(m.totales_columnas)}<td>${data.total}</td></tr></tfoot></table></div></section>`;
     }
 
     function exportReportePeriodoCSV() {

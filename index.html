@@ -439,7 +439,16 @@
     [data-theme="dark"] .catalog-row-actions button { color: #cbd5e1; border-color: #475569; }
     @media (max-width: 639px) { #reporteAuto .daily-summary, #reporteAuto .daily-advisor-body { padding: 1rem; } }
     @media (max-width: 639px) { #modalHelp { padding: .5rem; } .help-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; } .help-header, .help-searchbar, .help-body, .help-footer { padding: 1rem; } .help-footer p { display: none; } .help-footer button { width: 100%; } }
-    @media (max-width: 639px) { #panelAdminUsers { padding: .5rem; } .users-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; } .users-header, .users-body { padding: 1rem; } .users-section { padding: 1rem; } .users-row-actions { width: 100%; } }
+    @media (max-width: 639px) {
+      #panelAdminUsers { padding: .5rem; }
+      .users-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; }
+      .users-header, .users-body, .users-section { padding: 1rem; }
+      .users-header > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
+      .users-body input, .users-body select { width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
+      #formAuthorizeUser button[type="submit"] { width: 100%; min-height: 2.75rem; }
+      .users-row-actions { width: 100%; }
+      .users-row-actions button { min-height: 2.5rem; padding: .5rem .7rem; }
+    }
     @media (max-width: 639px) { #modalCatalogs { padding: .5rem; } .catalog-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; } .catalog-header, .catalog-body, .catalog-section { padding: 1rem; } }
     @media (max-width: 639px) {
       #reportePeriodo .period-card { padding: .85rem; }

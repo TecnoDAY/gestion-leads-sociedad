@@ -469,6 +469,10 @@
       #formNewLead textarea { min-height: 6rem; }
       #formNewLead .lead-form-footer button { min-height: 2.75rem; }
       #modalNewLead .lead-form-header > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
+      #formEditLead input:not([type="radio"]):not([type="hidden"]), #formEditLead select, #formEditLead textarea { min-height: 2.75rem; font-size: 1rem; }
+      #formEditLead textarea { min-height: 6rem; }
+      #formEditLead .lead-form-footer button { min-height: 2.75rem; }
+      #modalEditLead .lead-form-header > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
       .appointments-intro { padding: 1.15rem; }
       .appointments-filters { padding: 1rem; }
       .campaigns-intro, .campaigns-controls { padding: 1rem; }
@@ -1928,8 +1932,8 @@
           </div>
 
            <!-- OBSERVACIONES -->
-           <div><label class="block font-medium text-slate-300 mb-1">Nombre</label><input id="editNombre" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"></div>
-           <div><label class="block font-medium text-slate-300 mb-1">Teléfono / WhatsApp</label><input id="editTelefono" type="text" onblur="this.value=formatPhone(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500" placeholder="Ej: 1 (786) 555-1234"></div>
+           <div><label class="block font-medium text-slate-300 mb-1">Nombre</label><input id="editNombre" type="text" autocomplete="name" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"></div>
+           <div><label class="block font-medium text-slate-300 mb-1">Teléfono / WhatsApp</label><input id="editTelefono" type="text" inputmode="tel" autocomplete="tel" onblur="this.value=formatPhone(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500" placeholder="Ej: 1 (786) 555-1234"></div>
            <div class="sm:col-span-2">
             <label class="block font-medium text-slate-300 mb-1">Historial de Observaciones & Notas</label>
             <textarea id="editObservaciones" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono text-xs"></textarea>

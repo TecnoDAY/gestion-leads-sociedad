@@ -714,9 +714,9 @@
       .appointments-table tbody td:nth-child(8)::before { content: 'Campaña'; }
       .appointments-table tbody td:nth-child(9)::before { content: 'Mes origen'; }
       .appointments-table tbody td:nth-child(10)::before { content: 'Resultado'; }
-      .appointments-table tbody td:nth-child(1), .appointments-table tbody td:nth-child(2), .appointments-table tbody td:nth-child(11), .appointments-table tbody td[colspan] { grid-column: 1 / -1; }
-      .appointments-table tbody td:nth-child(11) { display: flex; flex-wrap: wrap; gap: .5rem; padding-top: .7rem; border-top: 1px solid #e4e7ec; }
-      .appointments-table tbody td:nth-child(11) button { min-height: 2.5rem; padding: .45rem .7rem; border: 1px solid #c7d2fe; border-radius: .55rem; }
+      .appointments-table tbody td:nth-child(1), .appointments-table tbody td:nth-child(2), .appointments-table tbody td:nth-child(4), .appointments-table tbody td:nth-child(11), .appointments-table tbody td[colspan] { grid-column: 1 / -1; }
+      .appointments-table tbody td:nth-child(11) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; padding-top: .7rem; border-top: 1px solid #e4e7ec; }
+      .appointments-table tbody td:nth-child(11) button { width: 100%; min-height: 2.75rem; padding: .45rem .7rem; border: 1px solid #c7d2fe; border-radius: .55rem; }
       .appointments-table tbody td[colspan]::before { content: none; }
       [data-theme="dark"] .appointments-table tbody tr { background: #263348; border-color: #475569; }
       [data-theme="dark"] .appointments-table tbody td::before { color: #94a3b8; }

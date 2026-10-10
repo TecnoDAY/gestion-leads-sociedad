@@ -1614,6 +1614,7 @@
         <button type="button" onclick="exportCampanasCSV()" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-700 text-white text-xs font-semibold hover:bg-indigo-600 cursor-pointer"><i data-lucide="download" class="w-4 h-4"></i> Descargar CSV</button>
       </div>
       <p id="campanasAviso" class="text-sm text-amber-300"></p>
+      <p id="campanasLoadingStatus" role="status" class="text-sm text-slate-500" aria-live="polite"></p>
       <div id="campanasSummary" class="campaigns-summary hidden grid grid-cols-2 lg:grid-cols-4 gap-3" aria-live="polite"></div>
       <div class="campaigns-table">
         <table class="w-full min-w-[1100px] text-xs">
@@ -2376,6 +2377,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (campaignMesSel) campaignMesSel.value = '';
       document.getElementById('campanasTableBody')?.replaceChildren();
       document.getElementById('campanasAviso')?.replaceChildren();
+      document.getElementById('campanasLoadingStatus')?.replaceChildren();
       document.getElementById('campanasSummary')?.replaceChildren();
       document.getElementById('campanasSummary')?.classList.add('hidden');
       currentMainTab = 'dashboard';
@@ -7489,6 +7491,8 @@ async function deleteLeadAppointment(id) {
       const mesNombre = MONTH_CHRONO[m - 1];
       const generation = sessionGeneration, token = ++campanasRequestGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at;
       campanasLoading = true; campanasContextMonth = monthStr;
+      const loadingStatus = document.getElementById('campanasLoadingStatus');
+      if (loadingStatus) loadingStatus.textContent = 'Cargando campañas…';
       const valid = () => token === campanasRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'campanas' && document.getElementById('campaignMesSel')?.value === monthStr;
       const [rollupRes, statsRes] = await Promise.allSettled([
         // RPC escalar JSONB: devuelve el agregado completo, no filas truncables.
@@ -7496,6 +7500,7 @@ async function deleteLeadAppointment(id) {
         fetchPagedResult(() => supabaseClient.from('campaign_stats').select('*').eq('anio', y).eq('mes', mesNombre))
       ]);
       if (!valid()) return;
+      if (loadingStatus) loadingStatus.textContent = '';
       const aviso = document.getElementById('campanasAviso');
       const failed = [rollupRes, statsRes].find(r => r.status === 'rejected' || r.value?.error);
       if (failed) {

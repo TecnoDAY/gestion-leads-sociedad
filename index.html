@@ -544,8 +544,19 @@
       #editAppointmentFields > label, #editAppointmentAdvisorWrap, #editAppointmentFields input:not([type="radio"]), #editAppointmentFields select, #editAppointmentFields textarea { width: 100%; min-width: 0; }
       .appointments-intro { padding: 1.15rem; }
       .appointments-filters { padding: 1rem; }
+      .appointments-filters > div:first-child { align-items: stretch; }
+      .appointments-filters > div:first-child > div { min-width: 0; }
+      .appointments-filters > div:first-child > button { width: 100%; min-height: 2.75rem; }
+      .appointments-filters input, .appointments-filters select { min-width: 0; min-height: 2.75rem; font-size: 1rem; }
       .campaigns-intro, .campaigns-controls { padding: 1rem; }
+      .campaigns-controls { display: grid; grid-template-columns: minmax(0, 1fr); }
+      .campaigns-controls > div, .campaigns-controls input, .campaigns-controls > button { width: 100%; min-width: 0; }
+      .campaigns-controls input { min-height: 2.75rem; font-size: 1rem; }
+      .campaigns-controls > button { min-height: 2.75rem; justify-content: center; }
+      .campaigns-table tbody input, .campaigns-table tbody select { width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
       .historical-intro, .historical-filters { padding: 1rem; }
+      .historical-filter-grid label { min-width: 0; }
+      .historical-filters select, .historical-filters input { width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
       .report-intro, .report-viewbar, .report-controls, .report-content-card { padding: 1rem; }
     }
     @media (min-width: 1100px) {
@@ -589,6 +600,7 @@
       #reporteDiario .daily-controls { display: grid; grid-template-columns: minmax(0, 1fr); }
       #reporteDiario .daily-filter-grid { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; }
       #reporteDiario .daily-filter-grid label, #reporteDiario .daily-filter-grid input, #reporteDiario .daily-filter-grid select { display: block; width: 100%; min-width: 0; }
+      #reporteDiario .report-controls input, #reporteDiario .report-controls select, #reporteDiario .report-viewbar select, #reportePeriodo .period-controls input { min-height: 2.75rem; font-size: 1rem; }
       #reporteDiario .daily-controls > button { width: 100%; min-height: 2.75rem; justify-content: center; }
       .leads-pagination { align-items: stretch; text-align: center; }
       #paginationControls { width: 100%; justify-content: space-between; }
@@ -597,7 +609,8 @@
       #paginationControls .pagination-mobile-label { display: inline-flex; align-items: center; font-weight: 700; color: #a5b4fc; }
       .dashboard-filters-header { align-items: flex-start; flex-wrap: wrap; gap: .75rem; }
       .dashboard-filters-header > button { min-height: 2.5rem; padding: .45rem .7rem; border: 1px solid #c7d2fe; border-radius: .55rem; }
-      .dashboard-filter-grid input, .dashboard-filter-grid select, .dashboard-filter-extra select { min-height: 2.6rem; }
+      .dashboard-filter-grid > div, .dashboard-filter-extra > div { min-width: 0; }
+      .dashboard-filter-grid input, .dashboard-filter-grid select, .dashboard-filter-extra select, .dashboard-date-fields input { min-width: 0; min-height: 2.75rem; font-size: 1rem; }
       .dashboard-date-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
       .dashboard-date-fields > div { display: block; min-width: 0; }
       .dashboard-date-fields input { display: block; width: 100%; min-width: 0; margin-top: .25rem; }
@@ -677,8 +690,8 @@
       .campaigns-table tbody td:nth-child(1) { font-weight: 700; font-size: .875rem; }
       .campaigns-table tbody td:nth-child(13) { display: flex; flex-wrap: wrap; gap: .5rem; padding-top: .7rem; border-top: 1px solid #e4e7ec; }
       .campaigns-table tbody td:nth-child(13):empty { display: none; }
-      .campaigns-table tbody td:nth-child(13) button { min-height: 2.5rem; padding: .5rem .8rem; }
-      .campaigns-table tbody input, .campaigns-table tbody select { max-width: 100%; min-height: 2.5rem; }
+      .campaigns-table tbody td:nth-child(13) button { min-height: 2.75rem; padding: .5rem .8rem; }
+      .campaigns-table tbody input, .campaigns-table tbody select { max-width: 100%; min-height: 2.75rem; }
       .campaigns-table tbody td[colspan]::before { content: none; }
       [data-theme="dark"] .campaigns-table tbody tr { background: #263348; border-color: #475569; }
       [data-theme="dark"] .campaigns-table tbody .campaigns-total-row { background: #252449; border-color: #818cf8; }

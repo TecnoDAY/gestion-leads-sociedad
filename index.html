@@ -262,6 +262,30 @@
     .appointments-table th { white-space: nowrap; background: #f1f5f9; color: #475569; font-size: .67rem; text-transform: uppercase; letter-spacing: .04em; }
     .appointments-table tbody tr:hover { background: #f8faff; }
     .appointments-table tbody td { color: #17203b; vertical-align: top; }
+    @media (max-width: 639px) {
+      .appointments-table table, .appointments-table tbody, .appointments-table tr { display: block; min-width: 0; width: 100%; }
+      .appointments-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+      .appointments-table tbody tr { margin: .75rem; padding: .4rem .85rem; border: 1px solid #cbd5e1; border-radius: .85rem; background: #fff; box-shadow: 0 6px 18px -16px #0f172a; }
+      .appointments-table tbody td { display: grid; grid-template-columns: minmax(6.5rem, 38%) minmax(0, 1fr); gap: .6rem; padding: .55rem 0; border-bottom: 1px solid #e2e8f0; overflow-wrap: anywhere; }
+      .appointments-table tbody td:last-child { border-bottom: 0; }
+      .appointments-table tbody td::before { color: #475569; font-size: .68rem; font-weight: 700; text-transform: uppercase; }
+      .appointments-table tbody td:nth-child(1)::before { content: 'Visita / creada'; }
+      .appointments-table tbody td:nth-child(2)::before { content: 'Lead'; }
+      .appointments-table tbody td:nth-child(3)::before { content: 'Estudiante'; }
+      .appointments-table tbody td:nth-child(4)::before { content: 'Correo'; }
+      .appointments-table tbody td:nth-child(5)::before { content: 'Edad'; }
+      .appointments-table tbody td:nth-child(6)::before { content: 'Sede'; }
+      .appointments-table tbody td:nth-child(7)::before { content: 'Asesor'; }
+      .appointments-table tbody td:nth-child(8)::before { content: 'Campaña'; }
+      .appointments-table tbody td:nth-child(9)::before { content: 'Mes origen'; }
+      .appointments-table tbody td:nth-child(10)::before { content: 'Resultado'; }
+      .appointments-table tbody td:nth-child(11)::before { content: 'Acciones'; }
+      .appointments-table tbody td[colspan] { display: block; }
+      .appointments-table tbody td[colspan]::before { content: none; }
+      [data-theme="dark"] .appointments-table tbody tr { background: #1e293b; border-color: #475569; }
+      [data-theme="dark"] .appointments-table tbody td { border-color: #334155; }
+      [data-theme="dark"] .appointments-table tbody td::before { color: #cbd5e1; }
+    }
     .appointments-table .appointments-empty { padding: 1.5rem; text-align: center; color: #475569; }
     .appointments-table .appointments-loading { padding: 1.5rem; text-align: center; color: #475569; }
     .appointments-table .appointments-error { padding: 1.5rem; text-align: center; color: #9f1239; }
@@ -1165,7 +1189,7 @@
 
         <!-- Filtro Gestión -->
         <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">Gestión / Estatus</label>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Estatus actual del lead</label>
           <select id="filterGestion" onchange="applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
             <option value="">Todas las gestiones</option>
           </select>
@@ -1201,6 +1225,7 @@
             <span id="dashRangeScope" class="text-[11px] text-indigo-300 font-semibold hidden"></span>
             <div id="dashRangeError" class="text-[11px] text-amber-400 hidden"></div>
           </div>
+          <p class="mt-1 text-[11px] text-slate-500">El rango busca leads gestionados en esas fechas; «Estatus actual» muestra cómo están hoy. Las citas creadas por día se consultan en el reporte diario.</p>
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-400 mb-1">Asesora</label>
@@ -1693,7 +1718,7 @@
         <div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> Agenda del equipo</span><h2 class="mt-3 text-2xl font-bold text-white">Citas</h2><p class="mt-1 text-sm text-slate-400">Consulta las visitas programadas y sus resultados.</p><p id="citasCount" class="mt-2 text-xs font-semibold text-indigo-400">0 citas</p></div>
       </div>
       <div class="appointments-filters space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2"><div><h3 class="font-bold text-white text-sm">Filtrar citas</h3><p class="text-xs text-slate-400">Ajusta fechas, sede y origen para encontrar una visita.</p></div><button type="button" onclick="resetCitasFilters()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer">Limpiar filtros</button></div>
+        <div class="flex flex-wrap items-center justify-between gap-2"><div><h3 class="font-bold text-white text-sm">Filtrar citas</h3><p class="text-xs text-slate-400">Ajusta fechas, sede y origen para encontrar una visita.</p></div><div class="flex flex-wrap gap-2"><button type="button" onclick="loadCitas()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer">Actualizar citas</button><button type="button" onclick="resetCitasFilters()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer">Limpiar filtros</button></div></div>
         <div class="grid grid-cols-1 min-[400px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs"><label>Desde<input id="citasDesde" type="date" class="w-full mt-1"></label><label>Hasta<input id="citasHasta" type="date" class="w-full mt-1"></label><label>Resultado<select id="citasResultado" class="w-full mt-1"><option value="">Todos</option><option value="ASISTIO">Asistió</option><option value="CANCELADA">Cancelada</option><option value="NO_ASISTIO">No asistió</option><option value="PROGRAMADA">Programada</option><option value="REPROGRAMADA">Reprogramada</option></select></label><label>Sede<select id="citasSede" class="w-full mt-1"><option value="">Todas</option><option value="DORAL">Doral</option><option value="sin">Sin sede</option><option value="WESTON">Weston</option></select></label><label>Campaña<select id="citasCampana" class="w-full mt-1"></select></label><label>Medio<select id="citasMedio" class="w-full mt-1"></select></label><label id="citasAsesorWrap" class="hidden">Asesor<select id="citasAsesor" class="w-full mt-1"></select></label></div>
       </div>
       <div id="citasKpis" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2"></div>
@@ -3278,7 +3303,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // Hoy en Miami (YYYY-MM-DD): el navegador no decide "hoy", lo hace Intl con la zona del reporte.
     function miamiToday() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date()); }
     // Rango [startISO, endISO] del día Miami de una fecha: inicio = 00:00 Miami,
-    // fin = 12:00 Miami del día siguiente. Sondea offsets -05:00/-04:00 y
+    // fin = 00:00 Miami del día siguiente. Sondea offsets -05:00/-04:00 y
     // verifica con Intl la hora Miami de cada instante; [null, null] si ninguna cuadra.
     function miamiDayBounds(fecha) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha || '')) return [null, null];
@@ -3308,7 +3333,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const desde = document.getElementById('citasDesde').value, hasta = document.getElementById('citasHasta').value;
       if (!desde || !hasta || desde > hasta) { clearCitasResults(); showToast('Rango de fechas no válido', 'warning'); return; }
       const key = desde + '|' + hasta, generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at, token = ++citasRequestGeneration;
-      if (key === citasRangeKey && citasCache.length) return renderCitas();
+      // Consultar de nuevo al entrar en Citas: otros usuarios pueden haber cambiado
+      // la agenda aunque Realtime no esté habilitado para lead_appointments.
       const tableBody = document.getElementById('citasTableBody');
       const showLoadError = message => {
         clearCitasResults();
@@ -3316,10 +3342,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         if (tableBody) tableBody.innerHTML = '<tr><td colspan="11" class="appointments-error" role="alert"><p class="text-sm font-semibold">No se pudieron cargar las citas.</p><button type="button" onclick="loadCitas()">Reintentar</button></td></tr>';
       };
       if (tableBody) { tableBody.setAttribute?.('aria-busy', 'true'); tableBody.innerHTML = '<tr><td colspan="11" class="appointments-loading" role="status">Cargando citas…</td></tr>'; }
-      const fromParts = desde.split('-').map(Number), untilParts = hasta.split('-').map(Number);
-      const start = new Date(fromParts[0], fromParts[1] - 1, fromParts[2]), end = new Date(untilParts[0], untilParts[1] - 1, untilParts[2] + 1);
+      const [startISO] = miamiDayBounds(desde), [, endISO] = miamiDayBounds(hasta);
+      if (!startISO || !endISO) return showLoadError('El rango de fechas de Miami no es válido.');
       const valid = () => token === citasRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentMainTab === 'citas' && document.getElementById('citasDesde')?.value + '|' + document.getElementById('citasHasta')?.value === key;
-      const { data, error } = await fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id,lead_id,scheduled_at,created_at,status,advisor_name,advisor_user_id,student_name,contact_email,student_age,campus,is_data_dura').gte('scheduled_at', start.toISOString()).lt('scheduled_at', end.toISOString()));
+      const { data, error } = await fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id,lead_id,scheduled_at,created_at,status,advisor_name,advisor_user_id,student_name,contact_email,student_age,campus,is_data_dura').gte('scheduled_at', startISO).lt('scheduled_at', endISO));
       if (!valid()) return;
       if (error) return showLoadError('No se pudo cargar citas. Verifica que la migración esté aplicada.');
       const rows = (data || []).sort((a, b) => String(b.scheduled_at).localeCompare(String(a.scheduled_at)) || Number(b.id) - Number(a.id));
@@ -4170,6 +4196,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
               console.log("Cambio en tiempo real recibido de Supabase:", payload);
               handleRealtimeEvent(payload);
             })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_appointments' }, () => {
+              invalidateCitasCache();
+              if (currentMainTab === 'citas') loadCitas();
+            })
             .subscribe(status => {
               console.log("Estado de suscripción Realtime:", status);
               if (status === 'SUBSCRIBED') {
@@ -4201,6 +4231,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       applyFilters();
       updateLeadScopeControls();
     }
+
+    // Revalidar la agenda al volver a la pestaña, incluso si la tabla de citas
+    // no está incluida en la publicación Realtime del proyecto Supabase.
+    window.addEventListener('focus', () => {
+      if (currentMainTab !== 'citas' || !currentUser || !currentAccess?.activo) return;
+      invalidateCitasCache();
+      loadCitas();
+    });
 
     function scheduleExactLeadCountRefresh() {
       clearTimeout(exactCountRefreshTimer);
@@ -6293,9 +6331,9 @@ async function deleteLeadAppointment(id) {
           'Pulsa "Descargar CSV" para exportar el día: resumen por asesora, total y comentarios.'
         ],
         notes: [
-          'Citas creadas hoy cuenta la fecha de creación en Miami, sin importar para cuándo se programó la visita. El calendario de Citas muestra la fecha programada.',
+          'Citas nuevas cuenta la fecha de creación en Miami y excluye las creadas por reprogramación; estas se muestran por separado. El calendario muestra la fecha de la visita.',
           'El agendamiento se atribuye a quien creó la cita; la asesora asignada para atenderla aparece en el calendario.',
-          'Visitas, No asistieron, Canceladas y Reprogramadas cuentan el día en que se registró el resultado. Las citas Data Dura se separan por su marca guardada.',
+          'Citas reprogramadas hoy cuenta las nuevas fechas registradas hoy; Reprogramadas indica cuándo se marcó la cita anterior con ese resultado. Visitas, No asistieron y Canceladas cuentan el día en que se registró el resultado.',
           'Llamada WhatsApp cuenta una sola vez, dentro del total de llamadas, y es una categoría distinta de Llamada.',
           'Los Inscritos Data Dura son los leads inscritos cuyo Mes de origen es distinto del mes actual.',
           'Al guardar en un bloque ajeno, administración escribe en nombre de la asesora y el bloque sigue siendo de ella.'
@@ -7675,15 +7713,15 @@ async function deleteLeadAppointment(id) {
       for (const n of notas) (n.autor_user_id ? byUid : byName).set(n.autor_user_id || n.autor_name, n);
       const noteOf = b => (b.autor_user_id && byUid.get(b.autor_user_id)) || byName.get(b.autor_name) || null;
       const num = (o, k) => Number(o?.[k]) || 0;
-       const total = bloques.reduce((a, b) => { a.g += num(b,'gestionados'); a.l += Number(b.llamadas?.total) || 0; a.c += Number(b.citas?.total_agendados) || 0; a.v += Number(b.citas?.visitas) || 0; return a; }, {g:0,l:0,c:0,v:0});
+       const total = bloques.reduce((a, b) => { a.g += num(b,'gestionados'); a.l += Number(b.llamadas?.total) || 0; a.c += Number(b.citas?.total_agendados) || 0; a.r += Number(b.citas?.citas_reprogramadas_hoy) || 0; a.v += Number(b.citas?.visitas) || 0; return a; }, {g:0,l:0,c:0,r:0,v:0});
       const cell = (label, value) => `<div class="daily-metric"><div class="text-xs text-slate-500">${label}</div><strong class="text-lg text-indigo-900">${value}</strong></div>`;
       const table = (title, rows) => `<div class="daily-detail-card"><h5 class="font-semibold text-indigo-900">${title}</h5><table class="text-sm"><tbody>${rows.map(([l,v]) => `<tr><td>${l}</td><td class="font-semibold">${v}</td></tr>`).join('')}</tbody></table></div>`;
       const blocks = bloques.map((b, i) => { const p=b.procedencia||{}, l=b.llamadas||{}, c=b.citas||{}, ins=b.inscritos||{}, note=noteOf(b); const pt=Object.values(p).reduce((a,v)=>a+(Number(v)||0),0); const own = b.autor_user_id ? b.autor_user_id === currentUser?.id : b.autor_name === currentAccess?.nombre; const editable=notasOk && ((isAdmin && Boolean(b.autor_user_id)) || (own && document.getElementById('reporteFecha')?.value===miamiToday()));
         const manual=editable ? `<label for="reporte-problemas-${i}" class="block text-xs font-semibold text-slate-600">Problemas</label><textarea id="reporte-problemas-${i}" class="reporte-manual w-full p-2" rows="3" maxlength="5000">${escapeHtml(note?.problemas||'')}</textarea><label for="reporte-obs-${i}" class="block text-xs font-semibold text-slate-600">Observaciones</label><textarea id="reporte-obs-${i}" class="reporte-manual w-full p-2" rows="3" maxlength="5000">${escapeHtml(note?.observaciones||'')}</textarea><div class="daily-note-actions flex flex-wrap gap-2"><button id="reporte-save-${i}" onclick="saveReporteNota(${i})" class="px-3 py-1 bg-indigo-600 text-white">Guardar</button>${note?.id ? '<button id="reporte-delete-'+i+'" onclick="deleteReporteNota('+i+')" class="px-3 py-1 border border-slate-300">Eliminar</button>' : ''}</div>` : `<p class="text-sm">${escapeHtml(note?.problemas||'')} ${escapeHtml(note?.observaciones||'')}</p>`;
-       const detailTables = table('Procedencia', [['WhatsApp',num(p,'WhatsApp')],['Facebook/Instagram',num(p,'Facebook/Instagram')],['Directo o Referido',num(p,'Directo o Referido')],['Total',pt]]) + table('Canales', [['Llamada',num(b.canales,'llamada')],['Llamada Data Dura',num(b.canales,'data_dura')],['Llamada y WhatsApp',num(b.canales,'llamada_whatsapp')],['WhatsApp',num(b.canales,'whatsapp')],['Instagram',num(b.canales,'instagram')],['Total',num(b.canales,'llamada')+num(b.canales,'data_dura')+num(b.canales,'llamada_whatsapp')+num(b.canales,'whatsapp')+num(b.canales,'instagram')]]) + table('Detalle WhatsApp', [['WhatsApp nuevos hoy',num(b.whatsapp,'nuevos')],['WhatsApp gestionados hoy',num(b.whatsapp,'gestionados')],['Total WhatsApp',num(b.whatsapp,'total')]]) + table('Citas creadas y resultados registrados hoy', [['Leads pasados a Agendado',num(c,'agendados_gestionados_dia')],['Leads pasados a Agendado Data Dura',num(c,'agendados_gestionados_data_dura')],['Citas creadas Doral',num(c,'agendados_doral')],['Citas creadas Data Dura Doral',num(c,'agendados_doral_data_dura')],['Citas creadas Weston',num(c,'agendados_weston')],['Citas creadas Data Dura Weston',num(c,'agendados_weston_data_dura')],['Citas creadas hoy',num(c,'total_agendados')],['Visitas registradas',num(c,'visitas')],['No asistieron',num(c,'no_asistieron')],['Canceladas',num(c,'canceladas')],['Reprogramadas',num(c,'reprogramadas')]]);
+       const detailTables = table('Procedencia', [['WhatsApp',num(p,'WhatsApp')],['Facebook/Instagram',num(p,'Facebook/Instagram')],['Directo o Referido',num(p,'Directo o Referido')],['Total',pt]]) + table('Canales', [['Llamada',num(b.canales,'llamada')],['Llamada Data Dura',num(b.canales,'data_dura')],['Llamada y WhatsApp',num(b.canales,'llamada_whatsapp')],['WhatsApp',num(b.canales,'whatsapp')],['Instagram',num(b.canales,'instagram')],['Total',num(b.canales,'llamada')+num(b.canales,'data_dura')+num(b.canales,'llamada_whatsapp')+num(b.canales,'whatsapp')+num(b.canales,'instagram')]]) + table('Detalle WhatsApp', [['WhatsApp nuevos hoy',num(b.whatsapp,'nuevos')],['WhatsApp gestionados hoy',num(b.whatsapp,'gestionados')],['Total WhatsApp',num(b.whatsapp,'total')]]) + table('Citas creadas y resultados registrados hoy', [['Leads pasados a Agendado',num(c,'agendados_gestionados_dia')],['Leads pasados a Agendado Data Dura',num(c,'agendados_gestionados_data_dura')],['Citas nuevas Doral',num(c,'agendados_doral')],['Citas nuevas Data Dura Doral',num(c,'agendados_doral_data_dura')],['Citas nuevas Weston',num(c,'agendados_weston')],['Citas nuevas Data Dura Weston',num(c,'agendados_weston_data_dura')],['Citas nuevas hoy',num(c,'total_agendados')],['Citas reprogramadas hoy',num(c,'citas_reprogramadas_hoy')],['Visitas registradas',num(c,'visitas')],['No asistieron',num(c,'no_asistieron')],['Canceladas',num(c,'canceladas')],['Reprogramadas',num(c,'reprogramadas')]]);
          return `<details class="daily-advisor" ${i?'':'open'}><summary class="cursor-pointer font-bold text-indigo-900">${escapeHtml(b.autor_name||b.advisor||'Sin asesora')} — ${num(b,'gestionados')} gestiones</summary><div class="daily-advisor-body"><div class="grid md:grid-cols-2 xl:grid-cols-4 gap-3">${detailTables}</div><div class="mt-4 space-y-2"><h4 class="text-sm font-semibold text-slate-700">Problemas y observaciones</h4>${manual}</div></div></details>`;
       }).join('');
-      return `${notasOk ? '' : '<div class="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">No se pudieron cargar las notas guardadas. La edicion esta desactivada para no sobrescribir datos: recarga la pagina o intentalo mas tarde.</div>'}<section class="daily-summary space-y-3"><h3 class="font-bold text-lg text-indigo-900">Resumen general</h3><div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${cell('Gestiones realizadas',total.g)}${cell('Total llamadas',total.l)}${cell('Citas creadas hoy',total.c)}${cell('Visitas registradas',total.v)}</div></section><section class="space-y-3"><h3 class="font-bold text-lg text-indigo-900">Comparativa por asesora</h3>${blocks||'<p class="text-slate-500">Sin gestiones para esta fecha.</p>'}</section>`;
+      return `${notasOk ? '' : '<div class="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">No se pudieron cargar las notas guardadas. La edicion esta desactivada para no sobrescribir datos: recarga la pagina o intentalo mas tarde.</div>'}<section class="daily-summary space-y-3"><h3 class="font-bold text-lg text-indigo-900">Resumen general</h3><div class="grid grid-cols-2 sm:grid-cols-5 gap-3">${cell('Gestiones realizadas',total.g)}${cell('Total llamadas',total.l)}${cell('Citas nuevas hoy',total.c)}${cell('Reprogramadas hoy',total.r)}${cell('Visitas registradas',total.v)}</div></section><section class="space-y-3"><h3 class="font-bold text-lg text-indigo-900">Comparativa por asesora</h3>${blocks||'<p class="text-slate-500">Sin gestiones para esta fecha.</p>'}</section>`;
     }
 
     async function loadReporteDiario() {
@@ -7821,16 +7859,16 @@ async function deleteLeadAppointment(id) {
       // Solo exportar los datos que estan en pantalla: nunca una fecha/asesora
       // que todavia esta cargando o una carga que fallo.
       if (reporteLoadedKey !== `${fecha}|${asesoraSel}`) { showToast('El reporte esta cargando o los filtros cambiaron. Actualiza y espera a que termine de cargar', 'warning'); return; }
-      const headers = ['Asesora', 'Gestiones realizadas', 'WhatsApp', 'Facebook/Instagram', 'CogniTalking', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Citas creadas hoy', 'Citas creadas Data Dura', 'Citas creadas Doral', 'Citas creadas Data Dura Doral', 'Citas creadas Weston', 'Citas creadas Data Dura Weston', 'Total citas creadas', 'Visitas registradas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Pasados a Agendado hoy', 'Pasados a Agendado Data Dura hoy', 'WhatsApp nuevos hoy', 'WhatsApp gestionados hoy', 'Total WhatsApp', 'Canal Instagram', 'Total canales', 'Problemas', 'Observaciones'];
-      // Las 33 columnas numericas, en el orden exacto de `values`.
-      const keys = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosDoral', 'agendadosDoralDura', 'agendadosWeston', 'agendadosWestonDura', 'agendadosTotal', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'agendadosGestionadosDia', 'agendadosGestionadosDura', 'whatsappNuevos', 'whatsappGestionados', 'whatsappTotal', 'canalInstagram', 'canalesTotal'];
+      const headers = ['Asesora', 'Gestiones realizadas', 'WhatsApp', 'Facebook/Instagram', 'CogniTalking', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Citas nuevas hoy', 'Citas nuevas Data Dura', 'Citas nuevas Doral', 'Citas nuevas Data Dura Doral', 'Citas nuevas Weston', 'Citas nuevas Data Dura Weston', 'Total citas nuevas', 'Citas reprogramadas hoy', 'Visitas registradas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Pasados a Agendado hoy', 'Pasados a Agendado Data Dura hoy', 'WhatsApp nuevos hoy', 'WhatsApp gestionados hoy', 'Total WhatsApp', 'Canal Instagram', 'Total canales', 'Problemas', 'Observaciones'];
+      // Columnas numéricas en el orden exacto de `values`.
+      const keys = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosDoral', 'agendadosDoralDura', 'agendadosWeston', 'agendadosWestonDura', 'agendadosTotal', 'reprogramadasHoy', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'agendadosGestionadosDia', 'agendadosGestionadosDura', 'whatsappNuevos', 'whatsappGestionados', 'whatsappTotal', 'canalInstagram', 'canalesTotal'];
       const sumas = Object.fromEntries(keys.map(k => [k, 0]));
       const selected = document.getElementById('reporteAsesora');
       const filtro = selected?.value ? (selected.options[selected.selectedIndex]?.textContent || '') : '';
       const lineas = ['Reporte Diario de Trabajo', `Fecha: ${fecha}`, `Generado: ${miamiToday()} Miami`, ...(filtro ? [`Filtro: ${filtro}`] : []), '', headers.map(csvReporteField).join(',')];
       reporteDayData.forEach((b, i) => {
         const p = b.procedencia || {}, l = b.llamadas || {}, c = b.citas || {};
-        const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, l.total, c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, (b.whatsapp||{}).nuevos, (b.whatsapp||{}).gestionados, (b.whatsapp||{}).total, (b.canales||{}).instagram, totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
+        const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, l.total, c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.citas_reprogramadas_hoy, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, (b.whatsapp||{}).nuevos, (b.whatsapp||{}).gestionados, (b.whatsapp||{}).total, (b.canales||{}).instagram, totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
         values.forEach((v, n) => { sumas[keys[n]] += v; });
         const notes = typeof reporteDayNotes === 'undefined' ? [] : reporteDayNotes;
         const uid = b.autor_user_id || '';

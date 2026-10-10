@@ -28,7 +28,7 @@ const names = [
   'getField', 'compareLeadIdsDescending', 'consolidateLeadsById', 'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads', 'getHistoricalBaseLeads', 'updateKpis',
   'fetchRowsByIdCursor', 'fetchPagedResult', 'fetchRowsByIds', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'haveSameLeadIds',
   'performLoadOlderLeads', 'returnToRecentLeads', 'refillLoadedWindow', 'applyRealtimeEvent', 'updateCompleteCacheOnly', 'removeFromCompleteCacheOnly',
-  'loadCitas', 'clearCitasResults', 'validAppointmentId', 'appointmentSessionValid', 'loadLeadAppointments',
+  'miamiDayBounds', 'loadCitas', 'clearCitasResults', 'validAppointmentId', 'appointmentSessionValid', 'loadLeadAppointments',
   'loadLeadNotes', 'loadLeadGestiones', 'loadLeadsByGestionRange', 'loadLeadsByMonth', 'clearDashRange', 'applyFilters', 'resetAllFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
   'activeCatalogValues', 'catalogOptions', 'compareAlphaEs', 'sortAlphaEs', 'sortMonthCatalog', 'parseFechaLead', 'normalizeLeadMonth', 'leadReportDate', 'isInscritoDataDura',
   'histMonthKey', 'histMonthLabel', 'sortHistMonthKeys', 'normalizeGestion', 'groupGestionEstado', 'readHistRange',
@@ -771,6 +771,21 @@ test('Citas: >1000 citas y leads asociados, desempate por id, archivados y ausen
   assert.match(element('citasAviso').textContent, /1 cita\(s\) sin lead asociado/);
   assert.match(element('citasAviso').textContent, /archivado/);
   assert.ok(db.calls.filter(q => q.table === 'leads').length > 1);
+});
+
+test('Citas: el rango usa días de Miami incluso al cambiar el horario de verano', async () => {
+  const appointments = [
+    { id: 1, lead_id: 1, scheduled_at: '2026-03-08T04:59:59.000Z' },
+    { id: 2, lead_id: 1, scheduled_at: '2026-03-08T05:00:00.000Z' },
+    { id: 3, lead_id: 1, scheduled_at: '2026-03-09T03:59:59.000Z' },
+    { id: 4, lead_id: 1, scheduled_at: '2026-03-09T04:00:00.000Z' },
+  ];
+  const db = database({ leads: [{ id: 1 }], lead_appointments: appointments });
+  const { context: c, element } = frontend({ supabaseClient: db });
+  element('citasDesde').value = '2026-03-08'; element('citasHasta').value = '2026-03-08';
+  await c.loadCitas();
+  assert.deepEqual(Array.from(c.citasCache, r => r.id), [3, 2]);
+  assert.deepEqual(Array.from(c.miamiDayBounds('2026-03-08')), ['2026-03-08T05:00:00.000Z', '2026-03-09T04:00:00.000Z']);
 });
 
 for (const failJoin of [false, true]) test(`Citas: error ${failJoin ? 'al asociar leads' : 'segunda página'} muestra aviso sin parcial`, async () => {
@@ -1861,10 +1876,10 @@ function reportFixture(report, notes = []) {
 }
 const advisor = (name, id, n = 1) => ({ autor_name: name, autor_user_id: id, gestionados: n, llamadas: { total: n + 1 }, citas: { total_agendados: n + 2, visitas: n + 3 }, inscritos: { total: n + 4 }, procedencia: { Whatsapp: n } });
 
-test('reporte RPC usa la fecha y pinta los cuatro KPIs', async () => {
+test('reporte RPC usa la fecha y separa citas nuevas de reprogramadas', async () => {
   const f = reportFixture({ asesoras: [advisor('Ana', 'a', 2), advisor('Bea', 'b', 3)] }); await f.context.loadReporteDiario();
   assert.deepEqual(plain(f.db.rpcCalls[0]), { name: 'daily_management_report', args: { p_fecha: '2026-03-05', p_autor_user_id: null } });
-  assert.match(f.element('reporteAuto').innerHTML, /Gestiones realizadas.*5/); assert.match(f.element('reporteAuto').innerHTML, /Total llamadas.*7/); assert.match(f.element('reporteAuto').innerHTML, /Citas creadas hoy.*9/); assert.match(f.element('reporteAuto').innerHTML, /Visitas registradas.*11/); assert.doesNotMatch(f.element('reporteAuto').innerHTML, /Total inscritos/);
+  assert.match(f.element('reporteAuto').innerHTML, /Gestiones realizadas.*5/); assert.match(f.element('reporteAuto').innerHTML, /Total llamadas.*7/); assert.match(f.element('reporteAuto').innerHTML, /Citas nuevas hoy.*9/); assert.match(f.element('reporteAuto').innerHTML, /Visitas registradas.*11/); assert.doesNotMatch(f.element('reporteAuto').innerHTML, /Total inscritos/);
 });
 test('comparativa RPC muestra campos y detalle las cuatro tablas y notas', async () => {
   const f = reportFixture({ asesoras: [advisor('Ana', 'a')] }, [{ id: 4, autor_name: 'Ana', problemas: 'p', observaciones: 'o' }]); await f.context.loadReporteDiario(); const html = f.element('reporteAuto').innerHTML;
@@ -1888,15 +1903,15 @@ test('reporte RPC vacío, cargando y error muestran estado sin romper', async ()
   const failed = reportFixture(null); failed.db.rpc = async () => ({ data: null, error: { message: 'rpc failed' } }); await failed.context.loadReporteDiario(); assert.match(failed.element('reporteAuto').innerHTML, /No se pudo cargar/);
 });
 
-test('CSV reporte: fila TOTAL suma las 28 columnas numericas y cuadra con las 31 cabeceras (gestion, agenda, whatsapp y canales)', async () => {
-  const full = (uid, name) => ({ autor_user_id: uid, autor_name: name, gestionados: 1, procedencia: { WhatsApp: 1, 'Facebook/Instagram': 1, CogniTalking: 1, 'Directo o Referido': 1, Otros: 1 }, llamadas: { del_dia: 1, data_dura: 1, llamada_whatsapp: 1, total: 3 }, whatsapp: { nuevos: 1, gestionados: 1, total: 2 }, canales: { llamada: 1, data_dura: 1, llamada_whatsapp: 1, whatsapp: 2, instagram: 0, visita: 0, sin_clasificar: 0, total: 5 }, citas: { agendados_dia: 1, agendados_data_dura: 1, agendados_gestionados_dia: 2, agendados_gestionados_data_dura: 1, agendados_doral: 1, agendados_doral_data_dura: 1, agendados_weston: 1, agendados_weston_data_dura: 1, total_agendados: 2, visitas: 1, no_asistieron: 1, canceladas: 1, reprogramadas: 1 }, inscritos: { del_dia: 1, data_dura: 1, total: 2 } });
+test('CSV reporte: separa citas nuevas y reprogramadas y suma las columnas visibles', async () => {
+  const full = (uid, name) => ({ autor_user_id: uid, autor_name: name, gestionados: 1, procedencia: { WhatsApp: 1, 'Facebook/Instagram': 1, CogniTalking: 1, 'Directo o Referido': 1, Otros: 1 }, llamadas: { del_dia: 1, data_dura: 1, llamada_whatsapp: 1, total: 3 }, whatsapp: { nuevos: 1, gestionados: 1, total: 2 }, canales: { llamada: 1, data_dura: 1, llamada_whatsapp: 1, whatsapp: 2, instagram: 0, visita: 0, sin_clasificar: 0, total: 5 }, citas: { agendados_dia: 1, agendados_data_dura: 1, agendados_gestionados_dia: 2, agendados_gestionados_data_dura: 1, agendados_doral: 1, agendados_doral_data_dura: 1, agendados_weston: 1, agendados_weston_data_dura: 1, total_agendados: 2, citas_reprogramadas_hoy: 3, visitas: 1, no_asistieron: 1, canceladas: 1, reprogramadas: 1 }, inscritos: { del_dia: 1, data_dura: 1, total: 2 } });
   const f = reportFixture({ asesoras: [full('a', 'Ana'), full('b', 'Bea')] });
   await f.context.loadReporteDiario(); f.context.exportReporteDiarioCSV();
   const rows = decodeCSV(new TextDecoder().decode(await f.downloads[0].blob.arrayBuffer()).slice(1));
   const headers = rows[4], total = rows.at(-1), col = n => Number(total[headers.indexOf(n)]);
-  assert.equal(headers.length, 31); assert.equal(total.length, 31);
-  assert.equal(col('Gestiones realizadas'), 2); assert.equal(col('Citas creadas Doral'), 2); assert.equal(col('Citas creadas Data Dura Weston'), 2);
-  assert.equal(col('Total citas creadas'), 4); assert.equal(col('Reprogramadas'), 2);
+  assert.equal(headers.length, 32); assert.equal(total.length, 32);
+  assert.equal(col('Gestiones realizadas'), 2); assert.equal(col('Citas nuevas Doral'), 2); assert.equal(col('Citas nuevas Data Dura Weston'), 2);
+  assert.equal(col('Total citas nuevas'), 4); assert.equal(col('Citas reprogramadas hoy'), 6); assert.equal(col('Reprogramadas'), 2);
   assert.equal(headers.includes('Inscritos del día'), false, 'inscripciones fuera del CSV diario');
   assert.equal(col('Pasados a Agendado hoy'), 4); assert.equal(col('Pasados a Agendado Data Dura hoy'), 2);
   assert.equal(col('WhatsApp nuevos hoy'), 2); assert.equal(col('WhatsApp gestionados hoy'), 2); assert.equal(col('Total WhatsApp'), 4);
@@ -1904,8 +1919,8 @@ test('CSV reporte: fila TOTAL suma las 28 columnas numericas y cuadra con las 31
   assert.equal(col('Total canales'), 10);
   assert.equal(col('Canal Instagram'), 0);
   const panel = f.element('reporteAuto').innerHTML;
-  assert.match(panel, /Citas creadas hoy/);
-  assert.doesNotMatch(panel, /programadas hoy/);
+  assert.match(panel, /Citas nuevas hoy/);
+  assert.doesNotMatch(panel, /Citas programadas hoy/);
   assert.match(panel, /WhatsApp nuevos hoy/); assert.match(panel, /Total WhatsApp/);
   assert.match(panel, /Canales/); assert.match(panel, /Detalle WhatsApp/);
   for (const text of ['Sin clasificar', 'Visita Conservatorio', 'Inscripciones']) assert.doesNotMatch(panel, new RegExp(text));
@@ -1946,6 +1961,16 @@ test('reporte diario: agendamientos por creación, resultados por resolución y 
   assert.match(sql, /from booked a where a\.worker_id is not distinct from f\.user_id/);
   assert.doesNotMatch(sql, /scheduled_at/);
   assert.match(sql, /grant execute on function public\.daily_management_report\(date, uuid\) to authenticated/);
+});
+
+test('reporte diario: las reprogramaciones no inflan citas nuevas', () => {
+  const sql = readFileSync('supabase/migrations/202610100002_daily_report_new_vs_rescheduled.sql', 'utf8');
+  assert.match(sql, /and a\.rescheduled_from_id is null/);
+  assert.match(sql, /and a\.rescheduled_from_id is not null/);
+  assert.match(sql, /from rebooked a where a\.worker_id is not distinct from f\.user_id/);
+  assert.match(sql, /'citas_reprogramadas_hoy', blocks\.rebooked_today/);
+  assert.match(sql, /'total_agendados', blocks\.ag_dia \+ blocks\.ag_dd/);
+  assert.doesNotMatch(sql, /scheduled_at/);
 });
 
 test('whatsapp gestión: canal inicial en crear, preselección por Medio y RPC con bloque aditivo', () => {
@@ -2347,5 +2372,5 @@ test('reporte diario: canales e inscripciones retirados de pantalla y CSV', () =
   assert.doesNotMatch(html, /<td class="py-1">Data Dura<\/td>/);
   assert.equal((html.match(new RegExp('<h5 class="font-semibold text-indigo-900">', 'g')) || []).length, 4, 'cuatro tablas por asesora');
   for (const text of ['Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas creadas y resultados registrados hoy', 'Gestiones realizadas', 'Total llamadas', 'Visitas registradas']) assert.match(html, new RegExp(text));
-  assert.match(html, /Citas creadas hoy/);
+  assert.match(html, /Citas nuevas hoy/);
 });

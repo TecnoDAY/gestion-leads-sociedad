@@ -131,6 +131,7 @@
     .quick-lead-row:first-child { border-top: 0; }
     .quick-lead-row:hover { background: rgba(99,102,241,.06); }
     .quick-lead-row .quick-lead-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .quick-lead-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .4rem; }
     .matrix-toggle[aria-expanded="true"] .matrix-chevron { transform: rotate(180deg); }
     .matrix-chevron { transition: transform .15s ease; }
     .primary-action { min-height: 2.6rem; border-radius: .75rem; }
@@ -169,6 +170,11 @@
       .dashboard-kpis .metric-icon { width: 2.25rem; height: 2.25rem; }
       .quick-lead-row { grid-template-columns: minmax(0, 1fr) auto; gap: .45rem; }
       .quick-lead-row .quick-lead-campaign, .quick-lead-row .quick-lead-status { grid-column: 1 / -1; }
+      .quick-lead-actions { grid-column: 1 / -1; justify-content: flex-start; }
+    }
+    @media (min-width: 640px) and (max-width: 1350px) {
+      .quick-lead-row { grid-template-columns: minmax(0, 1fr) minmax(0, .8fr) auto; }
+      .quick-lead-status { display: none; }
     }
     @media (max-width: 767px) {
       #leadsTableViewport { min-height: 0; padding: .75rem; overflow-x: visible; }
@@ -557,7 +563,7 @@
     <!-- ACCESO RÁPIDO A LEADS DEL CONJUNTO FILTRADO -->
     <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden" aria-labelledby="quickLeadsTitle">
       <div class="px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
-        <div><h2 id="quickLeadsTitle" class="dashboard-section-title text-sm sm:text-base font-bold text-white">Acceso rápido a leads</h2><p class="text-xs text-slate-400 mt-0.5">Cuatro resultados del filtro actual; abre la ficha para continuar la gestión.</p></div>
+        <div><h2 id="quickLeadsTitle" class="dashboard-section-title text-sm sm:text-base font-bold text-white">Acceso rápido a leads</h2><p class="text-xs text-slate-400 mt-0.5">Cuatro resultados del filtro actual; consulta, contacta o actualiza la gestión.</p></div>
         <button type="button" onclick="document.getElementById('leadsTableBody')?.scrollIntoView({behavior:'smooth',block:'start'})" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 cursor-pointer">Ver lista completa →</button>
       </div>
       <div id="quickLeadsList" aria-live="polite"><p class="px-4 py-5 text-xs text-slate-400">Cargando leads…</p></div>
@@ -3925,14 +3931,28 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         const campana = getField(lead, 'Campaña') || 'Sin campaña';
         const fecha = getField(lead, 'Fecha') || 'Sin fecha';
         const gestion = getField(lead, 'GESTION') || 'Sin estado';
+        const telefono = getField(lead, 'Telefono').replace(/\D/g, '');
+        const waLink = telefono ? `https://wa.me/${telefono}?text=${encodeURIComponent('Hola ' + nombre + ', te escribimos de Sociedad Actoral Hispanoamericana.')}` : '';
         return `<div class="quick-lead-row text-xs">
-          <div class="quick-lead-meta"><button type="button" onclick="openViewLeadModal('${escapeAttr(id)}', '${origin}')" class="font-semibold text-left text-white hover:text-indigo-400 cursor-pointer">${escapeHtml(nombre)}</button><p class="mt-1 text-slate-400">${escapeHtml(fecha)}${origin === 'historico' ? ' · Histórico 2025' : ''}</p></div>
+          <div class="quick-lead-meta"><button type="button" data-quick-action="view" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="font-semibold text-left text-white hover:text-indigo-400 cursor-pointer">${escapeHtml(nombre)}</button><p class="mt-1 text-slate-400">${escapeHtml(fecha)}${origin === 'historico' ? ' · Histórico 2025' : ''}</p></div>
           <span class="quick-lead-campaign quick-lead-meta text-slate-300">${escapeHtml(campana)}</span>
-          <span class="quick-lead-status quick-lead-meta text-slate-300">${escapeHtml(gestion)}</span>
-          <button type="button" onclick="openViewLeadModal('${escapeAttr(id)}', '${origin}')" class="rounded-lg border border-indigo-500/40 px-3 py-1.5 font-semibold text-indigo-300 hover:bg-indigo-500/10 cursor-pointer">Ver ficha</button>
+          <span class="quick-lead-status">${renderGestionBadge(gestion)}</span>
+          <div class="quick-lead-actions">
+            ${waLink ? `<a href="${waLink}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-emerald-500/40 px-3 py-1.5 font-semibold text-emerald-400 hover:bg-emerald-500/10">WhatsApp</a>` : ''}
+            <button type="button" data-quick-action="edit" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="rounded-lg border border-indigo-500/40 px-3 py-1.5 font-semibold text-indigo-300 hover:bg-indigo-500/10 cursor-pointer">Gestionar</button>
+            <button type="button" data-quick-action="view" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="rounded-lg border border-slate-600 px-3 py-1.5 font-semibold text-slate-300 hover:bg-slate-700 cursor-pointer">Ver ficha</button>
+          </div>
         </div>`;
       }).join('');
     }
+
+    document.getElementById('quickLeadsList')?.addEventListener('click', event => {
+      const button = event.target.closest?.('[data-quick-action]');
+      if (!button) return;
+      const { quickAction, leadId, origin } = button.dataset;
+      if (quickAction === 'edit') openEditLeadModal(leadId, origin);
+      if (quickAction === 'view') openViewLeadModal(leadId, origin);
+    });
 
     // Delegacion de clics de la matriz: los valores viajan en data-*, nunca
     // dentro de onclick inline (los atributos JS decodifican entidades antes

@@ -644,7 +644,7 @@
       .quick-lead-row .quick-lead-campaign::before { content: 'Campaña'; }
       .quick-lead-row .quick-lead-status::before { content: 'Gestión actual'; }
       .quick-lead-actions { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; padding-top: .7rem; border-top: 1px solid rgba(148,163,184,.25); }
-      .quick-lead-actions button { min-height: 2.5rem; }
+      .quick-lead-actions button { min-width: 0; min-height: 2.75rem; padding: .6rem .7rem; }
       .quick-lead-actions button:disabled { grid-column: 1 / -1; grid-row: 2; }
       [data-theme="light"] .quick-lead-row { border-color: #e4e7ec; background: #fff; }
       [data-theme="light"] .quick-lead-row .quick-lead-campaign::before, [data-theme="light"] .quick-lead-row .quick-lead-status::before { color: #667085; }
@@ -4536,7 +4536,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           <span class="quick-lead-campaign quick-lead-meta text-slate-300">${escapeHtml(campana)}</span>
           <span class="quick-lead-status">${renderGestionBadge(gestion)}</span>
           <div class="quick-lead-actions">
-            <button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="rounded-lg border border-slate-600 px-3 py-1.5 font-semibold text-slate-400 opacity-60 cursor-not-allowed">WhatsApp</button>
+            <button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="rounded-lg border border-slate-600 px-3 py-1.5 font-semibold text-slate-400 opacity-60 cursor-not-allowed">WhatsApp · Próximamente</button>
             <button type="button" data-quick-action="edit" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="rounded-lg border border-indigo-500/40 px-3 py-1.5 font-semibold text-indigo-300 hover:bg-indigo-500/10 cursor-pointer">Gestionar</button>
             <button type="button" data-quick-action="view" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="rounded-lg border border-slate-600 px-3 py-1.5 font-semibold text-slate-300 hover:bg-slate-700 cursor-pointer">Ver ficha</button>
           </div>

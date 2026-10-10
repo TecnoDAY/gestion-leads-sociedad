@@ -464,6 +464,13 @@
       .lead-note-compose { display: grid; grid-template-columns: minmax(0, 1fr); }
       #leadNoteInput { width: 100%; min-height: 6rem; font-size: 1rem; }
       #leadNoteSubmit { min-height: 2.75rem; justify-content: center; }
+      #leadAppointmentForm { grid-template-columns: minmax(0, 1fr); }
+      #leadAppointmentForm > label, #leadAppointmentForm > div > label { font-size: .8rem; }
+      #leadAppointmentForm input:not([type="radio"]), #leadAppointmentForm select, #leadAppointmentForm textarea { width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
+      #leadAppointmentForm textarea { min-height: 5rem; }
+      #leadAppointmentForm .lead-appointment-campus { flex-wrap: wrap; }
+      #leadAppointmentForm .lead-appointment-campus label { min-height: 2.5rem; }
+      #leadAppointmentSubmit { min-height: 2.75rem; width: 100%; }
       :is(#modalEditLead, #modalNewLead) { padding: .5rem; }
       .lead-form-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; }
       .lead-form-header, .lead-form-footer { padding: .9rem 1rem; }
@@ -5353,7 +5360,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             <div id="leadAppointmentCreate" class="${isAgendadoGestion(getField(lead, 'GESTION')) ? '' : 'hidden'}">
             <form id="leadAppointmentForm" onsubmit="createLeadAppointment(event)" class="grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end">
              <label class="text-[11px] text-slate-400">Fecha y hora<input id="leadAppointmentDate" type="datetime-local" required class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
-             <div class="sm:col-span-3 flex items-center gap-3"><span class="text-[11px] text-slate-400">Sede de la cita *</span><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="leadAppointmentCampus" value="DORAL" required class="accent-indigo-500"> Doral</label><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="leadAppointmentCampus" value="WESTON" required class="accent-indigo-500"> Weston</label></div>
+             <div class="lead-appointment-campus sm:col-span-3 flex items-center gap-3"><span class="text-[11px] text-slate-400">Sede de la cita *</span><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="leadAppointmentCampus" value="DORAL" required class="accent-indigo-500"> Doral</label><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="leadAppointmentCampus" value="WESTON" required class="accent-indigo-500"> Weston</label></div>
              <label class="text-[11px] text-slate-400">Nota opcional<textarea id="leadAppointmentNote" maxlength="2000" rows="1" class="block w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></textarea></label>
              <div id="leadAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="leadAppointmentAdvisor" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
              <label class="text-[11px] text-slate-400">Nombre del estudiante (opcional)<input id="leadAppointmentStudentName" type="text" maxlength="200" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>

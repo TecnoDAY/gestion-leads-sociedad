@@ -502,9 +502,19 @@
       .dashboard-kpis .metric-card > div:nth-child(2) > span:first-child { max-width: 100%; font-size: clamp(1.4rem, 6vw, 1.85rem); line-height: 1.15; overflow-wrap: anywhere; }
       .dashboard-kpis .metric-card > div:nth-child(2) > span:last-child { line-height: 1.3; }
       .dashboard-kpis .metric-icon { width: 2.25rem; height: 2.25rem; flex-shrink: 0; }
-      .quick-lead-row { grid-template-columns: minmax(0, 1fr) auto; gap: .45rem; }
+      #quickLeadsList { display: grid; gap: .75rem; padding: .75rem; }
+      .quick-lead-row, .quick-lead-row:first-child { grid-template-columns: minmax(0, 1fr) auto; gap: .65rem; padding: 1rem; border: 1px solid #475569; border-radius: .85rem; }
+      .quick-lead-row .quick-lead-meta { overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: anywhere; }
+      .quick-lead-row .quick-lead-meta button { font-size: .88rem; line-height: 1.3; }
       .quick-lead-row .quick-lead-campaign, .quick-lead-row .quick-lead-status { grid-column: 1 / -1; }
-      .quick-lead-actions { grid-column: 1 / -1; justify-content: flex-start; }
+      .quick-lead-row .quick-lead-campaign::before, .quick-lead-row .quick-lead-status::before { display: block; margin-bottom: .2rem; color: #94a3b8; font-size: .65rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+      .quick-lead-row .quick-lead-campaign::before { content: 'Campaña'; }
+      .quick-lead-row .quick-lead-status::before { content: 'Gestión actual'; }
+      .quick-lead-actions { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; padding-top: .7rem; border-top: 1px solid rgba(148,163,184,.25); }
+      .quick-lead-actions button { min-height: 2.5rem; }
+      .quick-lead-actions button:disabled { grid-column: 1 / -1; grid-row: 2; }
+      [data-theme="light"] .quick-lead-row { border-color: #e4e7ec; background: #fff; }
+      [data-theme="light"] .quick-lead-row .quick-lead-campaign::before, [data-theme="light"] .quick-lead-row .quick-lead-status::before { color: #667085; }
     }
     @media (min-width: 400px) and (max-width: 639px) {
       .dashboard-filter-grid, .dashboard-filter-extra { grid-template-columns: repeat(2, minmax(0, 1fr)); }

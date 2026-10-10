@@ -377,8 +377,70 @@
     [data-theme="dark"] .help-card h4 { color: #f8fafc; }
     [data-theme="dark"] .help-card ol li > span:last-child { color: #e2e8f0; }
     [data-theme="dark"] .help-searchbar input { background: #0f172a; color: #f8fafc; border-color: #475569; }
+    #panelAdminUsers { background: rgba(10,20,42,.78); }
+    .users-shell { width: min(100%, 46rem); max-height: min(92dvh, 54rem); overflow: hidden; border: 1px solid #e4e7ec; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
+    .users-header { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.2rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: linear-gradient(115deg,#fff 45%,#f0efff); }
+    .users-header h2 { color: #17203b; }
+    .users-header p { color: #526174; }
+    .users-body { min-height: 0; overflow-y: auto; padding: 1.5rem; background: #f7f8fc; }
+    .users-section { border: 1px solid #e4e7ec; border-radius: .9rem; padding: 1.2rem; background: #fff; }
+    .users-section h3 { color: #17203b; }
+    .users-body label { display: block; margin-bottom: .4rem; color: #344054; font-size: .75rem; font-weight: 700; }
+    .users-body input, .users-body select { min-height: 2.65rem; border: 1px solid #98a2b3; border-radius: .6rem; padding: .6rem .75rem; background: #fff; color: #17203b; }
+    .users-body input::placeholder { color: #667085; }
+    .users-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding: .85rem 0; border-top: 1px solid #e4e7ec; }
+    .users-row:first-child { border-top: 0; }
+    .users-row strong { color: #17203b; }
+    .users-row-email { color: #526174; overflow-wrap: anywhere; }
+    .users-row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+    .users-row-actions button { min-height: 2rem; padding: .35rem .6rem; border: 1px solid #cbd5e1; border-radius: .5rem; color: #344054; font-size: .7rem; cursor: pointer; }
+    .users-row-actions button:hover { border-color: #6366f1; color: #4338ca; }
+    .users-status { display: inline-flex; align-items: center; border-radius: 9999px; padding: .25rem .55rem; font-size: .67rem; font-weight: 700; }
+    .users-status.is-active { background: #d1fae5; color: #065f46; }
+    .users-status.is-inactive { background: #f1f5f9; color: #475569; }
+    .users-session-row { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; padding: .7rem 0; border-top: 1px solid #e4e7ec; }
+    .users-session-row:first-child { border-top: 0; }
+    [data-theme="dark"] .users-shell, [data-theme="dark"] .users-section { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .users-header { background: linear-gradient(115deg,#1e293b,#252449); border-color: #334155; }
+    [data-theme="dark"] .users-header h2, [data-theme="dark"] .users-section h3, [data-theme="dark"] .users-row strong { color: #f8fafc; }
+    [data-theme="dark"] .users-header p, [data-theme="dark"] .users-row-email { color: #cbd5e1; }
+    [data-theme="dark"] .users-body { background: #0f172a; }
+    [data-theme="dark"] .users-body label { color: #cbd5e1; }
+    [data-theme="dark"] .users-body input, [data-theme="dark"] .users-body select { background: #0f172a; color: #f8fafc; border-color: #475569; }
+    [data-theme="dark"] .users-row, [data-theme="dark"] .users-session-row { border-color: #334155; }
+    [data-theme="dark"] .users-row-actions button { color: #e2e8f0; border-color: #475569; }
+    #modalCatalogs { background: rgba(10,20,42,.78); }
+    .catalog-shell { width: min(100%, 35rem); max-height: min(92dvh, 48rem); overflow: hidden; border: 1px solid #e4e7ec; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
+    .catalog-header { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.2rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: linear-gradient(115deg,#fff 45%,#f0efff); }
+    .catalog-header h2 { color: #17203b; }
+    .catalog-header p { color: #526174; }
+    .catalog-body { min-height: 0; overflow-y: auto; padding: 1.5rem; background: #f7f8fc; }
+    .catalog-section { border: 1px solid #e4e7ec; border-radius: .9rem; padding: 1.2rem; background: #fff; }
+    .catalog-section h3 { color: #17203b; }
+    .catalog-section label { display: block; margin-bottom: .4rem; color: #344054; font-size: .75rem; font-weight: 700; }
+    .catalog-section input, .catalog-section select { min-height: 2.65rem; border: 1px solid #98a2b3; border-radius: .6rem; padding: .6rem .75rem; background: #fff; color: #17203b; }
+    .catalog-section input::placeholder { color: #667085; }
+    .catalog-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .75rem 0; border-top: 1px solid #e4e7ec; }
+    .catalog-row:first-child { border-top: 0; }
+    .catalog-row-value { min-width: 0; overflow-wrap: anywhere; color: #17203b; font-weight: 600; }
+    .catalog-row-value.is-inactive { color: #667085; text-decoration: line-through; }
+    .catalog-row-actions { display: flex; align-items: center; gap: .4rem; flex: none; }
+    .catalog-row-actions button { min-width: 2rem; min-height: 2rem; display: inline-grid; place-items: center; border: 1px solid #cbd5e1; border-radius: .5rem; color: #475569; cursor: pointer; }
+    .catalog-row-actions button:hover { border-color: #6366f1; color: #4338ca; }
+    [data-theme="dark"] .catalog-shell, [data-theme="dark"] .catalog-section { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .catalog-header { background: linear-gradient(115deg,#1e293b,#252449); border-color: #334155; }
+    [data-theme="dark"] .catalog-header h2, [data-theme="dark"] .catalog-section h3, [data-theme="dark"] .catalog-row-value { color: #f8fafc; }
+    [data-theme="dark"] .catalog-header p { color: #cbd5e1; }
+    [data-theme="dark"] .catalog-body { background: #0f172a; }
+    [data-theme="dark"] .catalog-section label { color: #cbd5e1; }
+    [data-theme="dark"] .catalog-section input, [data-theme="dark"] .catalog-section select { background: #0f172a; color: #f8fafc; border-color: #475569; }
+    [data-theme="dark"] .catalog-row { border-color: #334155; }
+    [data-theme="dark"] .catalog-row-value.is-inactive { color: #94a3b8; }
+    [data-theme="dark"] .catalog-row-actions button { color: #cbd5e1; border-color: #475569; }
     @media (max-width: 639px) { #reporteAuto .daily-summary, #reporteAuto .daily-advisor-body { padding: 1rem; } }
     @media (max-width: 639px) { #modalHelp { padding: .5rem; } .help-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; } .help-header, .help-searchbar, .help-body, .help-footer { padding: 1rem; } .help-footer p { display: none; } .help-footer button { width: 100%; } }
+    @media (max-width: 639px) { #panelAdminUsers { padding: .5rem; } .users-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; } .users-header, .users-body { padding: 1rem; } .users-section { padding: 1rem; } .users-row-actions { width: 100%; } }
+    @media (max-width: 639px) { #modalCatalogs { padding: .5rem; } .catalog-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; } .catalog-header, .catalog-body, .catalog-section { padding: 1rem; } }
     @media (max-width: 639px) { #reportePeriodo .period-card { padding: .85rem; } #reportePeriodo .period-table th, #reportePeriodo .period-table td { padding: .5rem; } }
     @media (max-width: 900px) { .historical-filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
     @media (max-width: 480px) { .historical-filter-grid { grid-template-columns: 1fr; } }
@@ -413,6 +475,17 @@
       #topBrand { visibility: hidden; pointer-events: none; }
     }
     @media (max-width: 639px) {
+      .topbar-inner { height: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: .65rem; padding-top: .65rem; padding-bottom: .65rem; }
+      .topbar-actions { width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; padding-bottom: .2rem; }
+      .topbar-actions > * { flex-shrink: 0; }
+      .topbar-actions button { min-height: 2.5rem; }
+      .topbar-actions #statusText { display: inline; }
+      .mobile-tabs { position: static; }
+      .mobile-tabs > div { padding-top: .5rem; padding-bottom: .5rem; }
+      .mobile-tabs nav { width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; scroll-snap-type: x proximity; }
+      .mobile-tabs nav button { flex-shrink: 0; min-height: 2.5rem; white-space: nowrap; scroll-snap-align: start; }
+      .mobile-tabs .tabs-info { display: none; }
+      .mobile-tabs .tabs-year { display: none; }
       .dashboard-intro { padding: 1.15rem; }
       .dashboard-kpis { gap: .65rem; }
       .dashboard-kpis .metric-card { min-height: 7rem; padding: .9rem; }
@@ -426,6 +499,60 @@
       .quick-lead-status { display: none; }
     }
     @media (max-width: 767px) {
+      .campaigns-table { padding: .75rem; overflow-x: visible; }
+      .campaigns-table table, .campaigns-table tbody { display: block; width: 100%; min-width: 0; }
+      .campaigns-table thead { display: none; }
+      .campaigns-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem 1rem; margin-bottom: .75rem; padding: 1rem; border: 1px solid #e4e7ec; border-radius: .85rem; background: #fff; }
+      .campaigns-table tbody tr:last-child { margin-bottom: 0; }
+      .campaigns-table tbody td { display: block; min-width: 0; padding: 0; text-align: left; overflow-wrap: anywhere; }
+      .campaigns-table tbody td::before { display: block; margin-bottom: .2rem; color: #667085; font-size: .65rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+      .campaigns-table tbody td:nth-child(1)::before { content: 'Campaña'; }
+      .campaigns-table tbody td:nth-child(2)::before { content: 'Estado'; }
+      .campaigns-table tbody td:nth-child(3)::before { content: 'Alcance'; }
+      .campaigns-table tbody td:nth-child(4)::before { content: 'Gasto (USD)'; }
+      .campaigns-table tbody td:nth-child(5)::before { content: 'Resultados Meta'; }
+      .campaigns-table tbody td:nth-child(6)::before { content: 'Coste por resultado'; }
+      .campaigns-table tbody td:nth-child(7)::before { content: 'Leads nuevos'; }
+      .campaigns-table tbody td:nth-child(8)::before { content: 'Agendados'; }
+      .campaigns-table tbody td:nth-child(9)::before { content: 'Asistieron'; }
+      .campaigns-table tbody td:nth-child(10)::before { content: 'Inscritos'; }
+      .campaigns-table tbody td:nth-child(11)::before { content: 'Agendados meses anteriores'; }
+      .campaigns-table tbody td:nth-child(12)::before { content: 'Pendientes'; }
+      .campaigns-table tbody td:nth-child(1), .campaigns-table tbody td:nth-child(13), .campaigns-table tbody td[colspan] { grid-column: 1 / -1; }
+      .campaigns-table tbody td:nth-child(1) { font-weight: 700; font-size: .875rem; }
+      .campaigns-table tbody td:nth-child(13) { display: flex; flex-wrap: wrap; gap: .5rem; padding-top: .7rem; border-top: 1px solid #e4e7ec; }
+      .campaigns-table tbody td:nth-child(13):empty { display: none; }
+      .campaigns-table tbody td:nth-child(13) button { min-height: 2.5rem; padding: .5rem .8rem; }
+      .campaigns-table tbody input, .campaigns-table tbody select { max-width: 100%; min-height: 2.5rem; }
+      .campaigns-table tbody td[colspan]::before { content: none; }
+      [data-theme="dark"] .campaigns-table tbody tr { background: #263348; border-color: #475569; }
+      [data-theme="dark"] .campaigns-table tbody .campaigns-total-row { background: #252449; border-color: #818cf8; }
+      [data-theme="dark"] .campaigns-table tbody td::before { color: #94a3b8; }
+      [data-theme="dark"] .campaigns-table tbody td:nth-child(13) { border-color: #475569; }
+      .appointments-table { padding: .75rem; overflow-x: visible; }
+      .appointments-table table, .appointments-table tbody { display: block; width: 100%; min-width: 0; }
+      .appointments-table thead { display: none; }
+      .appointments-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem 1rem; margin-bottom: .75rem; padding: 1rem; border: 1px solid #e4e7ec; border-radius: .85rem; background: #fff; }
+      .appointments-table tbody tr:last-child { margin-bottom: 0; }
+      .appointments-table tbody td { display: block; min-width: 0; padding: 0; overflow-wrap: anywhere; }
+      .appointments-table tbody td::before { display: block; margin-bottom: .2rem; color: #667085; font-size: .65rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+      .appointments-table tbody td:nth-child(1)::before { content: 'Fecha y hora'; }
+      .appointments-table tbody td:nth-child(2)::before { content: 'Lead y teléfono'; }
+      .appointments-table tbody td:nth-child(3)::before { content: 'Estudiante'; }
+      .appointments-table tbody td:nth-child(4)::before { content: 'Correo'; }
+      .appointments-table tbody td:nth-child(5)::before { content: 'Edad'; }
+      .appointments-table tbody td:nth-child(6)::before { content: 'Sede'; }
+      .appointments-table tbody td:nth-child(7)::before { content: 'Asesor'; }
+      .appointments-table tbody td:nth-child(8)::before { content: 'Campaña'; }
+      .appointments-table tbody td:nth-child(9)::before { content: 'Mes origen'; }
+      .appointments-table tbody td:nth-child(10)::before { content: 'Resultado'; }
+      .appointments-table tbody td:nth-child(1), .appointments-table tbody td:nth-child(2), .appointments-table tbody td:nth-child(11), .appointments-table tbody td[colspan] { grid-column: 1 / -1; }
+      .appointments-table tbody td:nth-child(11) { display: flex; flex-wrap: wrap; gap: .5rem; padding-top: .7rem; border-top: 1px solid #e4e7ec; }
+      .appointments-table tbody td:nth-child(11) button { min-height: 2.5rem; padding: .45rem .7rem; border: 1px solid #c7d2fe; border-radius: .55rem; }
+      .appointments-table tbody td[colspan]::before { content: none; }
+      [data-theme="dark"] .appointments-table tbody tr { background: #263348; border-color: #475569; }
+      [data-theme="dark"] .appointments-table tbody td::before { color: #94a3b8; }
+      [data-theme="dark"] .appointments-table tbody td:nth-child(11) { border-color: #475569; }
       #leadsTableViewport { min-height: 0; padding: .75rem; overflow-x: visible; }
       #leadsTable { display: block; width: 100%; }
       #leadsTable thead { display: none; }
@@ -488,7 +615,7 @@
 
   <!-- ================= HEADER SUPERIOR ================= -->
   <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <div class="topbar-inner max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
       
       <!-- Brand & Title -->
       <div id="topBrand" class="flex items-center gap-3 min-w-0">
@@ -511,7 +638,7 @@
       </div>
 
       <!-- Action Buttons & Status -->
-      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+      <div class="topbar-actions flex items-center gap-2 sm:gap-3 shrink-0">
         <!-- Live Connection Status -->
         <div id="connectionStatusBadge" class="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700/80 text-xs font-medium text-slate-300">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="statusDot"></span>
@@ -559,20 +686,20 @@
   </header>
 
   <!-- ================= BARRA DE PESTAÑAS PRINCIPALES ================= -->
-  <div class="bg-slate-900/90 border-b border-slate-800 sticky top-16 z-20 backdrop-blur">
+  <div class="mobile-tabs bg-slate-900/90 border-b border-slate-800 sticky top-16 z-20 backdrop-blur">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 py-3 overflow-x-auto">
-      <nav class="flex shrink-0 items-center rounded-lg border border-slate-700/80 bg-slate-800/50 p-1" aria-label="Tabs">
+      <nav class="flex shrink-0 items-center rounded-lg border border-slate-700/80 bg-slate-800/50 p-1" aria-label="Secciones principales">
         <!-- Pestaña 1: Panel Operativo -->
         <button id="tabBtnDashboard" onclick="switchTab('dashboard')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
           <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-          <span>Panel Operativo & Leads</span>
+          <span class="sm:hidden">Inicio y leads</span><span class="hidden sm:inline">Panel Operativo & Leads</span>
         </button>
 
         <!-- Pestaña 2: Gráficos Históricos -->
         <button id="tabBtnHistorico" onclick="switchTab('historico')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">
           <i data-lucide="line-chart" class="w-4 h-4"></i>
           <span>Gráficos Históricos</span>
-          <span class="text-[11px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono font-semibold">2026</span>
+          <span class="tabs-year text-[11px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono font-semibold">2026</span>
         </button>
         <button id="tabBtnReporte" onclick="switchTab('reporte')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">
           <i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Reporte</span>
@@ -581,7 +708,7 @@
         <button id="tabBtnCampanas" onclick="switchTab('campanas')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent"><i data-lucide="megaphone" class="w-4 h-4"></i><span>Campañas</span></button>
       </nav>
 
-      <div class="flex shrink-0 items-center gap-3 border-l border-slate-700/80 pl-4 text-xs text-slate-400">
+      <div class="tabs-info flex shrink-0 items-center gap-3 border-l border-slate-700/80 pl-4 text-xs text-slate-400">
         <i data-lucide="history" class="w-3.5 h-3.5 text-indigo-400"></i>
         <span>Histórico Sociedad Actoral</span>
         <span id="tabTotalDatabaseBadge" class="inline-flex items-center gap-1 text-[11px] font-mono text-slate-400" title="Cantidad total de leads en la Base de Datos">
@@ -1365,68 +1492,74 @@
 
   <!-- ================= PANEL: ADMINISTRACIÓN DE ACCESOS ================= -->
   <div id="panelAdminUsers" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg p-6 space-y-4 max-h-[90dvh] overflow-y-auto">
-      <div class="flex items-center justify-between"><h2 class="font-bold text-white">Gestión de accesos</h2><button onclick="document.getElementById('panelAdminUsers').classList.add('hidden');document.getElementById('panelAdminUsers').classList.remove('flex')" class="text-slate-400 hover:text-white">×</button></div>
-      <form id="formAuthorizeUser" onsubmit="handleAuthorizeUser(event)" class="space-y-3 text-xs">
-        <input id="authorizeEmail" type="email" required placeholder="correo@ejemplo.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
-        <input id="authorizeName" type="text" required maxlength="120" placeholder="Nombre" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
-        <select id="authorizeRole" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"><option value="admin">Administrador</option><option value="agente" selected>Agente</option><option value="supervisor">Supervisor</option><option value="trafficker">Trafficker</option></select>
-        <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Autorizar y enviar invitación</button>
-      </form>
-      <p class="text-[11px] text-slate-400">Se envía un correo de invitación para que la persona verifique su correo y defina su propia contraseña. Aquí solo se guarda el correo, el nombre, el rol y el estado.</p>
-      <input id="userSearch" type="search" oninput="renderAuthorizedUsers()" placeholder="Buscar por correo, nombre o rol…" aria-label="Buscar usuarios" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
-      <p id="userSearchCount" class="text-[11px] text-slate-500"></p>
-      <div id="authorizedUsers" class="text-xs text-slate-400 space-y-1"></div>
-      <div class="border-t border-slate-700 pt-3 space-y-2">
-        <div class="flex items-center justify-between"><h3 class="font-semibold text-white text-xs">Actividad de asesoras</h3><button type="button" onclick="loadAgentSessionsReport()" class="px-2 py-1 rounded border border-slate-600 hover:border-indigo-400 text-[11px] cursor-pointer">Actualizar</button></div>
-        <p class="text-[11px] text-slate-500">Inicio, última actividad, cierre y motivo. Se conservan 90 días; no incluye clics ni tecleo.</p>
-        <div id="agentSessionsBody" class="space-y-1 text-[11px] text-slate-400"><p class="text-slate-500">Cargando actividad…</p></div>
+    <div class="users-shell flex flex-col" role="dialog" aria-modal="true" aria-labelledby="usersTitle">
+      <div class="users-header"><div class="flex items-center gap-3"><span class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400"><i data-lucide="users-round" class="w-5 h-5"></i></span><div><h2 id="usersTitle" class="font-bold text-base">Gestión de accesos</h2><p class="text-xs">Invitaciones, usuarios y actividad del equipo.</p></div></div><button type="button" onclick="document.getElementById('panelAdminUsers').classList.add('hidden');document.getElementById('panelAdminUsers').classList.remove('flex')" aria-label="Cerrar gestión de accesos" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+      <div class="users-body space-y-4">
+        <section class="users-section space-y-3"><div><h3 class="text-sm font-bold">Invitar usuario</h3><p class="text-xs text-slate-500">Envía una invitación para acceder al panel.</p></div>
+          <form id="formAuthorizeUser" onsubmit="handleAuthorizeUser(event)" class="grid sm:grid-cols-2 gap-3 text-xs">
+            <div><label for="authorizeEmail">Correo electrónico</label><input id="authorizeEmail" type="email" required placeholder="correo@ejemplo.com" class="w-full"></div>
+            <div><label for="authorizeName">Nombre</label><input id="authorizeName" type="text" required maxlength="120" placeholder="Nombre de la persona" class="w-full"></div>
+            <div><label for="authorizeRole">Rol</label><select id="authorizeRole" class="w-full"><option value="admin">Administrador</option><option value="agente" selected>Agente</option><option value="supervisor">Supervisor</option><option value="trafficker">Trafficker</option></select></div>
+            <div class="flex items-end"><button type="submit" class="min-h-10 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Autorizar y enviar invitación</button></div>
+          </form>
+          <p class="text-[11px] text-slate-500">La persona verifica su correo y define su propia contraseña. Aquí se guardan su correo, nombre, rol y estado.</p>
+        </section>
+        <section class="users-section space-y-3"><div><h3 class="text-sm font-bold">Usuarios autorizados</h3><p class="text-xs text-slate-500">Busca una cuenta o administra su acceso.</p></div>
+          <label for="userSearch" class="sr-only">Buscar usuarios</label><input id="userSearch" type="search" oninput="renderAuthorizedUsers()" placeholder="Buscar por correo, nombre o rol…" class="w-full text-xs">
+          <p id="userSearchCount" class="text-[11px] text-slate-500"></p>
+          <div id="authorizedUsers" class="text-xs text-slate-500"></div>
+        </section>
+        <section class="users-section space-y-2">
+          <div class="flex items-center justify-between gap-3"><h3 class="text-sm font-bold">Actividad de asesoras</h3><button type="button" onclick="loadAgentSessionsReport()" class="px-2 py-1 rounded border border-slate-300 hover:border-indigo-400 text-[11px] cursor-pointer">Actualizar</button></div>
+          <p class="text-[11px] text-slate-500">Inicio, última actividad, cierre y motivo. Se conservan 90 días; no incluye clics ni tecleo.</p>
+          <div id="agentSessionsBody" class="text-[11px] text-slate-500"><p>Cargando actividad…</p></div>
+        </section>
+        <section id="changeEmailBox" class="users-section hidden space-y-2 text-xs">
+          <h3 class="text-sm font-bold">Cambiar correo</h3><p class="text-slate-500">Cuenta: <span id="changeEmailTarget" class="font-semibold text-slate-700"></span></p>
+          <form id="formChangeEmail" onsubmit="handleChangeEmail(event)" class="space-y-2">
+            <label for="changeEmailNew">Nuevo correo electrónico</label><input id="changeEmailNew" type="email" required maxlength="320" placeholder="nuevo@correo.com" class="w-full">
+            <div class="flex flex-wrap items-center gap-2"><button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Enviar confirmación</button><button type="button" onclick="closeChangeEmail()" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 cursor-pointer">Cancelar</button></div>
+            <p id="changeEmailStatus" class="text-[11px] text-slate-500"></p>
+          </form>
+          <p class="text-[11px] text-slate-500">Se envían confirmaciones a ambos correos. La cuenta, el rol y el historial se conservan.</p>
+        </section>
       </div>
-      <div id="changeEmailBox" class="hidden space-y-2 border-t border-slate-700 pt-3 text-xs">
-        <p class="text-slate-400">Cambiar el correo de <span id="changeEmailTarget" class="text-white"></span></p>
-        <form id="formChangeEmail" onsubmit="handleChangeEmail(event)" class="space-y-2">
-          <input id="changeEmailNew" type="email" required maxlength="320" placeholder="nuevo@correo.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
-          <div class="flex items-center gap-2">
-            <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Enviar confirmación</button>
-            <button type="button" onclick="closeChangeEmail()" class="px-3 py-2 rounded-lg border border-slate-600 hover:border-slate-400 text-slate-300">Cancelar</button>
-          </div>
-          <p id="changeEmailStatus" class="text-[11px] text-slate-400"></p>
-        </form>
-      </div>
-      <p class="text-[11px] text-slate-400">Al cambiar el correo se envían confirmaciones a las dos direcciones: la persona confirma primero el correo nuevo y después el antiguo, y al terminar define su contraseña. La cuenta, el rol y el historial no cambian.</p>
     </div>
   </div>
 
   <!-- ================= MODAL: CATÁLOGOS (ADMIN) ================= -->
   <div id="modalCatalogs" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg p-6 space-y-4 max-h-[90dvh] overflow-y-auto shadow-2xl">
-      <div class="flex items-center justify-between">
+    <div class="catalog-shell flex flex-col" role="dialog" aria-modal="true" aria-labelledby="catalogTitle">
+      <div class="catalog-header">
         <div class="flex items-center gap-2">
           <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
             <i data-lucide="list" class="w-4 h-4"></i>
           </div>
           <div>
-            <h2 class="font-bold text-white">Catálogos</h2>
-            <p class="text-[11px] text-slate-400">Valores de filtros y formularios. No modifican los leads existentes.</p>
+            <h2 id="catalogTitle" class="font-bold text-base">Catálogos</h2>
+            <p class="text-xs">Valores de filtros y formularios del equipo.</p>
           </div>
         </div>
-        <button onclick="closeCatalogsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">×</button>
+        <button type="button" onclick="closeCatalogsModal()" aria-label="Cerrar catálogos" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
 
-      <select id="catalogKind" onchange="renderCatalogList()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+      <div class="catalog-body space-y-4">
+      <div class="catalog-section space-y-3"><label for="catalogKind">Tipo de catálogo</label><select id="catalogKind" onchange="renderCatalogList()" class="w-full text-xs">
         <option value="agente">Agente</option>
         <option value="campana">Campaña</option>
         <option value="gestion">Gestión</option>
         <option value="medio">Medio</option>
         <option value="mes" selected>Mes</option>
-      </select>
+      </select></div>
 
-      <div class="flex items-center gap-2">
-        <input id="catalogNewValue" type="text" maxlength="120" placeholder="Nuevo valor…" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
-        <button onclick="addCatalogValue()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition-colors">Añadir</button>
+      <div class="catalog-section space-y-3"><div><h3 class="text-sm font-bold">Añadir valor</h3><p class="text-xs text-slate-500">Aparecerá en los filtros y formularios.</p></div><label for="catalogNewValue" class="sr-only">Nuevo valor</label><div class="flex flex-wrap items-center gap-2">
+        <input id="catalogNewValue" type="text" maxlength="120" placeholder="Nuevo valor…" class="flex-1 min-w-0 text-xs">
+        <button type="button" onclick="addCatalogValue()" class="min-h-10 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition-colors">Añadir</button>
+      </div></div>
+
+      <div class="catalog-section"><div class="mb-2"><h3 class="text-sm font-bold">Valores disponibles</h3><p class="text-xs text-slate-500">Renombra o cambia el estado de un valor cuando sea necesario.</p></div><div id="catalogList" class="text-xs"></div></div>
+      <p class="text-[11px] text-slate-500">Los cambios en estos valores no modifican los leads existentes.</p>
       </div>
-
-      <div id="catalogList" class="text-xs space-y-0 max-h-[45vh] overflow-y-auto border border-slate-700 rounded-lg px-3 py-1"></div>
     </div>
   </div>
 
@@ -2453,7 +2586,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         const durationMs = s.ended_at ? new Date(s.ended_at) - new Date(s.started_at) : Date.now() - new Date(s.started_at);
         const mins = Math.max(0, Math.round(durationMs / 60000));
         const state = s.active ? '<span class="text-emerald-300">Activa</span>' : (IDLE_REASON_LABELS[s.end_reason] || 'Cerrada');
-        return `<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 border-b border-slate-800 pb-1"><span class="text-slate-200 font-medium">${escapeHtml(s.agent_name || '-')}</span><span>${idleMiami(s.started_at)}</span><span class="text-slate-500">→ act. ${idleMiami(s.last_activity_at)}</span><span>${state}</span><span class="text-slate-500">${mins} min</span></div>`;
+        return `<div class="users-session-row"><span class="text-slate-200 font-medium">${escapeHtml(s.agent_name || '-')}</span><span>${idleMiami(s.started_at)}</span><span class="text-slate-500">→ act. ${idleMiami(s.last_activity_at)}</span><span>${state}</span><span class="text-slate-500">${mins} min</span></div>`;
       }).join('');
       box.innerHTML = rows || '<p class="text-slate-500">Sin sesiones de asesoras en los últimos 7 días.</p>';
       if (window.lucide) lucide.createIcons();
@@ -2491,13 +2624,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const count = document.getElementById('userSearchCount');
       if (count) count.textContent = `${users.length} de ${authorizedUsersList.length} usuarios`;
       container.innerHTML = users.map(item => `
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700 py-1">
-          <span>${escapeHtml(item.email)}${item.nombre ? ' · ' + escapeHtml(item.nombre) : ''} · ${escapeHtml(item.role)}</span>
-          <span class="flex items-center gap-2">
-            ${item.activo ? 'Activo' : 'Inactivo'}
-            <button onclick="openChangeEmail('${escapeAttr(item.user_id)}')" class="px-2 py-1 rounded border border-slate-600 hover:border-indigo-400 text-[11px]">Cambiar correo</button>
-            <button onclick="setUserActive('${escapeAttr(item.user_id)}', ${item.activo ? 'false' : 'true'})" class="px-2 py-1 rounded border border-slate-600 hover:border-indigo-400 text-[11px]">${item.activo ? 'Desactivar' : 'Activar'}</button>
-          </span>
+        <div class="users-row">
+          <div class="min-w-0"><strong class="block">${escapeHtml(item.nombre || item.email)}</strong>${item.nombre ? `<span class="users-row-email block">${escapeHtml(item.email)}</span>` : ''}<span class="text-[11px] text-slate-500">${escapeHtml(item.role)}</span></div>
+          <div class="users-row-actions">
+            <span class="users-status ${item.activo ? 'is-active' : 'is-inactive'}">${item.activo ? 'Activo' : 'Inactivo'}</span>
+            <button type="button" onclick="openChangeEmail('${escapeAttr(item.user_id)}')">Cambiar correo</button>
+            <button type="button" onclick="setUserActive('${escapeAttr(item.user_id)}', ${item.activo ? 'false' : 'true'})">${item.activo ? 'Desactivar' : 'Activar'}</button>
+          </div>
         </div>`).join('') || `<p class="text-slate-500">${search ? 'No hay coincidencias.' : 'No hay usuarios.'}</p>`;
     }
 
@@ -2775,6 +2908,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }
 
       [btnDash, btnHist, btnReporte, btnCitas].forEach(button => button.classList.toggle('hidden', isTrafficker));
+      if (window.matchMedia?.('(max-width: 639px)').matches) {
+        const activeButton = { dashboard: btnDash, historico: btnHist, reporte: btnReporte, citas: btnCitas, campanas: btnCamp }[tab];
+        const tabsNav = activeButton?.parentElement;
+        if (tabsNav && !activeButton.classList.contains('hidden')) {
+          tabsNav.scrollTo({ left: activeButton.offsetLeft - tabsNav.offsetLeft - 8, behavior: 'smooth' });
+        }
+      }
       document.querySelectorAll('[data-sidebar-tab]').forEach(button => {
         button.classList.toggle('is-active', button.dataset.sidebarTab === tab);
       });
@@ -3774,11 +3914,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         return;
       }
       container.innerHTML = rows.map(r => `
-        <div class="flex items-center justify-between gap-2 border-b border-slate-800 last:border-0 py-1.5">
-          <span class="text-xs ${r.active ? 'text-slate-200' : 'text-slate-500 line-through'} truncate">${escapeHtml(r.value)}</span>
-          <div class="flex items-center gap-1 shrink-0">
-            <button onclick="renameCatalogValue(${Number(r.id)})" title="Renombrar" class="p-1 rounded bg-slate-800 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-300 transition-colors cursor-pointer"><i data-lucide="pencil" class="w-3 h-3"></i></button>
-            <button onclick="toggleCatalogValue(${Number(r.id)}, ${r.active ? 'false' : 'true'})" title="${r.active ? 'Desactivar' : 'Reactivar'}" class="p-1 rounded bg-slate-800 hover:bg-amber-500/20 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer"><i data-lucide="${r.active ? 'x-circle' : 'check-circle'}" class="w-3 h-3"></i></button>
+        <div class="catalog-row">
+          <span class="catalog-row-value ${r.active ? '' : 'is-inactive'}">${escapeHtml(r.value)}</span>
+          <div class="catalog-row-actions">
+            <button type="button" onclick="renameCatalogValue(${Number(r.id)})" title="Renombrar" aria-label="Renombrar ${escapeAttr(r.value)}"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+            <button type="button" onclick="toggleCatalogValue(${Number(r.id)}, ${r.active ? 'false' : 'true'})" title="${r.active ? 'Desactivar' : 'Reactivar'}" aria-label="${r.active ? 'Desactivar' : 'Reactivar'} ${escapeAttr(r.value)}"><i data-lucide="${r.active ? 'x-circle' : 'check-circle'}" class="w-3.5 h-3.5"></i></button>
           </div>
         </div>`).join('');
       if (window.lucide) lucide.createIcons();

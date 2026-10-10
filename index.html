@@ -482,6 +482,7 @@
     .users-session-row { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; padding: .7rem 0; border-top: 1px solid #e4e7ec; }
     .users-session-row:first-child { border-top: 0; }
     .users-session-list { max-height: 16rem; overflow-y: auto; border-top: 1px solid #e4e7ec; }
+    .users-session-row span { min-width: 0; overflow-wrap: anywhere; }
     .users-session-row span:first-child { color: #17203b; }
     [data-theme="dark"] .users-shell, [data-theme="dark"] .users-section { background: #1e293b; border-color: #334155; }
     [data-theme="dark"] .users-header { background: linear-gradient(115deg,#1e293b,#252449); border-color: #334155; }
@@ -543,6 +544,12 @@
       .users-body input, .users-body select { width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
       #formAuthorizeUser button[type="submit"] { width: 100%; min-height: 2.75rem; }
       .users-row-actions { width: 100%; }
+      .users-session-header { flex-wrap: wrap; }
+      .users-session-refresh { min-height: 2.75rem; padding: .5rem .75rem; }
+      #agentSessionsBody { font-size: .75rem; }
+      .users-session-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .25rem .5rem; }
+      .users-session-row span:nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+      .users-session-row span:last-child { grid-column: 1 / -1; }
       .users-row-actions button { min-height: 2.5rem; padding: .5rem .7rem; }
     }
     @media (max-width: 639px) {
@@ -1806,7 +1813,7 @@
           <div id="authorizedUsers" class="text-xs text-slate-500"></div>
         </section>
         <section class="users-section space-y-2">
-          <div class="flex items-center justify-between gap-3"><h3 class="text-sm font-bold">Actividad de asesoras</h3><button type="button" onclick="loadAgentSessionsReport()" class="px-2 py-1 rounded border border-slate-300 hover:border-indigo-400 text-[11px] cursor-pointer">Actualizar</button></div>
+          <div class="users-session-header flex items-center justify-between gap-3"><h3 class="text-sm font-bold">Actividad de asesoras</h3><button type="button" onclick="loadAgentSessionsReport()" class="users-session-refresh px-2 py-1 rounded border border-slate-300 hover:border-indigo-400 text-[11px] cursor-pointer">Actualizar</button></div>
           <p class="text-[11px] text-slate-500">Una fila por asesora. Las sesiones cerradas de más de 7 días se purgan al actualizar o iniciar una sesión; no se registran clics ni tecleo.</p>
           <div id="agentSessionsBody" class="text-[11px] text-slate-500"><p>Cargando actividad…</p></div>
         </section>

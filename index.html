@@ -623,7 +623,7 @@
       .mobile-tabs { position: static; }
       .mobile-tabs > div { padding-top: .5rem; padding-bottom: .5rem; }
       .mobile-tabs nav { width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; scroll-snap-type: x proximity; }
-      .mobile-tabs nav button { flex-shrink: 0; min-height: 2.5rem; white-space: nowrap; scroll-snap-align: start; }
+      .mobile-tabs nav button { flex-shrink: 0; min-height: 2.75rem; white-space: nowrap; scroll-snap-align: start; }
       .mobile-tabs .tabs-info { display: none; }
       .mobile-tabs .tabs-year { display: none; }
       .dashboard-intro { padding: 1.15rem; }
@@ -871,7 +871,7 @@
         <!-- Pestaña 2: Gráficos Históricos -->
         <button id="tabBtnHistorico" onclick="switchTab('historico')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">
           <i data-lucide="line-chart" class="w-4 h-4"></i>
-          <span>Gráficos Históricos</span>
+          <span class="sm:hidden">Histórico</span><span class="hidden sm:inline">Gráficos Históricos</span>
           <span class="tabs-year text-[11px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono font-semibold">2026</span>
         </button>
         <button id="tabBtnReporte" onclick="switchTab('reporte')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">

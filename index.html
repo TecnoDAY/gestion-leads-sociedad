@@ -172,11 +172,140 @@
     .login-password-toggle { position: absolute; right: .45rem; top: .45rem; min-height: 1.9rem; padding: 0 .65rem; border-radius: .45rem; background: #f1f3f9; color: #344054; font-size: .7rem; font-weight: 700; cursor: pointer; }
     .login-password-toggle:hover { background: #e4e7f0; }
     #loginStatus { min-height: 1.2rem; }
+    #modalSetPassword { background: rgba(10,20,42,.84); }
+    .password-shell { width: min(100%, 30rem); overflow: hidden; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.65); }
+    .password-brand { padding: 1.6rem; color: #fff; background: radial-gradient(circle at 95% 0%, rgba(129,140,248,.34), transparent 12rem), linear-gradient(145deg,#172b53,#101d3b); }
+    .password-brand-mark { display: inline-grid; place-items: center; width: 2.7rem; height: 2.7rem; border-radius: .8rem; background: linear-gradient(135deg,#6366f1,#4338ca); }
+    .password-brand h2 { color: #fff; }
+    [data-theme="light"] .password-brand .text-indigo-200 { color: #c7d2fe; }
+    [data-theme="light"] .password-brand .text-slate-300 { color: #cbd5e1; }
+    .password-content { padding: 1.6rem; color: #17203b; }
+    .password-content label { display: block; margin-bottom: .45rem; color: #344054; font-size: .78rem; font-weight: 700; }
+    .password-content input:not([hidden]) { width: 100%; min-height: 2.8rem; padding: .7rem .9rem; border: 1px solid #98a2b3; border-radius: .7rem; background: #fff; color: #17203b; font-size: .88rem; }
+    .password-content input::placeholder { color: #667085; }
+    .password-content input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+    .password-submit { width: 100%; min-height: 2.9rem; border: 0; border-radius: .7rem; background: #4f46e5; color: #fff; font-size: .88rem; font-weight: 700; cursor: pointer; }
+    .password-submit:hover { background: #4338ca; }
+    .password-submit:disabled { opacity: .55; cursor: wait; }
+    #setPasswordStatus { min-height: 1.2rem; }
+    #modalViewLead { background: rgba(10,20,42,.78); }
+    .lead-detail-shell { width: min(100%, 55rem); border: 1px solid rgba(148,163,184,.24); border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
+    .lead-detail-header { padding: 1.1rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: #fff; }
+    .lead-detail-header h3 { color: #17203b; }
+    .lead-detail-header p { color: #667085; }
+    .lead-detail-content { padding: 1.5rem; background: #f7f8fc; color: #17203b; }
+    .lead-detail-hero { border: 1px solid #e3e7f1; border-radius: 1rem; padding: 1.2rem; background: linear-gradient(115deg,#fff 45%,#f0efff); }
+    .lead-detail-hero .lead-detail-name { color: #17203b; font-size: 1.2rem; line-height: 1.4; }
+    .lead-detail-hero .lead-detail-meta { color: #475569; }
+    .lead-detail-card, .lead-detail-section { border: 1px solid #e4e7ec; border-radius: .85rem; background: #fff; }
+    .lead-detail-card { min-width: 0; padding: .9rem; }
+    .lead-detail-card > span:first-child, .lead-detail-section > span:first-child { color: #526174; font-size: .67rem; letter-spacing: .04em; }
+    .lead-detail-card .lead-detail-value { color: #17203b; overflow-wrap: anywhere; }
+    .lead-detail-section { padding: 1rem; }
+    .lead-detail-section p { overflow-wrap: anywhere; }
+    .lead-detail-footer { border-top: 1px solid #e4e7ec; padding: .9rem 1.5rem; background: #fff; }
+    .lead-detail-content textarea, .lead-detail-content input:not([type="radio"]), .lead-detail-content select { background: #fff !important; color: #17203b !important; }
+    .lead-detail-content textarea::placeholder, .lead-detail-content input::placeholder { color: #667085; }
+    [data-theme="dark"] .lead-detail-shell { background: #1e293b; }
+    [data-theme="dark"] .lead-detail-header, [data-theme="dark"] .lead-detail-footer { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .lead-detail-header h3 { color: #fff; }
+    [data-theme="dark"] .lead-detail-header p { color: #94a3b8; }
+    [data-theme="dark"] .lead-detail-content { background: #0f172a; color: #e2e8f0; }
+    [data-theme="dark"] .lead-detail-hero { background: linear-gradient(115deg,#1e293b,#252449); border-color: #334155; }
+    [data-theme="dark"] .lead-detail-hero .lead-detail-name, [data-theme="dark"] .lead-detail-card .lead-detail-value { color: #f8fafc; }
+    [data-theme="dark"] .lead-detail-hero .lead-detail-meta { color: #cbd5e1; }
+    [data-theme="dark"] .lead-detail-card, [data-theme="dark"] .lead-detail-section { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .lead-detail-card > span:first-child, [data-theme="dark"] .lead-detail-section > span:first-child { color: #94a3b8; }
+    [data-theme="dark"] .lead-detail-content textarea, [data-theme="dark"] .lead-detail-content input:not([type="radio"]), [data-theme="dark"] .lead-detail-content select { background: #0f172a !important; color: #f8fafc !important; }
+    :is(#modalEditLead, #modalNewLead) { background: rgba(10,20,42,.78); }
+    .lead-form-shell { width: min(100%, 47rem); border: 1px solid #e4e7ec; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
+    .lead-form-header { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: #fff; }
+    .lead-form-header h3 { color: #17203b; }
+    .lead-form-header p { color: #667085; }
+    .lead-form-scroll { min-height: 0; overflow-y: auto; padding: 1.5rem; background: #f7f8fc; }
+    .lead-form-primary, #editExistingCampusBlock:not(.hidden), #editAppointmentFields:not(.hidden), #newAppointmentFields:not(.hidden), #adminLeadFields:not(.hidden) { border: 1px solid #e4e7ec; border-radius: 1rem; padding: 1.2rem; background: #fff; }
+    .lead-form-primary h4 { margin-bottom: 1rem; color: #17203b; font-size: .86rem; font-weight: 700; }
+    :is(#formEditLead, #formNewLead) label { color: #344054; }
+    :is(#formEditLead, #formNewLead) input:not([type="radio"]):not([type="hidden"]), :is(#formEditLead, #formNewLead) select, :is(#formEditLead, #formNewLead) textarea { min-height: 2.55rem; border: 1px solid #98a2b3; border-radius: .6rem; background: #fff; color: #17203b; }
+    :is(#formEditLead, #formNewLead) input[readonly]:not([type="radio"]) { background: #f1f5f9; color: #475569; }
+    :is(#formEditLead, #formNewLead) textarea { min-height: 5rem; }
+    :is(#formEditLead, #formNewLead) input::placeholder, :is(#formEditLead, #formNewLead) textarea::placeholder { color: #667085; }
+    :is(#formEditLead, #formNewLead) input:focus, :is(#formEditLead, #formNewLead) select:focus, :is(#formEditLead, #formNewLead) textarea:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+    .lead-form-footer { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .7rem; padding: .9rem 1.5rem; border-top: 1px solid #e4e7ec; background: #fff; }
+    [data-theme="dark"] .lead-form-shell, [data-theme="dark"] .lead-form-header, [data-theme="dark"] .lead-form-footer { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .lead-form-header h3, [data-theme="dark"] .lead-form-primary h4 { color: #f8fafc; }
+    [data-theme="dark"] .lead-form-header p { color: #94a3b8; }
+    [data-theme="dark"] .lead-form-scroll { background: #0f172a; }
+    [data-theme="dark"] .lead-form-primary, [data-theme="dark"] #editExistingCampusBlock:not(.hidden), [data-theme="dark"] #editAppointmentFields:not(.hidden), [data-theme="dark"] #newAppointmentFields:not(.hidden), [data-theme="dark"] #adminLeadFields:not(.hidden) { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] :is(#formEditLead, #formNewLead) label { color: #cbd5e1; }
+    [data-theme="dark"] :is(#formEditLead, #formNewLead) input:not([type="radio"]):not([type="hidden"]), [data-theme="dark"] :is(#formEditLead, #formNewLead) select, [data-theme="dark"] :is(#formEditLead, #formNewLead) textarea { background: #0f172a; color: #f8fafc; border-color: #475569; }
+    [data-theme="dark"] :is(#formEditLead, #formNewLead) input[readonly]:not([type="radio"]) { background: #1e293b; color: #cbd5e1; }
+    .appointments-intro { position: relative; overflow: hidden; border: 1px solid #e4e7ec; border-radius: 1rem; padding: 1.5rem; background: linear-gradient(115deg,#fff 45%,#f0efff); }
+    .appointments-intro::after { content: ''; position: absolute; width: 13rem; height: 13rem; right: -5rem; top: -7rem; border-radius: 50%; background: rgba(99,102,241,.1); }
+    .appointments-filters, .appointments-table { border: 1px solid #e4e7ec; border-radius: 1rem; background: #fff; box-shadow: 0 8px 28px -24px rgba(15,23,42,.5); }
+    .appointments-filters { padding: 1.25rem; }
+    .appointments-filters label { color: #344054; font-size: .75rem; font-weight: 600; }
+    .appointments-filters input, .appointments-filters select { min-height: 2.6rem; border: 1px solid #98a2b3; border-radius: .6rem; padding: .55rem .7rem; background: #fff; color: #17203b; }
+    #citasKpis > div { min-height: 5rem; border: 1px solid #e4e7ec; border-radius: .85rem; padding: .9rem; background: #fff; box-shadow: 0 8px 24px -20px rgba(15,23,42,.4); }
+    #citasKpis > div strong { display: block; margin-top: .35rem; color: #17203b; font-variant-numeric: tabular-nums; }
+    #citasKpis > div:first-child { border-color: #c7d2fe; background: #eef2ff; }
+    #citasKpis > div:first-child strong { color: #4338ca; }
+    .appointments-table { overflow-x: auto; }
+    .appointments-table table { min-width: 900px; }
+    .appointments-table th { white-space: nowrap; background: #f1f5f9; color: #475569; font-size: .67rem; text-transform: uppercase; letter-spacing: .04em; }
+    .appointments-table tbody tr:hover { background: #f8faff; }
+    .appointments-table tbody td { color: #17203b; vertical-align: top; }
+    [data-theme="dark"] .appointments-intro { background: linear-gradient(115deg,#1e293b,#252449); border-color: #334155; }
+    [data-theme="dark"] .appointments-filters, [data-theme="dark"] .appointments-table, [data-theme="dark"] #citasKpis > div { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .appointments-filters label { color: #cbd5e1; }
+    [data-theme="dark"] .appointments-filters input, [data-theme="dark"] .appointments-filters select { background: #0f172a; color: #f8fafc; border-color: #475569; }
+    [data-theme="dark"] #citasKpis > div strong, [data-theme="dark"] .appointments-table tbody td { color: #f8fafc; }
+    [data-theme="dark"] .appointments-table th { background: #334155; color: #cbd5e1; }
+    [data-theme="dark"] .appointments-table tbody tr:hover { background: #273449; }
+    .campaigns-intro { position: relative; overflow: hidden; border: 1px solid #e4e7ec; border-radius: 1rem; padding: 1.5rem; background: linear-gradient(115deg,#fff 45%,#f0efff); }
+    .campaigns-intro::after { content: ''; position: absolute; width: 13rem; height: 13rem; right: -5rem; top: -7rem; border-radius: 50%; background: rgba(99,102,241,.1); }
+    .campaigns-controls, .campaigns-table { border: 1px solid #e4e7ec; border-radius: 1rem; background: #fff; box-shadow: 0 8px 28px -24px rgba(15,23,42,.5); }
+    .campaigns-controls { padding: 1.25rem; }
+    .campaigns-controls label { color: #344054; font-size: .75rem; font-weight: 600; }
+    .campaigns-controls input { min-height: 2.6rem; border: 1px solid #98a2b3; border-radius: .6rem; padding: .55rem .7rem; background: #fff; color: #17203b; }
+    .campaigns-summary > div { min-height: 5.5rem; border: 1px solid #e4e7ec; border-radius: .85rem; padding: 1rem; background: #fff; box-shadow: 0 8px 24px -20px rgba(15,23,42,.4); }
+    .campaigns-summary > div:first-child { border-color: #c7d2fe; background: #eef2ff; }
+    .campaigns-summary strong { display: block; margin-top: .4rem; color: #17203b; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+    .campaigns-summary > div:first-child strong { color: #4338ca; }
+    .campaigns-table { overflow-x: auto; }
+    .campaigns-table th { white-space: nowrap; background: #f1f5f9; color: #475569; font-size: .67rem; text-transform: uppercase; letter-spacing: .04em; }
+    .campaigns-table tbody tr:hover { background: #f8faff; }
+    .campaigns-table tbody td { color: #17203b; }
+    .campaigns-table tbody .campaigns-total-row { background: #eef2ff; }
+    .campaigns-table tbody .campaigns-total-row td { color: #17203b; }
+    .campaigns-table tbody input, .campaigns-table tbody select { border: 1px solid #98a2b3; border-radius: .5rem; background: #fff; color: #17203b; }
+    [data-theme="dark"] .campaigns-intro { background: linear-gradient(115deg,#1e293b,#252449); border-color: #334155; }
+    [data-theme="dark"] .campaigns-controls, [data-theme="dark"] .campaigns-table, [data-theme="dark"] .campaigns-summary > div { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .campaigns-controls label { color: #cbd5e1; }
+    [data-theme="dark"] .campaigns-controls input, [data-theme="dark"] .campaigns-table tbody input, [data-theme="dark"] .campaigns-table tbody select { background: #0f172a; color: #f8fafc; border-color: #475569; }
+    [data-theme="dark"] .campaigns-summary strong, [data-theme="dark"] .campaigns-table tbody td, [data-theme="dark"] .campaigns-table tbody .campaigns-total-row td { color: #f8fafc; }
+    [data-theme="dark"] .campaigns-table th { background: #334155; color: #cbd5e1; }
+    [data-theme="dark"] .campaigns-table tbody tr:hover { background: #273449; }
+    [data-theme="dark"] .campaigns-table tbody .campaigns-total-row { background: #252449; }
     @media (max-width: 639px) {
       .login-shell { display: block; max-width: 27rem; }
       .login-brand { min-height: 0; padding: 1.2rem 1.5rem; }
       .login-brand-description, .login-brand-footer { display: none; }
       .login-form-panel { padding: 1.5rem; }
+      #modalViewLead { padding: .5rem; }
+      .lead-detail-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; }
+      .lead-detail-header { padding: .9rem 1rem; }
+      .lead-detail-content { padding: 1rem; }
+      .lead-detail-footer { padding: .75rem 1rem; }
+      :is(#modalEditLead, #modalNewLead) { padding: .5rem; }
+      .lead-form-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; }
+      .lead-form-header, .lead-form-footer { padding: .9rem 1rem; }
+      .lead-form-scroll { padding: 1rem; }
+      .lead-form-primary, #editExistingCampusBlock:not(.hidden), #editAppointmentFields:not(.hidden), #newAppointmentFields:not(.hidden), #adminLeadFields:not(.hidden) { padding: 1rem; }
+      .lead-form-footer button { flex: 1; justify-content: center; }
+      .appointments-intro { padding: 1.15rem; }
+      .appointments-filters { padding: 1rem; }
+      .campaigns-intro, .campaigns-controls { padding: 1rem; }
     }
     @media (min-width: 1100px) {
       .app-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 45; width: 14rem; display: flex; flex-direction: column; padding: 1.25rem .9rem; background: linear-gradient(180deg, #111f3d, #0b1730); border-right: 1px solid rgba(148,163,184,.14); color: #cbd5e1; }
@@ -1038,29 +1167,31 @@
     </div> <!-- /viewHistorico -->
 
     <div id="viewCitas" class="hidden space-y-5">
-      <div class="glass-card rounded-2xl p-4 sm:p-6 border border-slate-700/80 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2"><div><h2 class="text-xl font-bold text-white">Citas</h2><p id="citasCount" class="text-xs text-slate-400">0 citas</p></div><button onclick="resetCitasFilters()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700">Limpiar</button></div>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs"><label>Desde<input id="citasDesde" type="date" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></label><label>Hasta<input id="citasHasta" type="date" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></label><label>Resultado<select id="citasResultado" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"><option value="">Todos</option><option value="ASISTIO">Asistió</option><option value="CANCELADA">Cancelada</option><option value="NO_ASISTIO">No asistió</option><option value="PROGRAMADA">Programada</option><option value="REPROGRAMADA">Reprogramada</option></select></label><label>Sede<select id="citasSede" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"><option value="">Todas</option><option value="DORAL">Doral</option><option value="sin">Sin sede</option><option value="WESTON">Weston</option></select></label><label>Campaña<select id="citasCampana" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label><label>Medio<select id="citasMedio" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label><label id="citasAsesorWrap" class="hidden">Asesor<select id="citasAsesor" class="w-full mt-1 rounded border border-slate-600 bg-slate-800 p-2"></select></label></div>
+      <div class="appointments-intro flex flex-wrap items-center justify-between gap-3">
+        <div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> Agenda del equipo</span><h2 class="mt-3 text-2xl font-bold text-white">Citas</h2><p class="mt-1 text-sm text-slate-400">Consulta las visitas programadas y sus resultados.</p><p id="citasCount" class="mt-2 text-xs font-semibold text-indigo-400">0 citas</p></div>
+      </div>
+      <div class="appointments-filters space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2"><div><h3 class="font-bold text-white text-sm">Filtrar citas</h3><p class="text-xs text-slate-400">Ajusta fechas, sede y origen para encontrar una visita.</p></div><button type="button" onclick="resetCitasFilters()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer">Limpiar filtros</button></div>
+        <div class="grid grid-cols-1 min-[400px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs"><label>Desde<input id="citasDesde" type="date" class="w-full mt-1"></label><label>Hasta<input id="citasHasta" type="date" class="w-full mt-1"></label><label>Resultado<select id="citasResultado" class="w-full mt-1"><option value="">Todos</option><option value="ASISTIO">Asistió</option><option value="CANCELADA">Cancelada</option><option value="NO_ASISTIO">No asistió</option><option value="PROGRAMADA">Programada</option><option value="REPROGRAMADA">Reprogramada</option></select></label><label>Sede<select id="citasSede" class="w-full mt-1"><option value="">Todas</option><option value="DORAL">Doral</option><option value="sin">Sin sede</option><option value="WESTON">Weston</option></select></label><label>Campaña<select id="citasCampana" class="w-full mt-1"></select></label><label>Medio<select id="citasMedio" class="w-full mt-1"></select></label><label id="citasAsesorWrap" class="hidden">Asesor<select id="citasAsesor" class="w-full mt-1"></select></label></div>
       </div>
       <div id="citasKpis" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2"></div>
-      <div class="glass-card rounded-2xl border border-slate-700/80 overflow-x-auto"><table class="w-full min-w-[900px] text-xs"><thead class="bg-slate-800 text-slate-300"><tr><th class="p-3 text-left">Fecha/hora</th><th class="p-3 text-left">Lead</th><th class="p-3 text-left">Estudiante</th><th class="p-3 text-left">Correo</th><th class="p-3 text-left">Edad</th><th class="p-3 text-left">Sede</th><th class="p-3 text-left">Asesor</th><th class="p-3 text-left">Campaña</th><th class="p-3 text-left">Mes origen</th><th class="p-3 text-left">Resultado</th><th></th></tr></thead><tbody id="citasTableBody" class="divide-y divide-slate-800"></tbody></table></div>
+      <div class="appointments-table"><table class="w-full text-xs"><thead><tr><th class="p-3 text-left">Fecha/hora</th><th class="p-3 text-left">Lead</th><th class="p-3 text-left">Estudiante</th><th class="p-3 text-left">Correo</th><th class="p-3 text-left">Edad</th><th class="p-3 text-left">Sede</th><th class="p-3 text-left">Asesor</th><th class="p-3 text-left">Campaña</th><th class="p-3 text-left">Mes origen</th><th class="p-3 text-left">Resultado</th><th></th></tr></thead><tbody id="citasTableBody" class="divide-y divide-slate-800"></tbody></table></div>
       <p id="citasAviso" class="text-sm text-slate-400"></p>
     </div>
 
-    <div id="viewCampanas" class="hidden max-w-5xl mx-auto space-y-5">
-      <div class="glass-card rounded-2xl p-4 sm:p-6 border border-slate-700/80 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div><h2 class="text-xl font-bold text-white">Campañas</h2><p class="text-xs text-slate-400">Informe mensual de Meta por campaña cruzado con los recuentos del CRM.</p></div>
-          <div class="flex flex-wrap items-center gap-2 text-xs text-slate-300">
-            <label>Mes <input id="campaignMesSel" type="month" onchange="loadCampanas()" class="mt-1 ml-1 rounded border border-slate-600 bg-slate-800 p-2 text-slate-100"></label>
-            <button type="button" onclick="exportCampanasCSV()" class="px-3 py-2 rounded-lg bg-slate-700 text-white text-xs font-semibold hover:bg-indigo-600 cursor-pointer">Descargar CSV</button>
-          </div>
-        </div>
-        <p id="campanasAviso" class="text-sm text-amber-300"></p>
+    <div id="viewCampanas" class="hidden space-y-5">
+      <div class="campaigns-intro">
+        <div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="megaphone" class="w-3.5 h-3.5"></i> Análisis de campañas</span><h2 class="mt-3 text-2xl font-bold text-white">Campañas</h2><p class="mt-1 text-sm text-slate-400">Compara la inversión de Meta con los resultados registrados en el CRM.</p></div>
       </div>
-      <div class="glass-card rounded-2xl border border-slate-700/80 overflow-x-auto">
+      <div class="campaigns-controls flex flex-wrap items-end justify-between gap-3">
+        <div><label for="campaignMesSel" class="block">Mes del informe</label><input id="campaignMesSel" type="month" onchange="loadCampanas()" class="mt-1"></div>
+        <button type="button" onclick="exportCampanasCSV()" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-700 text-white text-xs font-semibold hover:bg-indigo-600 cursor-pointer"><i data-lucide="download" class="w-4 h-4"></i> Descargar CSV</button>
+      </div>
+      <p id="campanasAviso" class="text-sm text-amber-300"></p>
+      <div id="campanasSummary" class="campaigns-summary hidden grid grid-cols-2 lg:grid-cols-4 gap-3" aria-live="polite"></div>
+      <div class="campaigns-table">
         <table class="w-full min-w-[1100px] text-xs">
-          <thead class="bg-slate-800 text-slate-300"><tr><th class="p-3 text-left">Campaña</th><th class="p-3 text-left">Estado</th><th class="p-3 text-right">Alcance</th><th class="p-3 text-right">Gasto (USD)</th><th class="p-3 text-right">Resultados Meta</th><th class="p-3 text-right">Coste/Resultado</th><th class="p-3 text-right">Leads Nuevos</th><th class="p-3 text-right">Agendados</th><th class="p-3 text-right">Asistieron</th><th class="p-3 text-right">Inscritos</th><th class="p-3 text-right">Agendados Meses Ant.</th><th class="p-3 text-right">Pendientes</th><th class="p-3"></th></tr></thead>
+          <thead><tr><th class="p-3 text-left">Campaña</th><th class="p-3 text-left">Estado</th><th class="p-3 text-right">Alcance</th><th class="p-3 text-right">Gasto (USD)</th><th class="p-3 text-right">Resultados Meta</th><th class="p-3 text-right">Coste/Resultado</th><th class="p-3 text-right">Leads Nuevos</th><th class="p-3 text-right">Agendados</th><th class="p-3 text-right">Asistieron</th><th class="p-3 text-right">Inscritos</th><th class="p-3 text-right">Agendados Meses Ant.</th><th class="p-3 text-right">Pendientes</th><th class="p-3"></th></tr></thead>
           <tbody id="campanasTableBody" class="divide-y divide-slate-800"></tbody>
         </table>
       </div>
@@ -1116,24 +1247,25 @@
 
   <!-- ================= MODAL: DEFINIR CONTRASEÑA (invitación o recuperación) ================= -->
   <div id="modalSetPassword" class="fixed inset-0 z-[70] bg-slate-950/95 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
-      <div class="flex items-center gap-3">
-        <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400"><i data-lucide="key-round" class="w-5 h-5"></i></div>
-        <div>
-          <h2 class="font-bold text-white">Define tu contraseña</h2>
-          <p id="setPasswordHint" class="text-xs text-slate-400">Tu cuenta está autorizada. Escribe una contraseña nueva para terminar de entrar.</p>
-        </div>
+    <div class="password-shell" role="dialog" aria-modal="true" aria-labelledby="setPasswordTitle">
+      <div class="password-brand">
+        <div class="flex items-center gap-3"><span class="password-brand-mark"><i data-lucide="clapperboard" class="w-5 h-5"></i></span><div><p class="font-bold leading-tight">Sociedad Actoral</p><p class="text-xs text-indigo-200">Centro de admisiones</p></div></div>
+        <h2 id="setPasswordTitle" class="mt-6 text-xl font-bold">Define tu contraseña</h2>
+        <p class="mt-1 text-sm text-slate-300">Un paso más para entrar a tu espacio de trabajo.</p>
       </div>
-      <form id="formSetPassword" onsubmit="handleSetPassword(event)" class="space-y-3">
+      <div class="password-content">
+      <p id="setPasswordHint" class="mb-5 text-sm text-slate-600">Tu cuenta está autorizada. Escribe una contraseña nueva para terminar de entrar.</p>
+      <form id="formSetPassword" onsubmit="handleSetPassword(event)" class="space-y-4">
         <!-- Chromium avisa si un formulario con contraseña no tiene campo de usuario: este modal se abre desde el enlace del correo, asi que el campo va oculto y vacio a proposito. -->
         <input type="text" id="setPasswordUsername" autocomplete="username" hidden>
-        <input id="setPasswordNew" type="password" autocomplete="new-password" required minlength="8" placeholder="Nueva contraseña (mínimo 8 caracteres)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
-        <input id="setPasswordConfirm" type="password" autocomplete="new-password" required minlength="8" placeholder="Repite la contraseña" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
-        <button type="submit" class="w-full px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Guardar contraseña</button>
+        <div><label for="setPasswordNew">Nueva contraseña</label><input id="setPasswordNew" type="password" autocomplete="new-password" required minlength="8" placeholder="Mínimo 8 caracteres"></div>
+        <div><label for="setPasswordConfirm">Confirmar contraseña</label><input id="setPasswordConfirm" type="password" autocomplete="new-password" required minlength="8" placeholder="Repite la contraseña"></div>
+        <button type="submit" class="password-submit">Guardar contraseña</button>
       </form>
-      <div class="flex items-center justify-between gap-3">
-        <p id="setPasswordStatus" class="text-xs text-slate-400"></p>
-        <button type="button" onclick="handleSignOut()" class="text-[11px] text-slate-400 hover:text-white cursor-pointer">Salir</button>
+      <div class="mt-5 flex items-center justify-between gap-3">
+        <p id="setPasswordStatus" role="status" aria-live="polite" class="text-xs text-slate-600"></p>
+        <button type="button" onclick="handleSignOut()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer">Salir</button>
+      </div>
       </div>
     </div>
   </div>
@@ -1242,20 +1374,23 @@
 
   <!-- ================= MODAL: NUEVO LEAD ================= -->
   <div id="modalNewLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
-      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between shrink-0">
+    <div class="lead-form-shell overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150" role="dialog" aria-modal="true" aria-labelledby="newLeadTitle">
+      <div class="lead-form-header">
         <div class="flex items-center gap-2">
           <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
             <i data-lucide="user-plus" class="w-4 h-4"></i>
           </div>
-          <h3 class="font-bold text-white text-base">Registrar Nuevo Lead</h3>
+          <div><h3 id="newLeadTitle" class="font-bold text-base">Registrar nuevo lead</h3><p class="text-xs">Datos de contacto y primera gestión</p></div>
         </div>
-        <button onclick="closeNewLeadModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
+        <button type="button" onclick="closeNewLeadModal()" aria-label="Cerrar registro de lead" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <form id="formNewLead" onsubmit="handleCreateLead(event)" class="p-6 space-y-4 text-xs overflow-y-auto min-h-0">
+      <form id="formNewLead" onsubmit="handleCreateLead(event)" class="flex flex-col min-h-0 flex-1 text-xs">
+        <div class="lead-form-scroll space-y-4">
+        <div class="lead-form-primary">
+          <h4>Información inicial</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- Nombre -->
           <div class="sm:col-span-2">
@@ -1383,12 +1518,14 @@
             <textarea id="newObservaciones" rows="3" placeholder="Notas de seguimiento, intereses específicos, edades de los alumnos..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
           </div>
         </div>
+        </div>
+        </div>
 
-        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/80">
+        <div class="lead-form-footer">
           <button type="button" onclick="closeNewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium cursor-pointer">Cancelar</button>
           <button type="submit" id="btnSubmitNewLead" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center gap-2 cursor-pointer">
             <i data-lucide="check" class="w-4 h-4"></i>
-            <span>Guardar en Supabase</span>
+            <span>Crear lead</span>
           </button>
         </div>
       </form>
@@ -1397,25 +1534,28 @@
 
   <!-- ================= MODAL: EDITAR / SEGUIMIENTO ================= -->
   <div id="modalEditLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
-      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between shrink-0">
+    <div class="lead-form-shell overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150" role="dialog" aria-modal="true" aria-labelledby="editLeadTitle">
+      <div class="lead-form-header">
         <div class="flex items-center gap-2">
-          <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+          <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
             <i data-lucide="edit-3" class="w-4 h-4"></i>
           </div>
           <div>
-            <h3 class="font-bold text-white text-base">Actualizar Seguimiento</h3>
+            <h3 id="editLeadTitle" class="font-bold text-base">Actualizar seguimiento</h3>
             <p id="editLeadLeadInfo" class="text-xs text-slate-400">ID: -</p>
           </div>
         </div>
-        <button onclick="closeEditLeadModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
+        <button type="button" onclick="closeEditLeadModal()" aria-label="Cerrar actualización de seguimiento" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <form id="formEditLead" onsubmit="handleUpdateLead(event)" class="p-6 space-y-4 text-xs overflow-y-auto min-h-0">
+      <form id="formEditLead" onsubmit="handleUpdateLead(event)" class="flex flex-col min-h-0 flex-1 text-xs">
         <input type="hidden" id="editLeadId">
+        <div class="lead-form-scroll space-y-4">
 
+        <div class="lead-form-primary">
+        <h4>Gestión y datos de contacto</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- GESTION -->
           <div>
@@ -1481,6 +1621,7 @@
             <p class="text-[11px] text-slate-400 mt-1">Puedes agregar nuevas notas fechadas al final del texto.</p>
           </div>
         </div>
+        </div>
 
         <p id="editAppointmentAlreadyNotice" class="hidden text-[11px] text-slate-400">Este lead ya estaba agendado, así que no se crea una cita nueva aquí. Las citas adicionales se gestionan desde la ficha del lead.</p>
 
@@ -1517,11 +1658,12 @@
           </div>
         </section>
 
-        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/80">
+        </div>
+        <div class="lead-form-footer">
           <button type="button" onclick="closeEditLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium cursor-pointer">Cancelar</button>
           <button type="submit" id="btnSubmitEditLead" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-2 cursor-pointer">
             <i data-lucide="save" class="w-4 h-4"></i>
-            <span>Actualizar en Supabase</span>
+            <span>Guardar cambios</span>
           </button>
         </div>
       </form>
@@ -1530,24 +1672,24 @@
 
   <!-- ================= MODAL: FICHA DETALLE LEAD ================= -->
   <div id="modalViewLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col">
-      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between shrink-0">
+    <div class="lead-detail-shell overflow-hidden max-h-[90dvh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="viewLeadTitle">
+      <div class="lead-detail-header flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2">
-          <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+          <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
             <i data-lucide="file-text" class="w-4 h-4"></i>
           </div>
-          <h3 class="font-bold text-white text-base">Ficha Integral del Lead</h3>
+          <div><h3 id="viewLeadTitle" class="font-bold text-base">Ficha del lead</h3><p class="text-xs">Información, seguimiento y próximas acciones</p></div>
         </div>
-        <button onclick="closeViewLeadModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
+        <button type="button" onclick="closeViewLeadModal()" aria-label="Cerrar ficha del lead" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="p-6 space-y-4 text-xs overflow-y-auto min-h-0" id="viewLeadContent">
+      <div class="lead-detail-content space-y-4 text-xs overflow-y-auto min-h-0" id="viewLeadContent">
         <!-- Injected by JS -->
       </div>
 
-      <div class="px-6 py-3 border-t border-slate-700/80 bg-slate-900/50 flex justify-end shrink-0">
+      <div class="lead-detail-footer flex justify-end shrink-0">
         <button onclick="closeViewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Cerrar</button>
       </div>
     </div>
@@ -1802,6 +1944,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (campaignMesSel) campaignMesSel.value = '';
       document.getElementById('campanasTableBody')?.replaceChildren();
       document.getElementById('campanasAviso')?.replaceChildren();
+      document.getElementById('campanasSummary')?.replaceChildren();
+      document.getElementById('campanasSummary')?.classList.add('hidden');
       currentMainTab = 'dashboard';
        setDashboardTabState();
        resetCitasPanel();
@@ -4804,13 +4948,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }
 
       container.innerHTML = `
-        <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-700/80 flex items-start justify-between gap-4">
+        <div class="lead-detail-hero flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <div class="flex items-center gap-2 flex-wrap">
-              <div class="text-base font-bold text-white">${escapeHtml(nombre)}</div>
+              <div class="lead-detail-name font-bold">${escapeHtml(nombre)}</div>
               ${finalOrigin === 'historico' ? '<span class="text-[11px] uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">Histórico 2025</span>' : ''}
             </div>
-            <div class="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
+            <div class="lead-detail-meta text-xs mt-1 flex flex-wrap items-center gap-2">
               <span>ID: #${escapeHtml(String(lead.id))}</span>
               <span>•</span>
               <span>Ingreso: ${escapeHtml(getField(lead, 'Fecha'))} (${escapeHtml(getField(lead, 'Mes'))})</span>
@@ -4819,50 +4963,50 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           <div>${renderGestionBadge(getField(lead, 'GESTION'))}</div>
         </div>${firstEntryHtml}
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+        <div class="grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-3 gap-3">
+          <div class="lead-detail-card">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Teléfono / WhatsApp</span>
             <div class="flex items-center gap-1.5 mt-0.5">
               ${cleanPhone ? `<button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="text-slate-400 opacity-60 cursor-not-allowed"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></button>` : ''}
-              <span class="font-mono text-slate-200">${escapeHtml(telefonoFmt || 'S/N')}</span>
+              <span class="lead-detail-value font-mono">${escapeHtml(telefonoFmt || 'S/N')}</span>
             </div>
           </div>
 
-          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+          <div class="lead-detail-card">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Campaña</span>
-            <span class="font-medium text-slate-200 mt-0.5 block truncate">${escapeHtml(getField(lead, 'Campaña') || '-')}</span>
+            <span class="lead-detail-value font-medium mt-0.5 block truncate">${escapeHtml(getField(lead, 'Campaña') || '-')}</span>
           </div>
 
-          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+          <div class="lead-detail-card">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Medio</span>
-            <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'Medio') || '-')}</span>
+            <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'Medio') || '-')}</span>
           </div>
 
-          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+          <div class="lead-detail-card">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Asesor Principal</span>
-            <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'Agente ') || '-')}</span>
+            <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'Agente ') || '-')}</span>
           </div>
 
-          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+          <div class="lead-detail-card">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Último Asesor</span>
-            <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'ULTIMO AGENTE ') || '-')}</span>
+            <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'ULTIMO AGENTE ') || '-')}</span>
           </div>
 
-          <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+          <div class="lead-detail-card">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Última Gestión</span>
-            <span class="font-medium text-slate-200 mt-0.5 block">${escapeHtml(getField(lead, 'Fecha Última Gestión ') || '-')}</span>
+            <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'Fecha Última Gestión ') || '-')}</span>
           </div>
         </div>${duplicateScopeHtml}${repetidosHtml}
 
-        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-1">
+        <div class="lead-detail-section space-y-1">
           <span class="text-[11px] uppercase text-slate-400 font-semibold block">Historial de Observaciones</span>
           <p class="text-slate-300 font-mono text-xs whitespace-pre-line leading-relaxed">${escapeHtml(getField(lead, 'OBSERVACIONES ') || 'Sin observaciones registradas.')}</p>
          </div>${finalOrigin === 'historico' ? '' : `
-         <div id="leadGestionesSection" class="hidden bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+         <div id="leadGestionesSection" class="hidden lead-detail-section space-y-2">
            <span class="text-[11px] uppercase text-slate-400 font-semibold block">Historial de gestiones</span>
            <div id="leadGestionesList"><p class="text-[11px] text-slate-500">Cargando historial…</p></div>
          </div>
-         <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+         <div class="lead-detail-section space-y-2">
           <span class="text-[11px] uppercase text-slate-400 font-semibold block">Notas del Equipo</span>
           <div id="leadNotesList" class="space-y-2"><p class="text-[11px] text-slate-500">Cargando notas…</p></div>
           <div class="flex items-start gap-2 pt-1">
@@ -4872,7 +5016,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             </button>
            </div>
          </div>`}
-          ${finalOrigin === 'historico' ? '' : `<div id="leadAppointmentsSection" class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-3">
+          ${finalOrigin === 'historico' ? '' : `<div id="leadAppointmentsSection" class="lead-detail-section space-y-3">
             <div class="flex items-center justify-between gap-2"><span class="text-[11px] uppercase text-slate-400 font-semibold">Citas</span><button type="button" onclick="openHelpModal('ayuda-citas')" title="Ayuda: citas del lead" aria-label="Ayuda sobre la gestión de citas del lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 cursor-pointer shrink-0">?</button></div>
             <div id="leadAppointmentCreate" class="${isAgendadoGestion(getField(lead, 'GESTION')) ? '' : 'hidden'}">
             <form id="leadAppointmentForm" onsubmit="createLeadAppointment(event)" class="grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end">
@@ -6951,6 +7095,16 @@ async function deleteLeadAppointment(id) {
     function renderCampanas(rows, totals, mesLabel, esEditor, monthStr) {
       const tbody = document.getElementById('campanasTableBody');
       if (!tbody) return;
+      const summary = document.getElementById('campanasSummary');
+      if (summary) {
+        summary.classList.toggle('hidden', !rows.length);
+        summary.innerHTML = rows.length ? [
+          ['Inversión Meta', `$${totals.gasto.toFixed(2)}`],
+          ['Resultados Meta', totals.resultados],
+          ['Leads nuevos', totals.leads_nuevos],
+          ['Inscritos', totals.inscritos]
+        ].map(([label, value]) => `<div><span class="text-[11px] text-slate-400">${label}</span><strong>${escapeHtml(String(value))}</strong></div>`).join('') : '';
+      }
       if (!rows.length) {
         tbody.innerHTML = '<tr><td colspan="13" class="p-4 text-center text-slate-400">Sin datos para este mes.</td></tr>';
         return;
@@ -6982,7 +7136,7 @@ async function deleteLeadAppointment(id) {
           <td class="p-3 text-right whitespace-nowrap space-x-1">${btnSave}${btnDelete}</td>
         </tr>`;
       }).join('');
-      const totalRow = `<tr class="bg-slate-800/70 font-semibold text-slate-100 border-t-2 border-indigo-600">
+      const totalRow = `<tr class="campaigns-total-row font-semibold text-slate-100 border-t-2 border-indigo-600">
         <td class="p-3 text-left">TOTAL · ${escapeHtml(mesLabel)}</td>
         <td class="p-3"></td>
         <td class="p-3 text-right font-mono">${totals.alcance}</td>

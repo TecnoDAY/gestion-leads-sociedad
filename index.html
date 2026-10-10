@@ -275,6 +275,53 @@
     [data-theme="dark"] #citasKpis > div strong, [data-theme="dark"] .appointments-table tbody td { color: #f8fafc; }
     [data-theme="dark"] .appointments-table th { background: #334155; color: #cbd5e1; }
     [data-theme="dark"] .appointments-table tbody tr:hover { background: #273449; }
+
+    /* Vista calendario en Citas */
+    #citasViewBar { display: flex; flex-wrap: wrap; gap: 2px; }
+    #citasViewBar button { border: 1px solid transparent; }
+    #citasViewBar button:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+    #citasCalendarNav { display: flex; align-items: center; }
+    #citasCalendarTitle { white-space: nowrap; }
+    #citasCalendar { min-height: 70vh; }
+    @media (min-width: 1024px) { #citasCalendar { min-height: 42rem; } }
+    #citasCalendarLegend { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+    /* FullCalendar overrides — coherentes con appointments-table (superficie, bordes, textos) */
+    .fc { background: transparent; border-color: #334155; }
+    .fc-theme-standard td, .fc-theme-standard th { border-color: #334155; }
+    .fc-theme-standard .fc-scrollgrid { border-color: #334155; }
+    .fc-timegrid-slot { border-color: #1e293b; }
+    .fc-timegrid-axis { border-color: #334155; }
+    .fc-col-header-cell { background: #1e293b; }
+    .fc-col-header-cell-cushion { color: #cbd5e1; }
+    .fc-timegrid-axis-cushion { color: #94a3b8; }
+    .fc-daygrid-day-number { color: #cbd5e1; }
+    .fc-day-today { background: rgba(99, 102, 241, 0.12) !important; }
+    .fc-event { border: none; border-radius: 4px; padding: 2px 4px; font-size: .75rem; cursor: pointer; }
+    .fc-event:hover { opacity: 0.9; }
+    .fc-event:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+    /* Tema claro — overrides bajo [data-theme="light"] */
+    [data-theme="light"] #citasViewBar { background: #f1f5f9; border-color: #cbd5e1; }
+    [data-theme="light"] #citasViewBar button { color: #475569; }
+    [data-theme="light"] #citasViewBar button[aria-selected="true"] { background: #4338ca; color: #fff; }
+    [data-theme="light"] #citasViewBar button:not([aria-selected="true"]):hover { background: #e2e8f0; color: #1e293b; }
+    [data-theme="light"] #citasCalendarNav { background: #f1f5f9; border-color: #cbd5e1; }
+    [data-theme="light"] #citasCalendarNav button { background: #e2e8f0; color: #334155; }
+    [data-theme="light"] #citasCalendarNav button:hover { background: #cbd5e1; color: #1e293b; }
+    [data-theme="light"] #citasCalendarTitle { color: #334155; }
+    [data-theme="light"] #citasCalendar { background: #fff; border-color: #cbd5e1; }
+    [data-theme="light"] #citasCalendarLegend { color: #475569; }
+    [data-theme="light"] .fc { border-color: #cbd5e1; }
+    [data-theme="light"] .fc-theme-standard td, [data-theme="light"] .fc-theme-standard th { border-color: #cbd5e1; }
+    [data-theme="light"] .fc-theme-standard .fc-scrollgrid { border-color: #cbd5e1; }
+    [data-theme="light"] .fc-timegrid-slot { border-color: #e2e8f0; }
+    [data-theme="light"] .fc-timegrid-axis { border-color: #cbd5e1; }
+    [data-theme="light"] .fc-col-header-cell { background: #f1f5f9; }
+    [data-theme="light"] .fc-col-header-cell-cushion { color: #475569; }
+    [data-theme="light"] .fc-timegrid-axis-cushion { color: #64748b; }
+    [data-theme="light"] .fc-daygrid-day-number { color: #334155; }
+    [data-theme="light"] .fc-day-today { background: rgba(99, 102, 241, 0.15) !important; }
+    [data-theme="light"] .fc-event { box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+
     .campaigns-intro { position: relative; overflow: hidden; border: 1px solid #e4e7ec; border-radius: 1rem; padding: 1.5rem; background: linear-gradient(115deg,#fff 45%,#f0efff); }
     .campaigns-intro::after { content: ''; position: absolute; width: 13rem; height: 13rem; right: -5rem; top: -7rem; border-radius: 50%; background: rgba(99,102,241,.1); }
     .campaigns-controls, .campaigns-table { border: 1px solid #e4e7ec; border-radius: 1rem; background: #fff; box-shadow: 0 8px 28px -24px rgba(15,23,42,.5); }
@@ -1600,6 +1647,29 @@
     </div> <!-- /viewHistorico -->
 
     <div id="viewCitas" class="hidden space-y-5">
+      <!-- Barra de vista: Lista / Día / Semana / Mes -->
+      <div id="citasViewBar" class="flex flex-wrap items-center gap-2 bg-slate-800/50 border border-slate-700 rounded-lg p-2" role="tablist" aria-label="Vista de citas">
+        <button id="citasViewLista" type="button" role="tab" aria-selected="true" onclick="setCitasViewMode('lista')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-indigo-600 text-white">Lista</button>
+        <button id="citasViewDia" type="button" role="tab" aria-selected="false" onclick="setCitasViewMode('dia')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Día</button>
+        <button id="citasViewSemana" type="button" role="tab" aria-selected="false" onclick="setCitasViewMode('semana')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Semana</button>
+        <button id="citasViewMes" type="button" role="tab" aria-selected="false" onclick="setCitasViewMode('mes')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Mes</button>
+      </div>
+      <!-- Navegación del calendario (oculta en modo lista) -->
+      <div id="citasCalendarNav" class="hidden flex items-center justify-between gap-3 bg-slate-800/50 border border-slate-700 rounded-lg p-3">
+        <button type="button" onclick="citasCalendarNav('today')" class="px-3 py-1.5 rounded-md text-xs font-medium bg-slate-700 text-slate-200 hover:bg-slate-600 transition-colors">Hoy</button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="citasCalendarNav('prev')" class="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" aria-label="Período anterior"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+          <span id="citasCalendarTitle" class="text-sm font-medium text-slate-200 min-w-[140px] text-center"></span>
+          <button type="button" onclick="citasCalendarNav('next')" class="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" aria-label="Período siguiente"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+        </div>
+        <div class="w-20"></div>
+      </div>
+      <!-- Contenedor del calendario (oculto en modo lista) -->
+      <div id="citasCalendarWrap" class="hidden space-y-3" role="region" aria-label="Calendario de citas" aria-live="polite">
+        <div id="citasCalendarLegend" class="flex flex-wrap items-center gap-3 text-xs text-slate-400" aria-hidden="true"></div>
+        <div id="citasCalendar" class="rounded-lg border border-slate-700 bg-slate-800/50 min-h-[70vh] lg:min-h-[42rem]"></div>
+        <p id="citasCalendarMsg" class="text-sm text-slate-400 text-center hidden"></p>
+      </div>
       <div class="appointments-intro flex flex-wrap items-center justify-between gap-3">
         <div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> Agenda del equipo</span><h2 class="mt-3 text-2xl font-bold text-white">Citas</h2><p class="mt-1 text-sm text-slate-400">Consulta las visitas programadas y sus resultados.</p><p id="citasCount" class="mt-2 text-xs font-semibold text-indigo-400">0 citas</p></div>
       </div>
@@ -3239,7 +3309,230 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       tableBody?.removeAttribute?.('aria-busy');
       renderCitas();
     }
-    function renderCitas() { const result=document.getElementById('citasResultado')?.value||'', camp=document.getElementById('citasCampana')?.value||'', medio=document.getElementById('citasMedio')?.value||'', advisor=isAdmin || isSupervisor?(document.getElementById('citasAsesor')?.value||''):''; const sede=document.getElementById('citasSede')?.value||'';const rows=citasCache.filter(r=>(!result||r.status===result)&&(!camp||getField(r.lead,'Campaña')===camp)&&(!sede||(sede==='sin' ? !r.campus : r.campus===sede))&&(!medio||getField(r.lead,'Medio')===medio)&&(!advisor||r.advisor_name===advisor)); const counts=Object.fromEntries(['PROGRAMADA','ASISTIO','NO_ASISTIO','CANCELADA','REPROGRAMADA'].map(s=>[s,rows.filter(r=>r.status===s).length])), denom=counts.ASISTIO+counts.NO_ASISTIO; document.getElementById('citasKpis').innerHTML=[['Total citas',rows.length],...Object.entries(counts).map(([k,v])=>[k,v]),['Doral',rows.filter(r=>r.campus==='DORAL'&&!r.is_data_dura).length],['Doral Data Dura',rows.filter(r=>r.campus==='DORAL'&&r.is_data_dura===true).length],['Weston',rows.filter(r=>r.campus==='WESTON'&&!r.is_data_dura).length],['Weston Data Dura',rows.filter(r=>r.campus==='WESTON'&&r.is_data_dura===true).length],['Sin sede (históricas)',rows.filter(r=>!r.campus).length],['Tasa asistencia',(denom?counts.ASISTIO/denom*100:0).toFixed(1)+'%']].map(x=>`<div class="rounded-lg border border-slate-700 bg-slate-800/60 p-3"><div class="text-[11px] text-slate-400">${escapeHtml(x[0])}</div><strong class="text-lg text-white">${escapeHtml(String(x[1]))}</strong></div>`).join(''); document.getElementById('citasCount').textContent=`${rows.length} citas`; document.getElementById('citasTableBody').innerHTML=rows.length?rows.map(r=>{const l=r.lead, id=Number(l?.id); return `<tr><td class="p-3">${escapeHtml(appointmentLocal(r.scheduled_at))}</td><td class="p-3">${escapeHtml(getField(l,'Nombre'))}<br>${escapeHtml(getField(l,'Telefono'))}</td><td class="p-3">${escapeHtml(r.student_name||'-')}</td><td class="p-3">${escapeHtml(r.contact_email||'-')}</td><td class="p-3">${escapeHtml(r.student_age!=null?String(r.student_age):'-')}</td><td class="p-3">${escapeHtml(r.campus||'Sin sede')}</td><td class="p-3">${escapeHtml(r.advisor_name)}</td><td class="p-3">${escapeHtml(getField(l,'Campaña'))}</td><td class="p-3">${escapeHtml(getField(l,'Mes'))}</td><td class="p-3">${escapeHtml(r.status)}</td><td class="p-3">${Number.isInteger(id)&&id>0?`<button onclick="openViewLeadModal(${id},'actual')" class="text-indigo-400 hover:underline">Ver ficha</button>${(isAdmin || r.advisor_user_id === currentUser?.id) ? `<button onclick="editAppointmentDetails(${r.id})" class="block text-indigo-400 hover:underline">Editar datos</button>` : ''}${isAdmin ? `<button onclick="deleteLeadAppointment(${r.id})" class="block text-rose-400 hover:underline">Eliminar cita</button>` : ''}`:''}</td></tr>`}).join(''):'<tr><td colspan="11" class="appointments-empty"><p class="text-sm font-semibold">No hay citas para los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otras fechas o limpia los filtros.</p><button type="button" onclick="resetCitasFilters()">Limpiar filtros</button></td></tr>'; }
+
+    // Estado de vista de citas: 'lista' | 'dia' | 'semana' | 'mes'
+    let citasViewMode = 'lista';
+    let citasCalendarReady = false;
+    let citasCurrentRange = { start: '', end: '' };
+
+    // Mapeo de modo de vista a vista de FullCalendar
+    const CITAS_VIEW_FC = {
+      dia: 'timeGridDay',
+      semana: 'timeGridWeek',
+      mes: 'dayGridMonth',
+    };
+
+    // Convierte filas filtradas de citasCache a eventos FullCalendar
+    function citasEventsFromRows(rows) {
+      return rows.map(r => {
+        const l = r.lead;
+        const leadId = Number(l?.id);
+        const start = window.citasCalendarApi?.miamiNaive?.(r.scheduled_at) || '';
+        const end = start ? window.citasCalendarApi?.addMinutesNaive?.(start, 60) : '';
+        const advisorKey = r.advisor_user_id ?? r.advisor_name;
+        const color = window.citasCalendarApi?.advisorColor?.(advisorKey) || '#2563eb';
+        return {
+          id: String(r.id),
+          start,
+          end,
+          title: escapeHtml(getField(l, 'Nombre') || 'Sin nombre'),
+          extendedProps: {
+            leadId,
+            advisorName: r.advisor_name,
+            status: r.status,
+            campus: r.campus,
+            time: start ? start.split('T')[1] : '',
+          },
+          backgroundColor: color,
+          borderColor: color,
+          textColor: '#ffffff',
+        };
+      }).filter(e => e.start && e.end);
+    }
+
+    // Actualiza el calendario con eventos y refresca la leyenda
+    function updateCitasCalendar(rows) {
+      if (!citasCalendarReady) return;
+      const events = citasEventsFromRows(rows);
+      window.citasCalendarApi?.updateEvents?.(events);
+      renderCitasLegend(rows);
+    }
+
+    // Renderiza la leyenda de asesores con chips de color
+    function renderCitasLegend(rows) {
+      const legend = document.getElementById('citasCalendarLegend');
+      if (!legend) return;
+      // Asesores únicos en las filas
+      const advisors = new Map();
+      rows.forEach(r => {
+        const key = r.advisor_user_id ?? r.advisor_name;
+        const name = r.advisor_name || 'Sin asesor';
+        if (!advisors.has(key)) {
+          advisors.set(key, name);
+        }
+      });
+      legend.innerHTML = '';
+      advisors.forEach((name, key) => {
+        const color = window.citasCalendarApi?.advisorColor?.(key) || '#2563eb';
+        const chip = document.createElement('span');
+        chip.className = 'inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full';
+        chip.style.backgroundColor = `${color}20`; // 12% opacity
+        chip.style.color = color;
+        chip.style.border = `1px solid ${color}60`; // 37% opacity
+        const dot = document.createElement('span');
+        dot.style.width = '8px';
+        dot.style.height = '8px';
+        dot.style.borderRadius = '50%';
+        dot.style.backgroundColor = color;
+        dot.style.flexShrink = '0';
+        chip.appendChild(dot);
+        const label = document.createElement('span');
+        label.textContent = escapeHtml(name);
+        chip.appendChild(label);
+        legend.appendChild(chip);
+      });
+    }
+
+    // Cambia entre vista lista y vista calendario
+    async function setCitasViewMode(mode) {
+      citasViewMode = mode;
+      const isCalendario = mode !== 'lista';
+      const tableWrap = document.querySelector('.appointments-table');
+      const calendarWrap = document.getElementById('citasCalendarWrap');
+      const calendarNav = document.getElementById('citasCalendarNav');
+      const viewButtons = ['citasViewLista', 'citasViewDia', 'citasViewSemana', 'citasViewMes'];
+      // Labels Desde/Hasta para ocultar en modo calendario
+      const desdeLabel = document.querySelector('label[for="citasDesde"]');
+      const hastaLabel = document.querySelector('label[for="citasHasta"]');
+
+      if (tableWrap) tableWrap.style.display = isCalendario ? 'none' : '';
+      if (calendarWrap) calendarWrap.classList.toggle('hidden', !isCalendario);
+      if (calendarNav) calendarNav.classList.toggle('hidden', !isCalendario);
+      if (desdeLabel) desdeLabel.style.display = isCalendario ? 'none' : '';
+      if (hastaLabel) hastaLabel.style.display = isCalendario ? 'none' : '';
+
+      viewButtons.forEach(id => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        const active = (mode === 'lista' && id === 'citasViewLista') ||
+                       (mode === 'dia' && id === 'citasViewDia') ||
+                       (mode === 'semana' && id === 'citasViewSemana') ||
+                       (mode === 'mes' && id === 'citasViewMes');
+        btn.setAttribute('aria-selected', active);
+        if (active) {
+          btn.classList.remove('text-slate-300', 'hover:bg-slate-700');
+          btn.classList.add('bg-indigo-600', 'text-white');
+        } else {
+          btn.classList.remove('bg-indigo-600', 'text-white');
+          btn.classList.add('text-slate-300', 'hover:bg-slate-700');
+        }
+      });
+
+      if (isCalendario) {
+        // Estado de carga: muestra mensaje mientras resuelve el import dinámico
+        const msg = document.getElementById('citasCalendarMsg');
+        if (msg) {
+          msg.textContent = 'Cargando calendario…';
+          msg.classList.remove('hidden');
+        }
+        try {
+          // Handler para click en evento: abre la ficha del lead
+          const onEventClick = (props) => {
+            if (props?.leadId) {
+              openViewLeadModal(props.leadId, 'actual');
+            }
+          };
+          // Handler para cambio de rango visible: sincroniza inputs y recarga
+          const onRangeChange = (range) => {
+            const { start, end } = range;
+            // Actualiza título del calendario
+            const titleEl = document.getElementById('citasCalendarTitle');
+            if (titleEl) {
+              const calTitle = window.citasCalendarApi?.getCalendarTitle?.();
+              if (calTitle) titleEl.textContent = calTitle;
+            }
+            // Guardia anti-bucle: solo recargar si el rango cambió realmente
+            if (citasCurrentRange.start === start && citasCurrentRange.end === end) return;
+            citasCurrentRange = { start, end };
+            const desdeInput = document.getElementById('citasDesde');
+            const hastaInput = document.getElementById('citasHasta');
+            if (desdeInput) desdeInput.value = start;
+            if (hastaInput) hastaInput.value = end;
+            loadCitas();
+          };
+          // Cargar calendario bajo demanda con callbacks
+          await window.citasCalendarApi?.ensureCalendar('citasCalendar', {
+            events: [],
+            onEventClick,
+            onRangeChange,
+          });
+          citasCalendarReady = true;
+          // Limpiar mensaje de carga tras montar
+          if (msg) msg.classList.add('hidden');
+          // En móvil (<640px) usar vista día por defecto al activar el modo
+          // Decisión simple: cada vez que se activa modo calendario en viewport estrecho,
+          // forzamos 'timeGridDay' para evitar desbordamiento horizontal en semana/mes.
+          const isMobile = window.innerWidth < 640;
+          const fcView = isMobile ? 'timeGridDay' : CITAS_VIEW_FC[mode];
+          if (fcView) window.citasCalendarApi?.setView?.(fcView);
+          // Refrescar título inicial
+          const titleEl = document.getElementById('citasCalendarTitle');
+          if (titleEl) {
+            const calTitle = window.citasCalendarApi?.getCalendarTitle?.();
+            if (calTitle) titleEl.textContent = calTitle;
+          }
+          // Sincronizar eventos actuales
+          const result = document.getElementById('citasResultado')?.value || '';
+          const camp = document.getElementById('citasCampana')?.value || '';
+          const medio = document.getElementById('citasMedio')?.value || '';
+          const advisor = (isAdmin || isSupervisor) ? (document.getElementById('citasAsesor')?.value || '') : '';
+          const sede = document.getElementById('citasSede')?.value || '';
+          const rows = citasCache.filter(r =>
+            (!result || r.status === result) &&
+            (!camp || getField(r.lead, 'Campaña') === camp) &&
+            (!sede || (sede === 'sin' ? !r.campus : r.campus === sede)) &&
+            (!medio || getField(r.lead, 'Medio') === medio) &&
+            (!advisor || r.advisor_name === advisor)
+          );
+          updateCitasCalendar(rows);
+        } catch (e) {
+          console.error('Error al inicializar el calendario:', e);
+          if (msg) {
+            msg.textContent = 'No se pudo cargar el calendario. ';
+            const retryBtn = document.createElement('button');
+            retryBtn.type = 'button';
+            retryBtn.textContent = 'Reintentar';
+            retryBtn.className = 'ml-2 px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-500';
+            retryBtn.onclick = () => {
+              msg.classList.add('hidden');
+              setCitasViewMode(mode);
+            };
+            msg.appendChild(retryBtn);
+            msg.classList.remove('hidden');
+          }
+        }
+      } else {
+        citasCalendarReady = false;
+      }
+    }
+
+    // Navegación del calendario: 'prev' | 'next' | 'today'
+    // También sincroniza la vista (Día/Semana/Mes) desde los botones de la barra
+    function citasCalendarNav(action) {
+      try {
+        window.citasCalendarApi?.navigateCalendar(action);
+        // Refrescar título tras navegar
+        const titleEl = document.getElementById('citasCalendarTitle');
+        if (titleEl) {
+          const calTitle = window.citasCalendarApi?.getCalendarTitle?.();
+          if (calTitle) titleEl.textContent = calTitle;
+        }
+      } catch (e) {
+        console.warn('Error navegando el calendario:', e);
+      }
+    }
+
+    function renderCitas() { const result=document.getElementById('citasResultado')?.value||'', camp=document.getElementById('citasCampana')?.value||'', medio=document.getElementById('citasMedio')?.value||'', advisor=isAdmin || isSupervisor?(document.getElementById('citasAsesor')?.value||''):''; const sede=document.getElementById('citasSede')?.value||'';const rows=citasCache.filter(r=>(!result||r.status===result)&&(!camp||getField(r.lead,'Campaña')===camp)&&(!sede||(sede==='sin' ? !r.campus : r.campus===sede))&&(!medio||getField(r.lead,'Medio')===medio)&&(!advisor||r.advisor_name===advisor)); const counts=Object.fromEntries(['PROGRAMADA','ASISTIO','NO_ASISTIO','CANCELADA','REPROGRAMADA'].map(s=>[s,rows.filter(r=>r.status===s).length])), denom=counts.ASISTIO+counts.NO_ASISTIO; document.getElementById('citasKpis').innerHTML=[['Total citas',rows.length],...Object.entries(counts).map(([k,v])=>[k,v]),['Doral',rows.filter(r=>r.campus==='DORAL'&&!r.is_data_dura).length],['Doral Data Dura',rows.filter(r=>r.campus==='DORAL'&&r.is_data_dura===true).length],['Weston',rows.filter(r=>r.campus==='WESTON'&&!r.is_data_dura).length],['Weston Data Dura',rows.filter(r=>r.campus==='WESTON'&&r.is_data_dura===true).length],['Sin sede (históricas)',rows.filter(r=>!r.campus).length],['Tasa asistencia',(denom?counts.ASISTIO/denom*100:0).toFixed(1)+'%']].map(x=>`<div class="rounded-lg border border-slate-700 bg-slate-800/60 p-3"><div class="text-[11px] text-slate-400">${escapeHtml(x[0])}</div><strong class="text-lg text-white">${escapeHtml(String(x[1]))}</strong></div>`).join(''); document.getElementById('citasCount').textContent=`${rows.length} citas`; document.getElementById('citasTableBody').innerHTML=rows.length?rows.map(r=>{const l=r.lead, id=Number(l?.id); return `<tr><td class="p-3">${escapeHtml(appointmentLocal(r.scheduled_at))}</td><td class="p-3">${escapeHtml(getField(l,'Nombre'))}<br>${escapeHtml(getField(l,'Telefono'))}</td><td class="p-3">${escapeHtml(r.student_name||'-')}</td><td class="p-3">${escapeHtml(r.contact_email||'-')}</td><td class="p-3">${escapeHtml(r.student_age!=null?String(r.student_age):'-')}</td><td class="p-3">${escapeHtml(r.campus||'Sin sede')}</td><td class="p-3">${escapeHtml(r.advisor_name)}</td><td class="p-3">${escapeHtml(getField(l,'Campaña'))}</td><td class="p-3">${escapeHtml(getField(l,'Mes'))}</td><td class="p-3">${escapeHtml(r.status)}</td><td class="p-3">${Number.isInteger(id)&&id>0?`<button onclick="openViewLeadModal(${id},'actual')" class="text-indigo-400 hover:underline">Ver ficha</button>${(isAdmin || r.advisor_user_id === currentUser?.id) ? `<button onclick="editAppointmentDetails(${r.id})" class="block text-indigo-400 hover:underline">Editar datos</button>` : ''}${isAdmin ? `<button onclick="deleteLeadAppointment(${r.id})" class="block text-rose-400 hover:underline">Eliminar cita</button>` : ''}`:''}</td></tr>`}).join(''):'<tr><td colspan="11" class="appointments-empty"><p class="text-sm font-semibold">No hay citas para los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otras fechas o limpia los filtros.</p><button type="button" onclick="resetCitasFilters()">Limpiar filtros</button></td></tr>'; if (citasViewMode !== 'lista') updateCitasCalendar(rows); }
 
     // Helper para acceder a campos con posibles espacios al final
     function getField(lead, key) {
@@ -7734,5 +8027,6 @@ async function deleteLeadAppointment(id) {
       showToast('Campañas exportadas a CSV', 'success');
     }
   </script>
+  <script type="module" src="/src/citas-calendar.js"></script>
 </body>
 </html>

@@ -201,29 +201,29 @@
     [data-theme="dark"] .lead-detail-card, [data-theme="dark"] .lead-detail-section { background: #1e293b; border-color: #334155; }
     [data-theme="dark"] .lead-detail-card > span:first-child, [data-theme="dark"] .lead-detail-section > span:first-child { color: #94a3b8; }
     [data-theme="dark"] .lead-detail-content textarea, [data-theme="dark"] .lead-detail-content input:not([type="radio"]), [data-theme="dark"] .lead-detail-content select { background: #0f172a !important; color: #f8fafc !important; }
-    #modalEditLead { background: rgba(10,20,42,.78); }
-    .edit-lead-shell { width: min(100%, 47rem); border: 1px solid #e4e7ec; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
-    .edit-lead-header { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: #fff; }
-    .edit-lead-header h3 { color: #17203b; }
-    .edit-lead-header p { color: #667085; }
-    .edit-lead-scroll { min-height: 0; overflow-y: auto; padding: 1.5rem; background: #f7f8fc; }
-    .edit-lead-primary, #editExistingCampusBlock:not(.hidden), #editAppointmentFields:not(.hidden), #adminLeadFields:not(.hidden) { border: 1px solid #e4e7ec; border-radius: 1rem; padding: 1.2rem; background: #fff; }
-    .edit-lead-primary h4 { margin-bottom: 1rem; color: #17203b; font-size: .86rem; font-weight: 700; }
-    #formEditLead label { color: #344054; }
-    #formEditLead input:not([type="radio"]):not([type="hidden"]), #formEditLead select, #formEditLead textarea { min-height: 2.55rem; border: 1px solid #98a2b3; border-radius: .6rem; background: #fff; color: #17203b; }
-    #formEditLead input[readonly] { background: #f1f5f9; color: #475569; }
-    #formEditLead textarea { min-height: 5rem; }
-    #formEditLead input::placeholder, #formEditLead textarea::placeholder { color: #667085; }
-    #formEditLead input:focus, #formEditLead select:focus, #formEditLead textarea:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
-    .edit-lead-footer { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .7rem; padding: .9rem 1.5rem; border-top: 1px solid #e4e7ec; background: #fff; }
-    [data-theme="dark"] .edit-lead-shell, [data-theme="dark"] .edit-lead-header, [data-theme="dark"] .edit-lead-footer { background: #1e293b; border-color: #334155; }
-    [data-theme="dark"] .edit-lead-header h3, [data-theme="dark"] .edit-lead-primary h4 { color: #f8fafc; }
-    [data-theme="dark"] .edit-lead-header p { color: #94a3b8; }
-    [data-theme="dark"] .edit-lead-scroll { background: #0f172a; }
-    [data-theme="dark"] .edit-lead-primary, [data-theme="dark"] #editExistingCampusBlock:not(.hidden), [data-theme="dark"] #editAppointmentFields:not(.hidden), [data-theme="dark"] #adminLeadFields:not(.hidden) { background: #1e293b; border-color: #334155; }
-    [data-theme="dark"] #formEditLead label { color: #cbd5e1; }
-    [data-theme="dark"] #formEditLead input:not([type="radio"]):not([type="hidden"]), [data-theme="dark"] #formEditLead select, [data-theme="dark"] #formEditLead textarea { background: #0f172a; color: #f8fafc; border-color: #475569; }
-    [data-theme="dark"] #formEditLead input[readonly] { background: #1e293b; color: #cbd5e1; }
+    :is(#modalEditLead, #modalNewLead) { background: rgba(10,20,42,.78); }
+    .lead-form-shell { width: min(100%, 47rem); border: 1px solid #e4e7ec; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
+    .lead-form-header { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: #fff; }
+    .lead-form-header h3 { color: #17203b; }
+    .lead-form-header p { color: #667085; }
+    .lead-form-scroll { min-height: 0; overflow-y: auto; padding: 1.5rem; background: #f7f8fc; }
+    .lead-form-primary, #editExistingCampusBlock:not(.hidden), #editAppointmentFields:not(.hidden), #newAppointmentFields:not(.hidden), #adminLeadFields:not(.hidden) { border: 1px solid #e4e7ec; border-radius: 1rem; padding: 1.2rem; background: #fff; }
+    .lead-form-primary h4 { margin-bottom: 1rem; color: #17203b; font-size: .86rem; font-weight: 700; }
+    :is(#formEditLead, #formNewLead) label { color: #344054; }
+    :is(#formEditLead, #formNewLead) input:not([type="radio"]):not([type="hidden"]), :is(#formEditLead, #formNewLead) select, :is(#formEditLead, #formNewLead) textarea { min-height: 2.55rem; border: 1px solid #98a2b3; border-radius: .6rem; background: #fff; color: #17203b; }
+    :is(#formEditLead, #formNewLead) input[readonly]:not([type="radio"]) { background: #f1f5f9; color: #475569; }
+    :is(#formEditLead, #formNewLead) textarea { min-height: 5rem; }
+    :is(#formEditLead, #formNewLead) input::placeholder, :is(#formEditLead, #formNewLead) textarea::placeholder { color: #667085; }
+    :is(#formEditLead, #formNewLead) input:focus, :is(#formEditLead, #formNewLead) select:focus, :is(#formEditLead, #formNewLead) textarea:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+    .lead-form-footer { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .7rem; padding: .9rem 1.5rem; border-top: 1px solid #e4e7ec; background: #fff; }
+    [data-theme="dark"] .lead-form-shell, [data-theme="dark"] .lead-form-header, [data-theme="dark"] .lead-form-footer { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .lead-form-header h3, [data-theme="dark"] .lead-form-primary h4 { color: #f8fafc; }
+    [data-theme="dark"] .lead-form-header p { color: #94a3b8; }
+    [data-theme="dark"] .lead-form-scroll { background: #0f172a; }
+    [data-theme="dark"] .lead-form-primary, [data-theme="dark"] #editExistingCampusBlock:not(.hidden), [data-theme="dark"] #editAppointmentFields:not(.hidden), [data-theme="dark"] #newAppointmentFields:not(.hidden), [data-theme="dark"] #adminLeadFields:not(.hidden) { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] :is(#formEditLead, #formNewLead) label { color: #cbd5e1; }
+    [data-theme="dark"] :is(#formEditLead, #formNewLead) input:not([type="radio"]):not([type="hidden"]), [data-theme="dark"] :is(#formEditLead, #formNewLead) select, [data-theme="dark"] :is(#formEditLead, #formNewLead) textarea { background: #0f172a; color: #f8fafc; border-color: #475569; }
+    [data-theme="dark"] :is(#formEditLead, #formNewLead) input[readonly]:not([type="radio"]) { background: #1e293b; color: #cbd5e1; }
     @media (max-width: 639px) {
       .login-shell { display: block; max-width: 27rem; }
       .login-brand { min-height: 0; padding: 1.2rem 1.5rem; }
@@ -234,12 +234,12 @@
       .lead-detail-header { padding: .9rem 1rem; }
       .lead-detail-content { padding: 1rem; }
       .lead-detail-footer { padding: .75rem 1rem; }
-      #modalEditLead { padding: .5rem; }
-      .edit-lead-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; }
-      .edit-lead-header, .edit-lead-footer { padding: .9rem 1rem; }
-      .edit-lead-scroll { padding: 1rem; }
-      .edit-lead-primary, #editExistingCampusBlock:not(.hidden), #editAppointmentFields:not(.hidden), #adminLeadFields:not(.hidden) { padding: 1rem; }
-      .edit-lead-footer button { flex: 1; justify-content: center; }
+      :is(#modalEditLead, #modalNewLead) { padding: .5rem; }
+      .lead-form-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; }
+      .lead-form-header, .lead-form-footer { padding: .9rem 1rem; }
+      .lead-form-scroll { padding: 1rem; }
+      .lead-form-primary, #editExistingCampusBlock:not(.hidden), #editAppointmentFields:not(.hidden), #newAppointmentFields:not(.hidden), #adminLeadFields:not(.hidden) { padding: 1rem; }
+      .lead-form-footer button { flex: 1; justify-content: center; }
     }
     @media (min-width: 1100px) {
       .app-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 45; width: 14rem; display: flex; flex-direction: column; padding: 1.25rem .9rem; background: linear-gradient(180deg, #111f3d, #0b1730); border-right: 1px solid rgba(148,163,184,.14); color: #cbd5e1; }
@@ -1305,20 +1305,23 @@
 
   <!-- ================= MODAL: NUEVO LEAD ================= -->
   <div id="modalNewLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
-      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between shrink-0">
+    <div class="lead-form-shell overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150" role="dialog" aria-modal="true" aria-labelledby="newLeadTitle">
+      <div class="lead-form-header">
         <div class="flex items-center gap-2">
           <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
             <i data-lucide="user-plus" class="w-4 h-4"></i>
           </div>
-          <h3 class="font-bold text-white text-base">Registrar Nuevo Lead</h3>
+          <div><h3 id="newLeadTitle" class="font-bold text-base">Registrar nuevo lead</h3><p class="text-xs">Datos de contacto y primera gestión</p></div>
         </div>
-        <button onclick="closeNewLeadModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
+        <button type="button" onclick="closeNewLeadModal()" aria-label="Cerrar registro de lead" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <form id="formNewLead" onsubmit="handleCreateLead(event)" class="p-6 space-y-4 text-xs overflow-y-auto min-h-0">
+      <form id="formNewLead" onsubmit="handleCreateLead(event)" class="flex flex-col min-h-0 flex-1 text-xs">
+        <div class="lead-form-scroll space-y-4">
+        <div class="lead-form-primary">
+          <h4>Información inicial</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- Nombre -->
           <div class="sm:col-span-2">
@@ -1446,12 +1449,14 @@
             <textarea id="newObservaciones" rows="3" placeholder="Notas de seguimiento, intereses específicos, edades de los alumnos..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
           </div>
         </div>
+        </div>
+        </div>
 
-        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/80">
+        <div class="lead-form-footer">
           <button type="button" onclick="closeNewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium cursor-pointer">Cancelar</button>
           <button type="submit" id="btnSubmitNewLead" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center gap-2 cursor-pointer">
             <i data-lucide="check" class="w-4 h-4"></i>
-            <span>Guardar en Supabase</span>
+            <span>Crear lead</span>
           </button>
         </div>
       </form>
@@ -1460,8 +1465,8 @@
 
   <!-- ================= MODAL: EDITAR / SEGUIMIENTO ================= -->
   <div id="modalEditLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="edit-lead-shell overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150" role="dialog" aria-modal="true" aria-labelledby="editLeadTitle">
-      <div class="edit-lead-header">
+    <div class="lead-form-shell overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150" role="dialog" aria-modal="true" aria-labelledby="editLeadTitle">
+      <div class="lead-form-header">
         <div class="flex items-center gap-2">
           <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
             <i data-lucide="edit-3" class="w-4 h-4"></i>
@@ -1478,9 +1483,9 @@
 
       <form id="formEditLead" onsubmit="handleUpdateLead(event)" class="flex flex-col min-h-0 flex-1 text-xs">
         <input type="hidden" id="editLeadId">
-        <div class="edit-lead-scroll space-y-4">
+        <div class="lead-form-scroll space-y-4">
 
-        <div class="edit-lead-primary">
+        <div class="lead-form-primary">
         <h4>Gestión y datos de contacto</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- GESTION -->
@@ -1585,7 +1590,7 @@
         </section>
 
         </div>
-        <div class="edit-lead-footer">
+        <div class="lead-form-footer">
           <button type="button" onclick="closeEditLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium cursor-pointer">Cancelar</button>
           <button type="submit" id="btnSubmitEditLead" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-2 cursor-pointer">
             <i data-lucide="save" class="w-4 h-4"></i>

@@ -438,9 +438,38 @@
     [data-theme="dark"] .catalog-row-value.is-inactive { color: #94a3b8; }
     [data-theme="dark"] .catalog-row-actions button { color: #cbd5e1; border-color: #475569; }
     @media (max-width: 639px) { #reporteAuto .daily-summary, #reporteAuto .daily-advisor-body { padding: 1rem; } }
-    @media (max-width: 639px) { #modalHelp { padding: .5rem; } .help-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; } .help-header, .help-searchbar, .help-body, .help-footer { padding: 1rem; } .help-footer p { display: none; } .help-footer button { width: 100%; } }
-    @media (max-width: 639px) { #panelAdminUsers { padding: .5rem; } .users-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; } .users-header, .users-body { padding: 1rem; } .users-section { padding: 1rem; } .users-row-actions { width: 100%; } }
-    @media (max-width: 639px) { #modalCatalogs { padding: .5rem; } .catalog-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; } .catalog-header, .catalog-body, .catalog-section { padding: 1rem; } }
+    @media (max-width: 639px) {
+      #modalHelp { padding: .5rem; }
+      .help-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; }
+      .help-header, .help-searchbar, .help-body, .help-footer { padding: 1rem; }
+      .help-header > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
+      .help-searchbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+      .help-searchbar input { width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
+      .help-searchbar button { min-height: 2.75rem; }
+      .help-card { padding: 1rem; }
+      .help-footer p { display: none; }
+      .help-footer button { width: 100%; min-height: 2.75rem; }
+    }
+    @media (max-width: 639px) {
+      #panelAdminUsers { padding: .5rem; }
+      .users-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; }
+      .users-header, .users-body, .users-section { padding: 1rem; }
+      .users-header > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
+      .users-body input, .users-body select { width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
+      #formAuthorizeUser button[type="submit"] { width: 100%; min-height: 2.75rem; }
+      .users-row-actions { width: 100%; }
+      .users-row-actions button { min-height: 2.5rem; padding: .5rem .7rem; }
+    }
+    @media (max-width: 639px) {
+      #modalCatalogs { padding: .5rem; }
+      .catalog-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; }
+      .catalog-header, .catalog-body, .catalog-section { padding: 1rem; }
+      .catalog-header > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
+      .catalog-section input, .catalog-section select { width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
+      .catalog-add-controls { display: grid; grid-template-columns: minmax(0, 1fr); }
+      .catalog-add-controls button { width: 100%; min-height: 2.75rem; }
+      .catalog-row-actions button { min-width: 2.75rem; min-height: 2.75rem; }
+    }
     @media (max-width: 639px) {
       #reportePeriodo .period-card { padding: .85rem; }
       #reportePeriodo .period-table th, #reportePeriodo .period-table td { padding: .5rem; }
@@ -454,6 +483,18 @@
       .login-brand { min-height: 0; padding: 1.2rem 1.5rem; }
       .login-brand-description, .login-brand-footer { display: none; }
       .login-form-panel { padding: 1.5rem; }
+      .login-form-panel input, .password-content input:not([hidden]) { font-size: 1rem; }
+      .login-password-toggle { top: .3rem; right: .3rem; min-height: 2.2rem; padding: 0 .8rem; font-size: .8rem; }
+      .login-form-panel > button { min-height: 2.75rem; }
+      #idleBanner { width: calc(100% - 1rem); max-width: 27rem; bottom: .5rem; flex-wrap: wrap; justify-content: space-between; }
+      #idleBanner > span { min-width: 0; flex: 1; }
+      #idleBanner > button { min-height: 2.75rem; }
+      #toastContainer { left: .5rem; right: .5rem; bottom: .5rem; align-items: stretch; }
+      #toastContainer > div { max-width: 100%; overflow-wrap: anywhere; }
+      #modalSetPassword { padding: .5rem; }
+      .password-shell { max-height: calc(100dvh - 1rem); overflow-y: auto; }
+      .password-brand, .password-content { padding: 1.25rem; }
+      .password-submit, .password-content button:not(.password-submit) { min-height: 2.75rem; }
       #modalViewLead { padding: .5rem; }
       .lead-detail-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; }
       .lead-detail-header { padding: .9rem 1rem; }
@@ -496,6 +537,11 @@
       #formEditLead textarea { min-height: 6rem; }
       #formEditLead .lead-form-footer button { min-height: 2.75rem; }
       #modalEditLead .lead-form-header > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
+      #modalEditLead .lead-form-header > div { min-width: 0; }
+      #editLeadLeadInfo { overflow-wrap: anywhere; }
+      #editExistingCampusBlock > div, #editAppointmentFields > div:has(input[name="editAppointmentCampus"]) { flex-wrap: wrap; }
+      #editExistingCampusBlock label, #editAppointmentFields label:has(input[name="editAppointmentCampus"]) { min-height: 2.5rem; }
+      #editAppointmentFields > label, #editAppointmentAdvisorWrap, #editAppointmentFields input:not([type="radio"]), #editAppointmentFields select, #editAppointmentFields textarea { width: 100%; min-width: 0; }
       .appointments-intro { padding: 1.15rem; }
       .appointments-filters { padding: 1rem; }
       .campaigns-intro, .campaigns-controls { padding: 1rem; }
@@ -1668,7 +1714,7 @@
         <option value="mes" selected>Mes</option>
       </select></div>
 
-      <div class="catalog-section space-y-3"><div><h3 class="text-sm font-bold">Añadir valor</h3><p class="text-xs text-slate-500">Aparecerá en los filtros y formularios.</p></div><label for="catalogNewValue" class="sr-only">Nuevo valor</label><div class="flex flex-wrap items-center gap-2">
+      <div class="catalog-section space-y-3"><div><h3 class="text-sm font-bold">Añadir valor</h3><p class="text-xs text-slate-500">Aparecerá en los filtros y formularios.</p></div><label for="catalogNewValue" class="sr-only">Nuevo valor</label><div class="catalog-add-controls flex flex-wrap items-center gap-2">
         <input id="catalogNewValue" type="text" maxlength="120" placeholder="Nuevo valor…" class="flex-1 min-w-0 text-xs">
         <button type="button" onclick="addCatalogValue()" class="min-h-10 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition-colors">Añadir</button>
       </div></div>

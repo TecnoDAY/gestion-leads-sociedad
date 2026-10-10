@@ -340,7 +340,12 @@
     .campaigns-table tbody tr:hover { background: #f8faff; }
     .campaigns-table tbody td { color: #17203b; }
     .campaigns-table .campaigns-empty { padding: 1.5rem; text-align: center; color: #475569; }
+    .campaigns-table .campaigns-retry { min-height: 2.75rem; margin-top: .75rem; padding: .5rem 1rem; border: 1px solid #a5b4fc; border-radius: .65rem; background: #eef2ff; color: #3730a3; font-weight: 600; cursor: pointer; }
+    .campaigns-table .campaigns-retry:hover { background: #e0e7ff; }
+    .campaigns-table .campaigns-retry:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
     [data-theme="dark"] .campaigns-table .campaigns-empty { color: #cbd5e1; }
+    [data-theme="dark"] .campaigns-table .campaigns-retry { border-color: #6366f1; background: #312e81; color: #eef2ff; }
+    [data-theme="dark"] .campaigns-table .campaigns-retry:hover { background: #3730a3; }
     .campaigns-table tbody .campaigns-total-row { background: #eef2ff; }
     .campaigns-table tbody .campaigns-total-row td { color: #17203b; }
     .campaigns-table tbody input, .campaigns-table tbody select { border: 1px solid #98a2b3; border-radius: .5rem; background: #fff; color: #17203b; }
@@ -7881,7 +7886,7 @@ async function deleteLeadAppointment(id) {
       }
       if (!rows.length) {
         tbody.innerHTML = loadFailed
-          ? '<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">No se pudo cargar el informe.</p><p class="mt-1 text-xs">Revisa el aviso anterior e inténtalo de nuevo.</p></td></tr>'
+          ? '<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">No se pudo cargar el informe.</p><p class="mt-1 text-xs">Revisa el aviso anterior e inténtalo de nuevo.</p><button type="button" class="campaigns-retry" onclick="loadCampanas()">Reintentar</button></td></tr>'
           : `<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">Sin campañas para ${escapeHtml(mesLabel)}.</p><p class="mt-1 text-xs">Selecciona otro mes para consultar sus resultados.</p></td></tr>`;
         return;
       }

@@ -127,6 +127,12 @@
     .dashboard-kpis .metric-card > div:first-child > span { text-transform: none; letter-spacing: 0; font-size: .78rem; }
     .dashboard-kpis .metric-icon { width: 2.65rem; height: 2.65rem; display: grid; place-items: center; border-radius: 9999px; }
     .dashboard-section-title { letter-spacing: -.015em; }
+    .quick-lead-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, .9fr) auto; gap: 1rem; align-items: center; padding: .85rem 1rem; border-top: 1px solid rgba(148,163,184,.16); }
+    .quick-lead-row:first-child { border-top: 0; }
+    .quick-lead-row:hover { background: rgba(99,102,241,.06); }
+    .quick-lead-row .quick-lead-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .matrix-toggle[aria-expanded="true"] .matrix-chevron { transform: rotate(180deg); }
+    .matrix-chevron { transition: transform .15s ease; }
     .primary-action { min-height: 2.6rem; border-radius: .75rem; }
     #viewDashboard > section { scroll-margin-top: 9.5rem; }
     #leadsTableBody tr { transition: background-color .15s ease, box-shadow .15s ease; }
@@ -138,6 +144,7 @@
     [data-theme="light"] .dashboard-kpis .metric-card { background: #fff; border-color: #e4e7ec; box-shadow: 0 8px 24px -20px rgba(15, 23, 42, .55); }
     [data-theme="light"] .dashboard-kpis .metric-card:hover { border-color: #a5b4fc; box-shadow: 0 18px 36px -24px rgba(79, 70, 229, .45); }
     [data-theme="light"] #viewDashboard > section:not(.dashboard-kpis):not(.dashboard-intro) { background-color: rgba(255,255,255,.94); border-color: #e4e7ec; box-shadow: 0 8px 28px -24px rgba(15,23,42,.5); }
+    [data-theme="light"] .quick-lead-row { border-color: #e9edf3; }
     [data-theme="light"] #leadsTableBody tr:hover { background-color: #f8faff; }
     [data-theme="light"] .app-sidebar, [data-theme="light"] .app-sidebar .text-white { color: #fff; }
     [data-theme="light"] .app-sidebar .text-slate-400 { color: #94a3b8; }
@@ -160,6 +167,8 @@
       .dashboard-kpis { gap: .65rem; }
       .dashboard-kpis .metric-card { min-height: 7rem; padding: .9rem; }
       .dashboard-kpis .metric-icon { width: 2.25rem; height: 2.25rem; }
+      .quick-lead-row { grid-template-columns: minmax(0, 1fr) auto; gap: .45rem; }
+      .quick-lead-row .quick-lead-campaign, .quick-lead-row .quick-lead-status { grid-column: 1 / -1; }
     }
   </style>
   <script>
@@ -517,6 +526,15 @@
       </div>
     </section>
 
+    <!-- ACCESO RÁPIDO A LEADS DEL CONJUNTO FILTRADO -->
+    <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden" aria-labelledby="quickLeadsTitle">
+      <div class="px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <div><h2 id="quickLeadsTitle" class="dashboard-section-title text-sm sm:text-base font-bold text-white">Acceso rápido a leads</h2><p class="text-xs text-slate-400 mt-0.5">Cuatro resultados del filtro actual; abre la ficha para continuar la gestión.</p></div>
+        <button type="button" onclick="document.getElementById('leadsTableBody')?.scrollIntoView({behavior:'smooth',block:'start'})" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 cursor-pointer">Ver lista completa →</button>
+      </div>
+      <div id="quickLeadsList" aria-live="polite"><p class="px-4 py-5 text-xs text-slate-400">Cargando leads…</p></div>
+    </section>
+
     <!-- DASHBOARD ANALÍTICO - MATRIZ CRUZADA (GESTIÓN VS CAMPAÑAS) -->
     <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden">
       <div class="p-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -532,11 +550,12 @@
         <div class="flex items-center gap-2 text-xs text-slate-400">
           <span class="inline-block w-2.5 h-2.5 rounded bg-emerald-500"></span> <span>Alta densidad</span>
           <span class="inline-block w-2.5 h-2.5 rounded bg-slate-800 border border-slate-700 ml-2"></span> <span>Sin registros</span>
+          <button type="button" id="matrixToggle" class="matrix-toggle ml-2 inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-indigo-300 hover:bg-indigo-500/10 cursor-pointer" aria-controls="matrixPanel" aria-expanded="false" onclick="toggleMatrixPanel()"><span id="matrixToggleLabel">Mostrar matriz</span><i data-lucide="chevron-down" class="matrix-chevron w-3.5 h-3.5"></i></button>
         </div>
       </div>
 
       <!-- Tabla Matriz Cruzada con Scroll Horizontal -->
-      <div class="overflow-x-auto max-h-96">
+      <div id="matrixPanel" class="hidden overflow-x-auto max-h-96">
         <table class="w-full text-xs text-left" id="matrixTable">
           <thead class="text-[11px] uppercase tracking-wider text-slate-300 bg-slate-950/80 sticky top-0 z-10 border-b border-slate-800" id="matrixThead">
             <!-- Headers generados dinámicamente -->
@@ -3852,6 +3871,41 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       document.querySelector('#leadsTableBody')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
+    function toggleMatrixPanel() {
+      const panel = document.getElementById('matrixPanel');
+      const button = document.getElementById('matrixToggle');
+      if (!panel || !button) return;
+      const expanded = panel.classList.toggle('hidden') === false;
+      button.setAttribute('aria-expanded', String(expanded));
+      document.getElementById('matrixToggleLabel').textContent = expanded ? 'Ocultar matriz' : 'Mostrar matriz';
+    }
+
+    function renderQuickLeads() {
+      const container = document.getElementById('quickLeadsList');
+      if (!container) return;
+      // Se usa el mismo conjunto que alimenta filtros y tabla. No se consulta
+      // información adicional ni se inventa una prioridad comercial.
+      const rows = [...filteredLeads].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 4);
+      if (!rows.length) {
+        container.innerHTML = '<p class="px-4 py-5 text-xs text-slate-400">No hay leads con los filtros seleccionados.</p>';
+        return;
+      }
+      container.innerHTML = rows.map(lead => {
+        const id = String(lead.id);
+        const origin = getLeadOrigin(lead);
+        const nombre = getField(lead, 'Nombre') || 'Sin nombre';
+        const campana = getField(lead, 'Campaña') || 'Sin campaña';
+        const fecha = getField(lead, 'Fecha') || 'Sin fecha';
+        const gestion = getField(lead, 'GESTION') || 'Sin estado';
+        return `<div class="quick-lead-row text-xs">
+          <div class="quick-lead-meta"><button type="button" onclick="openViewLeadModal('${escapeAttr(id)}', '${origin}')" class="font-semibold text-left text-white hover:text-indigo-400 cursor-pointer">${escapeHtml(nombre)}</button><p class="mt-1 text-slate-400">${escapeHtml(fecha)}${origin === 'historico' ? ' · Histórico 2025' : ''}</p></div>
+          <span class="quick-lead-campaign quick-lead-meta text-slate-300">${escapeHtml(campana)}</span>
+          <span class="quick-lead-status quick-lead-meta text-slate-300">${escapeHtml(gestion)}</span>
+          <button type="button" onclick="openViewLeadModal('${escapeAttr(id)}', '${origin}')" class="rounded-lg border border-indigo-500/40 px-3 py-1.5 font-semibold text-indigo-300 hover:bg-indigo-500/10 cursor-pointer">Ver ficha</button>
+        </div>`;
+      }).join('');
+    }
+
     // Delegacion de clics de la matriz: los valores viajan en data-*, nunca
     // dentro de onclick inline (los atributos JS decodifican entidades antes
     // de parsear, lo que permitia inyectar codigo con un apstrofe).
@@ -3867,6 +3921,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     function renderTable() {
       const tbody = document.getElementById('leadsTableBody');
       if (!tbody) return;
+      if (typeof renderQuickLeads === 'function') renderQuickLeads();
 
       const totalItems = filteredLeads.length;
       const totalPages = Math.ceil(totalItems / pageSize) || 1;

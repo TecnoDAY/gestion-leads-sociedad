@@ -459,12 +459,43 @@
       .lead-detail-header { padding: .9rem 1rem; }
       .lead-detail-content { padding: 1rem; }
       .lead-detail-footer { padding: .75rem 1rem; }
+      .lead-detail-hero { padding: 1rem; }
+      .lead-detail-hero > div:first-child { min-width: 0; }
+      .lead-detail-name { overflow-wrap: anywhere; }
+      .lead-detail-grid .lead-detail-card:nth-child(-n+2) { grid-column: 1 / -1; }
+      .lead-detail-grid .lead-detail-card { padding: .8rem; }
+      .lead-detail-grid .lead-detail-card .lead-detail-value { min-width: 0; white-space: normal; overflow: visible; text-overflow: clip; }
+      #modalViewLead .lead-detail-header > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
+      #modalViewLead .lead-detail-footer button { min-height: 2.75rem; }
+      .lead-note-compose { display: grid; grid-template-columns: minmax(0, 1fr); }
+      #leadNoteInput { width: 100%; min-height: 6rem; font-size: 1rem; }
+      #leadNoteSubmit { min-height: 2.75rem; justify-content: center; }
+      #leadAppointmentForm { grid-template-columns: minmax(0, 1fr); }
+      #leadAppointmentForm > label, #leadAppointmentForm > div > label { font-size: .8rem; }
+      #leadAppointmentForm input:not([type="radio"]), #leadAppointmentForm select, #leadAppointmentForm textarea { width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
+      #leadAppointmentForm textarea { min-height: 5rem; }
+      #leadAppointmentForm .lead-appointment-campus { flex-wrap: wrap; }
+      #leadAppointmentForm .lead-appointment-campus label { min-height: 2.5rem; }
+      #leadAppointmentSubmit { min-height: 2.75rem; width: 100%; }
+      #leadAppointmentsList { display: grid; gap: .75rem; }
+      #leadAppointmentsList > div[data-appointment-id] { padding: .85rem; border: 1px solid #e4e7ec; border-radius: .75rem; background: #fff; overflow-wrap: anywhere; }
+      #leadAppointmentsList button { min-height: 2.5rem; margin: .15rem .25rem .15rem 0; padding: .45rem .7rem; }
+      #leadAppointmentsList input[type="datetime-local"] { width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
+      [data-theme="dark"] #leadAppointmentsList > div[data-appointment-id] { background: #1e293b; border-color: #475569; }
       :is(#modalEditLead, #modalNewLead) { padding: .5rem; }
       .lead-form-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; }
       .lead-form-header, .lead-form-footer { padding: .9rem 1rem; }
       .lead-form-scroll { padding: 1rem; }
       .lead-form-primary, #editExistingCampusBlock:not(.hidden), #editAppointmentFields:not(.hidden), #newAppointmentFields:not(.hidden), #adminLeadFields:not(.hidden) { padding: 1rem; }
       .lead-form-footer button { flex: 1; justify-content: center; }
+      #formNewLead input:not([type="radio"]):not([type="hidden"]), #formNewLead select, #formNewLead textarea { min-height: 2.75rem; font-size: 1rem; }
+      #formNewLead textarea { min-height: 6rem; }
+      #formNewLead .lead-form-footer button { min-height: 2.75rem; }
+      #modalNewLead .lead-form-header > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
+      #formEditLead input:not([type="radio"]):not([type="hidden"]), #formEditLead select, #formEditLead textarea { min-height: 2.75rem; font-size: 1rem; }
+      #formEditLead textarea { min-height: 6rem; }
+      #formEditLead .lead-form-footer button { min-height: 2.75rem; }
+      #modalEditLead .lead-form-header > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
       .appointments-intro { padding: 1.15rem; }
       .appointments-filters { padding: 1rem; }
       .campaigns-intro, .campaigns-controls { padding: 1rem; }
@@ -1706,13 +1737,13 @@
           <!-- Nombre -->
           <div class="sm:col-span-2">
             <label class="block font-medium text-slate-300 mb-1">Nombre Completo *</label>
-            <input type="text" id="newNombre" required placeholder="Ej: Marcela Gómez" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <input type="text" id="newNombre" required autocomplete="name" placeholder="Ej: Marcela Gómez" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
           </div>
 
           <!-- Teléfono -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Teléfono / WhatsApp *</label>
-            <input type="text" id="newTelefono" required placeholder="Ej: 1 (786) 555-1234" oninput="queueNewPhoneCheck()" onblur="this.value=formatPhone(this.value); checkNewPhoneDuplicate()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <input type="text" id="newTelefono" required inputmode="tel" autocomplete="tel" placeholder="Ej: 1 (786) 555-1234" oninput="queueNewPhoneCheck()" onblur="this.value=formatPhone(this.value); checkNewPhoneDuplicate()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
             <p id="newPhoneWarn" class="hidden mt-1 text-[11px] text-amber-300"></p>
           </div>
 
@@ -1924,8 +1955,8 @@
           </div>
 
            <!-- OBSERVACIONES -->
-           <div><label class="block font-medium text-slate-300 mb-1">Nombre</label><input id="editNombre" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"></div>
-           <div><label class="block font-medium text-slate-300 mb-1">Teléfono / WhatsApp</label><input id="editTelefono" type="text" onblur="this.value=formatPhone(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500" placeholder="Ej: 1 (786) 555-1234"></div>
+           <div><label class="block font-medium text-slate-300 mb-1">Nombre</label><input id="editNombre" type="text" autocomplete="name" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"></div>
+           <div><label class="block font-medium text-slate-300 mb-1">Teléfono / WhatsApp</label><input id="editTelefono" type="text" inputmode="tel" autocomplete="tel" onblur="this.value=formatPhone(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500" placeholder="Ej: 1 (786) 555-1234"></div>
            <div class="sm:col-span-2">
             <label class="block font-medium text-slate-300 mb-1">Historial de Observaciones & Notas</label>
             <textarea id="editObservaciones" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono text-xs"></textarea>
@@ -5282,7 +5313,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           <div>${renderGestionBadge(getField(lead, 'GESTION'))}</div>
         </div>${firstEntryHtml}
 
-        <div class="grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-3 gap-3">
+        <div class="lead-detail-grid grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-3 gap-3">
           <div class="lead-detail-card">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Teléfono / WhatsApp</span>
             <div class="flex items-center gap-1.5 mt-0.5">
@@ -5328,7 +5359,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
          <div class="lead-detail-section space-y-2">
           <span class="text-[11px] uppercase text-slate-400 font-semibold block">Notas del Equipo</span>
           <div id="leadNotesList" class="space-y-2"><p class="text-[11px] text-slate-500">Cargando notas…</p></div>
-          <div class="flex items-start gap-2 pt-1">
+          <div class="lead-note-compose flex items-start gap-2 pt-1">
             <textarea id="leadNoteInput" rows="2" maxlength="2000" placeholder="Añadir una nota para el equipo" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 resize-y"></textarea>
             <button id="leadNoteSubmit" onclick="addLeadNote()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition-colors shrink-0 flex items-center gap-1.5">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Añadir</span>
@@ -5340,7 +5371,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             <div id="leadAppointmentCreate" class="${isAgendadoGestion(getField(lead, 'GESTION')) ? '' : 'hidden'}">
             <form id="leadAppointmentForm" onsubmit="createLeadAppointment(event)" class="grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end">
              <label class="text-[11px] text-slate-400">Fecha y hora<input id="leadAppointmentDate" type="datetime-local" required class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
-             <div class="sm:col-span-3 flex items-center gap-3"><span class="text-[11px] text-slate-400">Sede de la cita *</span><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="leadAppointmentCampus" value="DORAL" required class="accent-indigo-500"> Doral</label><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="leadAppointmentCampus" value="WESTON" required class="accent-indigo-500"> Weston</label></div>
+             <div class="lead-appointment-campus sm:col-span-3 flex items-center gap-3"><span class="text-[11px] text-slate-400">Sede de la cita *</span><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="leadAppointmentCampus" value="DORAL" required class="accent-indigo-500"> Doral</label><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="leadAppointmentCampus" value="WESTON" required class="accent-indigo-500"> Weston</label></div>
              <label class="text-[11px] text-slate-400">Nota opcional<textarea id="leadAppointmentNote" maxlength="2000" rows="1" class="block w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></textarea></label>
              <div id="leadAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="leadAppointmentAdvisor" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
              <label class="text-[11px] text-slate-400">Nombre del estudiante (opcional)<input id="leadAppointmentStudentName" type="text" maxlength="200" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>

@@ -132,6 +132,10 @@
     .quick-lead-row:hover { background: rgba(99,102,241,.06); }
     .quick-lead-row .quick-lead-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .quick-lead-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .4rem; }
+    .quick-leads-empty { padding: 1.5rem; text-align: center; color: #475569; }
+    .quick-leads-empty button { min-height: 2.5rem; margin-top: .75rem; padding: .5rem .9rem; border: 1px solid #c7d2fe; border-radius: .6rem; color: #4338ca; font-weight: 700; cursor: pointer; }
+    [data-theme="dark"] .quick-leads-empty { color: #cbd5e1; }
+    [data-theme="dark"] .quick-leads-empty button { color: #c7d2fe; border-color: #6366f1; }
     .matrix-toggle[aria-expanded="true"] .matrix-chevron { transform: rotate(180deg); }
     .matrix-chevron { transition: transform .15s ease; }
     .primary-action { min-height: 2.6rem; border-radius: .75rem; }
@@ -4528,7 +4532,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       // información adicional ni se inventa una prioridad comercial.
       const rows = [...filteredLeads].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 4);
       if (!rows.length) {
-        container.innerHTML = '<p class="px-4 py-5 text-xs text-slate-400">No hay leads con los filtros seleccionados.</p>';
+        container.innerHTML = '<div class="quick-leads-empty"><p class="text-sm font-semibold">No hay leads con los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otros criterios o limpia los filtros para ver los registros.</p><button type="button" onclick="resetAllFilters()">Limpiar filtros</button></div>';
         return;
       }
       container.innerHTML = rows.map(lead => {

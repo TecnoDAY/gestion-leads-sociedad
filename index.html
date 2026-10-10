@@ -5986,6 +5986,7 @@ async function deleteLeadAppointment(id) {
     async function loadLeadNotes(leadId) {
       const list = document.getElementById('leadNotesList');
       if (!list) return;
+      list.innerHTML = '<p class="text-[11px] text-slate-500" role="status">Cargando notas…</p>';
       // T4: patron sessionGeneration en exito y error (ficha+sesion+usuario).
       const generation = sessionGeneration, viewGeneration = viewLeadGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
       const { data, error } = await fetchPagedResult(() => supabaseClient
@@ -5996,7 +5997,7 @@ async function deleteLeadAppointment(id) {
       // respuesta obsoleta sin pintar ni limpiar datos ajenos.
       if (generation !== sessionGeneration || viewGeneration !== viewLeadGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt || String(currentViewId) !== String(leadId)) return;
       if (error) {
-        list.innerHTML = '<p class="text-[11px] text-rose-400">No se pudieron cargar las notas.</p>';
+        list.innerHTML = '<div role="alert" class="flex flex-wrap items-center gap-2 text-[11px] text-rose-400"><p>No se pudieron cargar las notas.</p><button type="button" onclick="loadLeadNotes(currentViewId)" class="min-h-11 rounded-lg border border-rose-400 px-3 py-2 font-semibold hover:bg-rose-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300">Reintentar</button></div>';
         return;
       }
       if (!data || data.length === 0) {

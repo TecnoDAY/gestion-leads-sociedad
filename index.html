@@ -562,6 +562,13 @@
       .quick-lead-status { display: none; }
     }
     @media (max-width: 767px) {
+      .historical-summary-hint { display: block; padding: .5rem 1rem 0; color: #64748b; font-size: .7rem; }
+      .historical-summary-table { min-width: 56rem; }
+      .historical-summary-table th:first-child, .historical-summary-table td:first-child:not([colspan]) { position: sticky; left: 0; z-index: 1; min-width: 8.5rem; background: #fff; color: #17203b; box-shadow: 1px 0 0 #e4e7ec; }
+      .historical-summary-table th:first-child { z-index: 2; background: #f1f5f9; color: #475569; }
+      [data-theme="dark"] .historical-summary-hint { color: #94a3b8; }
+      [data-theme="dark"] .historical-summary-table td:first-child:not([colspan]) { background: #1e293b; color: #f8fafc; box-shadow: 1px 0 0 #475569; }
+      [data-theme="dark"] .historical-summary-table th:first-child { background: #334155; color: #cbd5e1; box-shadow: 1px 0 0 #475569; }
       .campaigns-table { padding: .75rem; overflow-x: visible; }
       .campaigns-table table, .campaigns-table tbody { display: block; width: 100%; min-width: 0; }
       .campaigns-table thead { display: none; }
@@ -1431,8 +1438,9 @@
           </button>
         </div>
 
+        <p class="historical-summary-hint hidden">Desliza la tabla para ver todas las métricas →</p>
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs border-collapse">
+          <table class="historical-summary-table w-full text-left text-xs border-collapse">
             <thead>
               <tr class="bg-slate-900/80 border-b border-slate-700/80 text-slate-400 uppercase tracking-wider font-semibold">
                 <th class="px-4 py-3">Mes</th>

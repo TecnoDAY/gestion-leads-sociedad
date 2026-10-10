@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="dark" data-theme="dark">
+<html lang="es" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -116,23 +116,156 @@
     .periodo-tip:hover .periodo-tip-panel, .periodo-tip:focus-within .periodo-tip-panel, .periodo-tip:active .periodo-tip-panel { opacity: 1; visibility: visible; }
     .periodo-tip-panel::after { content: ''; position: absolute; top: 100%; left: .5rem; border: .3125rem solid transparent; border-top-color: #0f172a; }
     @media (prefers-reduced-motion: reduce) { .periodo-tip-panel { transition: none; } }
+
+    /* Rediseño visual 2026: capa de presentación sobre la lógica existente. */
+    body { background-image: radial-gradient(circle at 85% 0%, rgba(99, 102, 241, .08), transparent 28rem); }
+    .dashboard-intro { position: relative; overflow: hidden; isolation: isolate; }
+    .dashboard-intro::after { content: ''; position: absolute; z-index: -1; width: 18rem; height: 18rem; right: -7rem; top: -10rem; border-radius: 9999px; background: rgba(99, 102, 241, .12); filter: blur(2px); }
+    .dashboard-eyebrow { display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .65rem; border-radius: 9999px; background: rgba(99, 102, 241, .12); color: #a5b4fc; font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .dashboard-kpis .metric-card { min-height: 7.5rem; border-radius: 1rem; padding: 1.15rem; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+    .dashboard-kpis .metric-card:hover { transform: translateY(-2px); border-color: rgba(99, 102, 241, .45); box-shadow: 0 16px 30px -18px rgba(15, 23, 42, .65); }
+    .dashboard-kpis .metric-card > div:first-child > span { text-transform: none; letter-spacing: 0; font-size: .78rem; }
+    .dashboard-kpis .metric-icon { width: 2.65rem; height: 2.65rem; display: grid; place-items: center; border-radius: 9999px; }
+    .dashboard-section-title { letter-spacing: -.015em; }
+    .quick-lead-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, .9fr) auto; gap: 1rem; align-items: center; padding: .85rem 1rem; border-top: 1px solid rgba(148,163,184,.16); }
+    .quick-lead-row:first-child { border-top: 0; }
+    .quick-lead-row:hover { background: rgba(99,102,241,.06); }
+    .quick-lead-row .quick-lead-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .quick-lead-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .4rem; }
+    .matrix-toggle[aria-expanded="true"] .matrix-chevron { transform: rotate(180deg); }
+    .matrix-chevron { transition: transform .15s ease; }
+    .primary-action { min-height: 2.6rem; border-radius: .75rem; }
+    #viewDashboard > section { scroll-margin-top: 9.5rem; }
+    #leadsTableBody tr { transition: background-color .15s ease, box-shadow .15s ease; }
+    #leadsTableBody tr:hover { box-shadow: inset 3px 0 0 #6366f1; }
+    [data-theme="light"] body { background-color: #f6f7fb; background-image: radial-gradient(circle at 85% 0%, rgba(99, 102, 241, .09), transparent 30rem); }
+    [data-theme="light"] header.sticky, [data-theme="light"] body > div.sticky { background-color: rgba(246, 247, 251, .9); border-color: #e2e8f0; }
+    [data-theme="light"] .dashboard-eyebrow { color: #4338ca; background: #eef2ff; }
+    [data-theme="light"] .dashboard-intro { background: linear-gradient(115deg, #ffffff 45%, #f3f1ff); }
+    [data-theme="light"] .dashboard-kpis .metric-card { background: #fff; border-color: #e4e7ec; box-shadow: 0 8px 24px -20px rgba(15, 23, 42, .55); }
+    [data-theme="light"] .dashboard-kpis .metric-card:hover { border-color: #a5b4fc; box-shadow: 0 18px 36px -24px rgba(79, 70, 229, .45); }
+    [data-theme="light"] #viewDashboard > section:not(.dashboard-kpis):not(.dashboard-intro) { background-color: rgba(255,255,255,.94); border-color: #e4e7ec; box-shadow: 0 8px 28px -24px rgba(15,23,42,.5); }
+    [data-theme="light"] .quick-lead-row { border-color: #e9edf3; }
+    [data-theme="light"] #leadsTableBody tr:hover { background-color: #f8faff; }
+    [data-theme="light"] .app-sidebar, [data-theme="light"] .app-sidebar .text-white { color: #fff; }
+    [data-theme="light"] .app-sidebar .text-slate-400 { color: #94a3b8; }
+    [data-theme="light"] .app-sidebar .text-slate-500 { color: #64748b; }
+    .app-sidebar { display: none; }
+    .sidebar-nav-button { width: 100%; display: flex; align-items: center; gap: .75rem; padding: .7rem .8rem; border: 1px solid transparent; border-radius: .7rem; color: #94a3b8; font-size: .82rem; font-weight: 600; text-align: left; transition: color .15s ease, background-color .15s ease, border-color .15s ease; cursor: pointer; }
+    .sidebar-nav-button:hover { color: #fff; background: rgba(255,255,255,.06); }
+    .sidebar-nav-button.is-active { color: #fff; background: linear-gradient(135deg, rgba(79,70,229,.95), rgba(67,56,202,.75)); border-color: rgba(165,180,252,.2); box-shadow: 0 12px 24px -16px rgba(99,102,241,.9); }
+    .sidebar-nav-button svg { width: 1rem; height: 1rem; flex: none; }
+    #modalLogin { background: rgba(10,20,42,.84); }
+    .login-shell { display: grid; grid-template-columns: minmax(0,.9fr) minmax(0,1fr); width: min(100%, 53rem); max-height: min(92dvh, 48rem); overflow-y: auto; border-radius: 1.5rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.65); }
+    .login-brand { display: flex; flex-direction: column; justify-content: space-between; min-height: 30rem; padding: 2.4rem; color: #fff; background: radial-gradient(circle at 15% 10%, rgba(129,140,248,.36), transparent 17rem), linear-gradient(150deg,#172b53,#101d3b 68%,#0c1732); }
+    .login-brand-mark { display: inline-grid; place-items: center; width: 3rem; height: 3rem; border-radius: .9rem; background: linear-gradient(135deg,#6366f1,#4338ca); box-shadow: 0 8px 22px rgba(99,102,241,.35); }
+    [data-theme="light"] .login-brand .text-indigo-200 { color: #c7d2fe; }
+    [data-theme="light"] .login-brand .text-slate-300 { color: #cbd5e1; }
+    [data-theme="light"] .login-brand .text-slate-400 { color: #94a3b8; }
+    .login-form-panel { padding: clamp(1.5rem,4vw,3rem); color: #17203b; }
+    .login-form-panel label { display: block; margin-bottom: .45rem; font-size: .78rem; font-weight: 700; color: #344054; }
+    .login-form-panel input { width: 100%; min-height: 2.8rem; padding: .7rem .9rem; border: 1px solid #98a2b3; border-radius: .7rem; background: #fff; color: #17203b; font-size: .88rem; }
+    .login-form-panel input::placeholder { color: #667085; }
+    .login-form-panel input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+    .login-submit { width: 100%; min-height: 2.9rem; border: 0; border-radius: .7rem; background: #4f46e5; color: #fff; font-size: .88rem; font-weight: 700; box-shadow: 0 9px 20px -10px rgba(79,70,229,.8); cursor: pointer; }
+    .login-submit:hover { background: #4338ca; }
+    .login-password-toggle { position: absolute; right: .45rem; top: .45rem; min-height: 1.9rem; padding: 0 .65rem; border-radius: .45rem; background: #f1f3f9; color: #344054; font-size: .7rem; font-weight: 700; cursor: pointer; }
+    .login-password-toggle:hover { background: #e4e7f0; }
+    #loginStatus { min-height: 1.2rem; }
+    @media (max-width: 639px) {
+      .login-shell { display: block; max-width: 27rem; }
+      .login-brand { min-height: 0; padding: 1.2rem 1.5rem; }
+      .login-brand-description, .login-brand-footer { display: none; }
+      .login-form-panel { padding: 1.5rem; }
+    }
+    @media (min-width: 1100px) {
+      .app-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 45; width: 14rem; display: flex; flex-direction: column; padding: 1.25rem .9rem; background: linear-gradient(180deg, #111f3d, #0b1730); border-right: 1px solid rgba(148,163,184,.14); color: #cbd5e1; }
+      body:not(.session-ready) > .app-sidebar { display: none; }
+      body.session-ready > header, body.session-ready > main, body.session-ready > footer { width: calc(100% - 14rem); margin-left: 14rem; max-width: none; }
+      body.session-ready > div.sticky { display: none; }
+      body.session-ready > header > div, body.session-ready > main { max-width: 96rem; }
+      #topBrand { visibility: hidden; pointer-events: none; }
+    }
+    @media (max-width: 639px) {
+      .dashboard-intro { padding: 1.15rem; }
+      .dashboard-kpis { gap: .65rem; }
+      .dashboard-kpis .metric-card { min-height: 7rem; padding: .9rem; }
+      .dashboard-kpis .metric-icon { width: 2.25rem; height: 2.25rem; }
+      .quick-lead-row { grid-template-columns: minmax(0, 1fr) auto; gap: .45rem; }
+      .quick-lead-row .quick-lead-campaign, .quick-lead-row .quick-lead-status { grid-column: 1 / -1; }
+      .quick-lead-actions { grid-column: 1 / -1; justify-content: flex-start; }
+    }
+    @media (min-width: 640px) and (max-width: 1350px) {
+      .quick-lead-row { grid-template-columns: minmax(0, 1fr) minmax(0, .8fr) auto; }
+      .quick-lead-status { display: none; }
+    }
+    @media (max-width: 767px) {
+      #leadsTableViewport { min-height: 0; padding: .75rem; overflow-x: visible; }
+      #leadsTable { display: block; width: 100%; }
+      #leadsTable thead { display: none; }
+      #leadsTableBody { display: grid; gap: .75rem; }
+      #leadsTableBody tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .65rem 1rem; padding: 1rem; border: 1px solid #475569; border-radius: .9rem; background: rgba(15,23,42,.45); }
+      #leadsTableBody tr:hover { box-shadow: none; border-color: #818cf8; }
+      #leadsTableBody td { display: block; min-width: 0; max-width: none; padding: 0; text-align: left; white-space: normal; }
+      #leadsTableBody td::before { display: block; margin-bottom: .25rem; color: #94a3b8; font-size: .66rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+      #leadsTableBody td:nth-child(1)::before { content: 'ID'; }
+      #leadsTableBody td:nth-child(2)::before { content: 'Fecha'; }
+      #leadsTableBody td:nth-child(3)::before { content: 'Lead'; }
+      #leadsTableBody td:nth-child(4)::before { content: 'WhatsApp'; }
+      #leadsTableBody td:nth-child(5)::before { content: 'Campaña'; }
+      #leadsTableBody td:nth-child(6)::before { content: 'Medio'; }
+      #leadsTableBody td:nth-child(7)::before { content: 'Estado'; }
+      #leadsTableBody td:nth-child(8)::before { content: 'Agente'; }
+      #leadsTableBody td:nth-child(9)::before { content: 'Acciones'; }
+      #leadsTableBody td:nth-child(3), #leadsTableBody td:nth-child(9), #leadsTableBody td[colspan] { grid-column: 1 / -1; }
+      #leadsTableBody td:nth-child(3) { grid-row: 1; }
+      #leadsTableBody td:nth-child(3) button { max-width: 100%; }
+      #leadsTableBody td:nth-child(9) > div { justify-content: flex-start; }
+      #leadsTableBody td:nth-child(9) button { min-width: 2.5rem; min-height: 2.5rem; display: inline-grid; place-items: center; }
+      #leadsTableBody td[colspan]::before { content: none; }
+      [data-theme="light"] #leadsTableBody tr { background: #fff; border-color: #e2e8f0; box-shadow: 0 5px 15px -12px rgba(15,23,42,.35); }
+      [data-theme="light"] #leadsTableBody tr:hover { border-color: #a5b4fc; }
+      [data-theme="light"] #leadsTableBody td::before { color: #475569; }
+    }
   </style>
   <script>
     (() => {
       const saved = localStorage.getItem('tema-dashboard');
-      document.documentElement.dataset.theme = saved === 'light' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = saved === 'dark' ? 'dark' : 'light';
     })();
   </script>
 </head>
 
 <body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
+  <!-- Navegación lateral de escritorio; las pestañas superiores se conservan en móvil/tablet. -->
+  <aside id="appSidebar" class="app-sidebar" aria-label="Navegación principal">
+    <div class="flex items-center gap-3 px-2 pb-6 border-b border-slate-700/60">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+        <i data-lucide="clapperboard" class="w-5 h-5 text-white"></i>
+      </div>
+      <div class="min-w-0"><p class="font-bold text-white leading-tight">Sociedad Actoral</p><p class="text-[11px] text-slate-400 mt-1">Centro de admisiones</p></div>
+    </div>
+    <nav class="mt-5 space-y-1" aria-label="Secciones">
+      <button type="button" data-sidebar-tab="dashboard" data-crm-nav onclick="switchTab('dashboard')" class="sidebar-nav-button is-active"><i data-lucide="home"></i><span>Inicio</span></button>
+      <button type="button" data-sidebar-tab="leads" data-crm-nav onclick="switchTab('dashboard');syncSidebarNavigation('leads');document.getElementById('leadsTableBody')?.scrollIntoView({behavior:'smooth',block:'start'})" class="sidebar-nav-button"><i data-lucide="users"></i><span>Leads</span></button>
+      <button type="button" data-sidebar-tab="citas" data-crm-nav onclick="switchTab('citas')" class="sidebar-nav-button"><i data-lucide="calendar-check"></i><span>Citas</span></button>
+      <button type="button" data-sidebar-tab="campanas" onclick="switchTab('campanas')" class="sidebar-nav-button"><i data-lucide="megaphone"></i><span>Campañas</span></button>
+      <button type="button" data-sidebar-tab="historico" data-crm-nav onclick="switchTab('historico')" class="sidebar-nav-button"><i data-lucide="chart-no-axes-combined"></i><span>Análisis histórico</span></button>
+      <button type="button" data-sidebar-tab="reporte" data-crm-nav onclick="switchTab('reporte')" class="sidebar-nav-button"><i data-lucide="clipboard-list"></i><span>Reportes</span></button>
+    </nav>
+    <div class="mt-auto pt-4 border-t border-slate-700/60 space-y-1">
+      <button type="button" onclick="openHelpModal()" class="sidebar-nav-button"><i data-lucide="circle-help"></i><span>Centro de ayuda</span></button>
+      <p class="px-3 pt-3 text-[10px] leading-relaxed text-slate-500">Gestión comercial y seguimiento de admisiones.</p>
+    </div>
+  </aside>
+
   <!-- ================= HEADER SUPERIOR ================= -->
   <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur border-b border-slate-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
       
       <!-- Brand & Title -->
-      <div class="flex items-center gap-3 min-w-0">
+      <div id="topBrand" class="flex items-center gap-3 min-w-0">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
           <i data-lucide="clapperboard" class="w-5 h-5 text-white"></i>
         </div>
@@ -275,13 +408,30 @@
     <!-- ================= VISTA 1: PANEL OPERATIVO ================= -->
     <div id="viewDashboard" class="space-y-6">
 
+    <!-- RESUMEN DE JORNADA -->
+    <section class="dashboard-intro glass-card rounded-2xl border border-slate-700/80 p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+      <div>
+        <span class="dashboard-eyebrow"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Centro de admisiones</span>
+        <h2 class="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Tu día, <span id="dashboardGreetingName">equipo</span></h2>
+        <p class="mt-1 text-sm text-slate-400">Revisa las prioridades, atiende tus leads y acompaña a tus próximos alumnos.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 shrink-0">
+        <button type="button" onclick="document.getElementById('leadsTableBody')?.scrollIntoView({behavior:'smooth',block:'start'})" class="primary-action inline-flex items-center gap-2 px-4 py-2 border border-slate-600 bg-slate-800/70 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-colors">
+          <i data-lucide="list-filter" class="w-4 h-4"></i> Ver prioridades
+        </button>
+        <button type="button" onclick="openNewLeadModal()" class="primary-action inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/25 cursor-pointer transition-all">
+          <i data-lucide="user-plus" class="w-4 h-4"></i> Nuevo lead
+        </button>
+      </div>
+    </section>
+
     <!-- KPI CARDS -->
-    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <section class="dashboard-kpis grid grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Total Leads Filtrados -->
-      <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+      <div class="metric-card glass-card border border-slate-700/80 shadow-sm relative overflow-hidden">
         <div class="flex items-center justify-between text-slate-400">
           <span class="text-xs font-semibold uppercase tracking-wider">Leads visibles</span>
-          <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+          <div class="metric-icon bg-blue-500/10 text-blue-400">
             <i data-lucide="users" class="w-4 h-4"></i>
           </div>
         </div>
@@ -292,10 +442,10 @@
       </div>
 
       <!-- Agendados -->
-      <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+      <div class="metric-card glass-card border border-slate-700/80 shadow-sm relative overflow-hidden">
         <div class="flex items-center justify-between text-slate-400">
           <span class="text-xs font-semibold uppercase tracking-wider">Agendados</span>
-          <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+          <div class="metric-icon bg-amber-500/10 text-amber-400">
             <i data-lucide="calendar-check" class="w-4 h-4"></i>
           </div>
         </div>
@@ -306,10 +456,10 @@
       </div>
 
       <!-- Inscritos -->
-      <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+      <div class="metric-card glass-card border border-slate-700/80 shadow-sm relative overflow-hidden">
         <div class="flex items-center justify-between text-slate-400">
           <span class="text-xs font-semibold uppercase tracking-wider">Inscritos</span>
-          <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+          <div class="metric-icon bg-emerald-500/10 text-emerald-400">
             <i data-lucide="badge-check" class="w-4 h-4"></i>
           </div>
         </div>
@@ -320,10 +470,10 @@
       </div>
 
       <!-- Tasa de Conversión -->
-      <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+      <div class="metric-card glass-card border border-slate-700/80 shadow-sm relative overflow-hidden">
         <div class="flex items-center justify-between text-slate-400">
           <span class="text-xs font-semibold uppercase tracking-wider">Conversión</span>
-          <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+          <div class="metric-icon bg-indigo-500/10 text-indigo-400">
             <i data-lucide="trending-up" class="w-4 h-4"></i>
           </div>
         </div>
@@ -339,7 +489,7 @@
       <div class="flex items-center justify-between">
         <div class="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-200">
           <i data-lucide="filter" class="w-4 h-4 text-indigo-400"></i>
-          <span>Filtros Dinámicos en Tiempo Real</span>
+          <span class="dashboard-section-title">Encuentra lo que necesitas</span>
           <span id="activeFiltersCount" class="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">Sin filtros</span>
           <span id="leadScopeLabel" class="text-xs text-slate-400 font-normal">Últimos 2.000 registros</span>
           <button id="btnLoadOlderLeads" type="button" onclick="loadOlderLeads()" class="text-xs px-2 py-1 rounded border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/10 cursor-pointer">Mostrar 2.000 anteriores</button>
@@ -354,10 +504,10 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <!-- Búsqueda libre -->
         <div class="lg:col-span-2">
-          <label class="block text-xs font-medium text-slate-400 mb-1">Buscar (Nombre o Teléfono)</label>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Buscar lead</label>
           <div class="relative">
             <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-            <input type="text" id="filterSearch" oninput="scheduleApplyFilters()" placeholder="Ej: Diana, 786, Camila..." class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
+            <input type="text" id="filterSearch" oninput="scheduleApplyFilters()" placeholder="Nombre, teléfono u observación…" class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
           </div>
         </div>
 
@@ -433,6 +583,15 @@
       </div>
     </section>
 
+    <!-- ACCESO RÁPIDO A LEADS DEL CONJUNTO FILTRADO -->
+    <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden" aria-labelledby="quickLeadsTitle">
+      <div class="px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <div><h2 id="quickLeadsTitle" class="dashboard-section-title text-sm sm:text-base font-bold text-white">Acceso rápido a leads</h2><p class="text-xs text-slate-400 mt-0.5">Cuatro resultados del filtro actual; consulta, contacta o actualiza la gestión.</p></div>
+        <button type="button" onclick="document.getElementById('leadsTableBody')?.scrollIntoView({behavior:'smooth',block:'start'})" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 cursor-pointer">Ver lista completa →</button>
+      </div>
+      <div id="quickLeadsList" aria-live="polite"><p class="px-4 py-5 text-xs text-slate-400">Cargando leads…</p></div>
+    </section>
+
     <!-- DASHBOARD ANALÍTICO - MATRIZ CRUZADA (GESTIÓN VS CAMPAÑAS) -->
     <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden">
       <div class="p-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -448,11 +607,12 @@
         <div class="flex items-center gap-2 text-xs text-slate-400">
           <span class="inline-block w-2.5 h-2.5 rounded bg-emerald-500"></span> <span>Alta densidad</span>
           <span class="inline-block w-2.5 h-2.5 rounded bg-slate-800 border border-slate-700 ml-2"></span> <span>Sin registros</span>
+          <button type="button" id="matrixToggle" class="matrix-toggle ml-2 inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-indigo-300 hover:bg-indigo-500/10 cursor-pointer" aria-controls="matrixPanel" aria-expanded="false" onclick="toggleMatrixPanel()"><span id="matrixToggleLabel">Mostrar matriz</span><i data-lucide="chevron-down" class="matrix-chevron w-3.5 h-3.5"></i></button>
         </div>
       </div>
 
       <!-- Tabla Matriz Cruzada con Scroll Horizontal -->
-      <div class="overflow-x-auto max-h-96">
+      <div id="matrixPanel" class="hidden overflow-x-auto max-h-96">
         <table class="w-full text-xs text-left" id="matrixTable">
           <thead class="text-[11px] uppercase tracking-wider text-slate-300 bg-slate-950/80 sticky top-0 z-10 border-b border-slate-800" id="matrixThead">
             <!-- Headers generados dinámicamente -->
@@ -474,7 +634,7 @@
       <div class="p-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <i data-lucide="table-properties" class="w-4 h-4 text-indigo-400"></i>
-          <h2 class="text-sm sm:text-base font-bold text-white">Registros de Leads</h2>
+          <h2 class="dashboard-section-title text-sm sm:text-base font-bold text-white">Leads y próximas acciones</h2>
           <span id="leadsTableCount" class="text-xs text-slate-400 font-mono">(0)</span>
         </div>
 
@@ -499,8 +659,8 @@
       </div>
 
       <!-- Data Table -->
-      <div class="overflow-x-auto min-h-[380px]">
-        <table class="w-full text-left text-xs border-collapse">
+      <div id="leadsTableViewport" class="overflow-x-auto min-h-[380px]">
+        <table id="leadsTable" class="w-full text-left text-xs border-collapse">
           <thead class="bg-slate-950/70 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800 sticky top-0 z-10">
             <tr>
               <th class="px-3.5 py-2.5 font-semibold">ID</th>
@@ -931,20 +1091,26 @@
   </div>
 
   <!-- ================= MODAL: INICIO DE SESIÓN ================= -->
-  <div id="modalLogin" class="fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
-      <div class="flex items-center gap-3">
-        <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
-        <div><h2 class="font-bold text-white">Iniciar sesión</h2><p class="text-xs text-slate-400">Accede con tu correo y contraseña</p></div>
+  <div id="modalLogin" class="fixed inset-0 z-[60] backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="login-shell" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <div class="login-brand">
+        <div class="flex items-center gap-3"><span class="login-brand-mark"><i data-lucide="clapperboard" class="w-5 h-5"></i></span><div><p class="font-bold text-lg leading-tight">Sociedad Actoral</p><p class="text-xs text-indigo-200">Centro de admisiones</p></div></div>
+        <div class="login-brand-description"><p class="text-xs font-semibold uppercase tracking-[.18em] text-indigo-200">Tu espacio de trabajo</p><p class="mt-4 text-3xl font-bold leading-tight">Cada conversación abre una oportunidad.</p><p class="mt-4 text-sm leading-relaxed text-slate-300">Organiza tus leads, acompaña sus próximos pasos y mantén a tu equipo conectado.</p></div>
+        <p class="login-brand-footer text-xs text-slate-400">Gestión comercial · Sociedad Actoral</p>
       </div>
-      <form id="formLogin" onsubmit="handleLogin(event)" class="space-y-3">
-        <input id="loginEmail" type="email" autocomplete="email" required placeholder="correo@ejemplo.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
-        <input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Contraseña" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
-        <button type="submit" class="w-full px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Ingresar</button>
-      </form>
-      <button type="button" onclick="handlePasswordReset()" class="w-full text-[11px] text-slate-400 hover:text-indigo-400 transition-colors cursor-pointer">¿Olvidaste tu contraseña?</button>
-      <p id="loginStatus" class="text-xs text-slate-400">La cuenta debe estar autorizada por un administrador.</p>
-      <p class="text-[11px] text-slate-400 text-center">El uso de este panel está sujeto a la <a href="/privacidad.html" class="text-slate-300 underline hover:text-indigo-400 transition-colors">política de privacidad</a>.</p>
+      <div class="login-form-panel flex flex-col justify-center">
+        <span class="inline-flex items-center gap-2 text-xs font-bold text-indigo-600"><i data-lucide="shield-check" class="w-4 h-4"></i> Acceso seguro</span>
+        <h2 id="loginTitle" class="mt-3 text-2xl font-bold tracking-tight">Te damos la bienvenida</h2>
+        <p class="mt-2 mb-7 text-sm text-slate-600">Ingresa con tu cuenta autorizada para continuar.</p>
+        <form id="formLogin" onsubmit="handleLogin(event)" class="space-y-4">
+          <div><label for="loginEmail">Correo electrónico</label><input id="loginEmail" type="email" autocomplete="email" required placeholder="tu@correo.com"></div>
+          <div><label for="loginPassword">Contraseña</label><div class="relative"><input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Escribe tu contraseña" class="pr-20"><button id="loginPasswordToggle" type="button" class="login-password-toggle" aria-controls="loginPassword" aria-pressed="false" onclick="toggleLoginPassword(this)">Mostrar</button></div></div>
+          <button type="submit" class="login-submit">Ingresar al panel</button>
+        </form>
+        <button type="button" onclick="handlePasswordReset()" class="mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer self-start">¿Olvidaste tu contraseña?</button>
+        <p id="loginStatus" role="status" aria-live="polite" class="mt-5 text-xs text-slate-600">La cuenta debe estar autorizada por un administrador.</p>
+        <p class="mt-7 pt-5 border-t border-slate-200 text-[11px] leading-relaxed text-slate-600">El uso de este panel está sujeto a la <a href="/privacidad.html" class="text-indigo-700 underline hover:text-indigo-900">política de privacidad</a>.</p>
+      </div>
     </div>
   </div>
 
@@ -1668,6 +1834,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       ['formNewLead', 'formEditLead', 'formAuthorizeUser', 'formLogin', 'formSetPassword'].forEach(id => {
         document.getElementById(id)?.reset();
       });
+      const loginPassword = document.getElementById('loginPassword');
+      if (loginPassword) loginPassword.type = 'password';
+      const loginPasswordToggle = document.getElementById('loginPasswordToggle');
+      if (loginPasswordToggle) {
+        loginPasswordToggle.setAttribute?.('aria-pressed', 'false');
+        loginPasswordToggle.textContent = 'Mostrar';
+      }
       const dataSourceSelect = document.getElementById('dataSourceFilter');
       if (dataSourceSelect) dataSourceSelect.value = 'actual';
       Object.values(histCharts).forEach(chart => {
@@ -1744,10 +1917,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const signOut = document.getElementById('btnSignOut');
       const adminButton = document.getElementById('btnAdminUsers');
       const catalogsButton = document.getElementById('btnCatalogs');
+      const greetingName = document.getElementById('dashboardGreetingName');
       if (badge) badge.textContent = `${access?.nombre || user.email} · ${isAdmin ? 'Admin' : (isSupervisor ? 'Supervisor' : (isTrafficker ? 'Trafficker' : 'Agente'))}`;
       if (signOut) signOut.classList.toggle('hidden', false);
       if (adminButton) adminButton.classList.toggle('hidden', !isAdmin);
       if (catalogsButton) catalogsButton.classList.toggle('hidden', !isAdmin);
+      if (greetingName) greetingName.textContent = (access?.nombre || user.email || 'equipo').trim().split(/\s+/)[0];
       const helpButton = document.getElementById('btnHelp');
       if (helpButton) helpButton.classList.toggle('hidden', false);
       document.querySelectorAll('[data-admin-only]').forEach(el => el.classList.toggle('hidden', !isAdmin));
@@ -1755,6 +1930,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       ['tabBtnDashboard', 'tabBtnHistorico', 'tabBtnReporte', 'tabBtnCitas'].forEach(id => {
         document.getElementById(id)?.classList.toggle('hidden', isTrafficker);
       });
+      document.querySelectorAll('[data-crm-nav]').forEach(button => button.classList.toggle('hidden', isTrafficker));
     }
 
     async function loadCurrentAccess(user) {
@@ -1764,6 +1940,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const { data: access, error: accessError } = await supabaseClient
         .from('user_access').select('user_id, email, nombre, role, activo, updated_at').eq('user_id', user.id).maybeSingle();
       return generation === sessionGeneration && !accessError && access?.activo ? access : null;
+    }
+
+    function toggleLoginPassword(button) {
+      const input = document.getElementById('loginPassword');
+      if (!input) return;
+      const visible = input.type === 'password';
+      input.type = visible ? 'text' : 'password';
+      button.setAttribute('aria-pressed', String(visible));
+      button.textContent = visible ? 'Ocultar' : 'Mostrar';
     }
 
     async function handleLogin(event) {
@@ -2353,7 +2538,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }
 
       [btnDash, btnHist, btnReporte, btnCitas].forEach(button => button.classList.toggle('hidden', isTrafficker));
+      document.querySelectorAll('[data-sidebar-tab]').forEach(button => {
+        button.classList.toggle('is-active', button.dataset.sidebarTab === tab);
+      });
       if (window.lucide) lucide.createIcons();
+    }
+
+    function syncSidebarNavigation(tab) {
+      document.querySelectorAll('[data-sidebar-tab]').forEach(button => {
+        button.classList.toggle('is-active', button.dataset.sidebarTab === tab);
+      });
     }
 
     async function prepareHistoricalAnalytics() {
@@ -3756,6 +3950,53 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       document.querySelector('#leadsTableBody')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
+    function toggleMatrixPanel() {
+      const panel = document.getElementById('matrixPanel');
+      const button = document.getElementById('matrixToggle');
+      if (!panel || !button) return;
+      const expanded = panel.classList.toggle('hidden') === false;
+      button.setAttribute('aria-expanded', String(expanded));
+      document.getElementById('matrixToggleLabel').textContent = expanded ? 'Ocultar matriz' : 'Mostrar matriz';
+    }
+
+    function renderQuickLeads() {
+      const container = document.getElementById('quickLeadsList');
+      if (!container) return;
+      // Se usa el mismo conjunto que alimenta filtros y tabla. No se consulta
+      // información adicional ni se inventa una prioridad comercial.
+      const rows = [...filteredLeads].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 4);
+      if (!rows.length) {
+        container.innerHTML = '<p class="px-4 py-5 text-xs text-slate-400">No hay leads con los filtros seleccionados.</p>';
+        return;
+      }
+      container.innerHTML = rows.map(lead => {
+        const id = String(lead.id);
+        const origin = getLeadOrigin(lead);
+        const nombre = getField(lead, 'Nombre') || 'Sin nombre';
+        const campana = getField(lead, 'Campaña') || 'Sin campaña';
+        const fecha = getField(lead, 'Fecha') || 'Sin fecha';
+        const gestion = getField(lead, 'GESTION') || 'Sin estado';
+        return `<div class="quick-lead-row text-xs">
+          <div class="quick-lead-meta"><button type="button" data-quick-action="view" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="font-semibold text-left text-white hover:text-indigo-400 cursor-pointer">${escapeHtml(nombre)}</button><p class="mt-1 text-slate-400">${escapeHtml(fecha)}${origin === 'historico' ? ' · Histórico 2025' : ''}</p></div>
+          <span class="quick-lead-campaign quick-lead-meta text-slate-300">${escapeHtml(campana)}</span>
+          <span class="quick-lead-status">${renderGestionBadge(gestion)}</span>
+          <div class="quick-lead-actions">
+            <button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="rounded-lg border border-slate-600 px-3 py-1.5 font-semibold text-slate-400 opacity-60 cursor-not-allowed">WhatsApp</button>
+            <button type="button" data-quick-action="edit" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="rounded-lg border border-indigo-500/40 px-3 py-1.5 font-semibold text-indigo-300 hover:bg-indigo-500/10 cursor-pointer">Gestionar</button>
+            <button type="button" data-quick-action="view" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="rounded-lg border border-slate-600 px-3 py-1.5 font-semibold text-slate-300 hover:bg-slate-700 cursor-pointer">Ver ficha</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    document.getElementById('quickLeadsList')?.addEventListener('click', event => {
+      const button = event.target.closest?.('[data-quick-action]');
+      if (!button) return;
+      const { quickAction, leadId, origin } = button.dataset;
+      if (quickAction === 'edit') openEditLeadModal(leadId, origin);
+      if (quickAction === 'view') openViewLeadModal(leadId, origin);
+    });
+
     // Delegacion de clics de la matriz: los valores viajan en data-*, nunca
     // dentro de onclick inline (los atributos JS decodifican entidades antes
     // de parsear, lo que permitia inyectar codigo con un apstrofe).
@@ -3771,6 +4012,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     function renderTable() {
       const tbody = document.getElementById('leadsTableBody');
       if (!tbody) return;
+      if (typeof renderQuickLeads === 'function') renderQuickLeads();
 
       const totalItems = filteredLeads.length;
       const totalPages = Math.ceil(totalItems / pageSize) || 1;
@@ -3811,7 +4053,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
         const badgeHtml = renderGestionBadge(gestion);
         const cleanPhone = telefono.replace(/\D/g, '');
-        const waLink = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent('Hola ' + nombre + ', te escribimos de Sociedad Actoral Hispanoamericana.')}` : '#';
 
         html += `<tr class="hover:bg-slate-800/80 transition-colors group">
           <td class="px-3.5 py-3 font-mono text-[11px] text-slate-400 tabular-nums">#${leadId}</td>
@@ -3831,9 +4072,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           <td class="px-3.5 py-3 text-slate-300">
             <div class="flex items-center gap-1.5">
               ${cleanPhone ? `
-                <a href="${waLink}" target="_blank" rel="noopener noreferrer" title="Abrir chat en WhatsApp" class="p-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors">
+                <button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="p-1 rounded bg-slate-700/50 text-slate-400 opacity-60 cursor-not-allowed">
                   <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
-                </a>
+                </button>
               ` : ''}
               <span class="font-mono text-[11px]">${escapeHtml(telefono || 'S/N')}</span>
             </div>
@@ -4470,7 +4711,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const telefono = getField(lead, 'Telefono');
       const telefonoFmt = formatPhone(telefono);
       const cleanPhone = telefono.replace(/\D/g, '');
-      const waLink = cleanPhone ? `https://wa.me/${cleanPhone}` : '#';
 
       // Posibles repetidos: misma clave de teléfono (>= 7 dígitos) en AMBOS años,
       // un solo recorrido por array; se excluye el propio registro por par origen+id.
@@ -4583,7 +4823,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Teléfono / WhatsApp</span>
             <div class="flex items-center gap-1.5 mt-0.5">
-              ${cleanPhone ? `<a href="${waLink}" target="_blank" class="text-emerald-400 hover:text-emerald-300"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></a>` : ''}
+              ${cleanPhone ? `<button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="text-slate-400 opacity-60 cursor-not-allowed"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></button>` : ''}
               <span class="font-mono text-slate-200">${escapeHtml(telefonoFmt || 'S/N')}</span>
             </div>
           </div>

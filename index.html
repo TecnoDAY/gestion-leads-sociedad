@@ -264,9 +264,12 @@
     .appointments-table tbody td { color: #17203b; vertical-align: top; }
     .appointments-table .appointments-empty { padding: 1.5rem; text-align: center; color: #475569; }
     .appointments-table .appointments-loading { padding: 1.5rem; text-align: center; color: #475569; }
+    .appointments-table .appointments-error { padding: 1.5rem; text-align: center; color: #9f1239; }
+    .appointments-error button { min-height: 2.75rem; margin-top: .75rem; padding: .5rem .9rem; border: 1px solid #fda4af; border-radius: .6rem; color: #9f1239; font-weight: 700; cursor: pointer; }
     .appointments-empty button { min-height: 2.5rem; margin-top: .75rem; padding: .5rem .9rem; border: 1px solid #c7d2fe; border-radius: .6rem; color: #4338ca; font-weight: 700; cursor: pointer; }
     [data-theme="dark"] .appointments-table .appointments-empty { color: #cbd5e1; }
     [data-theme="dark"] .appointments-table .appointments-loading { color: #cbd5e1; }
+    [data-theme="dark"] .appointments-table .appointments-error, [data-theme="dark"] .appointments-error button { color: #fda4af; }
     [data-theme="dark"] .appointments-empty button { color: #c7d2fe; border-color: #6366f1; }
     [data-theme="dark"] .appointments-intro { background: linear-gradient(115deg,#1e293b,#252449); border-color: #334155; }
     [data-theme="dark"] .appointments-filters, [data-theme="dark"] .appointments-table, [data-theme="dark"] #citasKpis > div { background: #1e293b; border-color: #334155; }
@@ -3273,20 +3276,25 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const key = desde + '|' + hasta, generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at, token = ++citasRequestGeneration;
       if (key === citasRangeKey && citasCache.length) return renderCitas();
       const tableBody = document.getElementById('citasTableBody');
+      const showLoadError = message => {
+        clearCitasResults();
+        document.getElementById('citasAviso').textContent = message;
+        if (tableBody) tableBody.innerHTML = '<tr><td colspan="11" class="appointments-error" role="alert"><p class="text-sm font-semibold">No se pudieron cargar las citas.</p><button type="button" onclick="loadCitas()">Reintentar</button></td></tr>';
+      };
       if (tableBody) { tableBody.setAttribute?.('aria-busy', 'true'); tableBody.innerHTML = '<tr><td colspan="11" class="appointments-loading" role="status">Cargando citas…</td></tr>'; }
       const fromParts = desde.split('-').map(Number), untilParts = hasta.split('-').map(Number);
       const start = new Date(fromParts[0], fromParts[1] - 1, fromParts[2]), end = new Date(untilParts[0], untilParts[1] - 1, untilParts[2] + 1);
       const valid = () => token === citasRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentMainTab === 'citas' && document.getElementById('citasDesde')?.value + '|' + document.getElementById('citasHasta')?.value === key;
       const { data, error } = await fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id,lead_id,scheduled_at,status,advisor_name,advisor_user_id,student_name,contact_email,student_age,campus,is_data_dura').gte('scheduled_at', start.toISOString()).lt('scheduled_at', end.toISOString()));
       if (!valid()) return;
-      if (error) { clearCitasResults(); document.getElementById('citasAviso').textContent = 'No se pudo cargar citas. Verifica que la migración esté aplicada.'; return renderCitas(); }
+      if (error) return showLoadError('No se pudo cargar citas. Verifica que la migración esté aplicada.');
       const rows = (data || []).sort((a, b) => String(b.scheduled_at).localeCompare(String(a.scheduled_at)) || Number(b.id) - Number(a.id));
       const ids = [...new Set(rows.map(r => r.lead_id).filter(Boolean))];
       let leads = [], missingLeads = 0, archivedLeads = 0;
       if (ids.length) {
         const res = await fetchRowsByIds('leads', 'id,Nombre,Telefono,Campaña,Medio,Mes,archived_at', ids);
         if (!valid()) return;
-        if (res.error) { console.warn('No se pudo cargar los leads de las citas:', res.error); clearCitasResults(); document.getElementById('citasAviso').textContent = 'No se pudieron cargar los datos de los leads asociados a las citas.'; return renderCitas(); }
+        if (res.error) { console.warn('No se pudo cargar los leads de las citas:', res.error); return showLoadError('No se pudieron cargar los datos de los leads asociados a las citas.'); }
         leads = res.data || [];
       }
       const activeLeads = leads.filter(l => !l.archived_at);

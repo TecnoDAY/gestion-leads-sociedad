@@ -624,6 +624,8 @@
       .mobile-tabs > div { padding-top: .5rem; padding-bottom: .5rem; }
       .mobile-tabs nav { width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; scroll-snap-type: x proximity; }
       .mobile-tabs nav button { flex-shrink: 0; min-height: 2.75rem; white-space: nowrap; scroll-snap-align: start; }
+      .mobile-tabs-hint { display: block; padding: 0 1rem .4rem; color: #cbd5e1; font-size: .7rem; text-align: right; }
+      [data-theme="light"] .mobile-tabs-hint { color: #475569; }
       .mobile-tabs .tabs-info { display: none; }
       .mobile-tabs .tabs-year { display: none; }
       .dashboard-intro { padding: 1.15rem; }
@@ -892,6 +894,7 @@
         </span>
       </div>
     </div>
+    <p class="mobile-tabs-hint hidden" aria-hidden="true">Desliza para ver más secciones →</p>
   </div>
 
   <!-- ================= CONTENEDOR PRINCIPAL ================= -->

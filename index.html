@@ -475,6 +475,12 @@
       #topBrand { visibility: hidden; pointer-events: none; }
     }
     @media (max-width: 639px) {
+      .topbar-inner { height: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: .65rem; padding-top: .65rem; padding-bottom: .65rem; }
+      .topbar-actions { width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; padding-bottom: .2rem; }
+      .topbar-actions > * { flex-shrink: 0; }
+      .topbar-actions button { min-height: 2.5rem; }
+      .topbar-actions #statusText { display: inline; }
+      .mobile-tabs { position: static; }
       .dashboard-intro { padding: 1.15rem; }
       .dashboard-kpis { gap: .65rem; }
       .dashboard-kpis .metric-card { min-height: 7rem; padding: .9rem; }
@@ -550,7 +556,7 @@
 
   <!-- ================= HEADER SUPERIOR ================= -->
   <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <div class="topbar-inner max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
       
       <!-- Brand & Title -->
       <div id="topBrand" class="flex items-center gap-3 min-w-0">
@@ -573,7 +579,7 @@
       </div>
 
       <!-- Action Buttons & Status -->
-      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+      <div class="topbar-actions flex items-center gap-2 sm:gap-3 shrink-0">
         <!-- Live Connection Status -->
         <div id="connectionStatusBadge" class="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700/80 text-xs font-medium text-slate-300">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="statusDot"></span>
@@ -621,7 +627,7 @@
   </header>
 
   <!-- ================= BARRA DE PESTAÑAS PRINCIPALES ================= -->
-  <div class="bg-slate-900/90 border-b border-slate-800 sticky top-16 z-20 backdrop-blur">
+  <div class="mobile-tabs bg-slate-900/90 border-b border-slate-800 sticky top-16 z-20 backdrop-blur">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 py-3 overflow-x-auto">
       <nav class="flex shrink-0 items-center rounded-lg border border-slate-700/80 bg-slate-800/50 p-1" aria-label="Tabs">
         <!-- Pestaña 1: Panel Operativo -->

@@ -549,6 +549,10 @@
       .appointments-filters > div:first-child > button { width: 100%; min-height: 2.75rem; }
       .appointments-filters input, .appointments-filters select { min-width: 0; min-height: 2.75rem; font-size: 1rem; }
       .campaigns-intro, .campaigns-controls { padding: 1rem; }
+      .campaigns-controls { display: grid; grid-template-columns: minmax(0, 1fr); }
+      .campaigns-controls > div, .campaigns-controls input, .campaigns-controls > button { width: 100%; min-width: 0; }
+      .campaigns-controls input { min-height: 2.75rem; font-size: 1rem; }
+      .campaigns-controls > button { min-height: 2.75rem; justify-content: center; }
       .historical-intro, .historical-filters { padding: 1rem; }
       .report-intro, .report-viewbar, .report-controls, .report-content-card { padding: 1rem; }
     }

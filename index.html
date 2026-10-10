@@ -449,7 +449,16 @@
       .users-row-actions { width: 100%; }
       .users-row-actions button { min-height: 2.5rem; padding: .5rem .7rem; }
     }
-    @media (max-width: 639px) { #modalCatalogs { padding: .5rem; } .catalog-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; } .catalog-header, .catalog-body, .catalog-section { padding: 1rem; } }
+    @media (max-width: 639px) {
+      #modalCatalogs { padding: .5rem; }
+      .catalog-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; }
+      .catalog-header, .catalog-body, .catalog-section { padding: 1rem; }
+      .catalog-header > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
+      .catalog-section input, .catalog-section select { width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
+      .catalog-add-controls { display: grid; grid-template-columns: minmax(0, 1fr); }
+      .catalog-add-controls button { width: 100%; min-height: 2.75rem; }
+      .catalog-row-actions button { min-width: 2.75rem; min-height: 2.75rem; }
+    }
     @media (max-width: 639px) {
       #reportePeriodo .period-card { padding: .85rem; }
       #reportePeriodo .period-table th, #reportePeriodo .period-table td { padding: .5rem; }
@@ -1677,7 +1686,7 @@
         <option value="mes" selected>Mes</option>
       </select></div>
 
-      <div class="catalog-section space-y-3"><div><h3 class="text-sm font-bold">Añadir valor</h3><p class="text-xs text-slate-500">Aparecerá en los filtros y formularios.</p></div><label for="catalogNewValue" class="sr-only">Nuevo valor</label><div class="flex flex-wrap items-center gap-2">
+      <div class="catalog-section space-y-3"><div><h3 class="text-sm font-bold">Añadir valor</h3><p class="text-xs text-slate-500">Aparecerá en los filtros y formularios.</p></div><label for="catalogNewValue" class="sr-only">Nuevo valor</label><div class="catalog-add-controls flex flex-wrap items-center gap-2">
         <input id="catalogNewValue" type="text" maxlength="120" placeholder="Nuevo valor…" class="flex-1 min-w-0 text-xs">
         <button type="button" onclick="addCatalogValue()" class="min-h-10 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition-colors">Añadir</button>
       </div></div>

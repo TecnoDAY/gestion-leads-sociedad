@@ -743,6 +743,9 @@
       #leadsTableBody td:nth-child(3) button { max-width: 100%; }
       #leadsTableBody td:nth-child(9) > div { justify-content: flex-start; }
       #leadsTableBody td:nth-child(9) button { min-width: 2.5rem; min-height: 2.5rem; display: inline-grid; place-items: center; }
+      .leads-table-toolbar { width: 100%; justify-content: space-between; }
+      .leads-table-toolbar select, .leads-table-toolbar > button { min-height: 2.75rem; }
+      .leads-table-toolbar select { min-width: 4.5rem; font-size: 1rem; }
       #leadsTableBody td[colspan]::before { content: none; }
       [data-theme="light"] #leadsTableBody tr { background: #fff; border-color: #e2e8f0; box-shadow: 0 5px 15px -12px rgba(15,23,42,.35); }
       [data-theme="light"] #leadsTableBody tr:hover { border-color: #a5b4fc; }
@@ -1163,7 +1166,7 @@
           <span id="leadsTableCount" class="text-xs text-slate-400 font-mono">(0)</span>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="leads-table-toolbar flex items-center gap-3">
           <!-- Page size selector -->
           <div class="flex items-center gap-1.5 text-xs text-slate-400">
             <span>Mostrar:</span>
@@ -1178,7 +1181,7 @@
           <!-- Export CSV -->
           <button onclick="exportCurrentLeadsCSV()" class="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-300 hover:text-white transition-colors cursor-pointer">
             <i data-lucide="download" class="w-3.5 h-3.5"></i>
-            <span class="hidden sm:inline">Exportar</span>
+            <span>Exportar</span>
           </button>
         </div>
       </div>

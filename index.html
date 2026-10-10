@@ -170,6 +170,34 @@
       .quick-lead-row { grid-template-columns: minmax(0, 1fr) auto; gap: .45rem; }
       .quick-lead-row .quick-lead-campaign, .quick-lead-row .quick-lead-status { grid-column: 1 / -1; }
     }
+    @media (max-width: 767px) {
+      #leadsTableViewport { min-height: 0; padding: .75rem; overflow-x: visible; }
+      #leadsTable { display: block; width: 100%; }
+      #leadsTable thead { display: none; }
+      #leadsTableBody { display: grid; gap: .75rem; }
+      #leadsTableBody tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .65rem 1rem; padding: 1rem; border: 1px solid #475569; border-radius: .9rem; background: rgba(15,23,42,.45); }
+      #leadsTableBody tr:hover { box-shadow: none; border-color: #818cf8; }
+      #leadsTableBody td { display: block; min-width: 0; max-width: none; padding: 0; text-align: left; white-space: normal; }
+      #leadsTableBody td::before { display: block; margin-bottom: .25rem; color: #94a3b8; font-size: .66rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+      #leadsTableBody td:nth-child(1)::before { content: 'ID'; }
+      #leadsTableBody td:nth-child(2)::before { content: 'Fecha'; }
+      #leadsTableBody td:nth-child(3)::before { content: 'Lead'; }
+      #leadsTableBody td:nth-child(4)::before { content: 'WhatsApp'; }
+      #leadsTableBody td:nth-child(5)::before { content: 'Campaña'; }
+      #leadsTableBody td:nth-child(6)::before { content: 'Medio'; }
+      #leadsTableBody td:nth-child(7)::before { content: 'Estado'; }
+      #leadsTableBody td:nth-child(8)::before { content: 'Agente'; }
+      #leadsTableBody td:nth-child(9)::before { content: 'Acciones'; }
+      #leadsTableBody td:nth-child(3), #leadsTableBody td:nth-child(9), #leadsTableBody td[colspan] { grid-column: 1 / -1; }
+      #leadsTableBody td:nth-child(3) { grid-row: 1; }
+      #leadsTableBody td:nth-child(3) button { max-width: 100%; }
+      #leadsTableBody td:nth-child(9) > div { justify-content: flex-start; }
+      #leadsTableBody td:nth-child(9) button { min-width: 2.5rem; min-height: 2.5rem; display: inline-grid; place-items: center; }
+      #leadsTableBody td[colspan]::before { content: none; }
+      [data-theme="light"] #leadsTableBody tr { background: #fff; border-color: #e2e8f0; box-shadow: 0 5px 15px -12px rgba(15,23,42,.35); }
+      [data-theme="light"] #leadsTableBody tr:hover { border-color: #a5b4fc; }
+      [data-theme="light"] #leadsTableBody td::before { color: #475569; }
+    }
   </style>
   <script>
     (() => {
@@ -602,8 +630,8 @@
       </div>
 
       <!-- Data Table -->
-      <div class="overflow-x-auto min-h-[380px]">
-        <table class="w-full text-left text-xs border-collapse">
+      <div id="leadsTableViewport" class="overflow-x-auto min-h-[380px]">
+        <table id="leadsTable" class="w-full text-left text-xs border-collapse">
           <thead class="bg-slate-950/70 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800 sticky top-0 z-10">
             <tr>
               <th class="px-3.5 py-2.5 font-semibold">ID</th>

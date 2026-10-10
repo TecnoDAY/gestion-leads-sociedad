@@ -732,7 +732,7 @@
       #leadsTableBody td:nth-child(1)::before { content: 'ID'; }
       #leadsTableBody td:nth-child(2)::before { content: 'Fecha'; }
       #leadsTableBody td:nth-child(3)::before { content: 'Lead'; }
-      #leadsTableBody td:nth-child(4)::before { content: 'WhatsApp'; }
+      #leadsTableBody td:nth-child(4)::before { content: 'Teléfono'; }
       #leadsTableBody td:nth-child(5)::before { content: 'Campaña'; }
       #leadsTableBody td:nth-child(6)::before { content: 'Medio'; }
       #leadsTableBody td:nth-child(7)::before { content: 'Estado'; }
@@ -740,7 +740,9 @@
       #leadsTableBody td:nth-child(9)::before { content: 'Acciones'; }
       #leadsTableBody td:nth-child(3), #leadsTableBody td:nth-child(9), #leadsTableBody td[colspan] { grid-column: 1 / -1; }
       #leadsTableBody td:nth-child(3) { grid-row: 1; }
-      #leadsTableBody td:nth-child(3) button { max-width: 100%; }
+      #leadsTableBody td:nth-child(3) > div, #leadsTableBody td:nth-child(4) > div { flex-wrap: wrap; }
+      #leadsTableBody td:nth-child(3) button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+      #leadsTableBody td:nth-child(4) span { overflow-wrap: anywhere; }
       #leadsTableBody td:nth-child(9) > div { justify-content: flex-start; }
       #leadsTableBody td:nth-child(9) button { min-width: 2.5rem; min-height: 2.5rem; display: inline-grid; place-items: center; }
       .leads-table-toolbar { width: 100%; justify-content: space-between; }

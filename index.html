@@ -441,7 +441,12 @@
     @media (max-width: 639px) { #modalHelp { padding: .5rem; } .help-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; } .help-header, .help-searchbar, .help-body, .help-footer { padding: 1rem; } .help-footer p { display: none; } .help-footer button { width: 100%; } }
     @media (max-width: 639px) { #panelAdminUsers { padding: .5rem; } .users-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; } .users-header, .users-body { padding: 1rem; } .users-section { padding: 1rem; } .users-row-actions { width: 100%; } }
     @media (max-width: 639px) { #modalCatalogs { padding: .5rem; } .catalog-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; } .catalog-header, .catalog-body, .catalog-section { padding: 1rem; } }
-    @media (max-width: 639px) { #reportePeriodo .period-card { padding: .85rem; } #reportePeriodo .period-table th, #reportePeriodo .period-table td { padding: .5rem; } }
+    @media (max-width: 639px) {
+      #reportePeriodo .period-card { padding: .85rem; }
+      #reportePeriodo .period-table th, #reportePeriodo .period-table td { padding: .5rem; }
+      #reportePeriodo .period-matrix th:first-child { min-width: 8.5rem; max-width: 8.5rem; white-space: normal; overflow-wrap: anywhere; line-height: 1.3; box-shadow: 1px 0 0 #cbd5e1; }
+      #reportePeriodo .period-matrix th:not(:first-child), #reportePeriodo .period-matrix td { min-width: 6rem; }
+    }
     @media (max-width: 900px) { .historical-filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
     @media (max-width: 480px) { .historical-filter-grid { grid-template-columns: 1fr; } }
     @media (max-width: 639px) {
@@ -475,6 +480,27 @@
       #topBrand { visibility: hidden; pointer-events: none; }
     }
     @media (max-width: 639px) {
+      .historical-summary-header { flex-wrap: wrap; gap: .85rem; }
+      .historical-summary-header > div { min-width: 0; }
+      .historical-summary-header > button { width: 100%; min-height: 2.75rem; justify-content: center; }
+      #viewHistorico .historical-kpis { gap: .65rem; }
+      #viewHistorico .historical-kpis .glass-card { min-width: 0; min-height: 8rem; padding: .85rem; }
+      #viewHistorico .historical-kpis .glass-card > div:first-child { align-items: flex-start; gap: .35rem; }
+      #viewHistorico .historical-kpis .glass-card > div:first-child > span { min-width: 0; line-height: 1.25; }
+      #viewHistorico .historical-kpis .glass-card > div:first-child > div { flex-shrink: 0; }
+      #viewHistorico .historical-kpis .glass-card > div:nth-child(2) { display: flex; flex-direction: column; align-items: flex-start; gap: .15rem; margin-top: .65rem; }
+      #viewHistorico .historical-kpis .glass-card > div:nth-child(2) > span:first-child { max-width: 100%; font-size: clamp(1.25rem, 5.5vw, 1.8rem); line-height: 1.15; white-space: normal; text-overflow: clip; overflow-wrap: anywhere; }
+      #viewHistorico .historical-kpis .glass-card > div:nth-child(2) > span:last-child { line-height: 1.3; }
+      .historical-chart-scroll { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+      .historical-chart-scroll::before { content: 'Desliza para ver todo el gráfico →'; display: block; margin-bottom: .35rem; color: #64748b; font-size: .7rem; }
+      .historical-chart-scroll > div { min-width: 35rem; }
+      [data-theme="dark"] .historical-chart-scroll::before { color: #94a3b8; }
+      .historical-filter-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
+      .historical-filter-actions > label { min-width: 0; }
+      .historical-filter-actions > label input { width: 100%; min-width: 0; }
+      .historical-filter-actions > .historical-presets, .historical-filter-actions > button { grid-column: 1 / -1; }
+      .historical-presets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; }
+      .historical-presets button, .historical-filter-actions > button { min-height: 2.6rem; justify-content: center; }
       #reportePeriodo .period-controls { display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
       #reportePeriodo .period-controls label, #reportePeriodo .period-controls input { display: block; width: 100%; min-width: 0; }
       #reportePeriodo .period-controls button, #reportePeriodo .period-presets button { min-height: 2.75rem; }
@@ -538,12 +564,19 @@
       .dashboard-filter-grid, .dashboard-filter-extra { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .dashboard-filter-grid > div:first-child, .dashboard-filter-extra > div:nth-child(2) { grid-column: 1 / -1; }
     }
-    @media (max-width: 399px) { .dashboard-date-fields { grid-template-columns: 1fr; } }
+    @media (max-width: 399px) { .dashboard-date-fields, .historical-filter-actions { grid-template-columns: 1fr; } }
     @media (min-width: 640px) and (max-width: 1350px) {
       .quick-lead-row { grid-template-columns: minmax(0, 1fr) minmax(0, .8fr) auto; }
       .quick-lead-status { display: none; }
     }
     @media (max-width: 767px) {
+      .historical-summary-hint { display: block; padding: .5rem 1rem 0; color: #64748b; font-size: .7rem; }
+      .historical-summary-table { min-width: 56rem; }
+      .historical-summary-table th:first-child, .historical-summary-table td:first-child:not([colspan]) { position: sticky; left: 0; z-index: 1; min-width: 8.5rem; background: #fff; color: #17203b; box-shadow: 1px 0 0 #e4e7ec; }
+      .historical-summary-table th:first-child { z-index: 2; background: #f1f5f9; color: #475569; }
+      [data-theme="dark"] .historical-summary-hint { color: #94a3b8; }
+      [data-theme="dark"] .historical-summary-table td:first-child:not([colspan]) { background: #1e293b; color: #f8fafc; box-shadow: 1px 0 0 #475569; }
+      [data-theme="dark"] .historical-summary-table th:first-child { background: #334155; color: #cbd5e1; box-shadow: 1px 0 0 #475569; }
       .campaigns-table { padding: .75rem; overflow-x: visible; }
       .campaigns-table table, .campaigns-table tbody { display: block; width: 100%; min-width: 0; }
       .campaigns-table thead { display: none; }
@@ -1263,8 +1296,9 @@
             </span>
           </div>
         </div>
-        <div class="relative w-full h-72 sm:h-80">
+        <div class="historical-chart-scroll"><div class="relative w-full h-72 sm:h-80">
           <canvas id="chartMonthlyEvolution"></canvas>
+        </div>
         </div>
       </div>
 
@@ -1281,8 +1315,9 @@
               <p class="text-xs text-slate-400">Porcentaje de leads convertidos en matrícula cada mes</p>
             </div>
           </div>
-          <div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-64">
             <canvas id="chartConversionTrend"></canvas>
+          </div>
           </div>
         </div>
 
@@ -1297,8 +1332,9 @@
               <p class="text-xs text-slate-400">Volumen de leads e inscripciones por programa</p>
             </div>
           </div>
-          <div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-64">
             <canvas id="chartCampaignPerformance"></canvas>
+          </div>
           </div>
         </div>
       </div>
@@ -1332,8 +1368,9 @@
               <p class="text-xs text-slate-400">Total de leads gestionados vs inscritos por asesor</p>
             </div>
           </div>
-          <div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-64">
             <canvas id="chartAgentPerformance"></canvas>
+          </div>
           </div>
         </div>
       </div>
@@ -1351,8 +1388,9 @@
               <p class="text-xs text-slate-400">Barras apiladas de los estados de GESTION de cada mes (top 6 estados + Otros)</p>
             </div>
           </div>
-          <div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-64">
             <canvas id="chartMonthlyStates"></canvas>
+          </div>
           </div>
         </div>
 
@@ -1367,8 +1405,9 @@
               <p class="text-xs text-slate-400">Barras apiladas con las 5 campañas de mayor volumen de leads por mes (resto en Otras)</p>
             </div>
           </div>
-          <div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-64">
             <canvas id="chartMonthlyCampaigns"></canvas>
+          </div>
           </div>
         </div>
       </div>
@@ -1391,7 +1430,7 @@
 
       <!-- TABLA RESUMEN CONSOLIDADA POR MES -->
       <div class="historical-chart-card rounded-2xl border border-slate-700/80 shadow-sm overflow-hidden space-y-0">
-        <div class="p-4 border-b border-slate-700/80 flex items-center justify-between">
+        <div class="historical-summary-header p-4 border-b border-slate-700/80 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
               <i data-lucide="table-2" class="w-4 h-4"></i>
@@ -1407,8 +1446,9 @@
           </button>
         </div>
 
+        <p class="historical-summary-hint hidden">Desliza la tabla para ver todas las métricas →</p>
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs border-collapse">
+          <table class="historical-summary-table w-full text-left text-xs border-collapse">
             <thead>
               <tr class="bg-slate-900/80 border-b border-slate-700/80 text-slate-400 uppercase tracking-wider font-semibold">
                 <th class="px-4 py-3">Mes</th>

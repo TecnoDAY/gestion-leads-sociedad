@@ -5262,6 +5262,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             const advisor = agendado ? (document.getElementById('newAppointmentAdvisor')?.value || null) : null;
             const campus = agendado ? appointmentCampusFrom('newAppointment') : '';
             if (agendado && (!scheduledAt || note.length > 2000 || !campus || (isAdmin && !advisor))) { showToast(!campus ? 'Selecciona la sede de la cita' : 'Fecha y hora de Miami, asesor o nota de cita no válidos', 'warning'); return; }
+            if (agendado && !confirmAppointmentCreation('newAppointment', scheduledAt)) return;
             newLeadSubmitting = true; if (btn) btn.disabled = true;
             const { data, error } = await supabaseClient.rpc(agendado ? 'create_lead_with_appointment' : 'create_lead', agendado ? { p_lead: newLeadData, p_scheduled_at: scheduledAt, p_notes: note, p_advisor_user_id: isAdmin ? advisor : null, p_details: appointmentDetailsFrom('newAppointment'), p_campus: campus } : { p_lead: newLeadData });
             if (!validRequest()) return;
@@ -5512,6 +5513,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         showToast(isAdmin ? 'Selecciona fecha y hora de Miami, y el asesor' : 'Selecciona una fecha y hora válida de Miami', 'warning');
         return;
       }
+      const appointmentCampus = needsAppointment ? appointmentCampusFrom('editAppointment') : '';
+      if (needsAppointment && !appointmentCampus) { showToast('Selecciona la sede de la cita', 'warning'); return; }
+      if (needsAppointment && !confirmAppointmentCreation('editAppointment', scheduledAt)) return;
 
       const requestGeneration = ++editLeadRequestGeneration;
       const capturedSessionGeneration = sessionGeneration, capturedUserId = currentUser.id, capturedAccessUpdatedAt = currentAccess.updated_at;
@@ -5566,9 +5570,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           let updated;
           let error;
           if (needsAppointment) {
-            const campus = appointmentCampusFrom('editAppointment');
-            if (!campus) { showToast('Selecciona la sede de la cita', 'warning'); return; }
-            const params = { p_id: Number(leadId), p_fields: updatedFields, p_scheduled_at: scheduledAt, p_notes: appointmentNote, p_advisor_user_id: isAdmin ? appointmentAdvisor : null, p_details: appointmentDetailsFrom('editAppointment'), p_campus: campus };
+            const params = { p_id: Number(leadId), p_fields: updatedFields, p_scheduled_at: scheduledAt, p_notes: appointmentNote, p_advisor_user_id: isAdmin ? appointmentAdvisor : null, p_details: appointmentDetailsFrom('editAppointment'), p_campus: appointmentCampus };
             ({ data: updated, error } = await supabaseClient.rpc('update_lead_with_appointment', params));
           } else if (existingCampusUpdate) {
             ({ data: updated, error } = await supabaseClient.rpc('update_lead_followup_with_appointment_campus', { p_id: Number(leadId), p_fields: updatedFields, ...existingCampusUpdate }));
@@ -5865,6 +5867,24 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         student_age: (document.getElementById(`${prefix}StudentAge`)?.value || '').trim()
       };
     }
+    function confirmAppointmentCreation(prefix, scheduledAt) {
+      const details = appointmentDetailsFrom(prefix);
+      const advisor = document.getElementById(`${prefix}Advisor`)?.selectedOptions?.[0]?.textContent?.trim() || currentAccess?.nombre || '-';
+      const note = (document.getElementById(`${prefix}Note`)?.value || '').trim();
+      return confirm([
+        '¿Has confirmado todos los datos para crear esta cita?',
+        '',
+        `Fecha y hora (Miami): ${appointmentLocal(scheduledAt)}`,
+        `Sede: ${appointmentCampusFrom(prefix)}`,
+        `Estudiante: ${details.student_name || 'Sin especificar'}`,
+        `Correo: ${details.contact_email || 'Sin especificar'}`,
+        `Edad: ${details.student_age || 'Sin especificar'}`,
+        `Asesor: ${advisor}`,
+        `Nota: ${note ? note.slice(0, 120) + (note.length > 120 ? '…' : '') : 'Sin nota'}`,
+        '',
+        'Aceptar creará la cita. Cancelar te permite revisar los datos.'
+      ].join('\n'));
+    }
     function appointmentDate(value) { const d = new Date(value); return Number.isNaN(d.getTime()) ? null : d; }
     // datetime-local no incluye zona horaria. La hora escrita representa siempre
     // la hora de pared de las sedes (America/New_York), no la del dispositivo.
@@ -5910,7 +5930,7 @@ async function loadLeadAppointments(leadId, lead) {
       const campus = appointmentCampusFrom('leadAppointment');
       if (!campus) { showToast('Selecciona la sede de la cita', 'warning'); return; }
       const args = { p_lead_id: validAppointmentId(currentViewId), p_scheduled_at: scheduledAt, p_notes: note, p_advisor_user_id: isAdmin ? (document.getElementById('leadAppointmentAdvisor')?.value || null) : null, p_details: appointmentDetailsFrom('leadAppointment'), p_campus: campus };
-       if (!args.p_lead_id || (isAdmin && !args.p_advisor_user_id)) return; const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at, key = `create:${leadId}`; if (pendingAppointmentMutations.has(key)) return; const operationToken = Symbol(); pendingAppointmentMutations.set(key, operationToken); if (submit) submit.disabled = true;
+       if (!args.p_lead_id || (isAdmin && !args.p_advisor_user_id)) return; const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at, key = `create:${leadId}`; if (pendingAppointmentMutations.has(key)) return; if (!confirmAppointmentCreation('leadAppointment', scheduledAt)) return; const operationToken = Symbol(); pendingAppointmentMutations.set(key, operationToken); if (submit) submit.disabled = true;
        try { const { error } = await supabaseClient.rpc('create_lead_appointment', args); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { if (error.message?.includes('lead_not_agendado')) { showToast('Solo los leads agendados pueden tener citas', 'warning'); document.getElementById('leadAppointmentCreate')?.classList.add('hidden'); } else if (String(error.code) === '23505' || String(error.message || '').includes('lead_appointments_one_programmed_per_lead_uidx')) { showToast('Este lead ya tiene una cita programada. Gestiona esa cita antes de crear otra', 'warning'); await loadLeadAppointments(leadId); return; } else showToast('No se pudo crear la cita', 'error'); return; } event.target.reset(); invalidateCitasCache(); await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Cita creada', 'success'); } catch (err) { if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) { console.warn('No se pudo crear la cita:', err); showToast('No se pudo crear la cita', 'error'); } } finally { if (pendingAppointmentMutations.get(key) === operationToken) pendingAppointmentMutations.delete(key); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.getElementById('leadAppointmentForm')) { if (submit) submit.disabled = leadAppointmentCreateBlocked; } }
     }
        async function editAppointmentDetails(id) { const appointmentId = validAppointmentId(id); if (!appointmentId || pendingAppointmentMutations.has(appointmentId)) return; const current = (leadAppointmentsCache.find(a => validAppointmentId(a.id) === appointmentId)) || (citasCache.find(a => validAppointmentId(a.id) === appointmentId)) || {}; const name = prompt('Nombre del estudiante (dejar vacío para borrar)', current.student_name || ''); if (name === null) return; const email = prompt('Correo de contacto (dejar vacío para borrar)', current.contact_email || ''); if (email === null) return; const age = prompt('Edad del estudiante en años (0-120, dejar vacío para borrar)', current.student_age != null ? String(current.student_age) : ''); if (age === null) return; if (age.trim() && (!/^[0-9]+$/.test(age.trim()) || Number(age) < 0 || Number(age) > 120)) { showToast('Edad no válida', 'warning'); return; } const generation = sessionGeneration, viewGeneration = viewLeadGeneration, leadId = currentViewId, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at; const operationToken = Symbol(); pendingAppointmentMutations.set(appointmentId, operationToken); setAppointmentMutationPending(appointmentId, true); try { const { error } = await supabaseClient.rpc('update_lead_appointment_details', { p_id: appointmentId, p_details: { student_name: name.trim(), contact_email: email.trim(), student_age: age.trim() } }); if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return; if (error) { showToast('No se pudieron guardar los datos: ' + (error.message || ''), 'error'); return; } invalidateCitasCache(); await loadLeadAppointments(leadId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) showToast('Datos de la cita actualizados', 'success'); } catch (err) { if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) { console.warn('No se pudieron guardar los datos:', err); showToast('No se pudieron guardar los datos de la cita', 'error'); } } finally { if (pendingAppointmentMutations.get(appointmentId) === operationToken) pendingAppointmentMutations.delete(appointmentId); if (appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt) && document.querySelector(`[data-appointment-id="${appointmentId}"]`)) setAppointmentMutationPending(appointmentId, false); } }
@@ -6240,7 +6260,7 @@ async function deleteLeadAppointment(id) {
           'Todas las asesoras ven el calendario completo de citas del equipo: sirve para saber quién atiende a quién. Lo que cambia por asesora es la gestión.',
           'Solo la asesora asignada a la cita (o un administrador) puede modificarla: el resto ve la información en solo lectura, sin botones de edición.',
           'Todas las horas de citas se escriben y se muestran en la zona horaria de Miami (Doral/Weston), aunque la asesora esté en otro país.',
-          'En la ficha del lead, sección Citas, elige Fecha y hora, añade una nota opcional, el nombre del estudiante, un correo de contacto y su edad, la sede (Doral o Weston) y, si eres administrador, el asesor. Pulsa "Crear cita".',
+          'En la ficha del lead, sección Citas, elige Fecha y hora, añade una nota opcional, el nombre del estudiante, un correo de contacto y su edad, la sede (Doral o Weston) y, si eres administrador, el asesor. Pulsa "Crear cita" y confirma los datos en el aviso antes de guardarla.',
           'Marca el resultado con los botones "Asistió", "No asistió" y "Cancelada". Cada cambio queda registrado en el historial de la cita.',
           'Para reprogramar, escribe la nueva Fecha y hora y pulsa "Reprogramar": la cita anterior queda como REPROGRAMADA y se crea una cita nueva enlazada a ella, sin sobrescribirla. La nueva cita conserva la marca Data Dura y los datos del estudiante.',
           'Un lead puede tener varias citas, cada una con su propio estado; todas se listan ordenadas en la ficha.',

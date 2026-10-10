@@ -41,7 +41,7 @@ const names = [
   'markPeriodoReportDirty', 'updatePeriodoCsvState', 'upsertLeadInState', 'removeLeadFromState',
   'loadPeriodoActividad', 'validatePeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
-  'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'syncNewLeadMes', 'syncNewUltimaGestion',
+  'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'confirmAppointmentCreation', 'syncNewLeadMes', 'syncNewUltimaGestion',
   'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentDate', 'appointmentInputISO', 'appointmentLocal', 'appointmentCampusFrom',
   'createLeadAppointment', 'editAppointmentDetails', 'editAppointmentCampus', 'setLeadAppointmentStatus', 'rescheduleLeadAppointment',
   'setAppointmentMutationPending', 'updateLeadAppointmentCreateState', 'deleteLeadAppointment',
@@ -80,7 +80,7 @@ function frontend(extra = {}) {
       body: { appendChild() {}, removeChild() {} },
     },
     window: {}, setTimeout: fn => { timers.push(fn); return timers.length; }, clearTimeout() {},
-    showToast: (...args) => toasts.push(args), catalogLabel: x => x,
+    showToast: (...args) => toasts.push(args), catalogLabel: x => x, confirm: () => true,
     fillCitasSelect() {}, renderCitas() {}, renderLeadNotes() {}, renderLeadGestiones() {}, renderLeadAppointments() {},
     updateKpis() {}, renderMatrix() {}, renderTable() {}, renderHistoricalAnalytics() {}, updateLeadScopeControls() {},
     refillLoadedWindow() {}, scheduleExactLeadCountRefresh() {},
@@ -1314,6 +1314,18 @@ test('hotfix campera: appointmentCampusFrom existe y los guardados alcanzan la R
     assert.equal(db.rpcCalls[0].args.p_campus, 'WESTON');
     assert.equal(db.rpcCalls[0].args.p_lead.GESTION, 'Agendado');
   }
+  // Cancelar la revisión no crea ni el lead ni la cita.
+  {
+    const { db, c, el } = prepare('DORAL');
+    let message = '';
+    c.confirm = text => { message = text; return false; };
+    el('newGestion').value = 'Agendado';
+    el('newAppointmentDate').value = '2026-10-06T18:00';
+    await c.handleCreateLead({ preventDefault() {} });
+    assert.equal(db.rpcCalls.length, 0);
+    assert.match(message, /Fecha y hora \(Miami\):.*\nSede: DORAL/);
+    assert.equal(c.newLeadSubmitting, false);
+  }
 });
 
 test('contrato RPC de citas: una asesora envia todos los nombres, incluidos UUID null', async () => {
@@ -1390,6 +1402,31 @@ test('contrato RPC de citas: una asesora envia todos los nombres, incluidos UUID
     await c.createLeadAppointment({ preventDefault() {}, target: { reset() {} } });
     assert.deepEqual(Object.keys(db.rpcCalls[0].args).sort(), expectedCreate);
     assert.equal(db.rpcCalls[0].args.p_advisor_user_id, 'advisor-2');
+  }
+  // La confirmación también detiene el cambio a Agendado y la creación desde la ficha.
+  {
+    const db = database({ update_lead_with_appointment: { id: 4590 } });
+    const f = frontend({ supabaseClient: db, editLeadSubmitting: false, editLeadPreviousGestion: 'Información', currentEditOrigin: 'actual' });
+    const c = f.context, el = f.element;
+    c.document.querySelector = sel => sel === 'input[name="editAppointmentCampus"]:checked' ? campus : null;
+    c.editLeadNeedsAppointment = () => true;
+    c.confirm = () => false;
+    el('editLeadId').value = '4590';
+    el('editAppointmentDate').value = '2026-10-10T10:00';
+    await c.handleUpdateLead({ preventDefault() {} });
+    assert.equal(db.rpcCalls.length, 0);
+    assert.equal(c.editLeadSubmitting, false);
+  }
+  {
+    const db = database({ create_lead_appointment: { id: 13 } });
+    const f = frontend({ supabaseClient: db, currentViewId: 4590, pendingAppointmentMutations: new Map() });
+    const c = f.context, el = f.element;
+    c.document.querySelector = sel => sel === 'input[name="leadAppointmentCampus"]:checked' ? campus : null;
+    c.confirm = () => false;
+    el('leadAppointmentDate').value = '2026-10-11T10:00';
+    await c.createLeadAppointment({ preventDefault() {}, target: { reset() {} } });
+    assert.equal(db.rpcCalls.length, 0);
+    assert.equal(c.pendingAppointmentMutations.size, 0);
   }
 });
 

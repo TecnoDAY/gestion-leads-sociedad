@@ -3931,14 +3931,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         const campana = getField(lead, 'Campaña') || 'Sin campaña';
         const fecha = getField(lead, 'Fecha') || 'Sin fecha';
         const gestion = getField(lead, 'GESTION') || 'Sin estado';
-        const telefono = getField(lead, 'Telefono').replace(/\D/g, '');
-        const waLink = telefono ? `https://wa.me/${telefono}?text=${encodeURIComponent('Hola ' + nombre + ', te escribimos de Sociedad Actoral Hispanoamericana.')}` : '';
         return `<div class="quick-lead-row text-xs">
           <div class="quick-lead-meta"><button type="button" data-quick-action="view" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="font-semibold text-left text-white hover:text-indigo-400 cursor-pointer">${escapeHtml(nombre)}</button><p class="mt-1 text-slate-400">${escapeHtml(fecha)}${origin === 'historico' ? ' · Histórico 2025' : ''}</p></div>
           <span class="quick-lead-campaign quick-lead-meta text-slate-300">${escapeHtml(campana)}</span>
           <span class="quick-lead-status">${renderGestionBadge(gestion)}</span>
           <div class="quick-lead-actions">
-            ${waLink ? `<a href="${waLink}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-emerald-500/40 px-3 py-1.5 font-semibold text-emerald-400 hover:bg-emerald-500/10">WhatsApp</a>` : ''}
+            <button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="rounded-lg border border-slate-600 px-3 py-1.5 font-semibold text-slate-400 opacity-60 cursor-not-allowed">WhatsApp</button>
             <button type="button" data-quick-action="edit" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="rounded-lg border border-indigo-500/40 px-3 py-1.5 font-semibold text-indigo-300 hover:bg-indigo-500/10 cursor-pointer">Gestionar</button>
             <button type="button" data-quick-action="view" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="rounded-lg border border-slate-600 px-3 py-1.5 font-semibold text-slate-300 hover:bg-slate-700 cursor-pointer">Ver ficha</button>
           </div>
@@ -4010,7 +4008,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
         const badgeHtml = renderGestionBadge(gestion);
         const cleanPhone = telefono.replace(/\D/g, '');
-        const waLink = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent('Hola ' + nombre + ', te escribimos de Sociedad Actoral Hispanoamericana.')}` : '#';
 
         html += `<tr class="hover:bg-slate-800/80 transition-colors group">
           <td class="px-3.5 py-3 font-mono text-[11px] text-slate-400 tabular-nums">#${leadId}</td>
@@ -4030,9 +4027,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           <td class="px-3.5 py-3 text-slate-300">
             <div class="flex items-center gap-1.5">
               ${cleanPhone ? `
-                <a href="${waLink}" target="_blank" rel="noopener noreferrer" title="Abrir chat en WhatsApp" class="p-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors">
+                <button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="p-1 rounded bg-slate-700/50 text-slate-400 opacity-60 cursor-not-allowed">
                   <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
-                </a>
+                </button>
               ` : ''}
               <span class="font-mono text-[11px]">${escapeHtml(telefono || 'S/N')}</span>
             </div>
@@ -4669,7 +4666,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const telefono = getField(lead, 'Telefono');
       const telefonoFmt = formatPhone(telefono);
       const cleanPhone = telefono.replace(/\D/g, '');
-      const waLink = cleanPhone ? `https://wa.me/${cleanPhone}` : '#';
 
       // Posibles repetidos: misma clave de teléfono (>= 7 dígitos) en AMBOS años,
       // un solo recorrido por array; se excluye el propio registro por par origen+id.
@@ -4782,7 +4778,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
             <span class="text-[11px] uppercase text-slate-500 font-semibold block">Teléfono / WhatsApp</span>
             <div class="flex items-center gap-1.5 mt-0.5">
-              ${cleanPhone ? `<a href="${waLink}" target="_blank" class="text-emerald-400 hover:text-emerald-300"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></a>` : ''}
+              ${cleanPhone ? `<button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="text-slate-400 opacity-60 cursor-not-allowed"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></button>` : ''}
               <span class="font-mono text-slate-200">${escapeHtml(telefonoFmt || 'S/N')}</span>
             </div>
           </div>

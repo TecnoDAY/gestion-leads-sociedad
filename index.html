@@ -420,6 +420,7 @@
               <input type="date" id="dashHasta" onchange="applyFilters()" class="w-[120px] bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
             </div>
             <button onclick="clearDashRange()" class="text-[11px] text-indigo-400 hover:text-indigo-300 underline cursor-pointer">Limpiar</button>
+            <span id="dashRangeScope" class="text-[11px] text-indigo-300 font-semibold hidden"></span>
             <div id="dashRangeError" class="text-[11px] text-amber-400 hidden"></div>
           </div>
         </div>
@@ -2222,6 +2223,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     let pageSize = 20;
     let currentMainTab = 'dashboard';
       let citasCache = [], citasRangeKey = '', citasRequestGeneration = 0;
+      // Base global temporal del rango de gestión (clave incluye la revisión
+      // de datos: cualquier mutación de leads la invalida).
+      let gestionRangeLeads = [], gestionRangeKey = '';
+      // Base global temporal del mes seleccionado (misma invalidación por
+      // revisión de datos; una sola caché, el mes activo).
+      let mesRangeLeads = [], mesRangeKey = '';
       const histCharts = {};      // Registro de instancias de Chart.js
       // Chart.js solo lo usa la pestaña Histórico: se descarga al abrirla para
       // no bloquear el arranque del panel. Si falla, renderHistoricalAnalytics
@@ -2717,11 +2724,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     // Lotes pequeños evitan URLs excesivas en .in(); el cursor evita truncamiento.
-    async function fetchRowsByIds(table, columns, ids) {
+    async function fetchRowsByIds(table, columns, ids, options = {}) {
       const rows = [];
       for (let i = 0; i < ids.length; i += 200) {
         const batch = ids.slice(i, i + 200);
-        const result = await fetchPagedResult(() => supabaseClient.from(table).select(columns).in('id', batch));
+        const result = await fetchPagedResult(() => {
+          let query = supabaseClient.from(table).select(columns).in('id', batch);
+          if (options.excludeArchived) query = query.is('archived_at', null);
+          return query;
+        });
         if (result.error) return result;
         rows.push(...result.data);
       }
@@ -3398,6 +3409,62 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       applyFilters();
     }
 
+    // Rango de gestión activo: base global temporal. Consulta lead_gestiones
+    // de todo el período y descarga solo los leads con gestión en esas
+    // fechas (aunque estén fuera de la ventana móvil de 2000). No toca
+    // allLeads ni el histórico; al limpiar el rango vuelve la ventana.
+    // Devuelve null si la sesión caducó; lanza si la consulta falla.
+    async function loadLeadsByGestionRange(desde, hasta) {
+      const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
+      const valid = () => generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt;
+      if (!valid()) return null;
+      const key = `${desde}|${hasta}|${leadDataRevision}`;
+      if (key === gestionRangeKey) return gestionRangeLeads;
+      // Comparar fechas planas YYYY-MM-DD; el navegador no decide la fecha
+      const { data, error } = await fetchPagedResult(() => supabaseClient
+        .from('lead_gestiones')
+        .select('id,lead_id')
+        .gte('fecha_gestion', desde)
+        .lte('fecha_gestion', hasta));
+      if (!valid()) return null;
+      if (error) throw error;
+      const ids = [...new Set((data || []).map(r => r.lead_id).filter(Boolean))];
+      let leads = [];
+      if (ids.length) {
+        const res = await fetchRowsByIds('leads', '*', ids, { excludeArchived: true });
+        if (!valid()) return null;
+        if (res.error) throw res.error;
+        leads = consolidateLeadsById(res.data || []);
+      }
+      gestionRangeKey = key;
+      gestionRangeLeads = leads;
+      return leads;
+    }
+
+    // Mes seleccionado con origen actual/todos: base global temporal por mes.
+    // Consulta todos los leads actuales con ese Mes aunque estén fuera de la
+    // ventana móvil de 2000. No toca allLeads ni el histórico; al quitar el
+    // mes vuelve la ventana. Devuelve null si la sesión caducó.
+    async function loadLeadsByMonth(mes) {
+      const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
+      const valid = () => generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt;
+      if (!valid()) return null;
+      const key = `${mes}|${leadDataRevision}`;
+      if (key === mesRangeKey) return mesRangeLeads;
+      // Los valores de Mes en la base están limpios (sin espacios): eq exacto.
+      const { data, error } = await fetchPagedResult(() => supabaseClient
+        .from('leads')
+        .select('*')
+        .eq('Mes', mes)
+        .is('archived_at', null));
+      if (!valid()) return null;
+      if (error) throw error;
+      const leads = consolidateLeadsById(data || []);
+      mesRangeKey = key;
+      mesRangeLeads = leads;
+      return leads;
+    }
+
     async function applyFilters() {
       clearTimeout(filterDebounceTimer);
       // Invalidar cualquier consulta del rango aún en vuelo
@@ -3413,13 +3480,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const dashDesde = document.getElementById('dashDesde')?.value || '';
       const dashHasta = document.getElementById('dashHasta')?.value || '';
       const errEl = document.getElementById('dashRangeError');
-      const baseLeads = getVisibleBaseLeads();
+      const scopeEl = document.getElementById('dashRangeScope');
 
       // Validar rango de fechas de gestión
-      let gestionIds = null;
+      let gestionBase = null; // conjunto global temporal: leads con gestión en el período
       if (dashDesde || dashHasta) {
         if (!dashDesde || !dashHasta || dashDesde > dashHasta) {
           if (errEl) { errEl.classList.remove('hidden'); errEl.innerText = 'Completa Desde y Hasta en orden válido; el rango no se ha aplicado.'; }
+          if (scopeEl) { scopeEl.classList.add('hidden'); scopeEl.innerText = ''; }
           return;
         }
         if (errEl) { errEl.classList.add('hidden'); errEl.innerText = ''; }
@@ -3428,28 +3496,57 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           return;
         }
         try {
-          // Comparar fechas planas YYYY-MM-DD; el navegador no decide la fecha
-          const { data, error } = await fetchPagedResult(() => supabaseClient
-            .from('lead_gestiones')
-            .select('id,lead_id')
-            .gte('fecha_gestion', dashDesde)
-            .lte('fecha_gestion', dashHasta));
-          if (!valid()) return;
-          if (error) throw error;
-          gestionIds = new Set((data || []).map(r => String(r.lead_id)));
+          gestionBase = await loadLeadsByGestionRange(dashDesde, dashHasta);
+          if (!valid() || gestionBase === null) return; // sesión obsoleta: no pintar parcial
           if (dataSource !== 'actual' && errEl) {
             errEl.classList.remove('hidden');
             errEl.innerText = 'El rango de gestión solo incluye leads actuales; el histórico no tiene historial de gestiones.';
+          }
+          if (scopeEl) {
+            scopeEl.classList.remove('hidden');
+            scopeEl.innerText = `Global por gestión · ${gestionBase.length.toLocaleString()} leads`;
           }
         } catch (e) {
           if (!valid()) return;
           console.warn('Error consultando lead_gestiones por rango:', e);
           if (errEl) { errEl.classList.remove('hidden'); errEl.innerText = 'Error al consultar el rango de gestión. Inténtalo de nuevo.'; }
+          if (scopeEl) { scopeEl.classList.add('hidden'); scopeEl.innerText = ''; }
           return;
         }
       } else {
         if (errEl) { errEl.classList.add('hidden'); errEl.innerText = ''; }
+        if (scopeEl) { scopeEl.classList.add('hidden'); scopeEl.innerText = ''; }
       }
+
+      // Mes seleccionado con origen actual/todos: base global temporal por mes.
+      // Con rango de gestión activo el mes se aplica localmente sobre ese
+      // conjunto (una sola descarga); en histórico la colección ya es completa.
+      let mesBase = null;
+      if (mes !== '' && gestionBase === null && dataSource !== 'historico') {
+        if (!supabaseClient || !currentUser) {
+          showToast('No se pudo consultar la base de datos. Verifica la sesión.', 'error');
+          return; // nada parcial presentado como global
+        }
+        try {
+          mesBase = await loadLeadsByMonth(mes);
+          if (!valid() || mesBase === null) return; // sesión obsoleta: no pintar parcial
+        } catch (e) {
+          if (!valid()) return;
+          console.warn('Error consultando leads por mes:', e);
+          showToast('Error al consultar el mes. Inténtalo de nuevo.', 'error');
+          return;
+        }
+      }
+
+      // Con rango activo la base es el conjunto global por gestión (ya
+      // excluye históricos y archivados); con mes, el global del mes (más el
+      // histórico en el origen «Todos»); sin ninguno, la ventana móvil o el
+      // origen seleccionado.
+      const baseLeads = gestionBase !== null
+        ? gestionBase
+        : mesBase !== null
+          ? (dataSource === 'todos' ? [...mesBase, ...allHistorico] : mesBase)
+          : getVisibleBaseLeads();
 
       filteredLeads = baseLeads.filter(lead => {
         if (!currentUser || !currentAccess?.activo) return;
@@ -3468,7 +3565,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
         if (gestion && getField(lead, 'GESTION').trim() !== gestion) return false;
         const agenteLead = getField(lead, 'Agente ').trim() || getField(lead, 'Agente').trim();
         if (asesora && agenteLead !== asesora) return false;
-        if (gestionIds !== null && (getLeadOrigin(lead) === 'historico' || !gestionIds.has(String(lead.id)))) return false;
         return true;
       });
 
@@ -3532,9 +3628,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const kpiTotalSubtitle = document.getElementById('kpiTotalSubtitle');
       if (kpiTotalSubtitle) {
         const hasFilters = document.getElementById('activeFiltersCount')?.innerText !== 'Sin filtros';
-        kpiTotalSubtitle.innerText = hasFilters
-          ? `Resultados dentro de ${getVisibleBaseLeads().length.toLocaleString()} cargados`
-          : loadedLeadTarget <= LEADS_BATCH_SIZE ? 'Últimos registros ingresados' : 'Incluye bloques anteriores';
+        const dashDesde = document.getElementById('dashDesde')?.value || '';
+        const dashHasta = document.getElementById('dashHasta')?.value || '';
+        const mesSel = document.getElementById('filterMes')?.value || '';
+        if (dashDesde !== '' || dashHasta !== '') {
+          kpiTotalSubtitle.innerText = 'Resultados globales por gestión';
+        } else if (mesSel !== '' && dataSource !== 'historico') {
+          kpiTotalSubtitle.innerText = 'Resultados globales del mes';
+        } else if (hasFilters) {
+          kpiTotalSubtitle.innerText = `Resultados dentro de ${getVisibleBaseLeads().length.toLocaleString()} cargados`;
+        } else {
+          kpiTotalSubtitle.innerText = loadedLeadTarget <= LEADS_BATCH_SIZE ? 'Últimos registros ingresados' : 'Incluye bloques anteriores';
+        }
       }
       document.getElementById('kpiAgendados').innerText = agendados.toLocaleString();
       document.getElementById('kpiAgendadosPct').innerText = `${agendadosPct}%`;

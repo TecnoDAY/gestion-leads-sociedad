@@ -25,11 +25,11 @@ const constants = ['LEADS_BATCH_SIZE', 'MONTH_CHRONO', 'GESTION_STATE_GROUPS'].m
   return script.slice(start, script.indexOf(';', start) + 1);
 });
 const names = [
-  'getField', 'compareLeadIdsDescending', 'consolidateLeadsById', 'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads', 'getHistoricalBaseLeads',
+  'getField', 'compareLeadIdsDescending', 'consolidateLeadsById', 'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads', 'getHistoricalBaseLeads', 'updateKpis',
   'fetchRowsByIdCursor', 'fetchPagedResult', 'fetchRowsByIds', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'haveSameLeadIds',
   'performLoadOlderLeads', 'returnToRecentLeads', 'refillLoadedWindow', 'applyRealtimeEvent', 'updateCompleteCacheOnly', 'removeFromCompleteCacheOnly',
   'loadCitas', 'clearCitasResults', 'validAppointmentId', 'appointmentSessionValid', 'loadLeadAppointments',
-  'loadLeadNotes', 'loadLeadGestiones', 'applyFilters', 'resetAllFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
+  'loadLeadNotes', 'loadLeadGestiones', 'loadLeadsByGestionRange', 'loadLeadsByMonth', 'clearDashRange', 'applyFilters', 'resetAllFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
   'activeCatalogValues', 'catalogOptions', 'compareAlphaEs', 'sortAlphaEs', 'sortMonthCatalog', 'parseFechaLead', 'normalizeLeadMonth', 'leadReportDate', 'isInscritoDataDura',
   'histMonthKey', 'histMonthLabel', 'sortHistMonthKeys', 'normalizeGestion', 'groupGestionEstado', 'readHistRange',
   'filterHistoricalLeads', 'populateHistoricalFilterOptions', 'computeHistoricalAggregates', 'escapeHtml', 'escapeAttr',
@@ -49,7 +49,7 @@ const names = [
   'toggleNewAppointmentFields', 'isAgendadoGestion', 'setBlockControls',
   'normalizePhone', 'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn'
 ];
-const frontendSource = ['let leadAppointmentCreateBlocked = true;', ...constants, ...names.map(extractFunction)].join('\n');
+const frontendSource = ['let leadAppointmentCreateBlocked = true;', 'let gestionRangeLeads = [], gestionRangeKey = "";', 'let mesRangeLeads = [], mesRangeKey = "";', ...constants, ...names.map(extractFunction)].join('\n');
 
 function frontend(extra = {}) {
   const elements = new Map(), downloads = [], timers = [], toasts = [];
@@ -815,24 +815,209 @@ for (const [fn, table, cache] of [
   });
 }
 
-test('rango gestiones >1000, origen histórico con id coincidente no se mezcla', async () => {
-  const db = database({ lead_gestiones: rows(1205, { fecha_gestion: '2026-03-05' }).map(r => ({ ...r, lead_id: r.id })) });
-  const { context: c, element } = frontend({ supabaseClient: db, allLeads: rows(1205), allHistorico: [{ id: 1, __origin: 'historico' }], dataSource: 'todos' });
+test('rango de gestión consulta global y trae leads fuera de la ventana de 2000', async () => {
+  const db = database({
+    lead_gestiones: rows(1205, { fecha_gestion: '2026-03-05' }).map(r => ({ ...r, lead_id: r.id })),
+    leads: rows(1205, { Mes: 'MARZO' }),
+  });
+  // La ventana visible tiene solo 100 leads; el rango debe ignorarla.
+  const { context: c, element } = frontend({ supabaseClient: db, allLeads: rows(100, { Mes: 'MARZO' }), allHistorico: [{ id: 1, __origin: 'historico' }], dataSource: 'todos' });
   element('dashDesde').value = '2026-03-01'; element('dashHasta').value = '2026-03-31';
   await c.applyFilters();
   assert.equal(c.filteredLeads.length, 1205);
+  assert.equal(c.filteredLeads[0].id, 1205); // orden descendente por id
+  assert.ok(db.calls.some(q => q.table === 'lead_gestiones'));
+  assert.ok(db.calls.some(q => q.table === 'leads'));
   assert.match(element('dashRangeError').innerText, /solo incluye leads actuales/);
+  assert.match(element('dashRangeScope').innerText, /Global por gestión · 1[.,]205 leads/);
+  assert.match(element('kpiTotalSubtitle').innerText, /Resultados globales por gestión/);
+});
+
+test('rango de gestión: misma consulta usa caché sin repetir peticiones', async () => {
+  const db = database({
+    lead_gestiones: rows(10, { fecha_gestion: '2026-03-05' }).map(r => ({ ...r, lead_id: r.id })),
+    leads: rows(10),
+  });
+  const { context: c, element } = frontend({ supabaseClient: db, allLeads: rows(10) });
+  element('dashDesde').value = '2026-03-01'; element('dashHasta').value = '2026-03-31';
+  await c.applyFilters();
+  const callsAfterFirst = db.calls.length;
+  assert.equal(c.filteredLeads.length, 10);
+  await c.applyFilters(); // otro filtro dispara applyFilters con el mismo rango
+  assert.equal(db.calls.length, callsAfterFirst);
+  assert.equal(c.filteredLeads.length, 10);
+});
+
+test('rango de gestión limpio vuelve a la ventana móvil', async () => {
+  const db = database({
+    lead_gestiones: rows(50, { fecha_gestion: '2026-03-05' }).map(r => ({ ...r, lead_id: r.id })),
+    leads: rows(50),
+  });
+  const f = frontend({ supabaseClient: db, allLeads: rows(100, { Mes: 'MARZO' }), dataSource: 'actual' });
+  f.element('dashDesde').value = '2026-03-01'; f.element('dashHasta').value = '2026-03-31';
+  await f.context.applyFilters();
+  assert.equal(f.context.filteredLeads.length, 50);
+  f.context.clearDashRange();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.context.filteredLeads.length, 100);
+  assert.equal(f.element('dashRangeScope').innerText, '');
+  assert.equal(f.element('kpiTotalSubtitle').innerText, 'Últimos registros ingresados');
+});
+
+test('filtro local sin mes ni rango muestra el alcance de la ventana', async () => {
+  const f = frontend({ allLeads: rows(100, { Mes: 'MARZO', Campaña: 'X' }), dataSource: 'actual' });
+  f.element('filterCampana').value = 'X';
+  await f.context.applyFilters();
+  assert.equal(f.context.filteredLeads.length, 100);
+  assert.equal(f.element('kpiTotalSubtitle').innerText, 'Resultados dentro de 100 cargados');
+});
+
+test('filtro Mes consulta global y trae leads fuera de la ventana de 2000', async () => {
+  const db = database({ leads: rows(1205, { Mes: 'Enero' }) });
+  // La ventana visible solo tiene 100 leads de Octubre; el mes debe ignorarla.
+  const { context: c, element } = frontend({ supabaseClient: db, allLeads: rows(100, { Mes: 'Octubre' }), dataSource: 'actual' });
+  element('filterMes').value = 'Enero';
+  await c.applyFilters();
+  assert.equal(c.filteredLeads.length, 1205);
+  assert.equal(c.filteredLeads[0].id, 1205); // orden descendente por id
+  assert.equal(c.allLeads.length, 100); // ventana intacta
+  assert.ok(db.calls.some(q => q.table === 'leads'));
+  assert.match(element('kpiTotalSubtitle').innerText, /Resultados globales del mes/);
+});
+
+test('filtro Mes: mismo mes usa caché sin repetir peticiones', async () => {
+  const db = database({ leads: rows(10, { Mes: 'Enero' }) });
+  const { context: c, element } = frontend({ supabaseClient: db, allLeads: rows(3, { Mes: 'Octubre' }) });
+  element('filterMes').value = 'Enero';
+  await c.applyFilters();
+  const callsAfterFirst = db.calls.length;
+  assert.equal(c.filteredLeads.length, 10);
+  element('filterCampana').value = ''; // otro filtro dispara applyFilters con el mismo mes
+  await c.applyFilters();
+  assert.equal(db.calls.length, callsAfterFirst);
+  assert.equal(c.filteredLeads.length, 10);
+});
+
+test('filtro Mes combinado con rango de gestión se aplica local sin segunda consulta global', async () => {
+  const leads = rows(10, { Mes: 'Enero' });
+  leads.forEach((l, i) => { if (i % 2 === 0) l.Mes = 'Octubre'; }); // 5 de Enero
+  const db = database({
+    lead_gestiones: rows(10, { fecha_gestion: '2026-03-05' }).map(r => ({ ...r, lead_id: r.id })),
+    leads,
+  });
+  const { context: c, element } = frontend({ supabaseClient: db, allLeads: rows(3), dataSource: 'actual' });
+  element('filterMes').value = 'Enero';
+  element('dashDesde').value = '2026-03-01'; element('dashHasta').value = '2026-03-31';
+  await c.applyFilters();
+  assert.equal(c.filteredLeads.length, 5);
+  // Descarga del rango por ids: 1 página con datos + 1 vacía; sin consulta extra por Mes.
+  assert.equal(db.calls.filter(q => q.table === 'leads').length, 2);
+  assert.equal(db.calls.filter(q => q.table === 'lead_gestiones').length, 2);
+  assert.match(element('kpiTotalSubtitle').innerText, /Resultados globales por gestión/);
+});
+
+test('filtro Mes limpio vuelve a la ventana móvil', async () => {
+  const db = database({ leads: rows(50, { Mes: 'Enero' }) });
+  const f = frontend({ supabaseClient: db, allLeads: rows(10, { Mes: 'Octubre' }), dataSource: 'actual' });
+  f.element('filterMes').value = 'Enero';
+  await f.context.applyFilters();
+  assert.equal(f.context.filteredLeads.length, 50);
+  f.element('filterMes').value = '';
+  await f.context.applyFilters();
+  assert.equal(f.context.filteredLeads.length, 10);
+  assert.equal(f.element('kpiTotalSubtitle').innerText, 'Últimos registros ingresados');
+});
+
+test('filtro Mes: sin Supabase o con error no pinta parcial', async () => {
+  const f = frontend({ allLeads: [{ id: 1, Mes: 'Enero' }], filteredLeads: [{ id: 'previous' }] });
+  f.element('filterMes').value = 'Enero';
+  await f.context.applyFilters(); // supabaseClient null
+  assert.equal(f.context.filteredLeads[0].id, 'previous');
+  assert.ok(f.toasts.some(t => t[1] === 'error'));
+  f.context.supabaseClient = database({ leads: rows(3, { Mes: 'Enero' }) }, { fail: () => true });
+  await f.context.applyFilters();
+  assert.equal(f.context.filteredLeads[0].id, 'previous');
+  assert.ok(f.toasts.filter(t => t[1] === 'error').length >= 2);
+});
+
+test('filtro Mes: sesión obsoleta durante la consulta descarta resultados', async () => {
+  const f = frontend({ allLeads: [{ id: 1 }], filteredLeads: [{ id: 'previous' }] });
+  f.context.supabaseClient = database({ leads: rows(3, { Mes: 'Enero' }) }, { hook: () => { f.context.sessionGeneration++; f.context.filteredLeads = [{ id: 'new' }]; } });
+  f.element('filterMes').value = 'Enero';
+  await f.context.applyFilters();
+  assert.equal(f.context.filteredLeads[0].id, 'new');
+});
+
+test('filtro Mes en histórico filtra localmente sin consultar leads', async () => {
+  const db = database({ leads: rows(5, { Mes: 'Enero' }) });
+  const f = frontend({
+    supabaseClient: db,
+    allHistorico: [{ id: 1, Mes: 'Enero', __origin: 'historico' }, { id: 2, Mes: 'Febrero', __origin: 'historico' }],
+    dataSource: 'historico',
+  });
+  f.element('filterMes').value = 'Enero';
+  await f.context.applyFilters();
+  assert.deepEqual(f.context.filteredLeads.map(l => l.id), [1]);
+  assert.equal(db.calls.length, 0);
+});
+
+test('filtro Mes en Todos combina globales actuales con el histórico', async () => {
+  const db = database({ leads: rows(3, { Mes: 'Enero' }) });
+  const f = frontend({
+    supabaseClient: db,
+    allLeads: rows(2, { Mes: 'Octubre' }),
+    allHistorico: [{ id: 99, Mes: 'Enero', __origin: 'historico' }],
+    dataSource: 'todos',
+  });
+  f.element('filterMes').value = 'Enero';
+  await f.context.applyFilters();
+  assert.deepEqual(plain(f.context.filteredLeads.map(l => l.id).sort((a, b) => a - b)), [1, 2, 3, 99]);
+});
+
+test('rango de gestión: error al descargar leads muestra aviso sin parcial', async () => {
+  const f = frontend({ allLeads: [{ id: 1 }], filteredLeads: [{ id: 'previous' }] });
+  f.context.supabaseClient = database({
+    lead_gestiones: rows(3, { fecha_gestion: '2026-03-05' }).map(r => ({ ...r, lead_id: r.id })),
+    leads: rows(3),
+  }, { fail: q => q.table === 'leads' });
+  f.element('dashDesde').value = '2026-03-01'; f.element('dashHasta').value = '2026-03-31';
+  await f.context.applyFilters();
+  assert.equal(f.context.filteredLeads[0].id, 'previous');
+  assert.match(f.element('dashRangeError').innerText, /Error al consultar/);
+});
+
+test('rango de gestión: sesión obsoleta durante la consulta descarta resultados', async () => {
+  const f = frontend({ allLeads: [{ id: 1 }], filteredLeads: [{ id: 'previous' }] });
+  f.context.supabaseClient = database({
+    lead_gestiones: rows(3, { fecha_gestion: '2026-03-05' }).map(r => ({ ...r, lead_id: r.id })),
+    leads: rows(3),
+  }, { hook: (_, n) => { if (n === 1) { f.context.sessionGeneration++; f.context.filteredLeads = [{ id: 'new' }]; } } });
+  f.element('dashDesde').value = '2026-03-01'; f.element('dashHasta').value = '2026-03-31';
+  await f.context.applyFilters();
+  assert.equal(f.context.filteredLeads[0].id, 'new');
+});
+
+test('rango de gestión sin gestiones en el período no devuelve nada y no toca la ventana', async () => {
+  const db = database({ lead_gestiones: [], leads: rows(5) });
+  const { context: c, element } = frontend({ supabaseClient: db, allLeads: rows(100) });
+  element('dashDesde').value = '2026-03-01'; element('dashHasta').value = '2026-03-31';
+  await c.applyFilters();
+  assert.equal(c.filteredLeads.length, 0);
+  assert.equal(c.allLeads.length, 100); // ventana intacta
+  assert.match(element('dashRangeScope').innerText, /Global por gestión · 0 leads/);
 });
 
 test('filtro asesora combina con mes, cuenta y se limpia', async () => {
-  const f = frontend({ allLeads: [
+  const leads = [
     { id: 1, Mes: 'MARZO', AGENTE: 'Ana' },
     { id: 2, Mes: 'MARZO', AGENTE: 'Bia' },
     { id: 3, Mes: 'ABRIL', AGENTE: 'Ana' },
-  ] });
+  ];
+  // Con Mes activo la base es global: la ventana se ignora, la consulta va a la tabla.
+  const f = frontend({ allLeads: leads, supabaseClient: database({ leads }) });
   f.element('filterAsesora').value = 'Ana'; f.element('filterMes').value = 'MARZO';
   await f.context.applyFilters();
-  assert.deepEqual(f.context.filteredLeads.map(l => l.id), [1]);
+  assert.deepEqual(plain(f.context.filteredLeads.map(l => l.id)), [1]);
   assert.match(f.element('activeFiltersCount').innerText, /2 filtros/);
   f.context.resetAllFilters();
   await new Promise(resolve => setImmediate(resolve));

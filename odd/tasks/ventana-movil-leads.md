@@ -92,3 +92,49 @@ Estado: complete
 Ultima tarea: T5 verificada.
 Siguiente paso: prueba manual autenticada de tiempos y comportamiento visual; commit/push solo si se autoriza.
 Bloqueos: ninguno.
+
+---
+
+## Fix: rango de gestión consulta global (2026-10-09)
+
+### Problema
+
+Con la ventana de 2.000, el filtro "Rango de gestión" (ej. 01/01/2026–31/01/2026) cruzaba las gestiones del período solo contra los leads visibles: las gestiones de enero referencian leads fuera de la ventana y el panel mostraba cero resultados.
+
+### Solución mínima
+
+- Nuevo `loadLeadsByGestionRange(desde, hasta)`: consulta `lead_gestiones` global por `fecha_gestion`, recoge `lead_id` únicos y descarga solo esos leads de `leads` (no archivados, lotes de 200 vía `fetchRowsByIds` con nueva opción `excludeArchived`).
+- `applyFilters` usa ese conjunto como base temporal mientras el rango está activo; `allLeads` (ventana) y el histórico no se tocan. Al limpiar el rango vuelve `getVisibleBaseLeads()`.
+- Caché por `desde|hasta|leadDataRevision`: cambiar otros filtros no repite peticiones; cualquier mutación de leads la invalida.
+- Señal de alcance: insignia `dashRangeScope` ("Global por gestión · N leads") y subtítulo del KPI total ("Resultados globales por gestión").
+- Guardas de sesión propias + `dashRangeGen`: sesión caduca o rango cambia → nada parcial.
+- Se elimina el cruce por `gestionIds` (redundante: la base ya es el conjunto global).
+
+### Evidencia
+
+- Estado: passed. `npm test`: 253 Node pass / 0 fail y 11 Python OK. `npm run lint`: OK. `npm run build`: OK, `dist/index.html` 438.24 kB (gzip 95.05 kB). `git diff --check`: limpio.
+- Tests nuevos/actualizados en `scripts/tests/t5-frontend-edge.test.mjs`: rango trae 1.205 leads globales con ventana de 100 (y avisa en origen histórico/todos); caché sin peticiones repetidas; limpiar rango vuelve a la ventana; error al descargar leads avisa sin parcial; sesión obsoleta descarta resultados; período sin gestiones devuelve cero sin tocar la ventana.
+
+---
+
+## Fix: filtro Mes consulta global (2026-10-09)
+
+### Problema
+
+Con la ventana de 2.000, el filtro **Mes** (ej. Enero) solo buscaba entre los leads visibles: los leads de enero fuera de la ventana no aparecían, aunque antes (con los 6.000 cargados) sí.
+
+### Solución mínima
+
+- Nuevo `loadLeadsByMonth(mes)`: consulta `leads` globalmente con `.eq('Mes', mes)` y `archived_at IS NULL`, paginado por `id` vía `fetchRowsByIdCursor`. Verificado en la base real: los valores de `Mes` están limpios (sin espacios), el `eq` exacto es seguro.
+- `applyFilters` usa ese conjunto como base temporal cuando hay Mes y el origen es **Actuales** o **Todos**; `allLeads` (ventana) no se toca. Al quitar el Mes vuelve la ventana móvil.
+- En origen **Histórico 2025** filtra localmente (la colección ya es completa); en **Todos** combina global actual + histórico.
+- Si también está activo el **Rango de gestión**, el rango gana y el Mes se aplica localmente sobre ese conjunto (una sola descarga).
+- Caché única por `mes|leadDataRevision`: cambiar otros filtros no repite peticiones.
+- Fail-closed: sin Supabase o con error → toast de error, nada parcial presentado como global.
+- Subtítulo del KPI total: «Resultados globales del mes».
+
+### Evidencia
+
+- Estado: passed. `npm test`: 262 Node pass / 0 fail y 11 Python OK. `npm run lint`: OK. `npm run build`: OK. `git diff --check`: limpio.
+- Tests nuevos en `t5-frontend-edge.test.mjs`: mes consulta global con ventana ajena (1.205 enero vs 100 octubre); caché sin peticiones repetidas; mes+rango de gestión con una sola descarga; limpiar mes vuelve a la ventana; sin Supabase/error no pinta parcial; sesión obsoleta descarta; histórico filtra local sin consulta; Todos combina global actual + histórico.
+- Verificación en DB (2026-10-09): `Mes` activo no archivado solo contiene valores limpios (Enero 1122, Mayo 1006, Agosto 865, Abril 654, Febrero 633, Julio 623, Marzo 540, Septiembre 466, Octubre 158).

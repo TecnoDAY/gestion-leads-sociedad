@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="dark" data-theme="dark">
+<html lang="es" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -116,23 +116,90 @@
     .periodo-tip:hover .periodo-tip-panel, .periodo-tip:focus-within .periodo-tip-panel, .periodo-tip:active .periodo-tip-panel { opacity: 1; visibility: visible; }
     .periodo-tip-panel::after { content: ''; position: absolute; top: 100%; left: .5rem; border: .3125rem solid transparent; border-top-color: #0f172a; }
     @media (prefers-reduced-motion: reduce) { .periodo-tip-panel { transition: none; } }
+
+    /* Rediseño visual 2026: capa de presentación sobre la lógica existente. */
+    body { background-image: radial-gradient(circle at 85% 0%, rgba(99, 102, 241, .08), transparent 28rem); }
+    .dashboard-intro { position: relative; overflow: hidden; isolation: isolate; }
+    .dashboard-intro::after { content: ''; position: absolute; z-index: -1; width: 18rem; height: 18rem; right: -7rem; top: -10rem; border-radius: 9999px; background: rgba(99, 102, 241, .12); filter: blur(2px); }
+    .dashboard-eyebrow { display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .65rem; border-radius: 9999px; background: rgba(99, 102, 241, .12); color: #a5b4fc; font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .dashboard-kpis .metric-card { min-height: 7.5rem; border-radius: 1rem; padding: 1.15rem; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+    .dashboard-kpis .metric-card:hover { transform: translateY(-2px); border-color: rgba(99, 102, 241, .45); box-shadow: 0 16px 30px -18px rgba(15, 23, 42, .65); }
+    .dashboard-kpis .metric-card > div:first-child > span { text-transform: none; letter-spacing: 0; font-size: .78rem; }
+    .dashboard-kpis .metric-icon { width: 2.65rem; height: 2.65rem; display: grid; place-items: center; border-radius: 9999px; }
+    .dashboard-section-title { letter-spacing: -.015em; }
+    .primary-action { min-height: 2.6rem; border-radius: .75rem; }
+    #viewDashboard > section { scroll-margin-top: 9.5rem; }
+    #leadsTableBody tr { transition: background-color .15s ease, box-shadow .15s ease; }
+    #leadsTableBody tr:hover { box-shadow: inset 3px 0 0 #6366f1; }
+    [data-theme="light"] body { background-color: #f6f7fb; background-image: radial-gradient(circle at 85% 0%, rgba(99, 102, 241, .09), transparent 30rem); }
+    [data-theme="light"] header.sticky, [data-theme="light"] body > div.sticky { background-color: rgba(246, 247, 251, .9); border-color: #e2e8f0; }
+    [data-theme="light"] .dashboard-eyebrow { color: #4338ca; background: #eef2ff; }
+    [data-theme="light"] .dashboard-intro { background: linear-gradient(115deg, #ffffff 45%, #f3f1ff); }
+    [data-theme="light"] .dashboard-kpis .metric-card { background: #fff; border-color: #e4e7ec; box-shadow: 0 8px 24px -20px rgba(15, 23, 42, .55); }
+    [data-theme="light"] .dashboard-kpis .metric-card:hover { border-color: #a5b4fc; box-shadow: 0 18px 36px -24px rgba(79, 70, 229, .45); }
+    [data-theme="light"] #viewDashboard > section:not(.dashboard-kpis):not(.dashboard-intro) { background-color: rgba(255,255,255,.94); border-color: #e4e7ec; box-shadow: 0 8px 28px -24px rgba(15,23,42,.5); }
+    [data-theme="light"] #leadsTableBody tr:hover { background-color: #f8faff; }
+    [data-theme="light"] .app-sidebar, [data-theme="light"] .app-sidebar .text-white { color: #fff; }
+    [data-theme="light"] .app-sidebar .text-slate-400 { color: #94a3b8; }
+    [data-theme="light"] .app-sidebar .text-slate-500 { color: #64748b; }
+    .app-sidebar { display: none; }
+    .sidebar-nav-button { width: 100%; display: flex; align-items: center; gap: .75rem; padding: .7rem .8rem; border: 1px solid transparent; border-radius: .7rem; color: #94a3b8; font-size: .82rem; font-weight: 600; text-align: left; transition: color .15s ease, background-color .15s ease, border-color .15s ease; cursor: pointer; }
+    .sidebar-nav-button:hover { color: #fff; background: rgba(255,255,255,.06); }
+    .sidebar-nav-button.is-active { color: #fff; background: linear-gradient(135deg, rgba(79,70,229,.95), rgba(67,56,202,.75)); border-color: rgba(165,180,252,.2); box-shadow: 0 12px 24px -16px rgba(99,102,241,.9); }
+    .sidebar-nav-button svg { width: 1rem; height: 1rem; flex: none; }
+    @media (min-width: 1100px) {
+      .app-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 45; width: 14rem; display: flex; flex-direction: column; padding: 1.25rem .9rem; background: linear-gradient(180deg, #111f3d, #0b1730); border-right: 1px solid rgba(148,163,184,.14); color: #cbd5e1; }
+      body:not(.session-ready) > .app-sidebar { display: none; }
+      body.session-ready > header, body.session-ready > main, body.session-ready > footer { width: calc(100% - 14rem); margin-left: 14rem; max-width: none; }
+      body.session-ready > div.sticky { display: none; }
+      body.session-ready > header > div, body.session-ready > main { max-width: 96rem; }
+      #topBrand { visibility: hidden; pointer-events: none; }
+    }
+    @media (max-width: 639px) {
+      .dashboard-intro { padding: 1.15rem; }
+      .dashboard-kpis { gap: .65rem; }
+      .dashboard-kpis .metric-card { min-height: 7rem; padding: .9rem; }
+      .dashboard-kpis .metric-icon { width: 2.25rem; height: 2.25rem; }
+    }
   </style>
   <script>
     (() => {
       const saved = localStorage.getItem('tema-dashboard');
-      document.documentElement.dataset.theme = saved === 'light' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = saved === 'dark' ? 'dark' : 'light';
     })();
   </script>
 </head>
 
 <body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
+  <!-- Navegación lateral de escritorio; las pestañas superiores se conservan en móvil/tablet. -->
+  <aside id="appSidebar" class="app-sidebar" aria-label="Navegación principal">
+    <div class="flex items-center gap-3 px-2 pb-6 border-b border-slate-700/60">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+        <i data-lucide="clapperboard" class="w-5 h-5 text-white"></i>
+      </div>
+      <div class="min-w-0"><p class="font-bold text-white leading-tight">Sociedad Actoral</p><p class="text-[11px] text-slate-400 mt-1">Centro de admisiones</p></div>
+    </div>
+    <nav class="mt-5 space-y-1" aria-label="Secciones">
+      <button type="button" data-sidebar-tab="dashboard" data-crm-nav onclick="switchTab('dashboard')" class="sidebar-nav-button is-active"><i data-lucide="home"></i><span>Inicio</span></button>
+      <button type="button" data-sidebar-tab="leads" data-crm-nav onclick="switchTab('dashboard');syncSidebarNavigation('leads');document.getElementById('leadsTableBody')?.scrollIntoView({behavior:'smooth',block:'start'})" class="sidebar-nav-button"><i data-lucide="users"></i><span>Leads</span></button>
+      <button type="button" data-sidebar-tab="citas" data-crm-nav onclick="switchTab('citas')" class="sidebar-nav-button"><i data-lucide="calendar-check"></i><span>Citas</span></button>
+      <button type="button" data-sidebar-tab="campanas" onclick="switchTab('campanas')" class="sidebar-nav-button"><i data-lucide="megaphone"></i><span>Campañas</span></button>
+      <button type="button" data-sidebar-tab="historico" data-crm-nav onclick="switchTab('historico')" class="sidebar-nav-button"><i data-lucide="chart-no-axes-combined"></i><span>Análisis histórico</span></button>
+      <button type="button" data-sidebar-tab="reporte" data-crm-nav onclick="switchTab('reporte')" class="sidebar-nav-button"><i data-lucide="clipboard-list"></i><span>Reportes</span></button>
+    </nav>
+    <div class="mt-auto pt-4 border-t border-slate-700/60 space-y-1">
+      <button type="button" onclick="openHelpModal()" class="sidebar-nav-button"><i data-lucide="circle-help"></i><span>Centro de ayuda</span></button>
+      <p class="px-3 pt-3 text-[10px] leading-relaxed text-slate-500">Gestión comercial y seguimiento de admisiones.</p>
+    </div>
+  </aside>
+
   <!-- ================= HEADER SUPERIOR ================= -->
   <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur border-b border-slate-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
       
       <!-- Brand & Title -->
-      <div class="flex items-center gap-3 min-w-0">
+      <div id="topBrand" class="flex items-center gap-3 min-w-0">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
           <i data-lucide="clapperboard" class="w-5 h-5 text-white"></i>
         </div>
@@ -275,13 +342,30 @@
     <!-- ================= VISTA 1: PANEL OPERATIVO ================= -->
     <div id="viewDashboard" class="space-y-6">
 
+    <!-- RESUMEN DE JORNADA -->
+    <section class="dashboard-intro glass-card rounded-2xl border border-slate-700/80 p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+      <div>
+        <span class="dashboard-eyebrow"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Centro de admisiones</span>
+        <h2 class="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Tu día, <span id="dashboardGreetingName">equipo</span></h2>
+        <p class="mt-1 text-sm text-slate-400">Revisa las prioridades, atiende tus leads y acompaña a tus próximos alumnos.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 shrink-0">
+        <button type="button" onclick="document.getElementById('leadsTableBody')?.scrollIntoView({behavior:'smooth',block:'start'})" class="primary-action inline-flex items-center gap-2 px-4 py-2 border border-slate-600 bg-slate-800/70 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-colors">
+          <i data-lucide="list-filter" class="w-4 h-4"></i> Ver prioridades
+        </button>
+        <button type="button" onclick="openNewLeadModal()" class="primary-action inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/25 cursor-pointer transition-all">
+          <i data-lucide="user-plus" class="w-4 h-4"></i> Nuevo lead
+        </button>
+      </div>
+    </section>
+
     <!-- KPI CARDS -->
-    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <section class="dashboard-kpis grid grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Total Leads Filtrados -->
-      <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+      <div class="metric-card glass-card border border-slate-700/80 shadow-sm relative overflow-hidden">
         <div class="flex items-center justify-between text-slate-400">
           <span class="text-xs font-semibold uppercase tracking-wider">Leads visibles</span>
-          <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+          <div class="metric-icon bg-blue-500/10 text-blue-400">
             <i data-lucide="users" class="w-4 h-4"></i>
           </div>
         </div>
@@ -292,10 +376,10 @@
       </div>
 
       <!-- Agendados -->
-      <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+      <div class="metric-card glass-card border border-slate-700/80 shadow-sm relative overflow-hidden">
         <div class="flex items-center justify-between text-slate-400">
           <span class="text-xs font-semibold uppercase tracking-wider">Agendados</span>
-          <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+          <div class="metric-icon bg-amber-500/10 text-amber-400">
             <i data-lucide="calendar-check" class="w-4 h-4"></i>
           </div>
         </div>
@@ -306,10 +390,10 @@
       </div>
 
       <!-- Inscritos -->
-      <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+      <div class="metric-card glass-card border border-slate-700/80 shadow-sm relative overflow-hidden">
         <div class="flex items-center justify-between text-slate-400">
           <span class="text-xs font-semibold uppercase tracking-wider">Inscritos</span>
-          <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+          <div class="metric-icon bg-emerald-500/10 text-emerald-400">
             <i data-lucide="badge-check" class="w-4 h-4"></i>
           </div>
         </div>
@@ -320,10 +404,10 @@
       </div>
 
       <!-- Tasa de Conversión -->
-      <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+      <div class="metric-card glass-card border border-slate-700/80 shadow-sm relative overflow-hidden">
         <div class="flex items-center justify-between text-slate-400">
           <span class="text-xs font-semibold uppercase tracking-wider">Conversión</span>
-          <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+          <div class="metric-icon bg-indigo-500/10 text-indigo-400">
             <i data-lucide="trending-up" class="w-4 h-4"></i>
           </div>
         </div>
@@ -339,7 +423,7 @@
       <div class="flex items-center justify-between">
         <div class="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-200">
           <i data-lucide="filter" class="w-4 h-4 text-indigo-400"></i>
-          <span>Filtros Dinámicos en Tiempo Real</span>
+          <span class="dashboard-section-title">Encuentra lo que necesitas</span>
           <span id="activeFiltersCount" class="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">Sin filtros</span>
           <span id="leadScopeLabel" class="text-xs text-slate-400 font-normal">Últimos 2.000 registros</span>
           <button id="btnLoadOlderLeads" type="button" onclick="loadOlderLeads()" class="text-xs px-2 py-1 rounded border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/10 cursor-pointer">Mostrar 2.000 anteriores</button>
@@ -354,10 +438,10 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <!-- Búsqueda libre -->
         <div class="lg:col-span-2">
-          <label class="block text-xs font-medium text-slate-400 mb-1">Buscar (Nombre o Teléfono)</label>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Buscar lead</label>
           <div class="relative">
             <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-            <input type="text" id="filterSearch" oninput="scheduleApplyFilters()" placeholder="Ej: Diana, 786, Camila..." class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
+            <input type="text" id="filterSearch" oninput="scheduleApplyFilters()" placeholder="Nombre, teléfono u observación…" class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
           </div>
         </div>
 
@@ -474,7 +558,7 @@
       <div class="p-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <i data-lucide="table-properties" class="w-4 h-4 text-indigo-400"></i>
-          <h2 class="text-sm sm:text-base font-bold text-white">Registros de Leads</h2>
+          <h2 class="dashboard-section-title text-sm sm:text-base font-bold text-white">Leads y próximas acciones</h2>
           <span id="leadsTableCount" class="text-xs text-slate-400 font-mono">(0)</span>
         </div>
 
@@ -1744,10 +1828,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const signOut = document.getElementById('btnSignOut');
       const adminButton = document.getElementById('btnAdminUsers');
       const catalogsButton = document.getElementById('btnCatalogs');
+      const greetingName = document.getElementById('dashboardGreetingName');
       if (badge) badge.textContent = `${access?.nombre || user.email} · ${isAdmin ? 'Admin' : (isSupervisor ? 'Supervisor' : (isTrafficker ? 'Trafficker' : 'Agente'))}`;
       if (signOut) signOut.classList.toggle('hidden', false);
       if (adminButton) adminButton.classList.toggle('hidden', !isAdmin);
       if (catalogsButton) catalogsButton.classList.toggle('hidden', !isAdmin);
+      if (greetingName) greetingName.textContent = (access?.nombre || user.email || 'equipo').trim().split(/\s+/)[0];
       const helpButton = document.getElementById('btnHelp');
       if (helpButton) helpButton.classList.toggle('hidden', false);
       document.querySelectorAll('[data-admin-only]').forEach(el => el.classList.toggle('hidden', !isAdmin));
@@ -1755,6 +1841,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       ['tabBtnDashboard', 'tabBtnHistorico', 'tabBtnReporte', 'tabBtnCitas'].forEach(id => {
         document.getElementById(id)?.classList.toggle('hidden', isTrafficker);
       });
+      document.querySelectorAll('[data-crm-nav]').forEach(button => button.classList.toggle('hidden', isTrafficker));
     }
 
     async function loadCurrentAccess(user) {
@@ -2353,7 +2440,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }
 
       [btnDash, btnHist, btnReporte, btnCitas].forEach(button => button.classList.toggle('hidden', isTrafficker));
+      document.querySelectorAll('[data-sidebar-tab]').forEach(button => {
+        button.classList.toggle('is-active', button.dataset.sidebarTab === tab);
+      });
       if (window.lucide) lucide.createIcons();
+    }
+
+    function syncSidebarNavigation(tab) {
+      document.querySelectorAll('[data-sidebar-tab]').forEach(button => {
+        button.classList.toggle('is-active', button.dataset.sidebarTab === tab);
+      });
     }
 
     async function prepareHistoricalAnalytics() {

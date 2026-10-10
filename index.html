@@ -475,6 +475,11 @@
       #topBrand { visibility: hidden; pointer-events: none; }
     }
     @media (max-width: 639px) {
+      .leads-pagination { align-items: stretch; text-align: center; }
+      #paginationControls { width: 100%; justify-content: space-between; }
+      #paginationControls .pagination-page-number, #paginationControls .pagination-ellipsis { display: none; }
+      #paginationControls .pagination-arrow { min-width: 2.75rem; min-height: 2.75rem; display: grid; place-items: center; }
+      #paginationControls .pagination-mobile-label { display: inline-flex; align-items: center; font-weight: 700; color: #a5b4fc; }
       .dashboard-filters-header { align-items: flex-start; flex-wrap: wrap; gap: .75rem; }
       .dashboard-filters-header > button { min-height: 2.5rem; padding: .45rem .7rem; border: 1px solid #c7d2fe; border-radius: .55rem; }
       .dashboard-filter-grid input, .dashboard-filter-grid select, .dashboard-filter-extra select { min-height: 2.6rem; }
@@ -1065,7 +1070,7 @@
       </div>
 
       <!-- Pagination Footer -->
-      <div class="p-3.5 border-t border-slate-800 bg-slate-900/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+      <div class="leads-pagination p-3.5 border-t border-slate-800 bg-slate-900/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
         <div id="paginationInfo">Mostrando 0 a 0 de 0 registros</div>
         <div class="flex items-center gap-1.5" id="paginationControls">
           <!-- Rendered by JS -->
@@ -4545,23 +4550,24 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (!controlsEl) return;
 
       let html = '';
-      html += `<button onclick="goToPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled class="px-2 py-1 rounded bg-slate-800 text-slate-600 cursor-not-allowed"' : 'class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer"'}>
+      html += `<button aria-label="Página anterior" onclick="goToPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled class="pagination-arrow px-2 py-1 rounded bg-slate-800 text-slate-600 cursor-not-allowed"' : 'class="pagination-arrow px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer"'}>
         <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
       </button>`;
 
       const pagesToShow = getPaginationRange(currentPage, totalPages);
       pagesToShow.forEach(p => {
         if (p === '...') {
-          html += `<span class="px-2 py-1 text-slate-500">...</span>`;
+          html += `<span class="pagination-ellipsis px-2 py-1 text-slate-500">...</span>`;
         } else {
           const isActive = p === currentPage;
-          html += `<button onclick="goToPage(${p})" class="px-2.5 py-1 rounded text-xs font-mono font-semibold transition-colors cursor-pointer ${isActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}">
+          html += `<button onclick="goToPage(${p})" aria-label="Ir a la página ${p}" ${isActive ? 'aria-current="page"' : ''} class="pagination-page-number px-2.5 py-1 rounded text-xs font-mono font-semibold transition-colors cursor-pointer ${isActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}">
             ${p}
           </button>`;
         }
       });
 
-      html += `<button onclick="goToPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled class="px-2 py-1 rounded bg-slate-800 text-slate-600 cursor-not-allowed"' : 'class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer"'}>
+      html += `<span class="pagination-mobile-label hidden" aria-live="polite">Página ${currentPage} de ${totalPages}</span>`;
+      html += `<button aria-label="Página siguiente" onclick="goToPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled class="pagination-arrow px-2 py-1 rounded bg-slate-800 text-slate-600 cursor-not-allowed"' : 'class="pagination-arrow px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer"'}>
         <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
       </button>`;
 

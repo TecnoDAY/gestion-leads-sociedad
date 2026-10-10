@@ -1864,11 +1864,11 @@ const advisor = (name, id, n = 1) => ({ autor_name: name, autor_user_id: id, ges
 test('reporte RPC usa la fecha y pinta los cuatro KPIs', async () => {
   const f = reportFixture({ asesoras: [advisor('Ana', 'a', 2), advisor('Bea', 'b', 3)] }); await f.context.loadReporteDiario();
   assert.deepEqual(plain(f.db.rpcCalls[0]), { name: 'daily_management_report', args: { p_fecha: '2026-03-05', p_autor_user_id: null } });
-  assert.match(f.element('reporteAuto').innerHTML, /Gestiones realizadas.*5/); assert.match(f.element('reporteAuto').innerHTML, /Total llamadas.*7/); assert.match(f.element('reporteAuto').innerHTML, /Total agendados.*9/); assert.match(f.element('reporteAuto').innerHTML, /Visitas.*11/); assert.doesNotMatch(f.element('reporteAuto').innerHTML, /Total inscritos/);
+  assert.match(f.element('reporteAuto').innerHTML, /Gestiones realizadas.*5/); assert.match(f.element('reporteAuto').innerHTML, /Total llamadas.*7/); assert.match(f.element('reporteAuto').innerHTML, /Citas creadas hoy.*9/); assert.match(f.element('reporteAuto').innerHTML, /Visitas registradas.*11/); assert.doesNotMatch(f.element('reporteAuto').innerHTML, /Total inscritos/);
 });
 test('comparativa RPC muestra campos y detalle las cuatro tablas y notas', async () => {
   const f = reportFixture({ asesoras: [advisor('Ana', 'a')] }, [{ id: 4, autor_name: 'Ana', problemas: 'p', observaciones: 'o' }]); await f.context.loadReporteDiario(); const html = f.element('reporteAuto').innerHTML;
-  for (const text of ['Ana', 'Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas y resultados', 'p', 'o']) assert.match(html, new RegExp(text));
+  for (const text of ['Ana', 'Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas creadas y resultados registrados hoy', 'p', 'o']) assert.match(html, new RegExp(text));
   // Retiradas del reporte diario: inscripciones y los dos canales en desuso.
   for (const text of ['Inscripciones', 'Visita Conservatorio', 'Sin clasificar', 'Total inscritos']) assert.doesNotMatch(html, new RegExp(text));
   assert.match(html, /Ana — 1 gestiones/); // gestiones del bloque, sin la clave vieja rota
@@ -1895,8 +1895,8 @@ test('CSV reporte: fila TOTAL suma las 28 columnas numericas y cuadra con las 31
   const rows = decodeCSV(new TextDecoder().decode(await f.downloads[0].blob.arrayBuffer()).slice(1));
   const headers = rows[4], total = rows.at(-1), col = n => Number(total[headers.indexOf(n)]);
   assert.equal(headers.length, 31); assert.equal(total.length, 31);
-  assert.equal(col('Gestiones realizadas'), 2); assert.equal(col('Agendados Doral'), 2); assert.equal(col('Agendados Data Dura Weston'), 2);
-  assert.equal(col('Total agendados'), 4); assert.equal(col('Reprogramadas'), 2);
+  assert.equal(col('Gestiones realizadas'), 2); assert.equal(col('Citas creadas Doral'), 2); assert.equal(col('Citas creadas Data Dura Weston'), 2);
+  assert.equal(col('Total citas creadas'), 4); assert.equal(col('Reprogramadas'), 2);
   assert.equal(headers.includes('Inscritos del día'), false, 'inscripciones fuera del CSV diario');
   assert.equal(col('Pasados a Agendado hoy'), 4); assert.equal(col('Pasados a Agendado Data Dura hoy'), 2);
   assert.equal(col('WhatsApp nuevos hoy'), 2); assert.equal(col('WhatsApp gestionados hoy'), 2); assert.equal(col('Total WhatsApp'), 4);
@@ -1904,7 +1904,7 @@ test('CSV reporte: fila TOTAL suma las 28 columnas numericas y cuadra con las 31
   assert.equal(col('Total canales'), 10);
   assert.equal(col('Canal Instagram'), 0);
   const panel = f.element('reporteAuto').innerHTML;
-  assert.match(panel, /Agendados hoy/);
+  assert.match(panel, /Citas creadas hoy/);
   assert.doesNotMatch(panel, /programadas hoy/);
   assert.match(panel, /WhatsApp nuevos hoy/); assert.match(panel, /Total WhatsApp/);
   assert.match(panel, /Canales/); assert.match(panel, /Detalle WhatsApp/);
@@ -1936,6 +1936,16 @@ test('canales: migracion cierra la contabilidad (canales excluyentes, fallback y
   assert.match(sql, /grant execute on function public\.daily_management_report\(date, uuid\) to authenticated/);
   // Sin PII en las salidas.
   assert.doesNotMatch(sql, /"Nombre"|"Telefono"/);
+});
+
+test('reporte diario: agendamientos por creación, resultados por resolución y autor del trabajo', () => {
+  const sql = readFileSync('supabase/migrations/202610100001_daily_report_appointment_work_date.sql', 'utf8');
+  assert.match(sql, /\(a\.created_at at time zone 'America\/New_York'\)::date = p_fecha/);
+  assert.match(sql, /\(a\.resolved_at at time zone 'America\/New_York'\)::date = p_fecha/);
+  assert.match(sql, /coalesce\(a\.created_by_user_id, a\.advisor_user_id\) as worker_id/);
+  assert.match(sql, /from booked a where a\.worker_id is not distinct from f\.user_id/);
+  assert.doesNotMatch(sql, /scheduled_at/);
+  assert.match(sql, /grant execute on function public\.daily_management_report\(date, uuid\) to authenticated/);
 });
 
 test('whatsapp gestión: canal inicial en crear, preselección por Medio y RPC con bloque aditivo', () => {
@@ -2336,6 +2346,6 @@ test('reporte diario: canales e inscripciones retirados de pantalla y CSV', () =
   assert.doesNotMatch(html, /<td class="py-1">Del día<\/td>/);
   assert.doesNotMatch(html, /<td class="py-1">Data Dura<\/td>/);
   assert.equal((html.match(new RegExp('<h5 class="font-semibold text-indigo-900">', 'g')) || []).length, 4, 'cuatro tablas por asesora');
-  for (const text of ['Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas y resultados', 'Gestiones realizadas', 'Total llamadas', 'Visitas']) assert.match(html, new RegExp(text));
-  assert.match(html, /Agendados hoy/);
+  for (const text of ['Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas creadas y resultados registrados hoy', 'Gestiones realizadas', 'Total llamadas', 'Visitas registradas']) assert.match(html, new RegExp(text));
+  assert.match(html, /Citas creadas hoy/);
 });

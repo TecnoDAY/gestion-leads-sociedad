@@ -351,7 +351,34 @@
     #reporteAuto .daily-detail-card td:last-child { min-width: 3.5rem; text-align: center; font-variant-numeric: tabular-nums; }
     #reporteAuto .reporte-manual { min-height: 5rem; border: 1px solid #98a2b3; border-radius: .6rem; background: #fff; color: #17203b; }
     #reporteAuto .daily-note-actions button { min-height: 2.3rem; border-radius: .6rem; cursor: pointer; }
+    #modalHelp { background: rgba(10,20,42,.78); }
+    .help-shell { width: min(100%, 53rem); border: 1px solid #e4e7ec; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
+    .help-header { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.2rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: linear-gradient(115deg,#fff 45%,#f0efff); }
+    .help-header h3 { color: #17203b; }
+    .help-header p { color: #526174; }
+    .help-searchbar { flex: none; display: flex; align-items: center; gap: .65rem; padding: .9rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: #fff; }
+    .help-searchbar input { min-height: 2.7rem; border: 1px solid #98a2b3; border-radius: .65rem; padding: .65rem .85rem; background: #fff; color: #17203b; }
+    .help-searchbar input::placeholder { color: #667085; }
+    .help-body { min-height: 0; overflow-y: auto; padding: 1.5rem; background: #f7f8fc; }
+    #helpContent { display: grid; gap: 1rem; }
+    .help-card { border: 1px solid #e4e7ec; border-radius: .9rem; padding: 1.2rem; background: #fff; }
+    .help-card h4 { color: #17203b; }
+    .help-card > p { color: #526174; }
+    .help-card ol li > span:last-child { color: #344054; }
+    .help-card ol li > span:first-child { background: #eef2ff; color: #4338ca; }
+    .help-card ul li { color: #526174; }
+    .help-footer { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 1.5rem; border-top: 1px solid #e4e7ec; background: #fff; }
+    [data-theme="dark"] .help-shell, [data-theme="dark"] .help-searchbar, [data-theme="dark"] .help-footer { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .help-header { background: linear-gradient(115deg,#1e293b,#252449); border-color: #334155; }
+    [data-theme="dark"] .help-header h3 { color: #f8fafc; }
+    [data-theme="dark"] .help-header p, [data-theme="dark"] .help-card > p, [data-theme="dark"] .help-card ul li { color: #cbd5e1; }
+    [data-theme="dark"] .help-body { background: #0f172a; }
+    [data-theme="dark"] .help-card { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .help-card h4 { color: #f8fafc; }
+    [data-theme="dark"] .help-card ol li > span:last-child { color: #e2e8f0; }
+    [data-theme="dark"] .help-searchbar input { background: #0f172a; color: #f8fafc; border-color: #475569; }
     @media (max-width: 639px) { #reporteAuto .daily-summary, #reporteAuto .daily-advisor-body { padding: 1rem; } }
+    @media (max-width: 639px) { #modalHelp { padding: .5rem; } .help-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; } .help-header, .help-searchbar, .help-body, .help-footer { padding: 1rem; } .help-footer p { display: none; } .help-footer button { width: 100%; } }
     @media (max-width: 639px) { #reportePeriodo .period-card { padding: .85rem; } #reportePeriodo .period-table th, #reportePeriodo .period-table td { padding: .5rem; } }
     @media (max-width: 900px) { .historical-filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
     @media (max-width: 480px) { .historical-filter-grid { grid-template-columns: 1fr; } }
@@ -1405,35 +1432,35 @@
 
   <!-- ================= MODAL: CENTRO DE AYUDA ================= -->
   <div id="modalHelp" class="fixed inset-0 z-[70] bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4" onclick="closeHelpModal()">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="modalHelpTitle" onclick="event.stopPropagation()">
-      <div class="px-6 py-4 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
+    <div class="help-shell overflow-hidden max-h-[90dvh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="modalHelpTitle" onclick="event.stopPropagation()">
+      <div class="help-header">
         <div class="flex items-center gap-2 min-w-0">
           <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
             <i data-lucide="help-circle" class="w-4 h-4"></i>
           </div>
           <div class="min-w-0">
-            <h3 id="modalHelpTitle" class="font-bold text-white text-base">Centro de Ayuda</h3>
-            <p class="text-[11px] text-slate-400">Cómo registrar leads, gestionar estados, citas, reporte y catálogos.</p>
+            <h3 id="modalHelpTitle" class="font-bold text-base">Centro de ayuda</h3>
+            <p class="text-xs">Encuentra pasos para leads, citas, reportes y administración.</p>
           </div>
         </div>
-        <button onclick="closeHelpModal()" title="Cerrar la ayuda" aria-label="Cerrar el centro de ayuda" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer shrink-0">
+        <button type="button" onclick="closeHelpModal()" title="Cerrar la ayuda" aria-label="Cerrar el centro de ayuda" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer shrink-0">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="px-6 py-3 border-b border-slate-700/80 flex items-center gap-2 shrink-0">
+      <div class="help-searchbar">
         <label for="helpSearch" class="sr-only">Buscar en la ayuda</label>
-        <input id="helpSearch" type="search" oninput="renderHelpContent()" placeholder="Buscar citas, reporte, catálogos…" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
-        <button onclick="clearHelpSearch()" title="Limpiar la búsqueda" aria-label="Limpiar la búsqueda de ayuda" class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium cursor-pointer shrink-0">Limpiar</button>
+        <input id="helpSearch" type="search" oninput="renderHelpContent()" placeholder="Busca una tarea o palabra clave…" class="flex-1 min-w-0 text-sm">
+        <button type="button" onclick="clearHelpSearch()" title="Limpiar la búsqueda" aria-label="Limpiar la búsqueda de ayuda" class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium cursor-pointer shrink-0">Limpiar</button>
       </div>
 
-      <div id="helpBody" class="p-6 space-y-4 text-xs overflow-y-auto min-h-0">
-        <div id="helpContent"><!-- Injected by JS --></div>
+      <div id="helpBody" class="help-body text-xs">
+        <div id="helpContent" aria-live="polite"><!-- Injected by JS --></div>
       </div>
 
-      <div class="px-6 py-3 border-t border-slate-700/80 bg-slate-900/50 flex items-center justify-between gap-3 shrink-0">
+      <div class="help-footer">
         <p class="text-[11px] text-slate-400">La ayuda se muestra sobre la pantalla en la que estás; ciérrala para volver.</p>
-        <button onclick="closeHelpModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Cerrar</button>
+        <button type="button" onclick="closeHelpModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Cerrar</button>
       </div>
     </div>
   </div>
@@ -5657,7 +5684,7 @@ async function deleteLeadAppointment(id) {
           ? `<ol class="space-y-1.5">${steps.map(({ step, index }) => `<li class="flex gap-2"><span class="shrink-0 w-4 h-4 mt-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold flex items-center justify-center">${index + 1}</span><span class="text-slate-300 leading-relaxed">${escapeHtml(step)}</span></li>`).join('')}</ol>`
           : '<p class="text-slate-400 text-xs leading-relaxed">Sin pasos para este término; revisa el resumen.</p>';
         const notesHtml = notes.length ? `<ul class="space-y-1.5 border-l-2 border-amber-500/40 pl-3">${notes.map(note => `<li class="text-slate-400 leading-relaxed">${escapeHtml(note)}</li>`).join('')}</ul>` : '';
-        return `<section id="helpSection-${escapeAttr(section.id)}" tabindex="-1" class="rounded-xl border border-slate-700/80 bg-slate-900/50 p-4 space-y-3 focus:outline-none">
+        return `<section id="helpSection-${escapeAttr(section.id)}" tabindex="-1" class="help-card space-y-3 focus:outline-none">
           <header class="flex items-center gap-2">
             <i data-lucide="book-open" class="w-4 h-4 text-indigo-400 shrink-0"></i>
             <h4 class="font-bold text-white text-sm">${escapeHtml(section.title)}</h4>

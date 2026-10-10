@@ -2873,9 +2873,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     async function loadAgentSessionsReport() {
       const box = document.getElementById('agentSessionsBody'); if (!box || !isAdmin || !supabaseClient) return;
       const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
+      box.innerHTML = '<p role="status">Cargando actividad…</p>';
       const { data, error } = await supabaseClient.rpc('admin_agent_sessions_report', {});
       if (!box || generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt) return;
-      if (error) { box.innerHTML = '<p class="text-rose-300">No se pudo cargar la actividad.</p>'; return; }
+      if (error) { box.innerHTML = '<div role="alert" class="flex flex-wrap items-center gap-2 text-rose-300"><p>No se pudo cargar la actividad.</p><button type="button" onclick="loadAgentSessionsReport()" class="min-h-11 rounded-lg border border-rose-400 px-3 py-2 font-semibold hover:bg-rose-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300">Reintentar</button></div>'; return; }
       const rows = (data || []).map(s => {
         const durationMs = s.ended_at ? new Date(s.ended_at) - new Date(s.started_at) : Date.now() - new Date(s.started_at);
         const mins = Math.max(0, Math.round(durationMs / 60000));

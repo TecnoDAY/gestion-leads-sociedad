@@ -465,6 +465,10 @@
       .lead-form-scroll { padding: 1rem; }
       .lead-form-primary, #editExistingCampusBlock:not(.hidden), #editAppointmentFields:not(.hidden), #newAppointmentFields:not(.hidden), #adminLeadFields:not(.hidden) { padding: 1rem; }
       .lead-form-footer button { flex: 1; justify-content: center; }
+      #formNewLead input:not([type="radio"]):not([type="hidden"]), #formNewLead select, #formNewLead textarea { min-height: 2.75rem; font-size: 1rem; }
+      #formNewLead textarea { min-height: 6rem; }
+      #formNewLead .lead-form-footer button { min-height: 2.75rem; }
+      #modalNewLead .lead-form-header > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
       .appointments-intro { padding: 1.15rem; }
       .appointments-filters { padding: 1rem; }
       .campaigns-intro, .campaigns-controls { padding: 1rem; }
@@ -1706,13 +1710,13 @@
           <!-- Nombre -->
           <div class="sm:col-span-2">
             <label class="block font-medium text-slate-300 mb-1">Nombre Completo *</label>
-            <input type="text" id="newNombre" required placeholder="Ej: Marcela Gómez" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <input type="text" id="newNombre" required autocomplete="name" placeholder="Ej: Marcela Gómez" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
           </div>
 
           <!-- Teléfono -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Teléfono / WhatsApp *</label>
-            <input type="text" id="newTelefono" required placeholder="Ej: 1 (786) 555-1234" oninput="queueNewPhoneCheck()" onblur="this.value=formatPhone(this.value); checkNewPhoneDuplicate()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <input type="text" id="newTelefono" required inputmode="tel" autocomplete="tel" placeholder="Ej: 1 (786) 555-1234" oninput="queueNewPhoneCheck()" onblur="this.value=formatPhone(this.value); checkNewPhoneDuplicate()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
             <p id="newPhoneWarn" class="hidden mt-1 text-[11px] text-amber-300"></p>
           </div>
 

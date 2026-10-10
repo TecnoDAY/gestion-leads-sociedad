@@ -284,6 +284,8 @@
     .campaigns-table th { white-space: nowrap; background: #f1f5f9; color: #475569; font-size: .67rem; text-transform: uppercase; letter-spacing: .04em; }
     .campaigns-table tbody tr:hover { background: #f8faff; }
     .campaigns-table tbody td { color: #17203b; }
+    .campaigns-table .campaigns-empty { padding: 1.5rem; text-align: center; color: #475569; }
+    [data-theme="dark"] .campaigns-table .campaigns-empty { color: #cbd5e1; }
     .campaigns-table tbody .campaigns-total-row { background: #eef2ff; }
     .campaigns-table tbody .campaigns-total-row td { color: #17203b; }
     .campaigns-table tbody input, .campaigns-table tbody select { border: 1px solid #98a2b3; border-radius: .5rem; background: #fff; color: #17203b; }
@@ -7488,7 +7490,7 @@ async function deleteLeadAppointment(id) {
         campanasData = [];
         campaignStatsMap = new Map();
         if (token === campanasRequestGeneration) campanasLoading = false;
-        return renderCampanas(campanasData, campaignTotals([]), `${mesNombre} ${y}`, canEditCampaigns(), monthStr);
+        return renderCampanas(campanasData, campaignTotals([]), `${mesNombre} ${y}`, canEditCampaigns(), monthStr, true);
       }
       const rollupRows = rollupRes.value.data || [];
       const statRows = statsRes.value.data || [];
@@ -7514,12 +7516,12 @@ async function deleteLeadAppointment(id) {
           pendientes: Number(r.pendientes) || 0
         };
       });
-      if (aviso) aviso.textContent = campanasData.length ? '' : 'Sin datos para este mes.';
+      if (aviso) aviso.textContent = '';
       if (token === campanasRequestGeneration) campanasLoading = false;
       renderCampanas(campanasData, campaignTotals(campanasData), `${mesNombre} ${y}`, canEditCampaigns(), monthStr);
     }
 
-    function renderCampanas(rows, totals, mesLabel, esEditor, monthStr) {
+    function renderCampanas(rows, totals, mesLabel, esEditor, monthStr, loadFailed = false) {
       const tbody = document.getElementById('campanasTableBody');
       if (!tbody) return;
       const summary = document.getElementById('campanasSummary');
@@ -7533,7 +7535,9 @@ async function deleteLeadAppointment(id) {
         ].map(([label, value]) => `<div><span class="text-[11px] text-slate-400">${label}</span><strong>${escapeHtml(String(value))}</strong></div>`).join('') : '';
       }
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="13" class="p-4 text-center text-slate-400">Sin datos para este mes.</td></tr>';
+        tbody.innerHTML = loadFailed
+          ? '<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">No se pudo cargar el informe.</p><p class="mt-1 text-xs">Revisa el aviso anterior e inténtalo de nuevo.</p></td></tr>'
+          : `<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">Sin campañas para ${escapeHtml(mesLabel)}.</p><p class="mt-1 text-xs">Selecciona otro mes para consultar sus resultados.</p></td></tr>`;
         return;
       }
       const estadoOptions = sel => ['activa', 'finalizada', 'pausada'].map(e => `<option value="${e}"${e === sel ? ' selected' : ''}>${e.charAt(0).toUpperCase() + e.slice(1)}</option>`).join('');

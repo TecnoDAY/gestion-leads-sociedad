@@ -305,6 +305,18 @@
     [data-theme="dark"] .historical-filters, [data-theme="dark"] #viewHistorico .historical-kpis .glass-card, [data-theme="dark"] #viewHistorico .historical-chart-card { background: #1e293b; border-color: #334155; }
     [data-theme="dark"] .historical-filters label { color: #cbd5e1; }
     [data-theme="dark"] .historical-filters select, [data-theme="dark"] .historical-filters input { background: #0f172a; color: #f8fafc; border-color: #475569; }
+    #reporteDiario { max-width: none; padding: 0; border: 0; border-radius: 0; background: transparent !important; box-shadow: none; }
+    .report-viewbar, .report-controls, .report-content-card { border: 1px solid #e4e7ec; border-radius: 1rem; padding: 1.25rem; background: #fff; box-shadow: 0 8px 28px -24px rgba(15,23,42,.5); }
+    .report-viewbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
+    .report-intro { position: relative; overflow: hidden; border: 1px solid #e4e7ec; border-radius: 1rem; padding: 1.5rem; background: linear-gradient(115deg,#fff 45%,#f0efff); }
+    .report-intro::after { content: ''; position: absolute; width: 13rem; height: 13rem; right: -5rem; top: -7rem; border-radius: 50%; background: rgba(99,102,241,.1); }
+    .report-controls label, .report-viewbar label { color: #344054; font-size: .75rem; font-weight: 600; }
+    #reporteDiario .report-controls input, #reporteDiario .report-controls select, #reporteDiario .report-viewbar select { min-height: 2.6rem; border: 1px solid #98a2b3 !important; border-radius: .6rem; padding: .55rem .7rem; background: #fff !important; color: #17203b !important; }
+    #reporteDiario .report-controls button, #reporteDiario .report-viewbar button { min-height: 2.5rem; border-radius: .6rem; }
+    .report-presets { display: flex; flex-wrap: wrap; gap: .5rem; }
+    #reporteDiario .report-presets button { border-radius: .6rem; background: #f8fafc; color: #344054; }
+    #reporteDiario .report-presets button:hover { border-color: #6366f1; color: #4338ca; }
+    #reporteAuto > *, #periodoBody > *, #periodoActividad > * { border-radius: .85rem; }
     @media (max-width: 900px) { .historical-filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
     @media (max-width: 480px) { .historical-filter-grid { grid-template-columns: 1fr; } }
     @media (max-width: 639px) {
@@ -327,6 +339,7 @@
       .appointments-filters { padding: 1rem; }
       .campaigns-intro, .campaigns-controls { padding: 1rem; }
       .historical-intro, .historical-filters { padding: 1rem; }
+      .report-intro, .report-viewbar, .report-controls, .report-content-card { padding: 1rem; }
     }
     @media (min-width: 1100px) {
       .app-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 45; width: 14rem; display: flex; flex-direction: column; padding: 1.25rem .9rem; background: linear-gradient(180deg, #111f3d, #0b1730); border-right: 1px solid rgba(148,163,184,.14); color: #cbd5e1; }
@@ -519,31 +532,35 @@
   <!-- ================= CONTENEDOR PRINCIPAL ================= -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-    <div id="reporteDiario" class="hidden max-w-5xl mx-auto bg-white text-slate-800 rounded-xl border border-slate-300 shadow-lg p-5 sm:p-7 space-y-5">
-      <label class="flex items-center gap-2 text-sm font-semibold">Vista del reporte
-        <select id="reporteVista" onchange="setReporteVista(this.value)" class="border border-slate-300 rounded px-3 py-2"><option value="diario">Diario</option><option value="periodo">Por período</option></select>
-      </label>
+    <div id="reporteDiario" class="hidden text-slate-800 space-y-5">
+      <div class="report-viewbar"><div><h2 class="text-sm font-bold text-slate-800">Reportes del equipo</h2><p class="text-xs text-slate-500">Consulta el trabajo diario o analiza un período.</p></div><label class="flex items-center gap-2">Vista del reporte
+        <select id="reporteVista" onchange="setReporteVista(this.value)"><option value="diario">Diario</option><option value="periodo">Por período</option></select>
+      </label></div>
       <div id="reporteDiarioVista" class="space-y-5">
-      <div class="border-b-2 border-indigo-600 pb-3 flex flex-wrap justify-between gap-3 items-end">
-        <div><div class="flex items-center gap-1.5"><h1 class="text-2xl font-bold text-indigo-900">Reporte Diario de Trabajo</h1><button type="button" onclick="openHelpModal('ayuda-reporte-diario')" title="Ayuda: reporte diario" aria-label="Ayuda sobre el reporte diario" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-200 hover:bg-indigo-600 text-[10px] font-bold text-slate-700 hover:text-white align-middle cursor-pointer shrink-0">?</button></div><p id="reporteFechaTexto" class="text-base text-slate-600"></p></div>
-        <div class="flex flex-wrap gap-2 items-center text-sm"><label>Fecha <input id="reporteFecha" type="date" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"></label><label>Asesora <select id="reporteAsesora" onchange="loadReporteDiario()" class="border border-slate-300 rounded px-2 py-1"><option value="">Todas las asesoras</option></select></label><button type="button" id="reporteBtnCsv" onclick="exportReporteDiarioCSV()" class="px-3 py-1.5 rounded bg-slate-700 text-white text-sm font-semibold hover:bg-indigo-600 cursor-pointer">Descargar CSV</button></div>
+      <div class="report-intro"><div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Actividad del equipo</span><div class="mt-3 flex items-center gap-2"><h1 class="text-2xl font-bold text-indigo-900">Reporte diario de trabajo</h1><button type="button" onclick="openHelpModal('ayuda-reporte-diario')" title="Ayuda: reporte diario" aria-label="Ayuda sobre el reporte diario" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 hover:bg-indigo-600 text-[11px] font-bold text-slate-700 hover:text-white cursor-pointer shrink-0">?</button></div><p id="reporteFechaTexto" class="mt-1 text-sm text-slate-600"></p></div></div>
+      <div class="report-controls flex flex-wrap gap-3 items-end justify-between text-sm">
+        <div class="flex flex-wrap gap-3 items-end"><label>Fecha <input id="reporteFecha" type="date" onchange="loadReporteDiario()" class="block mt-1"></label><label>Asesora <select id="reporteAsesora" onchange="loadReporteDiario()" class="block mt-1"><option value="">Todas las asesoras</option></select></label></div>
+        <button type="button" id="reporteBtnCsv" onclick="exportReporteDiarioCSV()" class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-700 text-white text-sm font-semibold hover:bg-indigo-600 cursor-pointer"><i data-lucide="download" class="w-4 h-4"></i> Descargar CSV</button>
       </div>
        <div id="reporteAviso" role="status" aria-live="polite" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">Los cambios en Problemas y Observaciones se guardan por asesora y fecha (zona horaria de Miami).</div>
       <div id="reporteAuto" class="space-y-3"></div>
       </div>
       <section id="reportePeriodo" class="hidden space-y-4" aria-label="Reporte por período">
-        <header class="border-b-2 border-indigo-600 pb-3"><h1 class="text-2xl font-bold text-indigo-900">Reporte por período</h1><p class="text-sm text-slate-600">Leads activos por fecha de entrada, desde y hasta inclusive. Gestión actual: no representa el estado histórico al cierre del período.</p>
+        <header class="report-intro"><div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="calendar-range" class="w-3.5 h-3.5"></i> Análisis por período</span><h1 class="mt-3 text-2xl font-bold text-indigo-900">Reporte por período</h1><p class="mt-1 text-sm text-slate-600">Leads activos por fecha de entrada, desde y hasta inclusive. Gestión actual: no representa el estado histórico al cierre del período.</p></div>
+        </header>
+        <div class="report-content-card">
           <div class="mt-2 grid gap-2 sm:grid-cols-2 text-xs">
             <p class="rounded border border-slate-300 bg-white p-2 text-slate-700"><strong class="text-indigo-900">Leads por fecha de entrada:</strong> leads activos cuya Fecha de entrada cayó entre Desde y Hasta (incluidos). La gestión que se muestra es la actual del lead, no la que tenía al cerrar el período.</p>
             <p class="rounded border border-slate-300 bg-white p-2 text-slate-700"><strong class="text-indigo-900">Actividad realizada en el período:</strong> gestiones registradas entre las fechas elegidas y citas contadas por su fecha programada (Miami).</p>
-          </div></header>
-        <div class="flex flex-wrap gap-3 items-end text-sm">
-          <label>Desde <input id="periodoDesde" type="date" onchange="loadReportePeriodo()" class="border border-slate-300 rounded px-2 py-1"></label>
-          <label>Hasta <input id="periodoHasta" type="date" onchange="loadReportePeriodo()" class="border border-slate-300 rounded px-2 py-1"></label>
+          </div>
+        </div>
+        <div class="report-controls flex flex-wrap gap-3 items-end text-sm">
+          <label>Desde <input id="periodoDesde" type="date" onchange="loadReportePeriodo()" class="block mt-1"></label>
+          <label>Hasta <input id="periodoHasta" type="date" onchange="loadReportePeriodo()" class="block mt-1"></label>
           <button type="button" onclick="loadReportePeriodo()" class="border border-slate-300 rounded px-3 py-1.5">Actualizar</button>
           <button type="button" id="periodoBtnCsv" onclick="exportReportePeriodoCSV()" class="rounded bg-slate-700 text-white px-3 py-1.5">Descargar CSV</button>
         </div>
-        <div class="flex flex-wrap gap-2 text-sm" aria-label="Rangos de calendario (Miami)">
+        <div class="report-presets text-sm" aria-label="Rangos de calendario (Miami)">
           <button type="button" onclick="setPeriodoPreset('semana')" class="border border-slate-300 rounded px-3 py-1.5">Esta semana (lunes–domingo)</button>
           <button type="button" onclick="setPeriodoPreset('7d')" class="border border-slate-300 rounded px-3 py-1.5">Últimos 7 días (incluye hoy)</button>
           <button type="button" onclick="setPeriodoPreset('30d')" class="border border-slate-300 rounded px-3 py-1.5">Últimos 30 días (incluye hoy)</button>

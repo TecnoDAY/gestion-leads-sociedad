@@ -132,6 +132,14 @@
     .quick-lead-row:hover { background: rgba(99,102,241,.06); }
     .quick-lead-row .quick-lead-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .quick-lead-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .4rem; }
+    .quick-leads-empty { padding: 1.5rem; text-align: center; color: #475569; }
+    .quick-leads-empty button { min-height: 2.5rem; margin-top: .75rem; padding: .5rem .9rem; border: 1px solid #c7d2fe; border-radius: .6rem; color: #4338ca; font-weight: 700; cursor: pointer; }
+    [data-theme="dark"] .quick-leads-empty { color: #cbd5e1; }
+    [data-theme="dark"] .quick-leads-empty button { color: #c7d2fe; border-color: #6366f1; }
+    .leads-table-empty { padding: 2rem 1rem; text-align: center; color: #475569; }
+    .leads-table-empty button { min-height: 2.75rem; margin-top: .75rem; padding: .5rem .9rem; border: 1px solid #c7d2fe; border-radius: .6rem; color: #4338ca; font-weight: 700; cursor: pointer; }
+    [data-theme="dark"] .leads-table-empty { color: #cbd5e1; }
+    [data-theme="dark"] .leads-table-empty button { color: #c7d2fe; border-color: #6366f1; }
     .matrix-toggle[aria-expanded="true"] .matrix-chevron { transform: rotate(180deg); }
     .matrix-chevron { transition: transform .15s ease; }
     .primary-action { min-height: 2.6rem; border-radius: .75rem; }
@@ -255,6 +263,10 @@
     .appointments-table th { white-space: nowrap; background: #f1f5f9; color: #475569; font-size: .67rem; text-transform: uppercase; letter-spacing: .04em; }
     .appointments-table tbody tr:hover { background: #f8faff; }
     .appointments-table tbody td { color: #17203b; vertical-align: top; }
+    .appointments-table .appointments-empty { padding: 1.5rem; text-align: center; color: #475569; }
+    .appointments-empty button { min-height: 2.5rem; margin-top: .75rem; padding: .5rem .9rem; border: 1px solid #c7d2fe; border-radius: .6rem; color: #4338ca; font-weight: 700; cursor: pointer; }
+    [data-theme="dark"] .appointments-table .appointments-empty { color: #cbd5e1; }
+    [data-theme="dark"] .appointments-empty button { color: #c7d2fe; border-color: #6366f1; }
     [data-theme="dark"] .appointments-intro { background: linear-gradient(115deg,#1e293b,#252449); border-color: #334155; }
     [data-theme="dark"] .appointments-filters, [data-theme="dark"] .appointments-table, [data-theme="dark"] #citasKpis > div { background: #1e293b; border-color: #334155; }
     [data-theme="dark"] .appointments-filters label { color: #cbd5e1; }
@@ -276,6 +288,8 @@
     .campaigns-table th { white-space: nowrap; background: #f1f5f9; color: #475569; font-size: .67rem; text-transform: uppercase; letter-spacing: .04em; }
     .campaigns-table tbody tr:hover { background: #f8faff; }
     .campaigns-table tbody td { color: #17203b; }
+    .campaigns-table .campaigns-empty { padding: 1.5rem; text-align: center; color: #475569; }
+    [data-theme="dark"] .campaigns-table .campaigns-empty { color: #cbd5e1; }
     .campaigns-table tbody .campaigns-total-row { background: #eef2ff; }
     .campaigns-table tbody .campaigns-total-row td { color: #17203b; }
     .campaigns-table tbody input, .campaigns-table tbody select { border: 1px solid #98a2b3; border-radius: .5rem; background: #fff; color: #17203b; }
@@ -367,6 +381,8 @@
     .help-card ol li > span:last-child { color: #344054; }
     .help-card ol li > span:first-child { background: #eef2ff; color: #4338ca; }
     .help-card ul li { color: #526174; }
+    .help-empty { padding: 2rem 1rem; text-align: center; color: #475569; }
+    .help-empty button { min-height: 2.5rem; margin-top: .75rem; padding: .5rem .9rem; border: 1px solid #c7d2fe; border-radius: .6rem; color: #4338ca; font-weight: 700; cursor: pointer; }
     .help-footer { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 1.5rem; border-top: 1px solid #e4e7ec; background: #fff; }
     [data-theme="dark"] .help-shell, [data-theme="dark"] .help-searchbar, [data-theme="dark"] .help-footer { background: #1e293b; border-color: #334155; }
     [data-theme="dark"] .help-header { background: linear-gradient(115deg,#1e293b,#252449); border-color: #334155; }
@@ -374,6 +390,8 @@
     [data-theme="dark"] .help-header p, [data-theme="dark"] .help-card > p, [data-theme="dark"] .help-card ul li { color: #cbd5e1; }
     [data-theme="dark"] .help-body { background: #0f172a; }
     [data-theme="dark"] .help-card { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .help-empty { color: #cbd5e1; }
+    [data-theme="dark"] .help-empty button { color: #c7d2fe; border-color: #6366f1; }
     [data-theme="dark"] .help-card h4 { color: #f8fafc; }
     [data-theme="dark"] .help-card ol li > span:last-child { color: #e2e8f0; }
     [data-theme="dark"] .help-searchbar input { background: #0f172a; color: #f8fafc; border-color: #475569; }
@@ -624,6 +642,8 @@
       .mobile-tabs > div { padding-top: .5rem; padding-bottom: .5rem; }
       .mobile-tabs nav { width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; scroll-snap-type: x proximity; }
       .mobile-tabs nav button { flex-shrink: 0; min-height: 2.75rem; white-space: nowrap; scroll-snap-align: start; }
+      .mobile-tabs-hint { display: block; padding: 0 1rem .4rem; color: #cbd5e1; font-size: .7rem; text-align: right; }
+      [data-theme="light"] .mobile-tabs-hint { color: #475569; }
       .mobile-tabs .tabs-info { display: none; }
       .mobile-tabs .tabs-year { display: none; }
       .dashboard-intro { padding: 1.15rem; }
@@ -730,6 +750,7 @@
       #leadsTableBody tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .65rem 1rem; padding: 1rem; border: 1px solid #475569; border-radius: .9rem; background: rgba(15,23,42,.45); }
       #leadsTableBody tr:hover { box-shadow: none; border-color: #818cf8; }
       #leadsTableBody td { display: block; min-width: 0; max-width: none; padding: 0; text-align: left; white-space: normal; }
+      #leadsTableBody td.leads-table-empty { padding: 2rem 1rem; text-align: center; }
       #leadsTableBody td::before { display: block; margin-bottom: .25rem; color: #94a3b8; font-size: .66rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
       #leadsTableBody td:nth-child(1)::before { content: 'ID'; }
       #leadsTableBody td:nth-child(2)::before { content: 'Fecha'; }
@@ -892,6 +913,7 @@
         </span>
       </div>
     </div>
+    <p class="mobile-tabs-hint hidden" aria-hidden="true">Desliza para ver más secciones →</p>
   </div>
 
   <!-- ================= CONTENEDOR PRINCIPAL ================= -->
@@ -3196,7 +3218,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (isAdmin || isSupervisor) fillCitasSelect('citasAsesor', catalogOptions('agente', citasCache.map(r => r.advisor_name).filter(Boolean)));
       renderCitas();
     }
-    function renderCitas() { const result=document.getElementById('citasResultado')?.value||'', camp=document.getElementById('citasCampana')?.value||'', medio=document.getElementById('citasMedio')?.value||'', advisor=isAdmin || isSupervisor?(document.getElementById('citasAsesor')?.value||''):''; const sede=document.getElementById('citasSede')?.value||'';const rows=citasCache.filter(r=>(!result||r.status===result)&&(!camp||getField(r.lead,'Campaña')===camp)&&(!sede||(sede==='sin' ? !r.campus : r.campus===sede))&&(!medio||getField(r.lead,'Medio')===medio)&&(!advisor||r.advisor_name===advisor)); const counts=Object.fromEntries(['PROGRAMADA','ASISTIO','NO_ASISTIO','CANCELADA','REPROGRAMADA'].map(s=>[s,rows.filter(r=>r.status===s).length])), denom=counts.ASISTIO+counts.NO_ASISTIO; document.getElementById('citasKpis').innerHTML=[['Total citas',rows.length],...Object.entries(counts).map(([k,v])=>[k,v]),['Doral',rows.filter(r=>r.campus==='DORAL'&&!r.is_data_dura).length],['Doral Data Dura',rows.filter(r=>r.campus==='DORAL'&&r.is_data_dura===true).length],['Weston',rows.filter(r=>r.campus==='WESTON'&&!r.is_data_dura).length],['Weston Data Dura',rows.filter(r=>r.campus==='WESTON'&&r.is_data_dura===true).length],['Sin sede (históricas)',rows.filter(r=>!r.campus).length],['Tasa asistencia',(denom?counts.ASISTIO/denom*100:0).toFixed(1)+'%']].map(x=>`<div class="rounded-lg border border-slate-700 bg-slate-800/60 p-3"><div class="text-[11px] text-slate-400">${escapeHtml(x[0])}</div><strong class="text-lg text-white">${escapeHtml(String(x[1]))}</strong></div>`).join(''); document.getElementById('citasCount').textContent=`${rows.length} citas`; document.getElementById('citasTableBody').innerHTML=rows.length?rows.map(r=>{const l=r.lead, id=Number(l?.id); return `<tr><td class="p-3">${escapeHtml(appointmentLocal(r.scheduled_at))}</td><td class="p-3">${escapeHtml(getField(l,'Nombre'))}<br>${escapeHtml(getField(l,'Telefono'))}</td><td class="p-3">${escapeHtml(r.student_name||'-')}</td><td class="p-3">${escapeHtml(r.contact_email||'-')}</td><td class="p-3">${escapeHtml(r.student_age!=null?String(r.student_age):'-')}</td><td class="p-3">${escapeHtml(r.campus||'Sin sede')}</td><td class="p-3">${escapeHtml(r.advisor_name)}</td><td class="p-3">${escapeHtml(getField(l,'Campaña'))}</td><td class="p-3">${escapeHtml(getField(l,'Mes'))}</td><td class="p-3">${escapeHtml(r.status)}</td><td class="p-3">${Number.isInteger(id)&&id>0?`<button onclick="openViewLeadModal(${id},'actual')" class="text-indigo-400 hover:underline">Ver ficha</button>${(isAdmin || r.advisor_user_id === currentUser?.id) ? `<button onclick="editAppointmentDetails(${r.id})" class="block text-indigo-400 hover:underline">Editar datos</button>` : ''}${isAdmin ? `<button onclick="deleteLeadAppointment(${r.id})" class="block text-rose-400 hover:underline">Eliminar cita</button>` : ''}`:''}</td></tr>`}).join(''):'<tr><td colspan="11" class="p-6 text-center text-slate-400">No hay citas para los filtros seleccionados.</td></tr>'; }
+    function renderCitas() { const result=document.getElementById('citasResultado')?.value||'', camp=document.getElementById('citasCampana')?.value||'', medio=document.getElementById('citasMedio')?.value||'', advisor=isAdmin || isSupervisor?(document.getElementById('citasAsesor')?.value||''):''; const sede=document.getElementById('citasSede')?.value||'';const rows=citasCache.filter(r=>(!result||r.status===result)&&(!camp||getField(r.lead,'Campaña')===camp)&&(!sede||(sede==='sin' ? !r.campus : r.campus===sede))&&(!medio||getField(r.lead,'Medio')===medio)&&(!advisor||r.advisor_name===advisor)); const counts=Object.fromEntries(['PROGRAMADA','ASISTIO','NO_ASISTIO','CANCELADA','REPROGRAMADA'].map(s=>[s,rows.filter(r=>r.status===s).length])), denom=counts.ASISTIO+counts.NO_ASISTIO; document.getElementById('citasKpis').innerHTML=[['Total citas',rows.length],...Object.entries(counts).map(([k,v])=>[k,v]),['Doral',rows.filter(r=>r.campus==='DORAL'&&!r.is_data_dura).length],['Doral Data Dura',rows.filter(r=>r.campus==='DORAL'&&r.is_data_dura===true).length],['Weston',rows.filter(r=>r.campus==='WESTON'&&!r.is_data_dura).length],['Weston Data Dura',rows.filter(r=>r.campus==='WESTON'&&r.is_data_dura===true).length],['Sin sede (históricas)',rows.filter(r=>!r.campus).length],['Tasa asistencia',(denom?counts.ASISTIO/denom*100:0).toFixed(1)+'%']].map(x=>`<div class="rounded-lg border border-slate-700 bg-slate-800/60 p-3"><div class="text-[11px] text-slate-400">${escapeHtml(x[0])}</div><strong class="text-lg text-white">${escapeHtml(String(x[1]))}</strong></div>`).join(''); document.getElementById('citasCount').textContent=`${rows.length} citas`; document.getElementById('citasTableBody').innerHTML=rows.length?rows.map(r=>{const l=r.lead, id=Number(l?.id); return `<tr><td class="p-3">${escapeHtml(appointmentLocal(r.scheduled_at))}</td><td class="p-3">${escapeHtml(getField(l,'Nombre'))}<br>${escapeHtml(getField(l,'Telefono'))}</td><td class="p-3">${escapeHtml(r.student_name||'-')}</td><td class="p-3">${escapeHtml(r.contact_email||'-')}</td><td class="p-3">${escapeHtml(r.student_age!=null?String(r.student_age):'-')}</td><td class="p-3">${escapeHtml(r.campus||'Sin sede')}</td><td class="p-3">${escapeHtml(r.advisor_name)}</td><td class="p-3">${escapeHtml(getField(l,'Campaña'))}</td><td class="p-3">${escapeHtml(getField(l,'Mes'))}</td><td class="p-3">${escapeHtml(r.status)}</td><td class="p-3">${Number.isInteger(id)&&id>0?`<button onclick="openViewLeadModal(${id},'actual')" class="text-indigo-400 hover:underline">Ver ficha</button>${(isAdmin || r.advisor_user_id === currentUser?.id) ? `<button onclick="editAppointmentDetails(${r.id})" class="block text-indigo-400 hover:underline">Editar datos</button>` : ''}${isAdmin ? `<button onclick="deleteLeadAppointment(${r.id})" class="block text-rose-400 hover:underline">Eliminar cita</button>` : ''}`:''}</td></tr>`}).join(''):'<tr><td colspan="11" class="appointments-empty"><p class="text-sm font-semibold">No hay citas para los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otras fechas o limpia los filtros.</p><button type="button" onclick="resetCitasFilters()">Limpiar filtros</button></td></tr>'; }
 
     // Helper para acceder a campos con posibles espacios al final
     function getField(lead, key) {
@@ -4525,7 +4547,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       // información adicional ni se inventa una prioridad comercial.
       const rows = [...filteredLeads].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 4);
       if (!rows.length) {
-        container.innerHTML = '<p class="px-4 py-5 text-xs text-slate-400">No hay leads con los filtros seleccionados.</p>';
+        container.innerHTML = '<div class="quick-leads-empty"><p class="text-sm font-semibold">No hay leads con los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otros criterios o limpia los filtros para ver los registros.</p><button type="button" onclick="resetAllFilters()">Limpiar filtros</button></div>';
         return;
       }
       container.innerHTML = rows.map(lead => {
@@ -4583,10 +4605,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
       if (pageItems.length === 0) {
         tbody.innerHTML = `<tr>
-          <td colspan="9" class="text-center py-12 text-slate-500">
+          <td colspan="9" class="leads-table-empty">
             <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
-            <p class="font-medium text-slate-400">No se encontraron leads con los filtros actuales</p>
-            <button onclick="resetAllFilters()" class="mt-2 text-indigo-400 hover:underline text-xs cursor-pointer">Limpiar filtros de búsqueda</button>
+            <p class="text-sm font-semibold">No se encontraron leads con los filtros actuales.</p>
+            <p class="mt-1 text-xs">Prueba con otros criterios o limpia los filtros para ver los registros.</p>
+            <button type="button" onclick="resetAllFilters()">Limpiar filtros</button>
           </td>
         </tr>`;
         updatePaginationUI(0, 0, 0, 1);
@@ -6017,7 +6040,7 @@ async function deleteLeadAppointment(id) {
           ${notesHtml}
         </section>`;
       }).join('');
-      container.innerHTML = html || '<p class="text-center text-slate-400 py-10">Sin resultados. Prueba con otra palabra o pulsa Limpiar.</p>';
+      container.innerHTML = html || '<div class="help-empty"><p class="text-sm font-semibold">No encontramos resultados para esa búsqueda.</p><p class="mt-1 text-xs">Prueba con otra palabra o vuelve a ver todas las guías.</p><button type="button" onclick="clearHelpSearch()">Ver todas las guías</button></div>';
       if (window.lucide) lucide.createIcons();
     }
 
@@ -7477,7 +7500,7 @@ async function deleteLeadAppointment(id) {
         campanasData = [];
         campaignStatsMap = new Map();
         if (token === campanasRequestGeneration) campanasLoading = false;
-        return renderCampanas(campanasData, campaignTotals([]), `${mesNombre} ${y}`, canEditCampaigns(), monthStr);
+        return renderCampanas(campanasData, campaignTotals([]), `${mesNombre} ${y}`, canEditCampaigns(), monthStr, true);
       }
       const rollupRows = rollupRes.value.data || [];
       const statRows = statsRes.value.data || [];
@@ -7503,12 +7526,12 @@ async function deleteLeadAppointment(id) {
           pendientes: Number(r.pendientes) || 0
         };
       });
-      if (aviso) aviso.textContent = campanasData.length ? '' : 'Sin datos para este mes.';
+      if (aviso) aviso.textContent = '';
       if (token === campanasRequestGeneration) campanasLoading = false;
       renderCampanas(campanasData, campaignTotals(campanasData), `${mesNombre} ${y}`, canEditCampaigns(), monthStr);
     }
 
-    function renderCampanas(rows, totals, mesLabel, esEditor, monthStr) {
+    function renderCampanas(rows, totals, mesLabel, esEditor, monthStr, loadFailed = false) {
       const tbody = document.getElementById('campanasTableBody');
       if (!tbody) return;
       const summary = document.getElementById('campanasSummary');
@@ -7522,7 +7545,9 @@ async function deleteLeadAppointment(id) {
         ].map(([label, value]) => `<div><span class="text-[11px] text-slate-400">${label}</span><strong>${escapeHtml(String(value))}</strong></div>`).join('') : '';
       }
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="13" class="p-4 text-center text-slate-400">Sin datos para este mes.</td></tr>';
+        tbody.innerHTML = loadFailed
+          ? '<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">No se pudo cargar el informe.</p><p class="mt-1 text-xs">Revisa el aviso anterior e inténtalo de nuevo.</p></td></tr>'
+          : `<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">Sin campañas para ${escapeHtml(mesLabel)}.</p><p class="mt-1 text-xs">Selecciona otro mes para consultar sus resultados.</p></td></tr>`;
         return;
       }
       const estadoOptions = sel => ['activa', 'finalizada', 'pausada'].map(e => `<option value="${e}"${e === sel ? ' selected' : ''}>${e.charAt(0).toUpperCase() + e.slice(1)}</option>`).join('');

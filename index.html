@@ -2902,7 +2902,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (container) container.innerHTML = '<p class="text-slate-500">Cargando usuarios...</p>';
       const { data, error } = await supabaseClient.rpc('admin_manage_user_access', { p_action: 'list' });
       if (!container || generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt || !isAdmin) return;
-      if (error) { container.innerHTML = '<p class="text-rose-300">No se pudieron cargar los usuarios.</p>'; return; }
+      if (error) { container.innerHTML = '<div role="alert" class="flex flex-wrap items-center gap-3 text-rose-300"><p>No se pudieron cargar los usuarios.</p><button type="button" onclick="loadAuthorizedUsers()" class="min-h-11 rounded-lg border border-rose-400 px-3 py-2 font-semibold hover:bg-rose-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300">Reintentar</button></div>'; return; }
       // La lista se guarda para poder resolver el correo por id: pasar el correo
       // por el atributo onclick metería datos del usuario dentro de JavaScript.
       authorizedUsersList = Array.isArray(data) ? data : [];

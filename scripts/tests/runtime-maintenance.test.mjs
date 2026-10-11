@@ -34,7 +34,10 @@ for (const url of [
   'https://unpkg.com/lucide@1.49.0/dist/umd/lucide.min.js',
 ]) {
   test(`runtime frontend fija ${url}`, () => {
-    assert.ok(html.includes(`<script src="${url}"></script>`));
+    // La version sigue pineada y el tag externo lleva SRI + CORS anonimo:
+    // sin integrity el navegador ejecutaria el script CDN sin verificarlo.
+    assert.ok(html.includes(`<script src="${url}" integrity="sha384-`));
+    assert.ok(html.includes(`crossorigin="anonymous"></script>`));
   });
 }
 

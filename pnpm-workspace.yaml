@@ -1,0 +1,8 @@
+# Raiz de workspace de pnpm. Sin paquetes locales: solo declara que scripts
+# de instalacion estan permitidos. pnpm 11 (strictDepBuilds por defecto)
+# aborta el install con ERR_PNPM_IGNORED_BUILDS si hay postinstall sin
+# revisar; esbuild necesita su script para instalar el binario de plataforma.
+packages: []
+
+allowBuilds:
+  esbuild: true

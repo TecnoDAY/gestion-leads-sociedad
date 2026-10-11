@@ -38,6 +38,11 @@ html = html.replace(
 // 3. Preloads de chunks que ya no existen (van inline) y rutas absolutas locales.
 html = html.replace(/<link\s+rel="modulepreload"[^>]*>/gi, '');
 html = html.replace(/(href|src)="\/(?!\/)/g, '$1="');
+// El CSS compilado (en /assets/) referencia public/ como ../fonts/...; al
+// incrustarlo en dist/index.html la base pasa a ser el documento -> ./fonts/.
+// (url(https:// y url(data: no empiezan por ../ ni /, no se tocan.)
+html = html.replace(/url\((['"]?)\.\.\//g, 'url($1./');
+html = html.replace(/url\((['"]?)\/(?!\/)/g, 'url($1./');
 
 // 4. Guardia: debe quedar autocontenido (solo CDN y data:).
 const pendientes = html.match(/(?:src|href)="\/(?!\/)[^"]*"/g) || [];

@@ -160,7 +160,7 @@ Runner: `node --test scripts/tests/verify-report-integration.test.mjs`
   El token no se guarda, no va en logs ni en GitHub Actions.
 
 ## Progreso
-- Estado: T1-T4 passed; T5 pending (sesion CRM del usuario)
+- Estado: T1-T4 y T6-T8 passed, commiteado y pusheado (main a93fc96); T5 pending (sesion CRM del usuario)
 - Ultima tarea: T8 evidencia MCP y bateria
 - Siguiente paso: T5 (sesion CRM del usuario) y commit/push si autoriza
 - Bloqueos: ninguno tecnico; T5 requiere accion del usuario

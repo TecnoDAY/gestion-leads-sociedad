@@ -5,6 +5,25 @@ import { execFileSync } from 'node:child_process';
 import vm from 'node:vm';
 import { test } from 'node:test';
 import { transformSync } from 'esbuild';
+import path from 'node:path';
+
+// Importar funciones puras desde el módulo legacy (extraídas del monolito)
+const legacyMod = await import('../../src/legacy/helpers.js');
+const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel, miamiToday } = legacyMod;
+// Funciones puras del area Citas extraidas a src/legacy/citas.js
+const citasMod = await import('../../src/legacy/citas.js');
+const { appointmentDate, appointmentInputISO, appointmentLocal } = citasMod;
+// Helpers puros de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js
+const reportesMod = await import('../../src/legacy/reportes.js');
+const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
+  histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
+  periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles } = reportesMod;
+// Helpers puros del area Leads extraidos a src/legacy/leads.js
+const leadsMod = await import('../../src/legacy/leads.js');
+const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
+  haveSameLeadIds, isAgendadoGestion } = leadsMod;
+// validAppointmentId vive en src/legacy/citas.js
+const { validAppointmentId } = citasMod;
 
 const baseline = process.argv.includes('--baseline');
 const source = path => baseline ? execFileSync('git', ['show', `HEAD:${path}`], { encoding: 'utf8' }) : readFileSync(path, 'utf8');
@@ -20,34 +39,34 @@ function extractFunction(name) {
   }
   throw new Error(`No se pudo extraer ${name}`);
 }
-const constants = ['LEADS_BATCH_SIZE', 'MONTH_CHRONO', 'GESTION_STATE_GROUPS'].map(name => {
+const constants = ['LEADS_BATCH_SIZE'].map(name => {
   const start = script.indexOf(`const ${name} =`);
   return script.slice(start, script.indexOf(';', start) + 1);
 });
+// MONTH_CHRONO y GESTION_STATE_GROUPS viven en src/legacy/reportes.js (extraidos).
+// Funciones que siguen en el script clásico (no extraídas a legacy)
 const names = [
-  'getField', 'compareLeadIdsDescending', 'consolidateLeadsById', 'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads', 'getHistoricalBaseLeads', 'updateKpis',
+  'consolidateLeadsById', 'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads', 'getHistoricalBaseLeads', 'updateKpis',
   'fetchRowsByIdCursor', 'fetchPagedResult', 'fetchRowsByIds', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'haveSameLeadIds',
   'performLoadOlderLeads', 'returnToRecentLeads', 'refillLoadedWindow', 'applyRealtimeEvent', 'updateCompleteCacheOnly', 'removeFromCompleteCacheOnly',
-  'miamiDayBounds', 'loadCitas', 'clearCitasResults', 'validAppointmentId', 'appointmentSessionValid', 'loadLeadAppointments',
+  'loadCitas', 'clearCitasResults', 'appointmentSessionValid', 'loadLeadAppointments',
   'loadLeadNotes', 'loadLeadGestiones', 'loadLeadsByGestionRange', 'loadLeadsByMonth', 'clearDashRange', 'applyFilters', 'resetAllFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
-  'activeCatalogValues', 'catalogOptions', 'compareAlphaEs', 'sortAlphaEs', 'sortMonthCatalog', 'parseFechaLead', 'normalizeLeadMonth', 'leadReportDate', 'isInscritoDataDura',
-  'histMonthKey', 'histMonthLabel', 'sortHistMonthKeys', 'normalizeGestion', 'groupGestionEstado', 'readHistRange',
-  'filterHistoricalLeads', 'populateHistoricalFilterOptions', 'computeHistoricalAggregates', 'escapeHtml', 'escapeAttr',
-  'loadReporteDiario', 'renderReporteV2', 'csvReporteField', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
-  'exportReporteDiarioCSV', 'exportCampanasCSV', 'campaignCosteResultado', 'campaignTotals', 'loadCampanas',
+  'activeCatalogValues', 'catalogOptions', 'readHistRange',
+  'filterHistoricalLeads', 'populateHistoricalFilterOptions', 'computeHistoricalAggregates',
+  'loadReporteDiario', 'renderReporteV2', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
+  'exportReporteDiarioCSV', 'exportCampanasCSV', 'loadCampanas',
   'saveReporteNota', 'deleteReporteNota', 'reporteNotaErrorMsg',
-  'resetReportePeriodo', 'setReporteVista', 'periodoPresetRange', 'setPeriodoPreset', 'periodoRangeKey', 'periodoValidDate',
-  'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'periodoPct', 'renderReportePeriodo', 'exportReportePeriodoCSV', 'initReporteDiario',
+  'resetReportePeriodo', 'setReporteVista', 'setPeriodoPreset', 'periodoRangeKey',
+  'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'renderReportePeriodo', 'exportReportePeriodoCSV', 'initReporteDiario',
   'markPeriodoReportDirty', 'updatePeriodoCsvState', 'upsertLeadInState', 'removeLeadFromState',
   'loadPeriodoActividad', 'validatePeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
   'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'confirmAppointmentCreation', 'syncNewLeadMes', 'syncNewUltimaGestion',
-  'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentDate', 'appointmentInputISO', 'appointmentLocal', 'appointmentCampusFrom',
+  'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentCampusFrom',
   'createLeadAppointment', 'editAppointmentDetails', 'editAppointmentCampus', 'setLeadAppointmentStatus', 'rescheduleLeadAppointment',
   'setAppointmentMutationPending', 'updateLeadAppointmentCreateState', 'deleteLeadAppointment',
-  'totalCanalesVisibles',
-  'toggleNewAppointmentFields', 'isAgendadoGestion', 'setBlockControls',
-  'normalizePhone', 'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn'
+  'toggleNewAppointmentFields', 'setBlockControls',
+  'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn'
 ];
 const frontendSource = ['let leadAppointmentCreateBlocked = true;', 'let gestionRangeLeads = [], gestionRangeKey = "";', 'let mesRangeLeads = [], mesRangeKey = "";', ...constants, ...names.map(extractFunction)].join('\n');
 
@@ -80,13 +99,25 @@ function frontend(extra = {}) {
       body: { appendChild() {}, removeChild() {} },
     },
     window: {}, setTimeout: fn => { timers.push(fn); return timers.length; }, clearTimeout() {},
-    showToast: (...args) => toasts.push(args), catalogLabel: x => x, confirm: () => true,
+    showToast: (...args) => toasts.push(args), confirm: () => true,
     fillCitasSelect() {}, renderCitas() {}, renderLeadNotes() {}, renderLeadGestiones() {}, renderLeadAppointments() {},
     updateKpis() {}, renderMatrix() {}, renderTable() {}, renderHistoricalAnalytics() {}, updateLeadScopeControls() {},
     refillLoadedWindow() {}, scheduleExactLeadCountRefresh() {},
     renderCampanas() {}, canEditCampaigns: () => false,
     isAgendadoGestion: value => value.startsWith('AGENDAD'),
-    miamiToday: () => '2026-09-30', miamiDayBounds: date => [date + 'T04:00:00.000Z', date + 'T16:00:00.000Z'],
+    // Funciones puras importadas desde src/legacy/helpers.js (extraídas del monolito)
+    getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel,
+    // Helpers del area Citas extraidos a src/legacy/citas.js
+    appointmentDate, appointmentInputISO, appointmentLocal,
+    // Helpers de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js
+    MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
+    histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
+    periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
+    // Helpers del area Leads extraidos a src/legacy/leads.js
+    sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
+    haveSameLeadIds, isAgendadoGestion, validAppointmentId,
+    // miamiToday se stubbea en el test para determinismo (2026-09-30)
+    miamiToday: () => '2026-09-30',
     supabaseClient: null, currentUser: { id: 'user-test' }, currentAccess: { activo: true, nombre: 'Test', updated_at: 'v1' },
     sessionGeneration: 1, currentMainTab: 'citas', isAdmin: false, isSupervisor: false, newPhoneCheckGeneration: 0, newPhoneCheckTimer: null,
     citasRequestGeneration: 0, citasCache: [], citasRangeKey: '', leadAppointmentsCache: [], leadNotesCache: [], leadGestionesCache: [],
@@ -110,6 +141,11 @@ function frontend(extra = {}) {
     return true;
   };
   context.loadHistoricoData = async () => true;
+  // periodoPresetRange (extraida a src/legacy/reportes.js) usa el reloj del
+  // contexto para que los tests sigan siendo deterministas con su stub.
+  context.periodoPresetRange = (preset, today) => reportesMod.periodoPresetRange(preset, today ?? context.miamiToday());
+  // isNuevoEsteMes (extraida a src/legacy/leads.js) same: reloj del contexto.
+  context.isNuevoEsteMes = (fecha, today) => leadsMod.isNuevoEsteMes(fecha, today ?? context.miamiToday());
   vm.runInContext(frontendSource, context);
   return { context, element, downloads, timers, toasts };
 }
@@ -445,8 +481,10 @@ test('período: ayudas y encabezados explican leads únicos vs gestiones sin cam
   assert.doesNotMatch(csv, /"Weston: programadas (normales|Data Dura)",""/);
   assert.match(csv, /"Nota: Leads únicos cuenta personas distintas; Total de gestiones suma todos los intentos\./);
 
-  assert.match(html, /periodo-tip-panel\s*\{/);
-  assert.match(html, /\.periodo-tip:focus-within \.periodo-tip-panel/);
+  // El CSS del tip vive en src/index.css desde T5 del strangler.
+  const panelCss = readFileSync('src/index.css', 'utf8');
+  assert.match(panelCss, /periodo-tip-panel\s*\{/);
+  assert.match(panelCss, /\.periodo-tip:focus-within \.periodo-tip-panel/);
   assert.match(html, /Leads por fecha de entrada:/);
 });
 
@@ -1199,7 +1237,9 @@ test('badge Nuevo: fecha de llegada del mes/año Miami actual, no de otros meses
   assert.equal(c.isNuevoEsteMes('30/9/2025'), false);
   assert.equal(c.isNuevoEsteMes('01/08/2026'), false);
   assert.equal(c.isNuevoEsteMes(''), false);
-  assert.match(html, />\s*Nuevo\s*<\/span>/);
+  // El markup del badge vive en src/legacy/leads.js (extraido); el USO sigue en el monolito.
+  const leadsSource = readFileSync('src/legacy/leads.js', 'utf8');
+  assert.match(leadsSource, />\s*Nuevo\s*<\/span>/);
   assert.match(html, /\$\{nuevoBadge\(lead\)\}/);
 });
 

@@ -85,17 +85,23 @@ for (const { re, msg } of REGRESSION_RULES) {
 // Si se usa una utilidad oscura sin su sobrescritura, se rompe SOLO en modo claro
 // (borde/divisor/superficie oscuro sobre fondo blanco) y sin ningun aviso, que es
 // como se acabo de perder una vez. Esta regla convierte ese fallo silencioso en un
-// error de build.
+// error de build. T5 del strangler: los estilos viven en src/index.css (el bloque
+// <style> inline de index.html se mudo alli), asi que el analisis lee ese fichero.
 //   - fondos neutros: avisan desde 600 (un bg de 500 es un indicador legitimo en ambos temas)
 //   - bordes/divisores/anillos: avisan desde 500 (cualquier tono medio pesa sobre blanco)
-const styleTag = html.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
-if (!styleTag) {
+let cssPanel;
+try {
+  cssPanel = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8');
+} catch (err) {
+  cssPanel = null;
+}
+if (!cssPanel) {
   failures++;
-  console.error('check-app: no hay bloque <style> que analizar para el tema claro');
+  console.error('check-app: no se pudo leer src/index.css para analizar el tema claro');
 } else {
   const deescapar = (t) => t.replace(/\\(.)/g, '$1');
   const cubiertas = new Set();
-  for (const regla of styleTag[1].matchAll(/([^{}]+)\{[^}]*\}/g)) {
+  for (const regla of cssPanel.matchAll(/([^{}]+)\{[^}]*\}/g)) {
     const selector = regla[1];
     if (!selector.includes('[data-theme="light"]')) continue;
     for (const parte of selector.split(',')) {

@@ -1,12 +1,12 @@
 import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
 import {dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    // React eliminado: el panel es un monolito index.html + modulos JS.
+    plugins: [tailwindcss()],
     resolve: {
       alias: {
         '@': dirname(fileURLToPath(import.meta.url)),

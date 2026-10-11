@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import test from 'node:test';
+// parseFechaLead vive en src/legacy/reportes.js (extraida del monolito).
+import { parseFechaLead } from '../../src/legacy/reportes.js';
 import vm from 'node:vm';
 
 const originalPath = 'supabase/migrations/202609290001_campaign_stats.sql';
@@ -106,10 +108,6 @@ test('separates the same declared month across years, not the import created_at'
 
 test('textual capture dates match the existing parseFechaLead rules including calendar validation', t => {
   const { add, db, prefix } = database(t);
-  const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
-  const start = html.indexOf('function parseFechaLead(lead) {');
-  const end = html.indexOf('\n    }', start) + '\n    }'.length;
-  const parseFechaLead = vm.runInNewContext(`(${html.slice(start, end)})`, { getField: (lead, key) => lead[key] || '' });
   const dates = ['1/1/2026', ' 09-1-26 ', '2025-12-31', '29/2/2024', '29/02/2025',
     '31/4/2026', '0/1/2026', '1/13/2026', '1/1/1999', '1/1/2101', '1/1/00', '31/12/99',
     null, '', 'ENERO 2026', '1/1', '2026-01-01T12:00:00Z', '21/07/2025 0:00:00',

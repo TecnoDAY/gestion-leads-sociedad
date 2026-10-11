@@ -1,0 +1,41 @@
+# Verificacion obligatoria en cada push/PR: el guardian del monolito, el
+# tipado, la suite completa y el build. Sin verde aqui no se integra a main.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Instalar dependencias (lockfile congelado)
+        run: pnpm install --frozen-lockfile
+
+      - name: check-app (guardian del monolito + tema claro)
+        run: node scripts/check-app.mjs
+
+      - name: Tipado
+        run: npx tsc --noEmit
+
+      - name: Suite node (unitarias + caracterizacion)
+        run: node --test scripts/tests/*.test.mjs
+
+      - name: Suite Python (reconcile leads, stdlib)
+        run: python3 -m unittest scripts/tests/test_reconcile_leads.py
+
+      - name: Build
+        run: pnpm run build

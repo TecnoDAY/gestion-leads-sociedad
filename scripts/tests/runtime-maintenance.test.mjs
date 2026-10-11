@@ -9,10 +9,16 @@ import { test } from 'node:test';
 const root = new URL('../../', import.meta.url);
 const html = readFileSync(new URL('index.html', root), 'utf8');
 const pkg = JSON.parse(readFileSync(new URL('package.json', root), 'utf8'));
+
+// Importar funciones puras desde el módulo legacy (extraídas del monolito)
+const legacyMod = await import('../../src/legacy/helpers.js');
+const { miamiToday, miamiDayBounds } = legacyMod;
+
 const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
   .map(match => match[1]).find(source => source.includes('function miamiToday'));
 
 function extractFunctions(name) {
+  if (!script) return [];
   return [...script.matchAll(new RegExp(`function\\s+${name}\\s*\\(`, 'g'))].map(match => {
     for (let end = script.indexOf('}', match.index); end !== -1; end = script.indexOf('}', end + 1)) {
       const candidate = script.slice(match.index, end + 1);
@@ -60,16 +66,19 @@ test('npm test expone la suite existente sin modificar puertos dev', () => {
 });
 
 test('helpers Miami tienen una sola implementacion canonica', () => {
+  // Las funciones se extrajeron a src/legacy/helpers.js; verificamos que existen y son las canónicas
+  for (const name of ['miamiToday', 'miamiDayBounds']) {
+    assert.ok(typeof legacyMod[name] === 'function', `${name}: exportada desde legacy/helpers.js`);
+  }
+  // Verificar que ya no están en index.html (evita duplicación)
   for (const name of ['miamiToday', 'miamiDayBounds']) {
     const copies = extractFunctions(name);
-    assert.ok(copies.length > 0);
-    assert.ok(copies.every(copy => copy === copies[0]), `${name}: no deduplicar implementaciones distintas`);
-    assert.equal(copies.length, 1);
+    assert.equal(copies.length, 0, `${name}: no debe haber implementación duplicada en index.html`);
   }
 });
 
 test('miamiDayBounds conserva medianoche, DST, leap day y entradas invalidas', () => {
-  const bounds = vm.runInNewContext(`(${extractFunctions('miamiDayBounds')[0]})`);
+  const bounds = miamiDayBounds;
   const cases = [
     ['2026-01-15', ['2026-01-15T05:00:00.000Z', '2026-01-16T05:00:00.000Z']],
     ['2026-07-15', ['2026-07-15T04:00:00.000Z', '2026-07-16T04:00:00.000Z']],
@@ -86,7 +95,7 @@ test('miamiToday conserva el dia Miami a ambos lados de medianoche', () => {
     ['2026-01-15T04:59:00Z', '2026-01-14'], ['2026-01-15T05:00:00Z', '2026-01-15'],
     ['2026-07-15T03:59:00Z', '2026-07-14'], ['2026-07-15T04:00:00Z', '2026-07-15'],
   ]) {
-    const today = vm.runInNewContext(`(${extractFunctions('miamiToday')[0]})`, {
+    const today = vm.runInNewContext(`(${miamiToday.toString()})`, {
       Date: class extends Date { constructor() { super(instant); } },
     });
     assert.equal(today(), expected);

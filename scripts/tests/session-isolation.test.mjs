@@ -4,6 +4,16 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { test } from 'node:test';
 
+// Importar funciones puras desde el módulo legacy (extraídas del monolito)
+const legacyMod = await import('../../src/legacy/helpers.js');
+const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds } = legacyMod;
+// Helpers de Reportes extraidos a src/legacy/reportes.js
+const reportesMod = await import('../../src/legacy/reportes.js');
+const { parseFechaLead, periodoPresetRange, periodoValidDate, periodoPct } = reportesMod;
+// Helpers del area Leads extraidos a src/legacy/leads.js
+const leadsMod = await import('../../src/legacy/leads.js');
+const { compareLeadIdsDescending, withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion } = leadsMod;
+
 const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
 const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
   .map(m => m[1]).find(s => s.includes('async function validateCurrentSession'));
@@ -17,21 +27,22 @@ function extractFunction(name) {
   }
   throw new Error(`No se pudo extraer ${name}`);
 }
+// Funciones que siguen en el script clásico (no extraídas a legacy)
 const names = ['clearSessionState', 'closeInvalidSession', 'validateCurrentSession', 'loadCurrentAccess',
   'setAppAuthenticated', 'enterAuthenticatedSession', 'handleSignOut', 'setDashboardTabState', 'switchTab', 'prepareHistoricalAnalytics',
   'ensureChartJs',
-  'closeViewLeadModal', 'openViewLeadModal', 'findLeadByOrigin', 'getField', 'escapeHtml', 'escapeAttr',
-  'updateLeadAppointmentCreateState', 'setBlockControls', 'isAgendadoGestion',
+  'closeViewLeadModal', 'openViewLeadModal', 'findLeadByOrigin',
+  'updateLeadAppointmentCreateState', 'setBlockControls',
   'fetchRowsByIdCursor', 'fetchPagedResult', 'loadLeadNotes', 'loadLeadGestiones',
-  'resetReportePeriodo', 'setReporteVista', 'periodoPresetRange', 'setPeriodoPreset', 'periodoRangeKey', 'periodoValidDate',
-  'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'renderReportePeriodo', 'periodoPct',
+  'resetReportePeriodo', 'setReporteVista', 'setPeriodoPreset', 'periodoRangeKey',
+  'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'renderReportePeriodo',
   'markPeriodoReportDirty', 'updatePeriodoCsvState',
   'loadPeriodoActividad', 'validatePeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
-  'consolidateLeadsById', 'compareLeadIdsDescending', 'parseFechaLead', 'compareAlphaEs', 'sortAlphaEs',
+  'consolidateLeadsById',
   'stopIdleTracking', 'endAgentSessionLocally', 'startAgentActivityTracking'];
 const sessionCacheNames = ['loadHistoricoData', 'performLoadHistoricoData', 'loadLeadsData', 'performLoadLeadsData',
   'getExactLeadsCount', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'consolidateLeadsById',
-  'compareLeadIdsDescending', 'withOrigin', 'haveSameLeadIds', 'loadCatalogs', 'refreshCatalogs',
+  'loadCatalogs', 'refreshCatalogs',
   'handleRealtimeEvent', 'applyRealtimeEvent', 'upsertLeadInState', 'removeLeadFromState'];
 const callbackStart = script.indexOf('if (supabaseClient) {\n      supabaseClient.auth.onAuthStateChange');
 assert.ok(callbackStart >= 0);
@@ -127,8 +138,15 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     loadLeadAppointments: async () => {},
     catalogRows: { mes: [], campana: [], medio: [], gestion: [], agente: [] },
     showLoadingState() {}, updateConnectionStatus() {}, updateLeadScopeControls() {}, showToast() {}, clearTimeout() {}, window: {},
+    // Funciones puras importadas desde src/legacy/helpers.js (extraídas del monolito)
+    getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds,
+    parseFechaLead, periodoPresetRange, periodoValidDate, periodoPct,
+    compareLeadIdsDescending, withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion,
   });
   const renders = [];
+  // periodoPresetRange (extraida a src/legacy/reportes.js) usa el reloj del
+  // contexto ('2026-09-30') para que el test siga siendo determinista.
+  c.periodoPresetRange = (preset, today) => reportesMod.periodoPresetRange(preset, today ?? c.miamiToday());
   c.loadCompleteCurrentData = async () => {
     c.completeCurrentLeads = c.allLeads;
     c.completeCurrentLoaded = true;

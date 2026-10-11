@@ -5,6 +5,25 @@ import { execFileSync } from 'node:child_process';
 import vm from 'node:vm';
 import { test } from 'node:test';
 import { transformSync } from 'esbuild';
+import path from 'node:path';
+
+// Importar funciones puras desde el módulo legacy (extraídas del monolito)
+const legacyMod = await import('../../src/legacy/helpers.js');
+const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel, miamiToday } = legacyMod;
+// Funciones puras del area Citas extraidas a src/legacy/citas.js
+const citasMod = await import('../../src/legacy/citas.js');
+const { appointmentDate, appointmentInputISO, appointmentLocal } = citasMod;
+// Helpers puros de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js
+const reportesMod = await import('../../src/legacy/reportes.js');
+const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
+  histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
+  periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles } = reportesMod;
+// Helpers puros del area Leads extraidos a src/legacy/leads.js
+const leadsMod = await import('../../src/legacy/leads.js');
+const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
+  haveSameLeadIds, isAgendadoGestion } = leadsMod;
+// validAppointmentId vive en src/legacy/citas.js
+const { validAppointmentId } = citasMod;
 
 const baseline = process.argv.includes('--baseline');
 const source = path => baseline ? execFileSync('git', ['show', `HEAD:${path}`], { encoding: 'utf8' }) : readFileSync(path, 'utf8');
@@ -20,34 +39,34 @@ function extractFunction(name) {
   }
   throw new Error(`No se pudo extraer ${name}`);
 }
-const constants = ['LEADS_BATCH_SIZE', 'MONTH_CHRONO', 'GESTION_STATE_GROUPS'].map(name => {
+const constants = ['LEADS_BATCH_SIZE'].map(name => {
   const start = script.indexOf(`const ${name} =`);
   return script.slice(start, script.indexOf(';', start) + 1);
 });
+// MONTH_CHRONO y GESTION_STATE_GROUPS viven en src/legacy/reportes.js (extraidos).
+// Funciones que siguen en el script clásico (no extraídas a legacy)
 const names = [
-  'getField', 'compareLeadIdsDescending', 'consolidateLeadsById', 'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads', 'getHistoricalBaseLeads', 'updateKpis',
+  'consolidateLeadsById', 'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads', 'getHistoricalBaseLeads', 'updateKpis',
   'fetchRowsByIdCursor', 'fetchPagedResult', 'fetchRowsByIds', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'haveSameLeadIds',
   'performLoadOlderLeads', 'returnToRecentLeads', 'refillLoadedWindow', 'applyRealtimeEvent', 'updateCompleteCacheOnly', 'removeFromCompleteCacheOnly',
-  'loadCitas', 'clearCitasResults', 'validAppointmentId', 'appointmentSessionValid', 'loadLeadAppointments',
+  'loadCitas', 'clearCitasResults', 'appointmentSessionValid', 'loadLeadAppointments',
   'loadLeadNotes', 'loadLeadGestiones', 'loadLeadsByGestionRange', 'loadLeadsByMonth', 'clearDashRange', 'applyFilters', 'resetAllFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
-  'activeCatalogValues', 'catalogOptions', 'compareAlphaEs', 'sortAlphaEs', 'sortMonthCatalog', 'parseFechaLead', 'normalizeLeadMonth', 'leadReportDate', 'isInscritoDataDura',
-  'histMonthKey', 'histMonthLabel', 'sortHistMonthKeys', 'normalizeGestion', 'groupGestionEstado', 'readHistRange',
-  'filterHistoricalLeads', 'populateHistoricalFilterOptions', 'computeHistoricalAggregates', 'escapeHtml', 'escapeAttr',
-  'loadReporteDiario', 'renderReporteV2', 'csvReporteField', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
-  'exportReporteDiarioCSV', 'exportCampanasCSV', 'campaignCosteResultado', 'campaignTotals', 'loadCampanas',
+  'activeCatalogValues', 'catalogOptions', 'readHistRange',
+  'filterHistoricalLeads', 'populateHistoricalFilterOptions', 'computeHistoricalAggregates',
+  'loadReporteDiario', 'renderReporteV2', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
+  'exportReporteDiarioCSV', 'exportCampanasCSV', 'loadCampanas',
   'saveReporteNota', 'deleteReporteNota', 'reporteNotaErrorMsg',
-  'resetReportePeriodo', 'setReporteVista', 'periodoPresetRange', 'setPeriodoPreset', 'periodoRangeKey', 'periodoValidDate',
-  'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'periodoPct', 'renderReportePeriodo', 'exportReportePeriodoCSV', 'initReporteDiario',
+  'resetReportePeriodo', 'setReporteVista', 'setPeriodoPreset', 'periodoRangeKey',
+  'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'renderReportePeriodo', 'exportReportePeriodoCSV', 'initReporteDiario',
   'markPeriodoReportDirty', 'updatePeriodoCsvState', 'upsertLeadInState', 'removeLeadFromState',
   'loadPeriodoActividad', 'validatePeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
-  'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'syncNewLeadMes', 'syncNewUltimaGestion',
-  'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentDate', 'appointmentInputISO', 'appointmentLocal', 'appointmentCampusFrom',
+  'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'confirmAppointmentCreation', 'syncNewLeadMes', 'syncNewUltimaGestion',
+  'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentCampusFrom',
   'createLeadAppointment', 'editAppointmentDetails', 'editAppointmentCampus', 'setLeadAppointmentStatus', 'rescheduleLeadAppointment',
   'setAppointmentMutationPending', 'updateLeadAppointmentCreateState', 'deleteLeadAppointment',
-  'totalCanalesVisibles',
-  'toggleNewAppointmentFields', 'isAgendadoGestion', 'setBlockControls',
-  'normalizePhone', 'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn'
+  'toggleNewAppointmentFields', 'setBlockControls',
+  'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn'
 ];
 const frontendSource = ['let leadAppointmentCreateBlocked = true;', 'let gestionRangeLeads = [], gestionRangeKey = "";', 'let mesRangeLeads = [], mesRangeKey = "";', ...constants, ...names.map(extractFunction)].join('\n');
 
@@ -80,13 +99,25 @@ function frontend(extra = {}) {
       body: { appendChild() {}, removeChild() {} },
     },
     window: {}, setTimeout: fn => { timers.push(fn); return timers.length; }, clearTimeout() {},
-    showToast: (...args) => toasts.push(args), catalogLabel: x => x,
+    showToast: (...args) => toasts.push(args), confirm: () => true,
     fillCitasSelect() {}, renderCitas() {}, renderLeadNotes() {}, renderLeadGestiones() {}, renderLeadAppointments() {},
     updateKpis() {}, renderMatrix() {}, renderTable() {}, renderHistoricalAnalytics() {}, updateLeadScopeControls() {},
     refillLoadedWindow() {}, scheduleExactLeadCountRefresh() {},
     renderCampanas() {}, canEditCampaigns: () => false,
     isAgendadoGestion: value => value.startsWith('AGENDAD'),
-    miamiToday: () => '2026-09-30', miamiDayBounds: date => [date + 'T04:00:00.000Z', date + 'T16:00:00.000Z'],
+    // Funciones puras importadas desde src/legacy/helpers.js (extraídas del monolito)
+    getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel,
+    // Helpers del area Citas extraidos a src/legacy/citas.js
+    appointmentDate, appointmentInputISO, appointmentLocal,
+    // Helpers de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js
+    MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
+    histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
+    periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
+    // Helpers del area Leads extraidos a src/legacy/leads.js
+    sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
+    haveSameLeadIds, isAgendadoGestion, validAppointmentId,
+    // miamiToday se stubbea en el test para determinismo (2026-09-30)
+    miamiToday: () => '2026-09-30',
     supabaseClient: null, currentUser: { id: 'user-test' }, currentAccess: { activo: true, nombre: 'Test', updated_at: 'v1' },
     sessionGeneration: 1, currentMainTab: 'citas', isAdmin: false, isSupervisor: false, newPhoneCheckGeneration: 0, newPhoneCheckTimer: null,
     citasRequestGeneration: 0, citasCache: [], citasRangeKey: '', leadAppointmentsCache: [], leadNotesCache: [], leadGestionesCache: [],
@@ -110,6 +141,11 @@ function frontend(extra = {}) {
     return true;
   };
   context.loadHistoricoData = async () => true;
+  // periodoPresetRange (extraida a src/legacy/reportes.js) usa el reloj del
+  // contexto para que los tests sigan siendo deterministas con su stub.
+  context.periodoPresetRange = (preset, today) => reportesMod.periodoPresetRange(preset, today ?? context.miamiToday());
+  // isNuevoEsteMes (extraida a src/legacy/leads.js) same: reloj del contexto.
+  context.isNuevoEsteMes = (fecha, today) => leadsMod.isNuevoEsteMes(fecha, today ?? context.miamiToday());
   vm.runInContext(frontendSource, context);
   return { context, element, downloads, timers, toasts };
 }
@@ -445,8 +481,10 @@ test('período: ayudas y encabezados explican leads únicos vs gestiones sin cam
   assert.doesNotMatch(csv, /"Weston: programadas (normales|Data Dura)",""/);
   assert.match(csv, /"Nota: Leads únicos cuenta personas distintas; Total de gestiones suma todos los intentos\./);
 
-  assert.match(html, /periodo-tip-panel\s*\{/);
-  assert.match(html, /\.periodo-tip:focus-within \.periodo-tip-panel/);
+  // El CSS del tip vive en src/index.css desde T5 del strangler.
+  const panelCss = readFileSync('src/index.css', 'utf8');
+  assert.match(panelCss, /periodo-tip-panel\s*\{/);
+  assert.match(panelCss, /\.periodo-tip:focus-within \.periodo-tip-panel/);
   assert.match(html, /Leads por fecha de entrada:/);
 });
 
@@ -771,6 +809,21 @@ test('Citas: >1000 citas y leads asociados, desempate por id, archivados y ausen
   assert.match(element('citasAviso').textContent, /1 cita\(s\) sin lead asociado/);
   assert.match(element('citasAviso').textContent, /archivado/);
   assert.ok(db.calls.filter(q => q.table === 'leads').length > 1);
+});
+
+test('Citas: el rango usa días de Miami incluso al cambiar el horario de verano', async () => {
+  const appointments = [
+    { id: 1, lead_id: 1, scheduled_at: '2026-03-08T04:59:59.000Z' },
+    { id: 2, lead_id: 1, scheduled_at: '2026-03-08T05:00:00.000Z' },
+    { id: 3, lead_id: 1, scheduled_at: '2026-03-09T03:59:59.000Z' },
+    { id: 4, lead_id: 1, scheduled_at: '2026-03-09T04:00:00.000Z' },
+  ];
+  const db = database({ leads: [{ id: 1 }], lead_appointments: appointments });
+  const { context: c, element } = frontend({ supabaseClient: db });
+  element('citasDesde').value = '2026-03-08'; element('citasHasta').value = '2026-03-08';
+  await c.loadCitas();
+  assert.deepEqual(Array.from(c.citasCache, r => r.id), [3, 2]);
+  assert.deepEqual(Array.from(c.miamiDayBounds('2026-03-08')), ['2026-03-08T05:00:00.000Z', '2026-03-09T04:00:00.000Z']);
 });
 
 for (const failJoin of [false, true]) test(`Citas: error ${failJoin ? 'al asociar leads' : 'segunda página'} muestra aviso sin parcial`, async () => {
@@ -1184,7 +1237,9 @@ test('badge Nuevo: fecha de llegada del mes/año Miami actual, no de otros meses
   assert.equal(c.isNuevoEsteMes('30/9/2025'), false);
   assert.equal(c.isNuevoEsteMes('01/08/2026'), false);
   assert.equal(c.isNuevoEsteMes(''), false);
-  assert.match(html, />\s*Nuevo\s*<\/span>/);
+  // El markup del badge vive en src/legacy/leads.js (extraido); el USO sigue en el monolito.
+  const leadsSource = readFileSync('src/legacy/leads.js', 'utf8');
+  assert.match(leadsSource, />\s*Nuevo\s*<\/span>/);
   assert.match(html, /\$\{nuevoBadge\(lead\)\}/);
 });
 
@@ -1234,7 +1289,7 @@ test('inactividad: aviso a 4 min, cierre a 5, multi-pestaña y registro en tabla
   assert.match(html, /p_reason: 'idle_timeout'/);
   assert.match(html, /sessionEndReason = 'session_invalid'/);
 
-  // Migración: tabla con motivos controlados, sin PII extra, retención 90 días.
+  // Migración: tabla con motivos controlados, sin PII extra y retención de 90 días.
   const sql = readFileSync('supabase/migrations/202610020006_agent_sessions.sql', 'utf8');
   assert.match(sql, /create table if not exists public\.agent_sessions/);
   assert.match(sql, /end_reason in \('manual_logout', 'idle_timeout', 'session_invalid'\)/);
@@ -1242,6 +1297,15 @@ test('inactividad: aviso a 4 min, cierre a 5, multi-pestaña y registro en tabla
   assert.match(sql, /if access\.role <> 'agente' then return null/); // solo asesoras
   assert.match(sql, /if not public\.is_admin_user\(\) then raise exception using errcode = '42501', message = 'admin_required'/);
   assert.doesNotMatch(sql, /ip_address|user_agent/);
+});
+
+test('actividad de asesoras: solo una sesion abierta con señal reciente figura activa', () => {
+  const isRecent = vm.runInNewContext(`const IDLE_LIMIT_MS = 300000; ${extractFunction('isRecentAgentSession')}; isRecentAgentSession`);
+  const now = Date.parse('2026-10-10T12:00:00Z');
+  assert.equal(isRecent({ active: true, last_activity_at: '2026-10-10T11:55:01Z' }, now), true);
+  assert.equal(isRecent({ active: true, last_activity_at: '2026-10-10T11:55:00Z' }, now), false);
+  assert.equal(isRecent({ active: false, last_activity_at: '2026-10-10T11:59:00Z' }, now), false);
+  assert.equal(isRecent({ active: true, last_activity_at: 'fecha-invalida' }, now), false);
 });
 
 
@@ -1304,6 +1368,18 @@ test('hotfix campera: appointmentCampusFrom existe y los guardados alcanzan la R
     assert.equal(db.rpcCalls[0].name, 'create_lead_with_appointment');
     assert.equal(db.rpcCalls[0].args.p_campus, 'WESTON');
     assert.equal(db.rpcCalls[0].args.p_lead.GESTION, 'Agendado');
+  }
+  // Cancelar la revisión no crea ni el lead ni la cita.
+  {
+    const { db, c, el } = prepare('DORAL');
+    let message = '';
+    c.confirm = text => { message = text; return false; };
+    el('newGestion').value = 'Agendado';
+    el('newAppointmentDate').value = '2026-10-06T18:00';
+    await c.handleCreateLead({ preventDefault() {} });
+    assert.equal(db.rpcCalls.length, 0);
+    assert.match(message, /Fecha y hora \(Miami\):.*\nSede: DORAL/);
+    assert.equal(c.newLeadSubmitting, false);
   }
 });
 
@@ -1381,6 +1457,31 @@ test('contrato RPC de citas: una asesora envia todos los nombres, incluidos UUID
     await c.createLeadAppointment({ preventDefault() {}, target: { reset() {} } });
     assert.deepEqual(Object.keys(db.rpcCalls[0].args).sort(), expectedCreate);
     assert.equal(db.rpcCalls[0].args.p_advisor_user_id, 'advisor-2');
+  }
+  // La confirmación también detiene el cambio a Agendado y la creación desde la ficha.
+  {
+    const db = database({ update_lead_with_appointment: { id: 4590 } });
+    const f = frontend({ supabaseClient: db, editLeadSubmitting: false, editLeadPreviousGestion: 'Información', currentEditOrigin: 'actual' });
+    const c = f.context, el = f.element;
+    c.document.querySelector = sel => sel === 'input[name="editAppointmentCampus"]:checked' ? campus : null;
+    c.editLeadNeedsAppointment = () => true;
+    c.confirm = () => false;
+    el('editLeadId').value = '4590';
+    el('editAppointmentDate').value = '2026-10-10T10:00';
+    await c.handleUpdateLead({ preventDefault() {} });
+    assert.equal(db.rpcCalls.length, 0);
+    assert.equal(c.editLeadSubmitting, false);
+  }
+  {
+    const db = database({ create_lead_appointment: { id: 13 } });
+    const f = frontend({ supabaseClient: db, currentViewId: 4590, pendingAppointmentMutations: new Map() });
+    const c = f.context, el = f.element;
+    c.document.querySelector = sel => sel === 'input[name="leadAppointmentCampus"]:checked' ? campus : null;
+    c.confirm = () => false;
+    el('leadAppointmentDate').value = '2026-10-11T10:00';
+    await c.createLeadAppointment({ preventDefault() {}, target: { reset() {} } });
+    assert.equal(db.rpcCalls.length, 0);
+    assert.equal(c.pendingAppointmentMutations.size, 0);
   }
 });
 
@@ -1815,14 +1916,14 @@ function reportFixture(report, notes = []) {
 }
 const advisor = (name, id, n = 1) => ({ autor_name: name, autor_user_id: id, gestionados: n, llamadas: { total: n + 1 }, citas: { total_agendados: n + 2, visitas: n + 3 }, inscritos: { total: n + 4 }, procedencia: { Whatsapp: n } });
 
-test('reporte RPC usa la fecha y pinta los cuatro KPIs', async () => {
+test('reporte RPC usa la fecha y separa citas nuevas de reprogramadas', async () => {
   const f = reportFixture({ asesoras: [advisor('Ana', 'a', 2), advisor('Bea', 'b', 3)] }); await f.context.loadReporteDiario();
   assert.deepEqual(plain(f.db.rpcCalls[0]), { name: 'daily_management_report', args: { p_fecha: '2026-03-05', p_autor_user_id: null } });
-  assert.match(f.element('reporteAuto').innerHTML, /Gestiones realizadas.*5/); assert.match(f.element('reporteAuto').innerHTML, /Total llamadas.*7/); assert.match(f.element('reporteAuto').innerHTML, /Total agendados.*9/); assert.match(f.element('reporteAuto').innerHTML, /Visitas.*11/); assert.doesNotMatch(f.element('reporteAuto').innerHTML, /Total inscritos/);
+  assert.match(f.element('reporteAuto').innerHTML, /Gestiones realizadas.*5/); assert.match(f.element('reporteAuto').innerHTML, /Total llamadas.*7/); assert.match(f.element('reporteAuto').innerHTML, /Citas nuevas hoy.*9/); assert.match(f.element('reporteAuto').innerHTML, /Visitas registradas.*11/); assert.doesNotMatch(f.element('reporteAuto').innerHTML, /Total inscritos/);
 });
 test('comparativa RPC muestra campos y detalle las cuatro tablas y notas', async () => {
   const f = reportFixture({ asesoras: [advisor('Ana', 'a')] }, [{ id: 4, autor_name: 'Ana', problemas: 'p', observaciones: 'o' }]); await f.context.loadReporteDiario(); const html = f.element('reporteAuto').innerHTML;
-  for (const text of ['Ana', 'Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas y resultados', 'p', 'o']) assert.match(html, new RegExp(text));
+  for (const text of ['Ana', 'Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas creadas y resultados registrados hoy', 'p', 'o']) assert.match(html, new RegExp(text));
   // Retiradas del reporte diario: inscripciones y los dos canales en desuso.
   for (const text of ['Inscripciones', 'Visita Conservatorio', 'Sin clasificar', 'Total inscritos']) assert.doesNotMatch(html, new RegExp(text));
   assert.match(html, /Ana — 1 gestiones/); // gestiones del bloque, sin la clave vieja rota
@@ -1842,15 +1943,15 @@ test('reporte RPC vacío, cargando y error muestran estado sin romper', async ()
   const failed = reportFixture(null); failed.db.rpc = async () => ({ data: null, error: { message: 'rpc failed' } }); await failed.context.loadReporteDiario(); assert.match(failed.element('reporteAuto').innerHTML, /No se pudo cargar/);
 });
 
-test('CSV reporte: fila TOTAL suma las 28 columnas numericas y cuadra con las 31 cabeceras (gestion, agenda, whatsapp y canales)', async () => {
-  const full = (uid, name) => ({ autor_user_id: uid, autor_name: name, gestionados: 1, procedencia: { WhatsApp: 1, 'Facebook/Instagram': 1, CogniTalking: 1, 'Directo o Referido': 1, Otros: 1 }, llamadas: { del_dia: 1, data_dura: 1, llamada_whatsapp: 1, total: 3 }, whatsapp: { nuevos: 1, gestionados: 1, total: 2 }, canales: { llamada: 1, data_dura: 1, llamada_whatsapp: 1, whatsapp: 2, instagram: 0, visita: 0, sin_clasificar: 0, total: 5 }, citas: { agendados_dia: 1, agendados_data_dura: 1, agendados_gestionados_dia: 2, agendados_gestionados_data_dura: 1, agendados_doral: 1, agendados_doral_data_dura: 1, agendados_weston: 1, agendados_weston_data_dura: 1, total_agendados: 2, visitas: 1, no_asistieron: 1, canceladas: 1, reprogramadas: 1 }, inscritos: { del_dia: 1, data_dura: 1, total: 2 } });
+test('CSV reporte: separa citas nuevas y reprogramadas y suma las columnas visibles', async () => {
+  const full = (uid, name) => ({ autor_user_id: uid, autor_name: name, gestionados: 1, procedencia: { WhatsApp: 1, 'Facebook/Instagram': 1, CogniTalking: 1, 'Directo o Referido': 1, Otros: 1 }, llamadas: { del_dia: 1, data_dura: 1, llamada_whatsapp: 1, total: 3 }, whatsapp: { nuevos: 1, gestionados: 1, total: 2 }, canales: { llamada: 1, data_dura: 1, llamada_whatsapp: 1, whatsapp: 2, instagram: 0, visita: 0, sin_clasificar: 0, total: 5 }, citas: { agendados_dia: 1, agendados_data_dura: 1, agendados_gestionados_dia: 2, agendados_gestionados_data_dura: 1, agendados_doral: 1, agendados_doral_data_dura: 1, agendados_weston: 1, agendados_weston_data_dura: 1, total_agendados: 2, citas_reprogramadas_hoy: 3, visitas: 1, no_asistieron: 1, canceladas: 1, reprogramadas: 1 }, inscritos: { del_dia: 1, data_dura: 1, total: 2 } });
   const f = reportFixture({ asesoras: [full('a', 'Ana'), full('b', 'Bea')] });
   await f.context.loadReporteDiario(); f.context.exportReporteDiarioCSV();
   const rows = decodeCSV(new TextDecoder().decode(await f.downloads[0].blob.arrayBuffer()).slice(1));
   const headers = rows[4], total = rows.at(-1), col = n => Number(total[headers.indexOf(n)]);
-  assert.equal(headers.length, 31); assert.equal(total.length, 31);
-  assert.equal(col('Gestiones realizadas'), 2); assert.equal(col('Agendados Doral'), 2); assert.equal(col('Agendados Data Dura Weston'), 2);
-  assert.equal(col('Total agendados'), 4); assert.equal(col('Reprogramadas'), 2);
+  assert.equal(headers.length, 32); assert.equal(total.length, 32);
+  assert.equal(col('Gestiones realizadas'), 2); assert.equal(col('Citas nuevas Doral'), 2); assert.equal(col('Citas nuevas Data Dura Weston'), 2);
+  assert.equal(col('Total citas nuevas'), 4); assert.equal(col('Citas reprogramadas hoy'), 6); assert.equal(col('Reprogramadas'), 2);
   assert.equal(headers.includes('Inscritos del día'), false, 'inscripciones fuera del CSV diario');
   assert.equal(col('Pasados a Agendado hoy'), 4); assert.equal(col('Pasados a Agendado Data Dura hoy'), 2);
   assert.equal(col('WhatsApp nuevos hoy'), 2); assert.equal(col('WhatsApp gestionados hoy'), 2); assert.equal(col('Total WhatsApp'), 4);
@@ -1858,8 +1959,8 @@ test('CSV reporte: fila TOTAL suma las 28 columnas numericas y cuadra con las 31
   assert.equal(col('Total canales'), 10);
   assert.equal(col('Canal Instagram'), 0);
   const panel = f.element('reporteAuto').innerHTML;
-  assert.match(panel, /Agendados hoy/);
-  assert.doesNotMatch(panel, /programadas hoy/);
+  assert.match(panel, /Citas nuevas hoy/);
+  assert.doesNotMatch(panel, /Citas programadas hoy/);
   assert.match(panel, /WhatsApp nuevos hoy/); assert.match(panel, /Total WhatsApp/);
   assert.match(panel, /Canales/); assert.match(panel, /Detalle WhatsApp/);
   for (const text of ['Sin clasificar', 'Visita Conservatorio', 'Inscripciones']) assert.doesNotMatch(panel, new RegExp(text));
@@ -1890,6 +1991,26 @@ test('canales: migracion cierra la contabilidad (canales excluyentes, fallback y
   assert.match(sql, /grant execute on function public\.daily_management_report\(date, uuid\) to authenticated/);
   // Sin PII en las salidas.
   assert.doesNotMatch(sql, /"Nombre"|"Telefono"/);
+});
+
+test('reporte diario: agendamientos por creación, resultados por resolución y autor del trabajo', () => {
+  const sql = readFileSync('supabase/migrations/202610100001_daily_report_appointment_work_date.sql', 'utf8');
+  assert.match(sql, /\(a\.created_at at time zone 'America\/New_York'\)::date = p_fecha/);
+  assert.match(sql, /\(a\.resolved_at at time zone 'America\/New_York'\)::date = p_fecha/);
+  assert.match(sql, /coalesce\(a\.created_by_user_id, a\.advisor_user_id\) as worker_id/);
+  assert.match(sql, /from booked a where a\.worker_id is not distinct from f\.user_id/);
+  assert.doesNotMatch(sql, /scheduled_at/);
+  assert.match(sql, /grant execute on function public\.daily_management_report\(date, uuid\) to authenticated/);
+});
+
+test('reporte diario: las reprogramaciones no inflan citas nuevas', () => {
+  const sql = readFileSync('supabase/migrations/202610100002_daily_report_new_vs_rescheduled.sql', 'utf8');
+  assert.match(sql, /and a\.rescheduled_from_id is null/);
+  assert.match(sql, /and a\.rescheduled_from_id is not null/);
+  assert.match(sql, /from rebooked a where a\.worker_id is not distinct from f\.user_id/);
+  assert.match(sql, /'citas_reprogramadas_hoy', blocks\.rebooked_today/);
+  assert.match(sql, /'total_agendados', blocks\.ag_dia \+ blocks\.ag_dd/);
+  assert.doesNotMatch(sql, /scheduled_at/);
 });
 
 test('whatsapp gestión: canal inicial en crear, preselección por Medio y RPC con bloque aditivo', () => {
@@ -2290,6 +2411,6 @@ test('reporte diario: canales e inscripciones retirados de pantalla y CSV', () =
   assert.doesNotMatch(html, /<td class="py-1">Del día<\/td>/);
   assert.doesNotMatch(html, /<td class="py-1">Data Dura<\/td>/);
   assert.equal((html.match(new RegExp('<h5 class="font-semibold text-indigo-900">', 'g')) || []).length, 4, 'cuatro tablas por asesora');
-  for (const text of ['Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas y resultados', 'Gestiones realizadas', 'Total llamadas', 'Visitas']) assert.match(html, new RegExp(text));
-  assert.match(html, /Agendados hoy/);
+  for (const text of ['Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas creadas y resultados registrados hoy', 'Gestiones realizadas', 'Total llamadas', 'Visitas registradas']) assert.match(html, new RegExp(text));
+  assert.match(html, /Citas nuevas hoy/);
 });

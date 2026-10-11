@@ -34,6 +34,24 @@
     (() => {
       const saved = localStorage.getItem('tema-dashboard');
       document.documentElement.dataset.theme = saved === 'dark' ? 'dark' : 'light';
+      // Aviso si la pagina se abre sin Vite: el CSS de Tailwind vive compilado
+      // en src/index.css y sin Vite no hay .hidden, ni fuentes, ni layout, por
+      // lo que el panel se ve roto (vistas apiladas, serif, clics sin efecto).
+      // Convertimos ese fallo silencioso en un mensaje accionable.
+      const avisaSiFaltaCss = () => {
+        const probe = document.createElement('div');
+        probe.className = 'hidden';
+        document.body.appendChild(probe);
+        const cssRoto = getComputedStyle(probe).display !== 'none';
+        probe.remove();
+        if (!cssRoto) return;
+        const aviso = document.createElement('div');
+        aviso.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;z-index:2147483647;background:#b91c1c;color:#fff;padding:14px 18px;border-radius:12px;font:14px/1.5 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.35)';
+        aviso.textContent = 'Este panel necesita compilarse con Vite. Abre una terminal en la carpeta del proyecto y ejecuta "pnpm dev" para usarlo en http://localhost:3000, o "pnpm build" y abre el archivo dist/index.html.';
+        document.body.appendChild(aviso);
+      };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', avisaSiFaltaCss);
+      else avisaSiFaltaCss();
     })();
   </script>
 </head>

@@ -7,6 +7,19 @@ export default defineConfig(() => {
   return {
     // React eliminado: el panel es un monolito index.html + modulos JS.
     plugins: [tailwindcss()],
+    // base relativa: dist/index.html funciona tambien abriendo el archivo
+    // directo (file://) o desde cualquier servidor estatico, como promete
+    // el README ("archivo estatico autocontenido").
+    base: './',
+    build: {
+      rollupOptions: {
+        output: {
+          // Un solo chunk: el inliner (scripts/inline-dist.mjs) incrusta el
+          // bundle completo en dist/index.html tras el build.
+          inlineDynamicImports: true,
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': dirname(fileURLToPath(import.meta.url)),

@@ -65,14 +65,25 @@ La tabla `leads` en Supabase utiliza la siguiente estructura exacta:
 
 ## 💻 Ejecución Local
 
-Puedes abrir directamente el archivo `index.html` en cualquier navegador web moderno, o ejecutar el servidor de desarrollo Vite:
+El CSS de Tailwind se compila con Vite (ya no se usa el CDN de runtime), así que hay dos formas correctas de usar el panel:
+
+**Desarrollo** (recarga automática al editar):
 
 ```bash
-# Instalar dependencias
-npm install
+pnpm install
 
 # Iniciar servidor local
-npm run dev
+pnpm dev
 ```
 
 El panel estará disponible en `http://localhost:3000`.
+
+**Archivo estático autocontenido** (sin servidor, para abrir directo o subir a cualquier alojamiento):
+
+```bash
+pnpm build
+```
+
+y abre `dist/index.html` en el navegador: lleva el CSS y el JavaScript incrustados.
+
+> ⚠️ Abrir el `index.html` de la raíz del proyecto directamente ya no funciona: Tailwind necesita compilarse. Si lo haces, el propio panel muestra un aviso rojo con estas dos opciones.

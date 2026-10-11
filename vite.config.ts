@@ -15,8 +15,9 @@ export default defineConfig(() => {
       rollupOptions: {
         output: {
           // Un solo chunk: el inliner (scripts/inline-dist.mjs) incrusta el
-          // bundle completo en dist/index.html tras el build.
-          inlineDynamicImports: true,
+          // bundle completo en dist/index.html tras el build. (inlineDynamicImports
+          // esta obsoleto desde Rollup 4.x / Vite 8.)
+          codeSplitting: false,
         },
       },
     },

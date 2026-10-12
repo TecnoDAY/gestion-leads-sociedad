@@ -2351,7 +2351,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           return;
         }
         if (['INITIAL_SESSION', 'SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED', 'PASSWORD_RECOVERY'].includes(event)) {
-          if (session?.user && currentUser?.id !== session.user.id) {
+          // El reset solo aplica al cambiar de usuario ya autenticado: en el
+          // primer arranque (currentUser null) no hay estado que limpiar y
+          // clearSessionState llama a helpers de los modulos ES, que aun no
+          // se han registrado en este punto (carrera de carga al iniciar).
+          if (currentUser && session?.user && currentUser?.id !== session.user.id) {
             const needsPasswordSetup = pendingPasswordSetup;
             clearSessionState();
             pendingPasswordSetup = needsPasswordSetup;

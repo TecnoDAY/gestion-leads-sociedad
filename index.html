@@ -1682,7 +1682,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       reporteAsesorasDisponibles = [];
       reporteLoadedKey = '';
       const reporteFecha = document.getElementById('reporteFecha');
-        if (reporteFecha) reporteFecha.value = miamiToday();
+        // miamiToday vive en un modulo ES (deferred): durante el arranque del
+        // panel aun no existe, asi que se deja vacio y lo rellena el flujo
+        // autenticado (initReporteDiario) sin romper el reset de sesion.
+        if (reporteFecha) reporteFecha.value = typeof miamiToday === 'function' ? miamiToday() : '';
       const reporteAviso = document.getElementById('reporteAviso');
        if (reporteAviso) reporteAviso.textContent = 'Los cambios en Problemas y Observaciones se guardan por asesora y fecha (zona horaria de Miami).';
       document.getElementById('reporteFechaTexto')?.replaceChildren();
@@ -2351,11 +2354,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
           return;
         }
         if (['INITIAL_SESSION', 'SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED', 'PASSWORD_RECOVERY'].includes(event)) {
-          // El reset solo aplica al cambiar de usuario ya autenticado: en el
-          // primer arranque (currentUser null) no hay estado que limpiar y
-          // clearSessionState llama a helpers de los modulos ES, que aun no
-          // se han registrado en este punto (carrera de carga al iniciar).
-          if (currentUser && session?.user && currentUser?.id !== session.user.id) {
+          if (session?.user && currentUser?.id !== session.user.id) {
             const needsPasswordSetup = pendingPasswordSetup;
             clearSessionState();
             pendingPasswordSetup = needsPasswordSetup;

@@ -49,7 +49,7 @@ const names = [
   'consolidateLeadsById', 'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads', 'getHistoricalBaseLeads', 'updateKpis',
   'fetchRowsByIdCursor', 'fetchPagedResult', 'fetchRowsByIds', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'haveSameLeadIds',
   'performLoadOlderLeads', 'returnToRecentLeads', 'refillLoadedWindow', 'applyRealtimeEvent', 'updateCompleteCacheOnly', 'removeFromCompleteCacheOnly',
-  'loadCitas', 'clearCitasResults', 'appointmentSessionValid', 'loadLeadAppointments',
+  'loadCitas', 'clearCitasResults', 'appointmentSessionValid', 'loadLeadAppointments', 'renderCitasKpis',
   'loadLeadNotes', 'loadLeadGestiones', 'loadLeadsByGestionRange', 'loadLeadsByMonth', 'clearDashRange', 'applyFilters', 'resetAllFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
   'activeCatalogValues', 'catalogOptions', 'readHistRange',
   'filterHistoricalLeads', 'populateHistoricalFilterOptions', 'computeHistoricalAggregates',
@@ -709,7 +709,7 @@ test('arranque acotado: loader pide 2000 y difiere el histórico; UI explica el 
   assert.match(html, /id="leadScopeLabel"[^>]*>Últimos 2\.000 registros/);
   assert.match(html, /id="btnLoadOlderLeads"/);
   assert.match(html, /id="btnRecentLeads"/);
-  assert.match(extractFunction('updateConnectionStatus'), /Supabase en vivo/);
+  assert.match(extractFunction('updateConnectionStatus'), /Actualizado/);
   assert.doesNotMatch(extractFunction('updateConnectionStatus'), /totalDatabaseCount\.toLocaleString\(\) \+ " leads/);
 });
 
@@ -1656,10 +1656,13 @@ test('citas por sede: requerida en las 3 rutas, filro/KPIs, corrección y report
   assert.match(html, /appointmentCampusFrom\('newAppointment'\)/);
   assert.match(html, /appointmentCampusFrom\('editAppointment'\)/);
   assert.match(html, /appointmentCampusFrom\('leadAppointment'\)/);
-  // Tabla, filtro y KPIs por sede; corrección con RPC dedicada
+  // Tabla, filtro y KPIs por sede; corrección con RPC dedicada.
+  // Los KPIs viven ahora en renderCitasKpis (Fase 5: 4 principales + desglose),
+  // por lo que el cálculo por sede se verifica sobre la función nueva.
   assert.match(html, /<th class="p-3 text-left">Sede<\/th>/);
   assert.match(html, /id="citasSede"/);
-  assert.match(html, /\['Doral',rows\.filter\(r=>r\.campus==='DORAL'&&!r\.is_data_dura\)\.length\]/);
+  assert.match(html, /card\('Doral', rows\.filter\(r => r\.campus === 'DORAL' && !r\.is_data_dura\)\.length\)/);
+  assert.match(html, /card\('Weston', rows\.filter\(r => r\.campus === 'WESTON' && !r\.is_data_dura\)\.length\)/);
   assert.match(html, /update_lead_appointment_campus/);
   // Lead ya Agendado: el modal de Actualizar Seguimiento tambien seda la cita
   // vigente sin crear otra (bloque con radios reutilizando la RPC existente).
@@ -1668,6 +1671,43 @@ test('citas por sede: requerida en las 3 rutas, filro/KPIs, corrección y report
   assert.match(html, /editLeadStaysAgendado\(\)/);
   assert.match(html, /loadEditExistingAppointment\(leadId\)/);
   assert.match(html, /update_lead_followup_with_appointment_campus/);
+});
+
+test('citas: KPIs compactos muestran 4 principales y el resto en desglose por estado y sede', () => {
+  const f = frontend({ currentMainTab: 'citas' });
+  const rows = [
+    { status: 'PROGRAMADA', campus: 'DORAL', is_data_dura: false },
+    { status: 'ASISTIO', campus: 'DORAL', is_data_dura: true },
+    { status: 'ASISTIO', campus: 'WESTON', is_data_dura: false },
+    { status: 'NO_ASISTIO', campus: 'WESTON', is_data_dura: true },
+    { status: 'CANCELADA', campus: null },
+    { status: 'REPROGRAMADA', campus: null },
+  ];
+  const counts = Object.fromEntries(['PROGRAMADA', 'ASISTIO', 'NO_ASISTIO', 'CANCELADA', 'REPROGRAMADA'].map(s => [s, rows.filter(r => r.status === s).length]));
+  const denom = counts.ASISTIO + counts.NO_ASISTIO; // 3 -> tasa 66.7%
+  f.context.renderCitasKpis(rows, counts, denom);
+
+  const kpis = f.element('citasKpis').innerHTML;
+  for (const label of ['Total citas', 'Programadas', 'Asistieron', 'Tasa asistencia'])
+    assert.match(kpis, new RegExp(label));
+  assert.match(kpis, />6<\/strong>/, 'total de citas');
+  assert.match(kpis, /66\.7%/, 'tasa de asistencia');
+  // Los 8 restantes NO deben aparecer en el bloque principal
+  assert.doesNotMatch(kpis, /No asistieron|Canceladas|Reprogramadas|Doral Data Dura|Weston Data Dura|Sin sede/);
+
+  const desglose = f.element('sedeBreakdownBody').innerHTML;
+  const escapeRe = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  for (const label of ['No asistieron', 'Canceladas', 'Reprogramadas', 'Doral', 'Doral Data Dura', 'Weston', 'Weston Data Dura', 'Sin sede (históricas)'])
+    assert.match(desglose, new RegExp(escapeRe(label)));
+  assert.match(desglose, /Ver desglose por estado y sede/);
+
+  // Caso sin citas: no debe lanzar y la tasa queda en 0.0%
+  const vacio = frontend({ currentMainTab: 'citas' });
+  const countsVacio = Object.fromEntries(['PROGRAMADA', 'ASISTIO', 'NO_ASISTIO', 'CANCELADA', 'REPROGRAMADA'].map(s => [s, 0]));
+  vacio.context.renderCitasKpis([], countsVacio, 0);
+  assert.match(vacio.element('citasKpis').innerHTML, />0<\/strong>/);
+  assert.match(vacio.element('citasKpis').innerHTML, /0\.0%/);
+  assert.match(vacio.element('sedeBreakdownBody').innerHTML, /Sin sede \(históricas\)/);
 });
 
 test('migración de detalles de cita: columnas, p_details, validación, edición y reschedule conservador', () => {

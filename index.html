@@ -65,7 +65,7 @@
     </div>
     <nav class="mt-5 space-y-1" aria-label="Secciones">
       <button type="button" data-sidebar-tab="dashboard" data-crm-nav onclick="switchTab('dashboard')" class="sidebar-nav-button is-active"><i data-lucide="home"></i><span>Inicio</span></button>
-      <button type="button" data-sidebar-tab="leads" data-crm-nav onclick="switchTab('dashboard');syncSidebarNavigation('leads');document.getElementById('leadsTableBody')?.scrollIntoView({behavior:'smooth',block:'start'})" class="sidebar-nav-button"><i data-lucide="users"></i><span>Leads</span></button>
+      <button type="button" data-sidebar-tab="leads" data-crm-nav onclick="switchTab('leads')" class="sidebar-nav-button"><i data-lucide="users"></i><span>Leads</span></button>
       <button type="button" data-sidebar-tab="citas" data-crm-nav onclick="switchTab('citas')" class="sidebar-nav-button"><i data-lucide="calendar-check"></i><span>Citas</span></button>
       <button type="button" data-sidebar-tab="campanas" onclick="switchTab('campanas')" class="sidebar-nav-button"><i data-lucide="megaphone"></i><span>Campañas</span></button>
       <button type="button" data-sidebar-tab="historico" data-crm-nav onclick="switchTab('historico')" class="sidebar-nav-button"><i data-lucide="chart-no-axes-combined"></i><span>Análisis histórico</span></button>
@@ -106,7 +106,7 @@
         <!-- Live Connection Status -->
         <div id="connectionStatusBadge" class="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700/80 text-xs font-medium text-slate-300">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="statusDot"></span>
-          <span id="statusText" class="hidden md:inline">Supabase en vivo</span>
+          <span id="statusText" class="hidden md:inline">Actualizado</span>
         </div>
 
         <!-- Refresh Button -->
@@ -156,7 +156,13 @@
         <!-- Pestaña 1: Panel Operativo -->
         <button id="tabBtnDashboard" onclick="switchTab('dashboard')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
           <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-          <span class="sm:hidden">Inicio y leads</span><span class="hidden sm:inline">Panel Operativo & Leads</span>
+          <span>Inicio</span>
+        </button>
+
+        <!-- Pestaña 1b: Leads -->
+        <button id="tabBtnLeads" onclick="switchTab('leads')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span>Leads</span>
         </button>
 
         <!-- Pestaña 2: Gráficos Históricos -->
@@ -192,23 +198,36 @@
         <select id="reporteVista" onchange="setReporteVista(this.value)"><option value="diario">Diario</option><option value="periodo">Por período</option></select>
       </label></div>
       <div id="reporteDiarioVista" class="space-y-5">
-      <div class="report-intro"><div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Actividad del equipo</span><div class="mt-3 flex items-center gap-2"><h1 class="text-2xl font-bold text-indigo-900">Reporte diario de trabajo</h1><button type="button" onclick="openHelpModal('ayuda-reporte-diario')" title="Ayuda: reporte diario" aria-label="Ayuda sobre el reporte diario" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 hover:bg-indigo-600 text-[11px] font-bold text-slate-700 hover:text-white cursor-pointer shrink-0">?</button></div><p id="reporteFechaTexto" class="mt-1 text-sm text-slate-600"></p></div></div>
-      <div class="daily-controls report-controls flex flex-wrap gap-3 items-end justify-between text-sm">
-        <div class="daily-filter-grid flex flex-wrap gap-3 items-end"><label>Fecha <input id="reporteFecha" type="date" onchange="loadReporteDiario()" class="block mt-1"></label><label>Asesora <select id="reporteAsesora" onchange="loadReporteDiario()" class="block mt-1"><option value="">Todas las asesoras</option></select></label></div>
-        <button type="button" id="reporteBtnCsv" onclick="exportReporteDiarioCSV()" class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-700 text-white text-sm font-semibold hover:bg-indigo-600 cursor-pointer"><i data-lucide="download" class="w-4 h-4"></i> Descargar CSV</button>
-      </div>
-       <div id="reporteAviso" role="status" aria-live="polite" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">Los cambios en Problemas y Observaciones se guardan por asesora y fecha (zona horaria de Miami).</div>
+      <header class="report-intro">
+        <div class="relative z-10 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <span class="dashboard-eyebrow"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Actividad del equipo</span>
+            <div class="mt-2 flex items-center gap-2"><h1 class="text-2xl font-bold text-indigo-900">Reporte diario de trabajo</h1><button type="button" onclick="openHelpModal('ayuda-reporte-diario')" title="Ayuda: reporte diario" aria-label="Ayuda sobre el reporte diario" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 hover:bg-indigo-600 text-[11px] font-bold text-slate-700 hover:text-white cursor-pointer shrink-0">?</button></div>
+            <p id="reporteFechaTexto" class="mt-1 text-sm text-slate-600"></p>
+          </div>
+          <div class="flex flex-wrap gap-3 items-end">
+            <label>Fecha <input id="reporteFecha" type="date" onchange="loadReporteDiario()" class="block mt-1"></label>
+            <label>Asesora <select id="reporteAsesora" onchange="loadReporteDiario()" class="block mt-1"><option value="">Todas las asesoras</option></select></label>
+            <button type="button" id="reporteBtnCsv" onclick="exportReporteDiarioCSV()" class="inline-flex items-center gap-2 rounded-md px-3 py-1.5 bg-slate-700 text-white text-sm font-semibold hover:bg-indigo-600 cursor-pointer"><i data-lucide="download" class="w-4 h-4"></i> Descargar CSV</button>
+          </div>
+        </div>
+      </header>
+      <p id="reporteAviso" role="status" aria-live="polite" class="text-xs text-slate-500">Los cambios en Problemas y Observaciones se guardan por asesora y fecha (zona horaria de Miami).</p>
       <div id="reporteAuto" class="space-y-3"></div>
       </div>
       <section id="reportePeriodo" class="hidden space-y-4" aria-label="Reporte por período">
-        <header class="report-intro"><div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="calendar-range" class="w-3.5 h-3.5"></i> Análisis por período</span><h1 class="mt-3 text-2xl font-bold text-indigo-900">Reporte por período</h1><p class="mt-1 text-sm text-slate-600">Leads activos por fecha de entrada, desde y hasta inclusive. Gestión actual: no representa el estado histórico al cierre del período.</p></div>
-        </header>
-        <div class="report-content-card">
-          <div class="mt-2 grid gap-2 sm:grid-cols-2 text-xs">
-            <p class="rounded border border-slate-300 bg-white p-2 text-slate-700"><strong class="text-indigo-900">Leads por fecha de entrada:</strong> leads activos cuya Fecha de entrada cayó entre Desde y Hasta (incluidos). La gestión que se muestra es la actual del lead, no la que tenía al cerrar el período.</p>
-            <p class="rounded border border-slate-300 bg-white p-2 text-slate-700"><strong class="text-indigo-900">Actividad realizada en el período:</strong> gestiones registradas entre las fechas elegidas y citas contadas por su fecha programada (Miami).</p>
+        <header class="report-intro">
+          <div class="relative z-10">
+            <span class="dashboard-eyebrow"><i data-lucide="calendar-range" class="w-3.5 h-3.5"></i> Análisis por período</span>
+            <h1 class="mt-2 text-2xl font-bold text-indigo-900">Reporte por período</h1>
+            <p class="mt-1 text-sm text-slate-600">Leads activos por fecha de entrada, desde y hasta inclusive. La gestión mostrada es la actual del lead, no la del cierre del período.</p>
+            <details class="mt-2 text-xs text-slate-500">
+              <summary class="cursor-pointer select-none hover:text-indigo-700">Cómo se calcula este reporte</summary>
+              <p class="mt-1"><strong>Leads por fecha de entrada:</strong> leads activos cuya Fecha de entrada cayó entre Desde y Hasta (incluidos). La gestión que se muestra es la actual del lead, no la que tenía al cerrar el período.</p>
+              <p class="mt-1"><strong>Actividad realizada en el período:</strong> gestiones registradas entre las fechas elegidas y citas contadas por su fecha programada (Miami).</p>
+            </details>
           </div>
-        </div>
+        </header>
         <div class="period-controls report-controls flex flex-wrap gap-3 items-end text-sm">
           <label>Desde <input id="periodoDesde" type="date" onchange="loadReportePeriodo()" class="block mt-1"></label>
           <label>Hasta <input id="periodoHasta" type="date" onchange="loadReportePeriodo()" class="block mt-1"></label>
@@ -238,8 +257,8 @@
         <p class="mt-1 text-sm text-slate-400">Revisa las prioridades, atiende tus leads y acompaña a tus próximos alumnos.</p>
       </div>
       <div class="flex flex-wrap items-center gap-2 shrink-0">
-        <button type="button" onclick="document.getElementById('leadsTableBody')?.scrollIntoView({behavior:'smooth',block:'start'})" class="primary-action inline-flex items-center gap-2 px-4 py-2 border border-slate-600 bg-slate-800/70 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-colors">
-          <i data-lucide="list-filter" class="w-4 h-4"></i> Ver prioridades
+        <button type="button" onclick="switchTab('leads')" class="primary-action inline-flex items-center gap-2 px-4 py-2 border border-slate-600 bg-slate-800/70 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-colors">
+          <i data-lucide="list-filter" class="w-4 h-4"></i> Ver leads
         </button>
         <button type="button" onclick="openNewLeadModal()" class="primary-action inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/25 cursor-pointer transition-all">
           <i data-lucide="user-plus" class="w-4 h-4"></i> Nuevo lead
@@ -305,6 +324,20 @@
         </div>
       </div>
     </section>
+
+    <!-- ACCESO RÁPIDO A LEADS (prioridades de la jornada) -->
+    <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden" aria-labelledby="quickLeadsTitle">
+      <div class="quick-leads-header px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <div><h2 id="quickLeadsTitle" class="dashboard-section-title text-sm sm:text-base font-bold text-white">Acceso rápido a leads</h2><p class="text-xs text-slate-400 mt-0.5">Cuatro resultados del filtro actual; consulta o actualiza la gestión.</p></div>
+        <button type="button" onclick="switchTab('leads')" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 cursor-pointer">Ver todos los leads →</button>
+      </div>
+      <div id="quickLeadsList" aria-live="polite"><p class="px-4 py-5 text-xs text-slate-400">Cargando leads…</p></div>
+    </section>
+
+    </div> <!-- /viewDashboard -->
+
+    <!-- ================= VISTA 1B: LEADS ================= -->
+    <div id="viewLeads" class="hidden space-y-6">
 
     <!-- BARRA DE FILTROS AVANZADOS -->
     <section class="dashboard-filters glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm space-y-3">
@@ -406,15 +439,6 @@
       </div>
     </section>
 
-    <!-- ACCESO RÁPIDO A LEADS DEL CONJUNTO FILTRADO -->
-    <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden" aria-labelledby="quickLeadsTitle">
-      <div class="quick-leads-header px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
-        <div><h2 id="quickLeadsTitle" class="dashboard-section-title text-sm sm:text-base font-bold text-white">Acceso rápido a leads</h2><p class="text-xs text-slate-400 mt-0.5">Cuatro resultados del filtro actual; consulta o actualiza la gestión.</p></div>
-        <button type="button" onclick="document.getElementById('leadsTableBody')?.scrollIntoView({behavior:'smooth',block:'start'})" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 cursor-pointer">Ver lista completa →</button>
-      </div>
-      <div id="quickLeadsList" aria-live="polite"><p class="px-4 py-5 text-xs text-slate-400">Cargando leads…</p></div>
-    </section>
-
     <!-- DASHBOARD ANALÍTICO - MATRIZ CRUZADA (GESTIÓN VS CAMPAÑAS) -->
     <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden">
       <div class="p-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -512,7 +536,7 @@
       </div>
     </section>
 
-    </div> <!-- /viewDashboard -->
+    </div> <!-- /viewLeads -->
 
     <!-- ================= VISTA 2: GRÁFICOS HISTÓRICOS ================= -->
     <div id="viewHistorico" class="space-y-6 hidden">
@@ -861,6 +885,18 @@
     </div> <!-- /viewHistorico -->
 
     <div id="viewCitas" class="hidden space-y-5">
+
+      <!-- Título y contador -->
+      <div class="appointments-intro flex flex-wrap items-center justify-between gap-3">
+        <div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> Agenda del equipo</span><h2 class="mt-3 text-2xl font-bold text-white">Citas</h2><p class="mt-1 text-sm text-slate-400">Consulta las visitas programadas y sus resultados.</p><p id="citasCount" class="mt-2 text-xs font-semibold text-indigo-400">0 citas</p></div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="appointments-filters space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2"><div><h3 class="font-bold text-white text-sm">Filtrar citas</h3><p class="text-xs text-slate-400">Ajusta fechas, sede y origen para encontrar una visita.</p></div><div class="flex flex-wrap gap-2"><button type="button" onclick="loadCitas()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer">Actualizar citas</button><button type="button" onclick="resetCitasFilters()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer">Limpiar filtros</button></div></div>
+        <div class="grid grid-cols-1 min-[400px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs"><label>Desde<input id="citasDesde" type="date" class="w-full mt-1"></label><label>Hasta<input id="citasHasta" type="date" class="w-full mt-1"></label><label>Resultado<select id="citasResultado" class="w-full mt-1"><option value="">Todos</option><option value="ASISTIO">Asistió</option><option value="CANCELADA">Cancelada</option><option value="NO_ASISTIO">No asistió</option><option value="PROGRAMADA">Programada</option><option value="REPROGRAMADA">Reprogramada</option></select></label><label>Sede<select id="citasSede" class="w-full mt-1"><option value="">Todas</option><option value="DORAL">Doral</option><option value="sin">Sin sede</option><option value="WESTON">Weston</option></select></label><label>Campaña<select id="citasCampana" class="w-full mt-1"></select></label><label>Medio<select id="citasMedio" class="w-full mt-1"></select></label><label id="citasAsesorWrap" class="hidden">Asesor<select id="citasAsesor" class="w-full mt-1"></select></label></div>
+      </div>
+
       <!-- Barra de vista: Lista / Día / Semana / Mes -->
       <div id="citasViewBar" class="flex flex-wrap items-center gap-2 bg-slate-800/50 border border-slate-700 rounded-lg p-2" role="tablist" aria-label="Vista de citas">
         <button id="citasViewLista" type="button" role="tab" aria-selected="true" onclick="setCitasViewMode('lista')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-indigo-600 text-white">Lista</button>
@@ -868,6 +904,7 @@
         <button id="citasViewSemana" type="button" role="tab" aria-selected="false" onclick="setCitasViewMode('semana')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Semana</button>
         <button id="citasViewMes" type="button" role="tab" aria-selected="false" onclick="setCitasViewMode('mes')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Mes</button>
       </div>
+
       <!-- Navegación del calendario (oculta en modo lista) -->
       <div id="citasCalendarNav" class="hidden flex items-center justify-between gap-3 bg-slate-800/50 border border-slate-700 rounded-lg p-3">
         <button type="button" onclick="citasCalendarNav('today')" class="px-3 py-1.5 rounded-md text-xs font-medium bg-slate-700 text-slate-200 hover:bg-slate-600 transition-colors">Hoy</button>
@@ -878,22 +915,27 @@
         </div>
         <div class="w-20"></div>
       </div>
+
       <!-- Contenedor del calendario (oculto en modo lista) -->
       <div id="citasCalendarWrap" class="hidden space-y-3" role="region" aria-label="Calendario de citas" aria-live="polite">
         <div id="citasCalendarLegend" class="flex flex-wrap items-center gap-3 text-xs text-slate-400" aria-hidden="true"></div>
         <div id="citasCalendar" class="rounded-lg border border-slate-700 bg-slate-800/50 min-h-[70vh] lg:min-h-[42rem]"></div>
         <p id="citasCalendarMsg" class="text-sm text-slate-400 text-center hidden"></p>
       </div>
-      <div class="appointments-intro flex flex-wrap items-center justify-between gap-3">
-        <div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> Agenda del equipo</span><h2 class="mt-3 text-2xl font-bold text-white">Citas</h2><p class="mt-1 text-sm text-slate-400">Consulta las visitas programadas y sus resultados.</p><p id="citasCount" class="mt-2 text-xs font-semibold text-indigo-400">0 citas</p></div>
+
+      <!-- KPIs: 4 indicadores principales -->
+      <div id="citasKpis" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-2">
+        <!-- KPIs serán llenados por renderCitas() -->
       </div>
-      <div class="appointments-filters space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2"><div><h3 class="font-bold text-white text-sm">Filtrar citas</h3><p class="text-xs text-slate-400">Ajusta fechas, sede y origen para encontrar una visita.</p></div><div class="flex flex-wrap gap-2"><button type="button" onclick="loadCitas()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer">Actualizar citas</button><button type="button" onclick="resetCitasFilters()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer">Limpiar filtros</button></div></div>
-        <div class="grid grid-cols-1 min-[400px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs"><label>Desde<input id="citasDesde" type="date" class="w-full mt-1"></label><label>Hasta<input id="citasHasta" type="date" class="w-full mt-1"></label><label>Resultado<select id="citasResultado" class="w-full mt-1"><option value="">Todos</option><option value="ASISTIO">Asistió</option><option value="CANCELADA">Cancelada</option><option value="NO_ASISTIO">No asistió</option><option value="PROGRAMADA">Programada</option><option value="REPROGRAMADA">Reprogramada</option></select></label><label>Sede<select id="citasSede" class="w-full mt-1"><option value="">Todas</option><option value="DORAL">Doral</option><option value="sin">Sin sede</option><option value="WESTON">Weston</option></select></label><label>Campaña<select id="citasCampana" class="w-full mt-1"></select></label><label>Medio<select id="citasMedio" class="w-full mt-1"></select></label><label id="citasAsesorWrap" class="hidden">Asesor<select id="citasAsesor" class="w-full mt-1"></select></label></div>
-      </div>
-      <div id="citasKpis" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2"></div>
+
+      <!-- Tabla de citas -->
       <div class="appointments-table"><table class="w-full text-xs"><thead><tr><th class="p-3 text-left">Fecha/hora</th><th class="p-3 text-left">Lead</th><th class="p-3 text-left">Estudiante</th><th class="p-3 text-left">Correo</th><th class="p-3 text-left">Edad</th><th class="p-3 text-left">Sede</th><th class="p-3 text-left">Asesor</th><th class="p-3 text-left">Campaña</th><th class="p-3 text-left">Mes origen</th><th class="p-3 text-left">Resultado</th><th></th></tr></thead><tbody id="citasTableBody" class="divide-y divide-slate-800"></tbody></table></div>
-      <p id="citasAviso" class="text-sm text-slate-400"></p>
+
+      <!-- Desglose por sede y Data Dura (agrupado) -->
+      <div id="sedeBreakdown" class="sede-breakdown mt-4">
+        <div id="sedeBreakdownBody"></div>
+        <p id="citasAviso" class="text-sm text-slate-400"></p>
+      </div>
     </div>
 
     <div id="viewCampanas" class="hidden space-y-5">
@@ -1659,7 +1701,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       document.querySelectorAll('[data-admin-only]').forEach(el => el.classList.add('hidden'));
       isTrafficker = false;
       isSupervisor = false;
-      ['tabBtnDashboard', 'tabBtnHistorico', 'tabBtnReporte', 'tabBtnCitas'].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
+      ['tabBtnDashboard', 'tabBtnLeads', 'tabBtnHistorico', 'tabBtnReporte', 'tabBtnCitas'].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
       document.getElementById('viewCampanas')?.classList.add('hidden');
       campanasData = [];
       campaignStatsMap = new Map();
@@ -1800,7 +1842,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       if (helpButton) helpButton.classList.toggle('hidden', false);
       document.querySelectorAll('[data-admin-only]').forEach(el => el.classList.toggle('hidden', !isAdmin));
       // Trafficker: solo ve la pestaña Campañas.
-      ['tabBtnDashboard', 'tabBtnHistorico', 'tabBtnReporte', 'tabBtnCitas'].forEach(id => {
+      ['tabBtnDashboard', 'tabBtnLeads', 'tabBtnHistorico', 'tabBtnReporte', 'tabBtnCitas'].forEach(id => {
         document.getElementById(id)?.classList.toggle('hidden', isTrafficker);
       });
       document.querySelectorAll('[data-crm-nav]').forEach(button => button.classList.toggle('hidden', isTrafficker));
@@ -2367,24 +2409,27 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     function setDashboardTabState() {
       const btnDash = document.getElementById('tabBtnDashboard');
+      const btnLeads = document.getElementById('tabBtnLeads');
       const btnHist = document.getElementById('tabBtnHistorico');
       const btnReporte = document.getElementById('tabBtnReporte');
       const btnCitas = document.getElementById('tabBtnCitas');
       const btnCamp = document.getElementById('tabBtnCampanas');
       const viewDash = document.getElementById('viewDashboard');
+      const viewLeads = document.getElementById('viewLeads');
       const viewHist = document.getElementById('viewHistorico');
       const viewReporte = document.getElementById('reporteDiario');
       const viewCitas = document.getElementById('viewCitas');
       const viewCamp = document.getElementById('viewCampanas');
-      if (!btnDash || !btnHist || !btnReporte || !btnCitas || !btnCamp || !viewDash || !viewHist || !viewReporte || !viewCitas || !viewCamp) return;
+      if (!btnDash || !btnLeads || !btnHist || !btnReporte || !btnCitas || !btnCamp || !viewDash || !viewLeads || !viewHist || !viewReporte || !viewCitas || !viewCamp) return;
       btnDash.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
-      btnHist.className = btnReporte.className = btnCitas.className = btnCamp.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent";
+      btnLeads.className = btnHist.className = btnReporte.className = btnCitas.className = btnCamp.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent";
       viewDash.classList.remove('hidden');
+      viewLeads.classList.add('hidden');
       viewHist.classList.add('hidden');
       viewReporte.classList.add('hidden');
       viewCitas.classList.add('hidden');
       viewCamp.classList.add('hidden');
-      ['tabBtnDashboard', 'tabBtnHistorico', 'tabBtnReporte', 'tabBtnCitas'].forEach(id => {
+      ['tabBtnDashboard', 'tabBtnLeads', 'tabBtnHistorico', 'tabBtnReporte', 'tabBtnCitas'].forEach(id => {
         document.getElementById(id)?.classList.toggle('hidden', isTrafficker);
       });
     }
@@ -2393,44 +2438,50 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     function switchTab(tab) {
       currentMainTab = tab;
       const btnDash = document.getElementById('tabBtnDashboard');
+      const btnLeads = document.getElementById('tabBtnLeads');
       const btnHist = document.getElementById('tabBtnHistorico');
       const btnReporte = document.getElementById('tabBtnReporte');
       const btnCitas = document.getElementById('tabBtnCitas');
       const btnCamp = document.getElementById('tabBtnCampanas');
       const viewDash = document.getElementById('viewDashboard');
+      const viewLeads = document.getElementById('viewLeads');
       const viewHist = document.getElementById('viewHistorico');
       const viewReporte = document.getElementById('reporteDiario');
       const viewCitas = document.getElementById('viewCitas');
       const viewCamp = document.getElementById('viewCampanas');
-      if (!btnDash || !btnHist || !btnReporte || !btnCitas || !btnCamp || !viewDash || !viewHist || !viewReporte || !viewCitas || !viewCamp) return;
+      if (!btnDash || !btnLeads || !btnHist || !btnReporte || !btnCitas || !btnCamp || !viewDash || !viewLeads || !viewHist || !viewReporte || !viewCitas || !viewCamp) return;
       const inactive = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent";
-      [btnDash, btnHist, btnReporte, btnCitas, btnCamp].forEach(b => b.className = inactive);
+      [btnDash, btnLeads, btnHist, btnReporte, btnCitas, btnCamp].forEach(b => b.className = inactive);
       viewCamp.classList.add('hidden');
 
       if (tab === 'dashboard') {
         setDashboardTabState();
+      } else if (tab === 'leads') {
+        btnLeads.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
+        viewDash.classList.add('hidden'); viewLeads.classList.remove('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden');
       } else if (tab === 'campanas') {
         btnCamp.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
-        viewDash.classList.add('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden'); viewCamp.classList.remove('hidden');
+        viewDash.classList.add('hidden'); viewLeads.classList.add('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden'); viewCamp.classList.remove('hidden');
         initCampanas();
       } else if (tab === 'reporte') {
         btnReporte.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
-         viewDash.classList.add('hidden'); viewHist.classList.add('hidden'); viewCitas.classList.add('hidden'); viewReporte.classList.remove('hidden');
+         viewDash.classList.add('hidden'); viewLeads.classList.add('hidden'); viewHist.classList.add('hidden'); viewCitas.classList.add('hidden'); viewReporte.classList.remove('hidden');
          setReporteVista(reporteVistaActiva);
       } else if (tab === 'citas') {
         btnCitas.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
-        viewDash.classList.add('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.remove('hidden'); initCitasPanel();
+        viewDash.classList.add('hidden'); viewLeads.classList.add('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.remove('hidden'); initCitasPanel();
       } else {
         btnHist.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
         viewDash.classList.add('hidden');
+        viewLeads.classList.add('hidden');
         viewHist.classList.remove('hidden');
          viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden');
         prepareHistoricalAnalytics();
       }
 
-      [btnDash, btnHist, btnReporte, btnCitas].forEach(button => button.classList.toggle('hidden', isTrafficker));
+      [btnDash, btnLeads, btnHist, btnReporte, btnCitas].forEach(button => button.classList.toggle('hidden', isTrafficker));
       if (window.matchMedia?.('(max-width: 639px)').matches) {
-        const activeButton = { dashboard: btnDash, historico: btnHist, reporte: btnReporte, citas: btnCitas, campanas: btnCamp }[tab];
+        const activeButton = { dashboard: btnDash, leads: btnLeads, historico: btnHist, reporte: btnReporte, citas: btnCitas, campanas: btnCamp }[tab];
         const tabsNav = activeButton?.parentElement;
         if (tabsNav && !activeButton.classList.contains('hidden')) {
           tabsNav.scrollTo({ left: activeButton.offsetLeft - tabsNav.offsetLeft - 8, behavior: 'smooth' });
@@ -2721,7 +2772,36 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       }
     }
 
-    function renderCitas() { const result=document.getElementById('citasResultado')?.value||'', camp=document.getElementById('citasCampana')?.value||'', medio=document.getElementById('citasMedio')?.value||'', advisor=isAdmin || isSupervisor?(document.getElementById('citasAsesor')?.value||''):''; const sede=document.getElementById('citasSede')?.value||'';const rows=citasCache.filter(r=>(!result||r.status===result)&&(!camp||getField(r.lead,'Campaña')===camp)&&(!sede||(sede==='sin' ? !r.campus : r.campus===sede))&&(!medio||getField(r.lead,'Medio')===medio)&&(!advisor||r.advisor_name===advisor)); const counts=Object.fromEntries(['PROGRAMADA','ASISTIO','NO_ASISTIO','CANCELADA','REPROGRAMADA'].map(s=>[s,rows.filter(r=>r.status===s).length])), denom=counts.ASISTIO+counts.NO_ASISTIO; document.getElementById('citasKpis').innerHTML=[['Total citas',rows.length],...Object.entries(counts).map(([k,v])=>[k,v]),['Doral',rows.filter(r=>r.campus==='DORAL'&&!r.is_data_dura).length],['Doral Data Dura',rows.filter(r=>r.campus==='DORAL'&&r.is_data_dura===true).length],['Weston',rows.filter(r=>r.campus==='WESTON'&&!r.is_data_dura).length],['Weston Data Dura',rows.filter(r=>r.campus==='WESTON'&&r.is_data_dura===true).length],['Sin sede (históricas)',rows.filter(r=>!r.campus).length],['Tasa asistencia',(denom?counts.ASISTIO/denom*100:0).toFixed(1)+'%']].map(x=>`<div class="rounded-lg border border-slate-700 bg-slate-800/60 p-3"><div class="text-[11px] text-slate-400">${escapeHtml(x[0])}</div><strong class="text-lg text-white">${escapeHtml(String(x[1]))}</strong></div>`).join(''); document.getElementById('citasCount').textContent=`${rows.length} citas`; document.getElementById('citasTableBody').innerHTML=rows.length?rows.map(r=>{const l=r.lead, id=Number(l?.id); return `<tr><td class="p-3"><span class="block font-medium">${escapeHtml(appointmentLocal(r.scheduled_at))}</span><span class="block text-[11px] text-slate-500">Cita creada: ${escapeHtml(appointmentLocal(r.created_at))}</span></td><td class="p-3">${escapeHtml(getField(l,'Nombre'))}<br>${escapeHtml(getField(l,'Telefono'))}</td><td class="p-3">${escapeHtml(r.student_name||'-')}</td><td class="p-3">${escapeHtml(r.contact_email||'-')}</td><td class="p-3">${escapeHtml(r.student_age!=null?String(r.student_age):'-')}</td><td class="p-3">${escapeHtml(r.campus||'Sin sede')}</td><td class="p-3">${escapeHtml(r.advisor_name)}</td><td class="p-3">${escapeHtml(getField(l,'Campaña'))}</td><td class="p-3">${escapeHtml(getField(l,'Mes'))}</td><td class="p-3">${escapeHtml(r.status)}</td><td class="p-3">${Number.isInteger(id)&&id>0?`<button onclick="openViewLeadModal(${id},'actual')" class="text-indigo-400 hover:underline">Ver ficha</button>${(isAdmin || r.advisor_user_id === currentUser?.id) ? `<button onclick="editAppointmentDetails(${r.id})" class="block text-indigo-400 hover:underline">Editar datos</button>` : ''}${isAdmin ? `<button onclick="deleteLeadAppointment(${r.id})" class="block text-rose-400 hover:underline">Eliminar cita</button>` : ''}`:''}</td></tr>`}).join(''):'<tr><td colspan="11" class="appointments-empty"><p class="text-sm font-semibold">No hay citas para los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otras fechas o limpia los filtros.</p><button type="button" onclick="resetCitasFilters()">Limpiar filtros</button></td></tr>'; if (citasViewMode !== 'lista') updateCitasCalendar(rows); }
+    // Fase 5: KPIs compactos de Citas. 4 indicadores principales visibles y el
+    // resto en un desglose colapsable por estado y sede. Funcion separada de
+    // renderCitas (escrita en varias lineas) para no editar su cuerpo de una
+    // sola linea, donde un comentario // rompe el cierre y deja la pantalla
+    // en blanco (regresion ya corregida).
+    function renderCitasKpis(rows, counts, denom) {
+      const card = (label, value) => `<div class="rounded-lg border border-slate-700 bg-slate-800/60 p-3"><div class="text-[11px] text-slate-400">${escapeHtml(label)}</div><strong class="text-lg text-white">${escapeHtml(String(value))}</strong></div>`;
+      const principales = [
+        card('Total citas', rows.length),
+        card('Programadas', counts.PROGRAMADA || 0),
+        card('Asistieron', counts.ASISTIO || 0),
+        card('Tasa asistencia', `${(denom ? counts.ASISTIO / denom * 100 : 0).toFixed(1)}%`)
+      ];
+      const desglose = [
+        card('No asistieron', counts.NO_ASISTIO || 0),
+        card('Canceladas', counts.CANCELADA || 0),
+        card('Reprogramadas', counts.REPROGRAMADA || 0),
+        card('Doral', rows.filter(r => r.campus === 'DORAL' && !r.is_data_dura).length),
+        card('Doral Data Dura', rows.filter(r => r.campus === 'DORAL' && r.is_data_dura === true).length),
+        card('Weston', rows.filter(r => r.campus === 'WESTON' && !r.is_data_dura).length),
+        card('Weston Data Dura', rows.filter(r => r.campus === 'WESTON' && r.is_data_dura === true).length),
+        card('Sin sede (históricas)', rows.filter(r => !r.campus).length)
+      ];
+      const kpis = document.getElementById('citasKpis');
+      if (kpis) kpis.innerHTML = principales.join('');
+      const cuerpo = document.getElementById('sedeBreakdownBody');
+      if (cuerpo) cuerpo.innerHTML = `<details class="mt-1"><summary class="cursor-pointer select-none text-xs text-slate-500 hover:text-indigo-300">Ver desglose por estado y sede</summary><div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">${desglose.join('')}</div></details>`;
+    }
+
+    function renderCitas() { const result=document.getElementById('citasResultado')?.value||'', camp=document.getElementById('citasCampana')?.value||'', medio=document.getElementById('citasMedio')?.value||'', advisor=isAdmin || isSupervisor?(document.getElementById('citasAsesor')?.value||''):''; const sede=document.getElementById('citasSede')?.value||'';const rows=citasCache.filter(r=>(!result||r.status===result)&&(!camp||getField(r.lead,'Campaña')===camp)&&(!sede||(sede==='sin' ? !r.campus : r.campus===sede))&&(!medio||getField(r.lead,'Medio')===medio)&&(!advisor||r.advisor_name===advisor)); const counts=Object.fromEntries(['PROGRAMADA','ASISTIO','NO_ASISTIO','CANCELADA','REPROGRAMADA'].map(s=>[s,rows.filter(r=>r.status===s).length])), denom=counts.ASISTIO+counts.NO_ASISTIO; renderCitasKpis(rows, counts, denom); document.getElementById('citasCount').textContent=`${rows.length} citas`; document.getElementById('citasTableBody').innerHTML=rows.length?rows.map(r=>{const l=r.lead, id=Number(l?.id); return `<tr><td class="p-3"><span class="block font-medium">${escapeHtml(appointmentLocal(r.scheduled_at))}</span><span class="block text-[11px] text-slate-500">Cita creada: ${escapeHtml(appointmentLocal(r.created_at))}</span></td><td class="p-3">${escapeHtml(getField(l,'Nombre'))}<br>${escapeHtml(getField(l,'Telefono'))}</td><td class="p-3">${escapeHtml(r.student_name||'-')}</td><td class="p-3">${escapeHtml(r.contact_email||'-')}</td><td class="p-3">${escapeHtml(r.student_age!=null?String(r.student_age):'-')}</td><td class="p-3">${escapeHtml(r.campus||'Sin sede')}</td><td class="p-3">${escapeHtml(r.advisor_name)}</td><td class="p-3">${escapeHtml(getField(l,'Campaña'))}</td><td class="p-3">${escapeHtml(getField(l,'Mes'))}</td><td class="p-3">${escapeHtml(r.status)}</td><td class="p-3">${Number.isInteger(id)&&id>0?`<button onclick="openViewLeadModal(${id},'actual')" class="text-indigo-400 hover:underline">Ver ficha</button>${(isAdmin || r.advisor_user_id === currentUser?.id) ? `<button onclick="editAppointmentDetails(${r.id})" class="block text-indigo-400 hover:underline">Editar datos</button>` : ''}${isAdmin ? `<button onclick="deleteLeadAppointment(${r.id})" class="block text-rose-400 hover:underline">Eliminar cita</button>` : ''}`:''}</td></tr>`}).join(''):'<tr><td colspan="11" class="appointments-empty"><p class="text-sm font-semibold">No hay citas para los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otras fechas o limpia los filtros.</p><button type="button" onclick="resetCitasFilters()">Limpiar filtros</button></td></tr>'; if (citasViewMode !== 'lista') updateCitasCalendar(rows); }
 
     // sortMonthCatalog, normalizePhone, isNuevoEsteMes, nuevoBadge y formatPhone
     // viven en src/legacy/leads.js (capa 2 del strangler) y llegan via window.
@@ -3180,7 +3260,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
       if (status === "online") {
         dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-        text.innerText = "Supabase en vivo";
+        text.innerText = "Actualizado";
         text.className = "hidden md:inline text-emerald-400 font-semibold";
       } else if (status === "online_empty") {
         dot.className = "w-2 h-2 rounded-full bg-blue-400";
@@ -4066,12 +4146,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
             <div class="text-[11px] text-slate-500">${escapeHtml(mes || '')}</div>
           </td>
           <td class="px-3.5 py-3">
-            <div class="flex items-center gap-1.5">
-              <button onclick="openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" class="text-left font-semibold text-white hover:text-indigo-400 transition-colors cursor-pointer truncate max-w-[170px] block">
+            <div class="flex flex-col gap-1.5">
+              <button onclick="openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" class="font-semibold text-white hover:text-indigo-400 transition-colors cursor-pointer truncate max-w-[190px] block">
                 ${escapeHtml(nombre)}
               </button>
               ${nuevoBadge(lead)}
-              ${originBadge}
             </div>
           </td>
           <td class="px-3.5 py-3 text-slate-300">
@@ -4084,12 +4163,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
               <span class="font-mono text-[11px]">${escapeHtml(telefono || 'S/N')}</span>
             </div>
           </td>
-          <td class="px-3.5 py-3 text-slate-300 truncate max-w-[140px]">${escapeHtml(campana || '-')}</td>
+          <td class="px-3.5 py-3 text-slate-300 truncate max-w-[150px]">${escapeHtml(campana || '-')}</td>
           <td class="px-3.5 py-3 text-slate-400 text-[11px] truncate max-w-[110px]">${escapeHtml(medio || '-')}</td>
-          <td class="px-3.5 py-3">${badgeHtml}</td>
+          <td class="px-3.5 py-3">
+            ${badgeHtml}
+            ${originBadge}
+          </td>
           <td class="px-3.5 py-3 text-slate-300 text-[11px]">${escapeHtml(agente)}</td>
           <td class="px-3.5 py-3 text-right">
-            <div class="flex items-center justify-end gap-1">
+            <div class="flex items-center justify-end gap-1.5">
               <button onclick="openEditLeadModal('${escapeAttr(leadId)}', '${origin}')" title="Editar seguimiento" class="p-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 transition-colors cursor-pointer">
                 <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
               </button>

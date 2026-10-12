@@ -6,8 +6,21 @@ import assert from 'node:assert/strict';
 const mod = await import('../../src/citas-calendar.js');
 
 const { miamiNaive, addMinutesNaive, advisorColor, toMiamiDay } = mod;
+const { createCalendarConfig } = mod;
 
 describe('citas-calendar pure functions', () => {
+  test('createCalendarConfig excluye los callbacks de la config de FullCalendar', () => {
+    // onEventClick/onRangeChange no son opciones nativas: si se filtran al
+    // constructor, FullCalendar emite "Unknown option" en consola.
+    const enEventClick = () => {};
+    const enRangeChange = () => {};
+    const cfg = createCalendarConfig({ onEventClick: enEventClick, onRangeChange: enRangeChange, events: [{ title: 'x' }] });
+    assert.equal('onEventClick' in cfg, false);
+    assert.equal('onRangeChange' in cfg, false);
+    assert.deepEqual(cfg.events, [{ title: 'x' }]);
+    assert.equal(cfg.initialView, 'timeGridWeek');
+  });
+
   test('miamiNaive convierte ISO UTC a naive Miami', () => {
     // 2026-07-15T16:00:00Z en Miami (EDT, UTC-4) = 2026-07-15T12:00
     const result = miamiNaive('2026-07-15T16:00:00Z');

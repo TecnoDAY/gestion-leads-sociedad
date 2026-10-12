@@ -14,6 +14,10 @@ let calendarInstance = null;
  * @returns {object} Configuración completa para new Calendar().
  */
 export function createCalendarConfig(opts = {}) {
+  // onEventClick/onRangeChange no son opciones de FullCalendar: se cablean con
+  // sus nombres nativos (eventClick/datesSet) en ensureCalendar. Excluirlos
+  // aqui evita el aviso "Unknown option" del constructor.
+  const { onEventClick, onRangeChange, ...configOpts } = opts;
   return {
     plugins: [], // se rellena en ensureCalendar tras importar plugins
     initialView: 'timeGridWeek',
@@ -30,7 +34,7 @@ export function createCalendarConfig(opts = {}) {
       startTime: '09:00',
       endTime: '19:00',
     },
-    ...opts,
+    ...configOpts,
   };
 }
 

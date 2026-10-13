@@ -146,3 +146,37 @@ vista tipo calendario tipo Nido Inmuebles conservando la vista lista actual.
 - Última tarea: T3 implementada y verificada read-only
 - Siguiente paso: humano prueba la vista en navegador; decidir gestor canónico (pnpm aquí vs bun.lock del repo); commit solo bajo petición explícita
 - Bloqueos: ninguno
+
+## Reapertura (2026-10-12): el calendario no era visible al entrar
+
+- Feedback del humano: «la sección de citas no me está mostrando el calendario».
+- Diagnóstico con evidencia (Playwright + Chromium headless, auth Supabase mockeada):
+  1. Código íntegro y desplegado: el sitio de producción (12 oct 18:25, commit 088bf07)
+     contiene el módulo del calendario inline y el fix del export nombrado
+     (`[{Calendar:r},...]` en el minificado) — verificado contra el HTML servido.
+  2. Pulsar Día/Semana/Mes SÍ montaba FullCalendar en producción (altura 782 px,
+     título «11 – 17 oct 2026», grid dibujado). La vista funcionaba.
+  3. Causa real: la decisión v1 «Lista por defecto» dejaba el calendario OCULTO
+     hasta un clic en el toggle. Tras la reorganización Fase 5 (título/filtros/KPIs
+     antes del calendario), el humano entra a Citas y no ve ningún calendario.
+- Lección (para no repetir el error): una feature «cerrada» cuyo entregable
+  central queda oculto tras un estado por defecto es un defecto de UX aunque
+  «todo funcione». El chequeo visual pendiente del humano era exactamente la
+  compuerta que lo habría detectado al cierre. Antes de cerrar una feature:
+  validar con el humano la vista por defecto cuando el entregable principal es
+  condicional, y hacer visible su condición (toggle evidente, estado vacío) o
+  abrir por defecto con el entregable a la vista.
+- Fix aplicado (mínimo, reversible):
+  - `citasViewMode` por defecto ahora 'semana' (en móvil <640px la lógica
+    existente fuerza 'dia'); Lista sigue a un clic en el toggle.
+  - Estados iniciales del HTML: `#citasCalendarWrap`/`#citasCalendarNav` visibles
+    y Semana con aria-selected/estilo activo.
+  - `initCitasPanel()` monta el calendario al entrar (`setCitasViewMode(citasViewMode)`)
+    tras la primera carga de datos.
+  - Centro de ayuda actualizado: Citas abre en vista Semana.
+- Verificación: `npm run lint` OK, `npm test` 382 pass / 0 fail, `npm run build` OK.
+  End-to-end en el nuevo dist (auth mockeada): entrar a Citas SIN clics →
+  calendario montado, 2 eventos, leyenda de asesoras, Desde/Hasta sincronizados
+  a la semana visible, sin pageerrors. Captura: /tmp/opencode/cal_local_autenticado.png
+- Pendiente: despliegue a Vercel para que el fix llegue a producción (requiere
+  petición explícita del humano); commit bajo petición.

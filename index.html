@@ -899,14 +899,14 @@
 
       <!-- Barra de vista: Lista / Día / Semana / Mes -->
       <div id="citasViewBar" class="flex flex-wrap items-center gap-2 bg-slate-800/50 border border-slate-700 rounded-lg p-2" role="tablist" aria-label="Vista de citas">
-        <button id="citasViewLista" type="button" role="tab" aria-selected="true" onclick="setCitasViewMode('lista')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-indigo-600 text-white">Lista</button>
+        <button id="citasViewLista" type="button" role="tab" aria-selected="false" onclick="setCitasViewMode('lista')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Lista</button>
         <button id="citasViewDia" type="button" role="tab" aria-selected="false" onclick="setCitasViewMode('dia')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Día</button>
-        <button id="citasViewSemana" type="button" role="tab" aria-selected="false" onclick="setCitasViewMode('semana')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Semana</button>
+        <button id="citasViewSemana" type="button" role="tab" aria-selected="true" onclick="setCitasViewMode('semana')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-indigo-600 text-white">Semana</button>
         <button id="citasViewMes" type="button" role="tab" aria-selected="false" onclick="setCitasViewMode('mes')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Mes</button>
       </div>
 
-      <!-- Navegación del calendario (oculta en modo lista) -->
-      <div id="citasCalendarNav" class="hidden flex items-center justify-between gap-3 bg-slate-800/50 border border-slate-700 rounded-lg p-3">
+      <!-- Navegación del calendario: visible de inicio porque Semana es la vista por defecto -->
+      <div id="citasCalendarNav" class="flex items-center justify-between gap-3 bg-slate-800/50 border border-slate-700 rounded-lg p-3">
         <button type="button" onclick="citasCalendarNav('today')" class="px-3 py-1.5 rounded-md text-xs font-medium bg-slate-700 text-slate-200 hover:bg-slate-600 transition-colors">Hoy</button>
         <div class="flex items-center gap-2">
           <button type="button" onclick="citasCalendarNav('prev')" class="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" aria-label="Período anterior"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
@@ -916,8 +916,8 @@
         <div class="w-20"></div>
       </div>
 
-      <!-- Contenedor del calendario (oculto en modo lista) -->
-      <div id="citasCalendarWrap" class="hidden space-y-3" role="region" aria-label="Calendario de citas" aria-live="polite">
+      <!-- Contenedor del calendario: visible de inicio porque Semana es la vista por defecto -->
+      <div id="citasCalendarWrap" class="space-y-3" role="region" aria-label="Calendario de citas" aria-live="polite">
         <div id="citasCalendarLegend" class="flex flex-wrap items-center gap-3 text-xs text-slate-400" aria-hidden="true"></div>
         <div id="citasCalendar" class="rounded-lg border border-slate-700 bg-slate-800/50 min-h-[70vh] lg:min-h-[42rem]"></div>
         <p id="citasCalendarMsg" class="text-sm text-slate-400 text-center hidden"></p>
@@ -2539,7 +2539,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     function clearCitasResults() { citasRequestGeneration += 1; citasCache=[]; citasRangeKey=''; ['citasKpis','citasTableBody','citasAviso','citasCount'].forEach(id=>document.getElementById(id)?.replaceChildren()); document.getElementById('citasTableBody')?.removeAttribute?.('aria-busy'); ['citasResultado','citasCampana','citasSede','citasMedio','citasAsesor'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';}); }
     function resetCitasFilters() { const [a,b]=citasDateDefaults(); document.getElementById('citasDesde').value=a; document.getElementById('citasHasta').value=b; clearCitasResults(); loadCitas(); }
     function fillCitasSelect(id, values, keep=true) { const e=document.getElementById(id), old=e.value, sorted=sortAlphaEs(values); e.innerHTML='<option value="">Todos</option>'+sorted.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(catalogLabel(v))}</option>`).join(''); if(keep && sorted.includes(old)) e.value=old; }
-    async function initCitasPanel() { const desde=document.getElementById('citasDesde'); if(!desde.value) { const [a,b]=citasDateDefaults(); desde.value=a; document.getElementById('citasHasta').value=b; } if(isAdmin || isSupervisor) document.getElementById('citasAsesorWrap').classList.remove('hidden'); ['citasDesde','citasHasta'].forEach(id=>document.getElementById(id).onchange=loadCitas); ['citasResultado','citasCampana','citasSede','citasMedio','citasAsesor'].forEach(id=>document.getElementById(id).onchange=renderCitas); await loadCitas(); }
+    async function initCitasPanel() { const desde=document.getElementById('citasDesde'); if(!desde.value) { const [a,b]=citasDateDefaults(); desde.value=a; document.getElementById('citasHasta').value=b; } if(isAdmin || isSupervisor) document.getElementById('citasAsesorWrap').classList.remove('hidden'); ['citasDesde','citasHasta'].forEach(id=>document.getElementById(id).onchange=loadCitas); ['citasResultado','citasCampana','citasSede','citasMedio','citasAsesor'].forEach(id=>document.getElementById(id).onchange=renderCitas); await loadCitas(); await setCitasViewMode(citasViewMode); }
     async function loadCitas() {
       if (!supabaseClient || !currentUser || !currentAccess?.activo) return;
       const desde = document.getElementById('citasDesde').value, hasta = document.getElementById('citasHasta').value;
@@ -2591,7 +2591,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     // Estado de vista de citas: 'lista' | 'dia' | 'semana' | 'mes'
-    let citasViewMode = 'lista';
+    // Semana por defecto: el humano reporto que al entrar a Citas no veia el
+    // calendario (quedaba oculto tras el toggle con Lista inicial). El
+    // calendario es el entregable central de la pestana; la tabla Lista sigue
+    // a un clic. En movil <640px setCitasViewMode fuerza vista Dia.
+    let citasViewMode = 'semana';
     let citasCalendarReady = false;
     let citasCurrentRange = { start: '', end: '' };
 

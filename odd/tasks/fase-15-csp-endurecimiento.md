@@ -128,16 +128,18 @@ build no cubren handlers dinamicos).
   reducida y meta con hashes; revision visual del humano confirmada
   ("todo sigue funcionando").
 - ZAP pasivo de esta fase: contra `http://127.0.0.1:4173/` (preview del
-  artefacto, no el dev relajado) con daemon MCP en 8080, evidencia
-  `/tmp/opencode/zap-fase15-4173.log`: en curso al momento del commit
-  (spider 100% con 19 URL y reglas seguras 50001/40100 desactivadas,
-  10038/10055 activas); se registrara al drenar la cola.
+  artefacto, no el dev relajado) con daemon MCP en 8080: INCOMPLETO.
+  Spider llego a 100% (19 URL, reglas seguras 50001/40100 desactivadas,
+  10038/10055 activas) pero el daemon cayo (connection refused) antes de
+  drenar la cola pasiva; no se recolecto alertas y el log no se escribio.
+  Estado: auditoria pendiente de re-escaneo cuando haya daemon; NO se
+  puede declarar limpia. Revision visual del humano confirmada.
 
 ## Progreso
 - Estado: implementada, verificada localmente (suite, lint, build, humo,
   revision visual confirmada) y commit atomo aprobado por el humano
-- Ultima tarea: commit
-- Siguiente paso: registrar resultado ZAP al drenar; push solo con orden
-  explicita; continuar migracion o fase de cierre
-- Bloqueos: sin escaneo autenticado; HMR dev sin validar interactivo
-  (CSP relajada solo dev)
+- Ultima tarea: registro del ZAP de la fase
+- Siguiente paso: re-escaneo ZAP cuando el daemon vuelva; push solo con
+  orden explicita; correccion del reporte diario (ver fase 16)
+- Bloqueos: ZAP daemon caido en el cierre (evidencia incompleta); sin
+  escaneo autenticado; HMR dev sin validar interactivo

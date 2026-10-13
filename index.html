@@ -5420,48 +5420,19 @@ async function deleteLeadAppointment(id) {
     function exportHistoricalSummaryCSV() {
       const { data, rangeActive, excludedNoDate } = filterHistoricalLeads();
 
-      const totalLeads = data.length;
-      const { monthlyStats, activeMonths } = computeHistoricalAggregates(data);
+      // La matriz del CSV (cabecera + filas por mes) vive en
+      // src/legacy/reportes.js y llega via window; aca quedan el aviso de
+      // vacio, la descarga y el toast con el suffix de excluidos.
+      const summary = historicalSummaryCsv(data);
 
-      if (activeMonths.length === 0) {
+      if (summary.months === 0) {
         showToast("No hay registros para exportar", "warning");
         return;
       }
 
-      const headers = ["Mes", "Total Leads", "Agendados", "No Contesta", "Inscritos", "% Conversión", "% del Total", "Campaña Más Fuerte", "Asesor con Más Cierres"];
-      const rows = activeMonths.map(m => {
-        const st = monthlyStats[m];
-        const mConv = st.total > 0 ? ((st.inscritos / st.total) * 100).toFixed(1) : '0.0';
-        const mMonthPct = totalLeads > 0 ? ((st.total / totalLeads) * 100).toFixed(1) : '0.0';
-
-        let topCamp = '-';
-        let topCampCount = 0;
-        Object.entries(st.campanas).forEach(([c, cnt]) => {
-          if (cnt > topCampCount) { topCampCount = cnt; topCamp = c; }
-        });
-
-        let topAg = '-';
-        let topAgCount = 0;
-        Object.entries(st.agentes).forEach(([a, cnt]) => {
-          if (cnt > topAgCount) { topAgCount = cnt; topAg = a; }
-        });
-
-        return [
-          histMonthLabel(m),
-          st.total,
-          st.agendados,
-          st.noContesta,
-          st.inscritos,
-          mConv + '%',
-          mMonthPct + '%',
-          topCamp,
-          topAg
-        ].map(csvReporteField).join(',');
-      });
-
-      downloadCSV([headers.join(','), ...rows].join('\n'), `Historical_Summary_${miamiToday()}.csv`);
+      downloadCSV(summary.csv, `Historical_Summary_${miamiToday()}.csv`);
       const suffix = rangeActive && excludedNoDate > 0 ? ` (${excludedNoDate.toLocaleString()} sin fecha válida excluidos)` : '';
-      showToast(`${activeMonths.length.toLocaleString()} meses exportados a CSV${suffix}`, "success");
+      showToast(`${summary.months.toLocaleString()} meses exportados a CSV${suffix}`, "success");
     }
 
     // -------------------------------------------------------------

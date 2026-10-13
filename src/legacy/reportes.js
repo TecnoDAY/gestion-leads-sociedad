@@ -281,6 +281,54 @@ export function computeHistoricalAggregates(data) {
 }
 
 /**
+ * Resumen historico como CSV completo (cabecera + una fila por mes activo),
+ * con la misma matriz del export original: etiqueta de mes (histMonthLabel),
+ * totales, % conversion, % del total y top campana/agente del agregado.
+ * El empate conserva el primero del recuento (comparador estricto >).
+ * Los meses vacios de estado no activos quedan fuera como en el original.
+ * @param {Array<object>} data Leads ya filtrados por el panel.
+ * @returns {{csv: string, months: number}} csv listo para downloadCSV.
+ */
+export function historicalSummaryCsv(data) {
+  const leids = Array.isArray(data) ? data : [];
+  const { monthlyStats, activeMonths } = computeHistoricalAggregates(leids);
+  const totalLeads = leids.length;
+
+  const headers = ['Mes', 'Total Leads', 'Agendados', 'No Contesta', 'Inscritos', '% Conversión', '% del Total', 'Campaña Más Fuerte', 'Asesor con Más Cierres'];
+  const rows = activeMonths.map(m => {
+    const st = monthlyStats[m];
+    const mConv = st.total > 0 ? ((st.inscritos / st.total) * 100).toFixed(1) : '0.0';
+    const mMonthPct = totalLeads > 0 ? ((st.total / totalLeads) * 100).toFixed(1) : '0.0';
+
+    let topCamp = '-';
+    let topCampCount = 0;
+    Object.entries(st.campanas).forEach(([c, cnt]) => {
+      if (cnt > topCampCount) { topCampCount = cnt; topCamp = c; }
+    });
+
+    let topAg = '-';
+    let topAgCount = 0;
+    Object.entries(st.agentes).forEach(([a, cnt]) => {
+      if (cnt > topAgCount) { topAgCount = cnt; topAg = a; }
+    });
+
+    return [
+      histMonthLabel(m),
+      st.total,
+      st.agendados,
+      st.noContesta,
+      st.inscritos,
+      mConv + '%',
+      mMonthPct + '%',
+      topCamp,
+      topAg,
+    ].map(csvReporteField).join(',');
+  });
+
+  return { csv: [headers.join(','), ...rows].join('\n'), months: activeMonths.length };
+}
+
+/**
  * Filtrado puro del panel historico: campana, agente, ano y rango Desde/Hasta.
  * El rango activo tiene precedencia y anula el filtro de mes; los leads sin
  * fecha parseable se excluyen del rango y se cuentan en excludedNoDate.
@@ -417,6 +465,7 @@ if (typeof window !== 'undefined') {
   window.applyHistoricalFilters = applyHistoricalFilters;
   window.histDateInputToTs = histDateInputToTs;
   window.histRangePresetDates = histRangePresetDates;
+  window.historicalSummaryCsv = historicalSummaryCsv;
   window.historicalFilterOptions = historicalFilterOptions;
   window.totalCanalesVisibles = totalCanalesVisibles;
 }

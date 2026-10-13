@@ -11,7 +11,7 @@ const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayB
 // Helpers de Reportes extraidos a src/legacy/reportes.js
 const reportesMod = await import('../../src/legacy/reportes.js');
 const { parseFechaLead, periodoPresetRange, periodoValidDate, periodoPct,
-  buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines } = reportesMod;
+  buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque } = reportesMod;
 // Helpers del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
 const { withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion } = leadsMod;
@@ -143,7 +143,7 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     // Funciones puras importadas desde src/legacy/helpers.js (extraídas del monolito)
     getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds,
     parseFechaLead, periodoPresetRange, periodoValidDate, periodoPct,
-    buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines,
+    buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
     compareLeadIdsDescending, withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion,
     consolidateLeadsById,
   });

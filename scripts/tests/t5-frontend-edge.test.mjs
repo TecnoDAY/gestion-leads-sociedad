@@ -20,7 +20,7 @@ const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, 
   histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
   periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
   computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
-  buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines } = reportesMod;
+  buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque } = reportesMod;
 // Helpers puros del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
 const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, withOrigin, getLeadOrigin,
@@ -124,7 +124,7 @@ function frontend(extra = {}) {
     histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
     periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
     computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
-    buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines,
+    buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
     // Helpers del area Leads extraidos a src/legacy/leads.js
     sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
     haveSameLeadIds, isAgendadoGestion, validAppointmentId,
@@ -1261,7 +1261,8 @@ test('badge Nuevo: fecha de llegada del mes/año Miami actual, no de otros meses
 test('canal Llamada WhatsApp: etiqueta visible nueva, valor y conteo canónicos intactos', () => {
   assert.match(html, /<option value="Llamada y WhatsApp">Llamada WhatsApp<\/option>/);
   assert.match(html, /\['Llamada y WhatsApp',num\(b\.canales,'llamada_whatsapp'\)\]/);
-  assert.match(html, /'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas'/);
+  // La cabecera del CSV diario vive en src/legacy/reportes.js (fase 16).
+  assert.match(readFileSync('src/legacy/reportes.js', 'utf8'), /'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas'/);
   // El historial traduce el canal almacenado a la nueva etiqueta.
   assert.match(html, /String\(g\.canal \|\| ''\) === 'Llamada y WhatsApp' \? 'Llamada WhatsApp'/);
 });
@@ -2070,14 +2071,17 @@ test('CSV reporte: separa citas nuevas y reprogramadas y suma las columnas visib
   await f.context.loadReporteDiario(); f.context.exportReporteDiarioCSV();
   const rows = decodeCSV(new TextDecoder().decode(await f.downloads[0].blob.arrayBuffer()).slice(1));
   const headers = rows[4], total = rows.at(-1), col = n => Number(total[headers.indexOf(n)]);
-  assert.equal(headers.length, 32); assert.equal(total.length, 32);
+  // Nueva columna coherente con pantalla: 33 cabeceras (fase 16).
+  assert.equal(headers.length, 33); assert.equal(total.length, 33);
   assert.equal(col('Gestiones realizadas'), 2); assert.equal(col('Citas nuevas Doral'), 2); assert.equal(col('Citas nuevas Data Dura Weston'), 2);
   assert.equal(col('Total citas nuevas'), 4); assert.equal(col('Citas reprogramadas hoy'), 6); assert.equal(col('Reprogramadas'), 2);
   assert.equal(headers.includes('Inscritos del día'), false, 'inscripciones fuera del CSV diario');
   assert.equal(col('Pasados a Agendado hoy'), 4); assert.equal(col('Pasados a Agendado Data Dura hoy'), 2);
   assert.equal(col('WhatsApp nuevos hoy'), 2); assert.equal(col('WhatsApp gestionados hoy'), 2); assert.equal(col('Total WhatsApp'), 4);
-  // Total canales solo suma las categorias visibles: 1+1+1+2+0 = 5 por asesora.
+  // Total canales = suma exclusiva de 5 categorias visibles; los buckets
+  // retirados (visita 0, sin_clasificar 0) van juntos en 'Otros o sin canal'.
   assert.equal(col('Total canales'), 10);
+  assert.equal(col('Otros o sin canal'), 0);
   assert.equal(col('Canal Instagram'), 0);
   const panel = f.element('reporteAuto').innerHTML;
   assert.match(panel, /Citas nuevas hoy/);
@@ -2514,8 +2518,10 @@ test('migraciones de cita unica: indice parcial y RPC admin sin privilege escala
 
 test('reporte diario: canales e inscripciones retirados de pantalla y CSV', () => {
   const c = { ...frontend({}).context };
-  // El total mostrado solo suma las categorias que siguen en pantalla.
-  assert.equal(c.totalCanalesVisibles({ llamada: 1, data_dura: 1, llamada_whatsapp: 1, whatsapp: 2, instagram: 0, visita: 3, sin_clasificar: 4, total: 99 }), 5);
+  // totalCanalesVisibles = TODOS los buckets del RPC; los retirados
+  // (visita/sin_clasificar) viajan juntos en la fila 'Otros o sin canal' y
+  // aqui existe como datos, nunca como etiquetas retiradas.
+  assert.equal(c.totalCanalesVisibles({ llamada: 1, data_dura: 1, llamada_whatsapp: 1, whatsapp: 2, instagram: 0, visita: 3, sin_clasificar: 4, total: 99 }), 12);
   for (const vacio of [undefined, null, {}]) assert.equal(c.totalCanalesVisibles(vacio), 0);
 
   // El HTML del reporte ya no ofrece las cinco metricas retiradas.

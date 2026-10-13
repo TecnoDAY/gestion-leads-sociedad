@@ -202,7 +202,10 @@ export function csvReporteField(value) {
  */
 export function totalCanalesVisibles(canales) {
   const c = canales || {};
-  return ['llamada', 'data_dura', 'llamada_whatsapp', 'whatsapp', 'instagram'].reduce((a, k) => a + (Number(c[k]) || 0), 0);
+  // Suma TODOS los buckets de canal que emite daily_management_report
+  // (coherencia del reporte: nada se suma que no se vea; los retirados
+  // 'visita conservatorio' y 'sin canal' viajan juntos en 'Otros o sin canal').
+  return ['llamada', 'data_dura', 'llamada_whatsapp', 'whatsapp', 'instagram', 'visita', 'sin_clasificar'].reduce((a, k) => a + (Number(c[k]) || 0), 0);
 }
 
 /**
@@ -773,6 +776,53 @@ export function periodoCsvLines(summary, actividad, generado) {
   return lines;
 }
 
+/** Columnas numericas del CSV diario en el orden exacto del export original. */
+const DIARIO_KEYS = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosDoral', 'agendadosDoralDura', 'agendadosWeston', 'agendadosWestonDura', 'agendadosTotal', 'reprogramadasHoy', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'agendadosGestionadosDia', 'agendadosGestionadosDura', 'whatsappNuevos', 'whatsappGestionados', 'whatsappTotal', 'canalInstagram', 'canalesOtros', 'canalesTotal'];
+
+/** 'Otros o sin canal': buckets retirados de pantalla, juntos. */
+const numCanalesOtros = c => (Number(c?.visita) || 0) + (Number(c?.sin_clasificar) || 0);
+
+/** Cabecera del CSV diario (33 columnas: ASESORA + 30 numericas + notas).
+ * 'Otros o sin canal' agrega los buckets retirados de pantalla
+ * (visita conservatorio + sin clasificar) para que el total cuadre. */
+const DIARIO_HEADERS = ['Asesora', 'Gestiones realizadas', 'WhatsApp', 'Facebook/Instagram', 'CogniTalking', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Citas nuevas hoy', 'Citas nuevas Data Dura', 'Citas nuevas Doral', 'Citas nuevas Data Dura Doral', 'Citas nuevas Weston', 'Citas nuevas Data Dura Weston', 'Total citas nuevas', 'Citas reprogramadas hoy', 'Visitas registradas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Pasados a Agendado hoy', 'Pasados a Agendado Data Dura hoy', 'WhatsApp nuevos hoy', 'WhatsApp gestionados hoy', 'Total WhatsApp', 'Canal Instagram', 'Otros o sin canal', 'Total canales', 'Problemas', 'Observaciones'];
+
+/**
+ * Resuelve la nota asociada a un bloque del reporte diario con la regla
+ * original: primero por autor_user_id; si el bloque no tiene uid, por
+ * autor_name contra notas sin uid; fallback b.nota; si nada, {}.
+ * @returns {object}
+ */
+export function resolverNotaBloque(bloque, notas) {
+  const uid = bloque.autor_user_id || '';
+  return (notas || []).find(n => (uid && n.autor_user_id === uid) || (!n.autor_user_id && n.autor_name === (bloque.autor_name ?? bloque.advisor))) || bloque.nota || {};
+}
+
+/**
+ * Lineas del CSV del reporte diario (misma estructura del export original).
+ * @param {string} fecha Fecha seleccionada.
+ * @param {string} filtro Nombre visible de la asesora filtrada ('' = todas).
+ * @param {string} generado Fecha Miami del momento (el wrapper evalua miamiToday).
+ * @param {object[]} bloques Datos por asesora en pantalla (reporteDayData).
+ * @param {object[]} notasResueltas Problemas/observaciones ya resueltos por
+ *   el wrapper (DOM primero, nota despues), en el orden de los bloques.
+ * @returns {string[]} Lineas de texto (unir con \\n para downloadCSV).
+ */
+export function diarioCsvLines(fecha, filtro, generado, bloques, notasResueltas) {
+  const lineas = ['Reporte Diario de Trabajo', csvReporteField(`Fecha: ${fecha}`), csvReporteField(`Generado: ${generado} Miami`)];
+  if (filtro) lineas.push(csvReporteField(`Filtro: ${filtro}`));
+  lineas.push('', DIARIO_HEADERS.map(csvReporteField).join(','));
+  const sumas = Object.fromEntries(DIARIO_KEYS.map(k => [k, 0]));
+  bloques.forEach((b, i) => {
+    const p = b.procedencia || {}, l = b.llamadas || {}, c = b.citas || {};
+    const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, l.total, c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.citas_reprogramadas_hoy, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, (b.whatsapp || {}).nuevos, (b.whatsapp || {}).gestionados, (b.whatsapp || {}).total, (b.canales || {}).instagram, numCanalesOtros(b.canales), totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
+    values.forEach((v, n) => { sumas[DIARIO_KEYS[n]] += v; });
+    const nota = notasResueltas[i] || {};
+    lineas.push([b.autor_name ?? b.advisor, ...values, nota.problemas ?? '', nota.observaciones ?? ''].map(csvReporteField).join(','));
+  });
+  lineas.push(['TOTAL', ...DIARIO_KEYS.map(k => sumas[k]), '', ''].map(csvReporteField).join(','));
+  return lineas;
+}
 
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
@@ -807,6 +857,8 @@ if (typeof window !== 'undefined') {
   window.validatePeriodoSummary = validatePeriodoSummary;
   window.validatePeriodoActividad = validatePeriodoActividad;
   window.periodoCsvLines = periodoCsvLines;
+  window.diarioCsvLines = diarioCsvLines;
+  window.resolverNotaBloque = resolverNotaBloque;
   window.historicalFilterOptions = historicalFilterOptions;
   window.totalCanalesVisibles = totalCanalesVisibles;
 }

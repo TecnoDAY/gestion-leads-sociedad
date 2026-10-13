@@ -5538,21 +5538,18 @@ async function deleteLeadAppointment(id) {
     }
 
     // Aviso visible del rango activo y de los registros excluidos sin fecha válida.
+    // Texto puro del aviso en src/legacy/reportes.js; aca solo
+    // visibilidad y escritura del elemento.
     function updateHistRangeNotice(filtered) {
       const notice = document.getElementById('histRangeNotice');
       if (!notice) return;
-      if (!filtered.rangeActive) {
+      const aviso = histRangeNoticeText(filtered);
+      if (!aviso.visible) {
         notice.classList.add('hidden');
         notice.textContent = '';
         return;
       }
-      const parts = [];
-      if (filtered.range.from !== null) parts.push('desde ' + new Date(filtered.range.from).toISOString().slice(0, 10));
-      if (filtered.range.to !== null) parts.push('hasta ' + new Date(filtered.range.to).toISOString().slice(0, 10));
-      parts.push(filtered.data.length.toLocaleString() + ' leads en rango');
-      if (filtered.selectedMes) parts.push('el filtro de mes queda anulado por el rango');
-      if (filtered.excludedNoDate > 0) parts.push(filtered.excludedNoDate.toLocaleString() + ' sin fecha válida excluidos');
-      notice.textContent = 'Rango: ' + parts.join(' · ');
+      notice.textContent = aviso.text;
       notice.classList.remove('hidden');
     }
 

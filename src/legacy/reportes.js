@@ -366,6 +366,29 @@ export function historicalRecordMonth(monthlyStats, activeMonths) {
   return { month: recordMonth, count: recordCount };
 }
 
+/**
+ * Texto del aviso de rango activo del historico. mismo orden y redaccion
+ * del original: desde/hasta, conteo en rango, aviso de mes anulado y
+ * excluidos; separador ' · ' con prefijo 'Rango: '. Invasores devuelven
+ * cero leads o el aviso de invisible sin lanzar.
+ * @param {{rangeActive: boolean, range?: {from: number|null, to: number|null}|null, data?: {length: number}, selectedMes?: string, excludedNoDate?: number}|null} filtered
+ * @returns {{visible: boolean, text: string}}
+ */
+export function histRangeNoticeText(filtered) {
+  const f = filtered || {};
+  if (!f.rangeActive) return { visible: false, text: '' };
+  const range = f.range || { from: null, to: null };
+  const parts = [];
+  if (range.from !== null) parts.push('desde ' + new Date(range.from).toISOString().slice(0, 10));
+  if (range.to !== null) parts.push('hasta ' + new Date(range.to).toISOString().slice(0, 10));
+  const count = Array.isArray(f.data) ? f.data.length : 0;
+  parts.push(count.toLocaleString() + ' leads en rango');
+  if (f.selectedMes) parts.push('el filtro de mes queda anulado por el rango');
+  const excluded = typeof f.excludedNoDate === 'number' ? f.excludedNoDate : 0;
+  if (excluded > 0) parts.push(excluded.toLocaleString() + ' sin fecha válida excluidos');
+  return { visible: true, text: 'Rango: ' + parts.join(' · ') };
+}
+
 
 /**
  * Filtrado puro del panel historico: campana, agente, ano y rango Desde/Hasta.
@@ -507,6 +530,7 @@ if (typeof window !== 'undefined') {
   window.historicalSummaryCsv = historicalSummaryCsv;
   window.historicalKpiTotals = historicalKpiTotals;
   window.historicalRecordMonth = historicalRecordMonth;
+  window.histRangeNoticeText = histRangeNoticeText;
   window.historicalFilterOptions = historicalFilterOptions;
   window.totalCanalesVisibles = totalCanalesVisibles;
 }

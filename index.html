@@ -2587,28 +2587,19 @@
       const { data, error } = await fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id,lead_id,scheduled_at,created_at,status,advisor_name,advisor_user_id,student_name,contact_email,student_age,campus,is_data_dura').gte('scheduled_at', startISO).lt('scheduled_at', endISO));
       if (!valid()) return;
       if (error) return showLoadError('No se pudo cargar citas. Verifica que la migración esté aplicada.');
-      const rows = (data || []).sort((a, b) => String(b.scheduled_at).localeCompare(String(a.scheduled_at)) || Number(b.id) - Number(a.id));
+      // Orden y union cita-lead son puros (src/legacy/citas.js, fase 18).
+      const rows = ordenarCitasDesc(data || []);
       const ids = [...new Set(rows.map(r => r.lead_id).filter(Boolean))];
-      let leads = [], missingLeads = 0, archivedLeads = 0;
+      let leads = [];
       if (ids.length) {
         const res = await fetchRowsByIds('leads', 'id,Nombre,Telefono,Campaña,Medio,Mes,archived_at', ids);
         if (!valid()) return;
         if (res.error) { console.warn('No se pudo cargar los leads de las citas:', res.error); return showLoadError('No se pudieron cargar los datos de los leads asociados a las citas.'); }
         leads = res.data || [];
       }
-      const activeLeads = leads.filter(l => !l.archived_at);
-      const archivedSet = new Set(leads.filter(l => l.archived_at).map(l => String(l.id)));
-      const map = new Map(activeLeads.map(l => [String(l.id), l]));
-      citasCache = rows.filter(r => {
-        if (!r.lead_id) return false;
-        if (archivedSet.has(String(r.lead_id))) { archivedLeads++; return false; }
-        if (!map.has(String(r.lead_id))) { missingLeads++; return false; }
-        return true;
-      }).map(r => ({ ...r, lead: map.get(String(r.lead_id)) }));
-      const parts = [];
-      if (missingLeads) parts.push(`${missingLeads} cita(s) sin lead asociado`);
-      if (archivedLeads) parts.push(`${archivedLeads} cita(s) de lead(s) archivado(s)`);
-      document.getElementById('citasAviso').textContent = parts.length ? 'Omitidas: ' + parts.join('; ') + '.' : '';
+      const { citas, aviso } = unirCitasConLeads(rows, leads);
+      document.getElementById('citasAviso').textContent = aviso;
+      citasCache = citas;
       citasRangeKey = key;
       fillCitasSelect('citasCampana', catalogOptions('campana', citasCache.map(r => getField(r.lead, 'Campaña')).filter(Boolean)));
       fillCitasSelect('citasMedio', catalogOptions('medio', citasCache.map(r => getField(r.lead, 'Medio')).filter(Boolean)));

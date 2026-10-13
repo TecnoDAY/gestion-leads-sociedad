@@ -144,6 +144,48 @@ export function filaCitaHtml(r, { isAdmin, userId } = { isAdmin: false, userId: 
 /** Marcado exacto del cuerpo vacio de la tabla de citas. */
 export const CITAS_TABLA_VACIA = '<tr><td colspan="11" class="appointments-empty"><p class="text-sm font-semibold">No hay citas para los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otras fechas o limpia los filtros.</p><button type="button" data-ev="click:resetCitasFilters()">Limpiar filtros</button></td></tr>';
 
+/**
+ * Ordena citas por scheduled_at descendente y empate por id descendente,
+ * sin mutar la entrada (regla original del wrapper de loadCitas).
+ * @param {object[]} filas
+ * @returns {object[]}
+ */
+export function ordenarCitasDesc(filas) {
+  return [...(filas || [])].sort((a, b) => String(b.scheduled_at).localeCompare(String(a.scheduled_at)) || Number(b.id) - Number(a.id));
+}
+
+/**
+ * Reune citas con sus leads activos con la semantica original: filas sin
+ * lead_id se descuentan en silencio; archivados y faltantes cuentan y se
+ * avisan en el orden fijo (sin lead, luego archivadas).
+ * @param {object[]} filas Citas del RPC (pueden venir desordenadas).
+ * @param {object[]|null} leads Leades consultados por id (con archived_at).
+ * @returns {{citas: object[], omitidas: {sinLead: number, archivadas: number}, aviso: string}}
+ */
+export function unirCitasConLeads(filas, leads) {
+  const todas = leads || [];
+  const activos = todas.filter(l => !l.archived_at);
+  const archivados = new Set(todas.filter(l => l.archived_at).map(l => String(l.id)));
+  const map = new Map(activos.map(l => [String(l.id), l]));
+  let sinLead = 0, archivadas = 0;
+  const citas = (filas || []).filter(r => {
+    if (!r.lead_id) return false;
+    if (archivados.has(String(r.lead_id))) {
+      archivadas++;
+      return false;
+    }
+    if (!map.has(String(r.lead_id))) {
+      sinLead++;
+      return false;
+    }
+    return true;
+  }).map(r => ({ ...r, lead: map.get(String(r.lead_id)) }));
+  const partes = [];
+  if (sinLead) partes.push(`${sinLead} cita(s) sin lead asociado`);
+  if (archivadas) partes.push(`${archivadas} cita(s) de lead(s) archivado(s)`);
+  return { citas, omitidas: { sinLead, archivadas }, aviso: partes.length ? 'Omitidas: ' + partes.join('; ') + '.' : '' };
+}
+
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
   window.appointmentDate = appointmentDate;  window.appointmentInputISO = appointmentInputISO;
@@ -156,4 +198,6 @@ if (typeof window !== 'undefined') {
   window.conteoCitas = conteoCitas;
   window.filaCitaHtml = filaCitaHtml;
   window.CITAS_TABLA_VACIA = CITAS_TABLA_VACIA;
+  window.ordenarCitasDesc = ordenarCitasDesc;
+  window.unirCitasConLeads = unirCitasConLeads;
 }

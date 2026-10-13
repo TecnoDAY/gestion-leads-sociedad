@@ -13,7 +13,7 @@ const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayB
   compareLeadIdsDescending, consolidateLeadsById } = legacyMod;
 // Funciones puras del area Citas extraidas a src/legacy/citas.js
 const citasMod = await import('../../src/legacy/citas.js');
-const { appointmentDate, appointmentInputISO, appointmentLocal } = citasMod;
+const { appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc, unirCitasConLeads } = citasMod;
 // Helpers puros de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js
 const reportesMod = await import('../../src/legacy/reportes.js');
 const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
@@ -118,7 +118,7 @@ function frontend(extra = {}) {
     getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel,
     compareLeadIdsDescending, consolidateLeadsById,
     // Helpers del area Citas extraidos a src/legacy/citas.js
-    appointmentDate, appointmentInputISO, appointmentLocal,
+    appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc, unirCitasConLeads,
     // Helpers de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js
     MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
     histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,

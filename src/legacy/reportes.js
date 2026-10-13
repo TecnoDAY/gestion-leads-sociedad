@@ -226,6 +226,61 @@ export function campaignTotals(rows) {
   return totals;
 }
 
+// Agregación mensual compartida por render y export CSV (cierra la deuda de historicos-mensuales T3).
+// Devuelve también contadores de estados/campañas y el embudo usados por los gráficos.
+// T5: la clave es año-mes ('2026-03'; ENERO 2025 ≠ ENERO 2026). Sin fecha
+// válida se agrupa por Mes declarado ('SIN-FECHA·…') u 'OTRO', que siempre
+// aparece si tiene datos.
+// No cambia la semántica de "Agendados" (incluye AGENDAD* sin distinguir
+// canceladas/reprogramadas; pendiente de definición humana).
+export function computeHistoricalAggregates(data) {
+  const monthlyStats = {};
+  const statBucket = key => {
+    if (!monthlyStats[key]) monthlyStats[key] = { total: 0, inscritos: 0, agendados: 0, noContesta: 0, campanas: {}, agentes: {} };
+    return monthlyStats[key];
+  };
+
+  const stateTotals = {};
+  const stateByMonth = {};
+  const campTotals = {};
+  const campByMonth = {};
+  let funnelGestionados = 0;
+
+  data.forEach(l => {
+    const key = histMonthKey(l);
+    const stats = statBucket(key);
+    stats.total++;
+
+    const gestion = normalizeGestion(l);
+    const inscrito = gestion.includes('INSCRIT');
+    if (inscrito) stats.inscritos++;
+    if (gestion.includes('AGENDAD')) stats.agendados++;
+    if (gestion.includes('NO CONTEST')) stats.noContesta++;
+    if (gestion && gestion !== 'INFORMACIÓN' && gestion !== 'INTERESADO') funnelGestionados++;
+
+    const estado = groupGestionEstado(gestion);
+    stateTotals[estado] = (stateTotals[estado] || 0) + 1;
+    if (!stateByMonth[key]) stateByMonth[key] = {};
+    stateByMonth[key][estado] = (stateByMonth[key][estado] || 0) + 1;
+
+    const camp = getField(l, 'Campaña').trim() || 'General';
+    stats.campanas[camp] = (stats.campanas[camp] || 0) + 1;
+    campTotals[camp] = (campTotals[camp] || 0) + 1;
+    if (!campByMonth[key]) campByMonth[key] = {};
+    campByMonth[key][camp] = (campByMonth[key][camp] || 0) + 1;
+
+    const agent = getField(l, 'Agente ').trim() || 'Sin asignar';
+    if (inscrito) {
+      stats.agentes[agent] = (stats.agentes[agent] || 0) + 1;
+    }
+  });
+
+  const activeMonths = sortHistMonthKeys(Object.keys(monthlyStats).filter(k => monthlyStats[k].total > 0));
+
+  return { monthlyStats, activeMonths, stateTotals, stateByMonth, campTotals, campByMonth, funnelGestionados };
+}
+
+
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
   window.MONTH_CHRONO = MONTH_CHRONO;
@@ -245,5 +300,6 @@ if (typeof window !== 'undefined') {
   window.csvReporteField = csvReporteField;
   window.campaignCosteResultado = campaignCosteResultado;
   window.campaignTotals = campaignTotals;
+  window.computeHistoricalAggregates = computeHistoricalAggregates;
   window.totalCanalesVisibles = totalCanalesVisibles;
 }

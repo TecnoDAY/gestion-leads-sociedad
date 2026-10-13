@@ -17,7 +17,8 @@ const { appointmentDate, appointmentInputISO, appointmentLocal } = citasMod;
 const reportesMod = await import('../../src/legacy/reportes.js');
 const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
   histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
-  periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles } = reportesMod;
+  periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
+  computeHistoricalAggregates } = reportesMod;
 // Helpers puros del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
 const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
@@ -56,7 +57,7 @@ const names = [
   'loadCitas', 'clearCitasResults', 'appointmentSessionValid', 'loadLeadAppointments', 'renderCitasKpis',
   'loadLeadNotes', 'loadLeadGestiones', 'loadLeadsByGestionRange', 'loadLeadsByMonth', 'clearDashRange', 'applyFilters', 'resetAllFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
   'activeCatalogValues', 'catalogOptions', 'readHistRange',
-  'filterHistoricalLeads', 'populateHistoricalFilterOptions', 'computeHistoricalAggregates',
+  'filterHistoricalLeads', 'populateHistoricalFilterOptions',
   'loadReporteDiario', 'renderReporteV2', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
   'exportReporteDiarioCSV', 'exportCampanasCSV', 'loadCampanas',
   'saveReporteNota', 'deleteReporteNota', 'reporteNotaErrorMsg',
@@ -118,6 +119,7 @@ function frontend(extra = {}) {
     MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
     histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
     periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
+    computeHistoricalAggregates,
     // Helpers del area Leads extraidos a src/legacy/leads.js
     sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
     haveSameLeadIds, isAgendadoGestion, validAppointmentId,

@@ -22,6 +22,9 @@ const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, 
 const leadsMod = await import('../../src/legacy/leads.js');
 const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
   haveSameLeadIds, isAgendadoGestion } = leadsMod;
+// Centro de ayuda extraido a src/legacy/help.js (seccion 10b del monolito)
+const helpMod = await import('../../src/legacy/help.js');
+const { normalizeHelpText, helpHighlight } = helpMod;
 // validAppointmentId vive en src/legacy/citas.js
 const { validAppointmentId } = citasMod;
 
@@ -67,7 +70,7 @@ const names = [
   'setAppointmentMutationPending', 'updateLeadAppointmentCreateState', 'deleteLeadAppointment',
   'toggleNewAppointmentFields', 'setBlockControls',
   'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn',
-  'normalizeHelpText', 'helpHighlight', 'closeInvalidSession'
+  'closeInvalidSession'
 ];
 const frontendSource = ['let leadAppointmentCreateBlocked = true;', 'let gestionRangeLeads = [], gestionRangeKey = "";', 'let mesRangeLeads = [], mesRangeKey = "";', ...constants, ...names.map(extractFunction)].join('\n');
 
@@ -117,6 +120,8 @@ function frontend(extra = {}) {
     // Helpers del area Leads extraidos a src/legacy/leads.js
     sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
     haveSameLeadIds, isAgendadoGestion, validAppointmentId,
+    // Centro de ayuda extraido a src/legacy/help.js
+    normalizeHelpText, helpHighlight,
     // miamiToday se stubbea en el test para determinismo (2026-09-30)
     miamiToday: () => '2026-09-30',
     supabaseClient: null, currentUser: { id: 'user-test' }, currentAccess: { activo: true, nombre: 'Test', updated_at: 'v1' },
@@ -1253,7 +1258,8 @@ test('canal Llamada WhatsApp: etiqueta visible nueva, valor y conteo canónicos 
 });
 
 test('ayuda: refleja el comportamiento actual y no repite reglas retiradas', () => {
-  const help = html.slice(html.indexOf('const HELP_SECTIONS = ['), html.indexOf('let helpReturnFocus'));
+  // La ayuda vive en src/legacy/help.js (extraida del monolito).
+  const help = readFileSync('src/legacy/help.js', 'utf8');
   // Reglas que ya no aplican: el Mes no se elige a mano y las citas no son privadas.
   assert.doesNotMatch(help, /Elige el Mes de origen del lead/);
   assert.doesNotMatch(help, /solo ves tus propias citas/);
@@ -1278,7 +1284,8 @@ test('ayuda: refleja el comportamiento actual y no repite reglas retiradas', () 
 });
 
 test('ayuda: refleja los KPIs compactos, los cuatro roles y el cierre por inactividad', () => {
-  const help = html.slice(html.indexOf('const HELP_SECTIONS = ['), html.indexOf('let helpReturnFocus'));
+  // La ayuda vive en src/legacy/help.js (extraida del monolito).
+  const help = readFileSync('src/legacy/help.js', 'utf8');
   // Los 12 KPIs ya no se muestran: 4 arriba y el resto en el desglose colapsable.
   assert.match(help, /Total citas, Programadas, Asistieron y Tasa asistencia/);
   assert.match(help, /Ver desglose por estado y sede/);
@@ -1336,7 +1343,8 @@ test('sesión: el cierre por inactividad es local y los cierres de acceso son gl
   assert.match(html, /auth\.signOut\(\{ scope: 'local' \}\)/);
   assert.match(html, /const scope = sessionEndReason === 'idle_timeout' \? 'local' : 'global'/);
   // La ayuda refleja el alcance real del cierre.
-  const help = html.slice(html.indexOf('const HELP_SECTIONS = ['), html.indexOf('let helpReturnFocus'));
+  // La ayuda vive en src/legacy/help.js (extraida del monolito).
+  const help = readFileSync('src/legacy/help.js', 'utf8');
   assert.match(help, /afecta solo al equipo donde se quedó inactivo/);
 });
 

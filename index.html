@@ -1790,7 +1790,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       clearSessionState();
       const generation = sessionGeneration;
       if (supabaseClient) {
-        try { await supabaseClient.auth.signOut(); } catch (_) { /* local cleanup already complete */ }
+        // signOut() sin scope es GLOBAL en supabase-js: revoca la sesion en
+        // todos los dispositivos. El cierre por inactividad es de ESTE
+        // navegador (uno que quedo quieto), asi que debe ser local o tumbaria
+        // tambien el movil y las demas pestanas de la asesora. Los cierres por
+        // sesion caducada o acceso desactivado siguen siendo globales, que es
+        // lo que corresponde cuando el acceso ya no vale en ningun sitio.
+        const scope = sessionEndReason === 'idle_timeout' ? 'local' : 'global';
+        try { await supabaseClient.auth.signOut({ scope }); } catch (_) { /* local cleanup already complete */ }
       }
       if (generation !== sessionGeneration) return;
       try { await pendingEnd; } catch (_) { /* el historial es best-effort */ }
@@ -5616,6 +5623,7 @@ async function deleteLeadAppointment(id) {
           'En Usuarios, cada asesora tiene su propio control "Cierre automático" en una línea aparte: "Desactivar cierre" quita el cierre por inactividad de esa asesora sin desactivar su cuenta; "Desactivar cuenta" sigue bloqueando el acceso en ambos casos.',
           'Una cuenta desactivada pierde el acceso: la sesión se cierra y la pantalla vuelve al inicio de sesión.',
           'El cierre por inactividad solo aplica a asesoras: administrador, supervisores y trafficker no se desconectan por dejar la pantalla quieta.',
+          'El cierre por inactividad afecta solo al equipo donde se quedó inactivo: el móvil y las demás sesiones siguen abiertas.',
           'Los registros históricos de 2025 no admiten cambios desde la aplicación.'
         ]
       }

@@ -67,7 +67,7 @@ const names = [
   'setAppointmentMutationPending', 'updateLeadAppointmentCreateState', 'deleteLeadAppointment',
   'toggleNewAppointmentFields', 'setBlockControls',
   'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn',
-  'normalizeHelpText', 'helpHighlight'
+  'normalizeHelpText', 'helpHighlight', 'closeInvalidSession'
 ];
 const frontendSource = ['let leadAppointmentCreateBlocked = true;', 'let gestionRangeLeads = [], gestionRangeKey = "";', 'let mesRangeLeads = [], mesRangeKey = "";', ...constants, ...names.map(extractFunction)].join('\n');
 
@@ -1310,6 +1310,34 @@ test('ayuda: el resaltado marca el término con o sin acento y escapa el HTML', 
   assert.equal(f.context.helpHighlight('Precio (total) y +mas', '(total)'), 'Precio <mark class="help-hit">(total)</mark> y +mas');
   // normalizeHelpText es la base de la búsqueda insensible a diacríticos.
   assert.equal(f.context.normalizeHelpText('Gestión'), 'gestion');
+});
+
+test('sesión: el cierre por inactividad es local y los cierres de acceso son globales', async () => {
+  // signOut() sin scope es global en supabase-js: tumbaria tambien el movil y
+  // las demas pestanas de la asesora. El guardian de inactividad debe ser local.
+  const llamadas = [];
+  const f = frontend({
+    supabaseClient: { auth: { signOut: async options => { llamadas.push(options?.scope); } } },
+    endAgentSessionLocally: async () => {},
+    clearSessionState: () => {},
+  });
+  await f.context.closeInvalidSession('Tu sesión se cerró por 5 minutos de inactividad.', 'idle_timeout');
+  assert.deepEqual(llamadas, ['local'], 'el cierre por inactividad debe ser local');
+
+  llamadas.length = 0;
+  await f.context.closeInvalidSession('La sesión no está disponible. Inicia sesión de nuevo.', 'session_invalid');
+  assert.deepEqual(llamadas, ['global'], 'una sesión caducada o acceso desactivado sigue siendo global');
+
+  llamadas.length = 0;
+  await f.context.closeInvalidSession();
+  assert.deepEqual(llamadas, ['global'], 'sin motivo explicito se conserva el cierre global');
+
+  // La salida manual ya era local antes: no debe cambiar.
+  assert.match(html, /auth\.signOut\(\{ scope: 'local' \}\)/);
+  assert.match(html, /const scope = sessionEndReason === 'idle_timeout' \? 'local' : 'global'/);
+  // La ayuda refleja el alcance real del cierre.
+  const help = html.slice(html.indexOf('const HELP_SECTIONS = ['), html.indexOf('let helpReturnFocus'));
+  assert.match(help, /afecta solo al equipo donde se quedó inactivo/);
 });
 
 test('inactividad: aviso a 4 min, cierre a 5, multi-pestaña y registro en tabla/RPC dedicadas', () => {

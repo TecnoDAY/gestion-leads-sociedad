@@ -9,7 +9,8 @@ import path from 'node:path';
 
 // Importar funciones puras desde el módulo legacy (extraídas del monolito)
 const legacyMod = await import('../../src/legacy/helpers.js');
-const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel, miamiToday } = legacyMod;
+const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel, miamiToday,
+  compareLeadIdsDescending, consolidateLeadsById } = legacyMod;
 // Funciones puras del area Citas extraidas a src/legacy/citas.js
 const citasMod = await import('../../src/legacy/citas.js');
 const { appointmentDate, appointmentInputISO, appointmentLocal } = citasMod;
@@ -18,10 +19,11 @@ const reportesMod = await import('../../src/legacy/reportes.js');
 const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
   histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
   periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
-  computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries } = reportesMod;
+  computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
+  buildPeriodSummary, validatePeriodoSummary } = reportesMod;
 // Helpers puros del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
-const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
+const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, withOrigin, getLeadOrigin,
   haveSameLeadIds, isAgendadoGestion } = leadsMod;
 // Centro de ayuda extraido a src/legacy/help.js (seccion 10b del monolito)
 const helpMod = await import('../../src/legacy/help.js');
@@ -51,7 +53,7 @@ const constants = ['LEADS_BATCH_SIZE'].map(name => {
 // MONTH_CHRONO y GESTION_STATE_GROUPS viven en src/legacy/reportes.js (extraidos).
 // Funciones que siguen en el script clásico (no extraídas a legacy)
 const names = [
-  'consolidateLeadsById', 'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads', 'getHistoricalBaseLeads', 'updateKpis',
+  'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads', 'getHistoricalBaseLeads', 'updateKpis',
   'fetchRowsByIdCursor', 'fetchPagedResult', 'fetchRowsByIds', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'haveSameLeadIds',
   'performLoadOlderLeads', 'returnToRecentLeads', 'refillLoadedWindow', 'applyRealtimeEvent', 'updateCompleteCacheOnly', 'removeFromCompleteCacheOnly',
   'loadCitas', 'clearCitasResults', 'appointmentSessionValid', 'loadLeadAppointments', 'renderCitasKpis',
@@ -113,6 +115,7 @@ function frontend(extra = {}) {
     isAgendadoGestion: value => value.startsWith('AGENDAD'),
     // Funciones puras importadas desde src/legacy/helpers.js (extraídas del monolito)
     getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel,
+    compareLeadIdsDescending, consolidateLeadsById,
     // Helpers del area Citas extraidos a src/legacy/citas.js
     appointmentDate, appointmentInputISO, appointmentLocal,
     // Helpers de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js
@@ -120,6 +123,7 @@ function frontend(extra = {}) {
     histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
     periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
     computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
+    buildPeriodSummary, validatePeriodoSummary,
     // Helpers del area Leads extraidos a src/legacy/leads.js
     sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
     haveSameLeadIds, isAgendadoGestion, validAppointmentId,

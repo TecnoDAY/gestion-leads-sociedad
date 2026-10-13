@@ -124,6 +124,37 @@ export function miamiDayBounds(fecha) {
   return endISO ? [startISO, endISO] : [null, null];
 }
 
+/**
+ * Orden descendente por id de lead (numerico si ambos lo son, textual si no).
+ * @param {object} a
+ * @param {object} b
+ * @returns {number}
+ */
+export function compareLeadIdsDescending(a, b) {
+  const numericA = Number(a.id);
+  const numericB = Number(b.id);
+  if (Number.isFinite(numericA) && Number.isFinite(numericB)) return numericB - numericA;
+  return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
+}
+
+/**
+ * Deduplica leads por id (el ultimo registro del mismo id pisa los campos
+ * anteriores) y los ordena por id descendente. Lanza si falta el id.
+ * @param {Array<object>} leads
+ * @returns {Array<object>}
+ */
+export function consolidateLeadsById(leads) {
+  const leadsById = new Map();
+  leads.forEach(lead => {
+    if (!lead || lead.id === undefined || lead.id === null) {
+      throw new Error("Supabase devolvió un lead sin id");
+    }
+    const key = String(lead.id);
+    leadsById.set(key, { ...(leadsById.get(key) || {}), ...lead });
+  });
+  return Array.from(leadsById.values()).sort(compareLeadIdsDescending);
+}
+
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== "undefined") {
   window.escapeHtml = escapeHtml;
@@ -134,4 +165,6 @@ if (typeof window !== "undefined") {
   window.sortAlphaEs = sortAlphaEs;
   window.miamiToday = miamiToday;
   window.miamiDayBounds = miamiDayBounds;
+  window.compareLeadIdsDescending = compareLeadIdsDescending;
+  window.consolidateLeadsById = consolidateLeadsById;
 }

@@ -81,18 +81,7 @@ export function formatPhone(value) {
   return trimmed;
 }
 
-/**
- * Orden descendente por id de lead (numerico si ambos lo son, textual si no).
- * @param {object} a
- * @param {object} b
- * @returns {number}
- */
-export function compareLeadIdsDescending(a, b) {
-  const numericA = Number(a.id);
-  const numericB = Number(b.id);
-  if (Number.isFinite(numericA) && Number.isFinite(numericB)) return numericB - numericA;
-  return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
-}
+// compareLeadIdsDescending vive ahora en helpers.js (base generica de ids).
 
 /**
  * Etiqueta el origen del registro ('actual'|'historico') como propiedad no
@@ -145,7 +134,6 @@ if (typeof window !== 'undefined') {
   window.isNuevoEsteMes = isNuevoEsteMes;
   window.nuevoBadge = nuevoBadge;
   window.formatPhone = formatPhone;
-  window.compareLeadIdsDescending = compareLeadIdsDescending;
   window.withOrigin = withOrigin;
   window.getLeadOrigin = getLeadOrigin;
   window.haveSameLeadIds = haveSameLeadIds;

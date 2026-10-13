@@ -6,7 +6,7 @@
  * (registro al final de este modulo); las llamadas quedaron intactas.
  */
 
-import { compareAlphaEs, getField, miamiToday } from './helpers.js';
+import { compareAlphaEs, consolidateLeadsById, getField, miamiToday } from './helpers.js';
 
 // Meses en orden cronologico canonico; nunca alfabetico. Fuente unica.
 export const MONTH_CHRONO = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
@@ -612,6 +612,107 @@ export function historicalFilterOptions(data) {
   };
 }
 
+/**
+ * Resumen del reporte por periodo: consolida leads, filtra por rango de
+ * fechas y arma categorias (catalogo activo + extras no conocidos),
+ * totales y matriz gestion x campana. Valida internamente antes de
+ * publicar. Lanza 'period_range_invalid' si el rango es invalido.
+ * @param {Array<object>} leads
+ * @param {object} catalogs Filas de catalogo por tipo ({medio,campana,gestion}).
+ * @param {string} desde YYYY-MM-DD.
+ * @param {string} hasta YYYY-MM-DD.
+ * @returns {object} Resumen validado.
+ */
+export function buildPeriodSummary(leads, catalogs, desde, hasta) {
+  if (!periodoValidDate(desde) || !periodoValidDate(hasta) || desde > hasta) throw new Error('period_range_invalid');
+  const desdeTs = Date.parse(`${desde}T00:00:00Z`), hastaTs = Date.parse(`${hasta}T00:00:00Z`);
+  const activos = consolidateLeadsById(leads || []).filter(lead => !lead.archived_at);
+  const norma = value => String(value ?? '').trim().toLocaleLowerCase('es');
+  const nuevaCategoria = kind => {
+    const porClave = new Map();
+    for (const row of catalogs?.[kind] || []) {
+      if (!row?.active) continue;
+      const label = String(row.value ?? '').trim();
+      const clave = norma(label);
+      if (!clave || porClave.has(clave)) continue; // duplicado case-insensitive: gana el primero
+      porClave.set(clave, { label, count: 0 });
+    }
+    return porClave;
+  };
+  const categorias = { medio: nuevaCategoria('medio'), campana: nuevaCategoria('campana'), gestion: nuevaCategoria('gestion') };
+  const extras = { medio: new Map(), campana: new Map(), gestion: new Map() };
+  const celdas = new Map();
+  let fechasInvalidas = 0;
+  const seleccion = [];
+  for (const lead of activos) {
+    const ts = parseFechaLead(lead);
+    if (ts === null) { fechasInvalidas++; continue; } // del conjunto cargado, excluidos
+    if (ts >= desdeTs && ts <= hastaTs) seleccion.push(lead);
+  }
+  const registrar = (kind, rawValue) => {
+    const trimmed = String(rawValue ?? '').trim() || 'Sin definir';
+    const clave = norma(trimmed);
+    const catalogo = categorias[kind].get(clave);
+    if (catalogo) { catalogo.count++; return catalogo.label; }
+    let extra = extras[kind].get(clave);
+    if (!extra) { extra = { label: trimmed, count: 0 }; extras[kind].set(clave, extra); }
+    extra.count++;
+    return extra.label;
+  };
+  // Una sola pasada: medios, campañas, gestiones y matriz salen de esta selección.
+  for (const lead of seleccion) {
+    const medio = registrar('medio', getField(lead, 'Medio'));
+    const campana = registrar('campana', getField(lead, 'Campaña'));
+    const gestion = registrar('gestion', getField(lead, 'GESTION'));
+    const clave = `${gestion}\u0000${campana}`;
+    celdas.set(clave, (celdas.get(clave) || 0) + 1);
+  }
+  const lista = kind => {
+    const resto = [...extras[kind].values()];
+    if (!extras[kind].has('sin definir') && !categorias[kind].has('sin definir')) resto.push({ label: 'Sin definir', count: 0 });
+    // Todo orden alfabético (categorías de catálogo y extras juntas).
+    return [...categorias[kind].values(), ...resto].sort((a, b) => compareAlphaEs(a.label, b.label));
+  };
+  const medios = lista('medio'), campanas = lista('campana'), gestiones = lista('gestion');
+  const total = seleccion.length;
+  const matriz = {
+    campanas: campanas.map(r => r.label),
+    filas: gestiones.map(g => ({ label: g.label, counts: campanas.map(c => celdas.get(`${g.label}\u0000${c.label}`) || 0), total: g.count })),
+    totales_columnas: campanas.map(c => c.count),
+  };
+  const summary = { desde, hasta, total, fechas_invalidas: fechasInvalidas, medios, campanas, gestiones, matriz, totales: { medios: total, campanas: total, gestiones: total, matriz: total } };
+  return validatePeriodoSummary(summary, desde, hasta); // comprobaciones internas antes de publicar
+}
+
+/**
+ * Valida la coherencia de un resumen de periodo antes de publicarlo:
+ * totales por categoria igual al total, matriz alineada con categorias y
+ * sumas por fila/columna cuadradas. Lanza mensaje claro si algo no cuadra.
+ * @param {object} data
+ * @param {string} desde
+ * @param {string} hasta
+ * @returns {object} El mismo data si es valido.
+ */
+export function validatePeriodoSummary(data, desde, hasta) {
+  const fail = () => { throw new Error('Los totales del reporte no coinciden o la respuesta es inválida. Actualiza e informa al administrador si persiste.'); };
+  const count = n => Number.isSafeInteger(n) && n >= 0;
+  const sum = rows => rows.reduce((total, row) => total + row.count, 0);
+  if (!data || data.desde !== desde || data.hasta !== hasta || !count(data.total) || !count(data.fechas_invalidas)) fail();
+  for (const key of ['medios', 'campanas', 'gestiones']) {
+    const rows = data[key];
+    if (!Array.isArray(rows) || !rows.length || rows.some(r => !r || typeof r.label !== 'string' || !count(r.count)) || new Set(rows.map(r => r.label.toLowerCase())).size !== rows.length || sum(rows) !== data.total || data.totales?.[key] !== data.total) fail();
+  }
+  const m = data.matriz;
+  if (!m || !Array.isArray(m.campanas) || !Array.isArray(m.filas) || !Array.isArray(m.totales_columnas) || m.campanas.length !== data.campanas.length || m.filas.length !== data.gestiones.length || m.totales_columnas.length !== m.campanas.length || data.totales?.matriz !== data.total) fail();
+  m.filas.forEach((row, i) => {
+    if (!row || row.label !== data.gestiones[i].label || !Array.isArray(row.counts) || row.counts.length !== m.campanas.length || !row.counts.every(count) || row.total !== row.counts.reduce((a, b) => a + b, 0) || row.total !== data.gestiones[i].count) fail();
+  });
+  m.campanas.forEach((label, i) => {
+    if (label !== data.campanas[i].label || m.totales_columnas[i] !== data.campanas[i].count || m.filas.reduce((total, r) => total + r.counts[i], 0) !== m.totales_columnas[i]) fail();
+  });
+  return data;
+}
+
 
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
@@ -642,6 +743,8 @@ if (typeof window !== 'undefined') {
   window.historicalRecordMonth = historicalRecordMonth;
   window.histRangeNoticeText = histRangeNoticeText;
   window.historicalChartSeries = historicalChartSeries;
+  window.buildPeriodSummary = buildPeriodSummary;
+  window.validatePeriodoSummary = validatePeriodoSummary;
   window.historicalFilterOptions = historicalFilterOptions;
   window.totalCanalesVisibles = totalCanalesVisibles;
 }

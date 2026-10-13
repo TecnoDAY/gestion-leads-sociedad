@@ -99,6 +99,51 @@ export function citasEventsFromRows(rows) {
  */
 export function validAppointmentId(value) { const id = Number(value); return Number.isFinite(id) && Number.isInteger(id) && id > 0 ? id : null; }
 
+/** Estados canonicos que la tabla de citas resalta por separado. */
+const ESTADOS_CITAS = ['PROGRAMADA', 'ASISTIO', 'NO_ASISTIO', 'CANCELADA', 'REPROGRAMADA'];
+
+/**
+ * Filtra la cache de citas con las mismas 5 condiciones de renderCitas,
+ * en el mismo orden (status, campana del lead, sede con especial 'sin',
+ * medio del lead y asesora). Un filtro vacio no filtra.
+ * @param {object[]} citas
+ * @param {{status?:string, campana?:string, sede?:string, medio?:string, advisor?:string}} filtros
+ * @returns {object[]}
+ */
+export function filtrarCitas(citas, filtros) {
+  const { status = '', campana = '', sede = '', medio = '', advisor = '' } = filtros || {};
+  return (citas || []).filter(r => (!status || r.status === status)
+    && (!campana || getField(r.lead, 'Campaña') === campana)
+    && (!sede || (sede === 'sin' ? !r.campus : r.campus === sede))
+    && (!medio || getField(r.lead, 'Medio') === medio)
+    && (!advisor || r.advisor_name === advisor));
+}
+
+/**
+ * Cuenta las citas por los estados canonicos y denom = ASISTIO + NO_ASISTIO.
+ * @returns {{counts: Record<string, number>, denom: number}}
+ */
+export function conteoCitas(rows) {
+  const counts = Object.fromEntries(ESTADOS_CITAS.map(s => [s, (rows || []).filter(r => r.status === s).length]));
+  return { counts, denom: counts.ASISTIO + counts.NO_ASISTIO };
+}
+
+/**
+ * Fila de la tabla de citas con la plantilla exacta del export original.
+ * Los botones viajan via data-ev (fase 15); permisos identicos a hoy:
+ * Editar para admin o asesora de la cita, borrar solo para admin.
+ * @param {object} r Cita con lead incluido.
+ * @param {{isAdmin: boolean, userId: string}} permisos
+ * @returns {string}
+ */
+export function filaCitaHtml(r, { isAdmin, userId } = { isAdmin: false, userId: '' }) {
+  const l = r.lead, id = Number(l?.id);
+  return `<tr><td class="p-3"><span class="block font-medium">${escapeHtml(appointmentLocal(r.scheduled_at))}</span><span class="block text-[11px] text-slate-500">Cita creada: ${escapeHtml(appointmentLocal(r.created_at))}</span></td><td class="p-3">${escapeHtml(getField(l, 'Nombre'))}<br>${escapeHtml(getField(l, 'Telefono'))}</td><td class="p-3">${escapeHtml(r.student_name || '-')}</td><td class="p-3">${escapeHtml(r.contact_email || '-')}</td><td class="p-3">${escapeHtml(r.student_age != null ? String(r.student_age) : '-')}</td><td class="p-3">${escapeHtml(r.campus || 'Sin sede')}</td><td class="p-3">${escapeHtml(r.advisor_name)}</td><td class="p-3">${escapeHtml(getField(l, 'Campaña'))}</td><td class="p-3">${escapeHtml(getField(l, 'Mes'))}</td><td class="p-3">${escapeHtml(r.status)}</td><td class="p-3">${Number.isInteger(id) && id > 0 ? `<button data-ev="click:openViewLeadModal(${id},'actual')" class="text-indigo-400 hover:underline">Ver ficha</button>${(isAdmin || r.advisor_user_id === userId) ? `<button data-ev="click:editAppointmentDetails(${r.id})" class="block text-indigo-400 hover:underline">Editar datos</button>` : ''}${isAdmin ? `<button data-ev="click:deleteLeadAppointment(${r.id})" class="block text-rose-400 hover:underline">Eliminar cita</button>` : ''}` : ''}</td></tr>`;
+}
+
+/** Marcado exacto del cuerpo vacio de la tabla de citas. */
+export const CITAS_TABLA_VACIA = '<tr><td colspan="11" class="appointments-empty"><p class="text-sm font-semibold">No hay citas para los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otras fechas o limpia los filtros.</p><button type="button" data-ev="click:resetCitasFilters()">Limpiar filtros</button></td></tr>';
+
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
   window.appointmentDate = appointmentDate;  window.appointmentInputISO = appointmentInputISO;
@@ -107,4 +152,8 @@ if (typeof window !== 'undefined') {
   window.citasDateDefaults = citasDateDefaults;
   window.citasEventsFromRows = citasEventsFromRows;
   window.validAppointmentId = validAppointmentId;
+  window.filtrarCitas = filtrarCitas;
+  window.conteoCitas = conteoCitas;
+  window.filaCitaHtml = filaCitaHtml;
+  window.CITAS_TABLA_VACIA = CITAS_TABLA_VACIA;
 }

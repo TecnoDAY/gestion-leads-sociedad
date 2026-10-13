@@ -1169,7 +1169,8 @@ test('citas: los tres formularios piden estudiante, correo y edad opcionales', (
   assert.match(html, /<th class="p-3 text-left">Estudiante<\/th>/);
   assert.match(html, /<th class="p-3 text-left">Correo<\/th>/);
   assert.match(html, /<th class="p-3 text-left">Edad<\/th>/);
-  assert.match(html, /data-ev="click:editAppointmentDetails\(\$\{r\.id\}\)"/);
+  // La plantilla de la fila de citas vive en src/legacy/citas.js (fase 17).
+  assert.match(readFileSync('src/legacy/citas.js', 'utf8'), /data-ev="click:editAppointmentDetails\(\$\{r\.id\}\)"/);
   // La ficha consulta los nuevos campos y permite editarlos.
   assert.match(html, /student_name, contact_email, student_age/);
   assert.match(html, /rpc\('update_lead_appointment_details'/);
@@ -1215,7 +1216,7 @@ test('citas: lectura compartida para el equipo y botones de edición solo para a
   assert.match(html, /canEdit = isAdmin \|\| a\.advisor_user_id === currentUser\?\.id/);
   assert.match(html, /\$\{canEdit \? `<button data-appointment-id="\$\{id\}" data-ev="click:editAppointmentDetails/);
   assert.match(html, /\$\{scheduled && canEdit \?/);
-  assert.match(html, /\(isAdmin \|\| r\.advisor_user_id === currentUser\?\.id\) \? `<button data-ev="click:editAppointmentDetails/);
+  assert.match(readFileSync('src/legacy/citas.js', 'utf8'), /\(isAdmin \|\| r\.advisor_user_id === userId\) \? `<button data-ev="click:editAppointmentDetails/);
   // La ficha necesita advisor_user_id para calcular canEdit.
   assert.match(html, /advisor_name, advisor_user_id, notes, rescheduled_from_id/);
 });
@@ -2494,7 +2495,8 @@ test('cita unica: la UI no duplica funciones ni expone el borrado a no-admin', (
   assert.equal(occurrences('loadLeadAppointments'), 1);
   // El boton de borrar solo se emite dentro de una rama de administrador.
   const botones = [...script.matchAll(/data-ev="click:deleteLeadAppointment\(/g)];
-  assert.equal(botones.length, 2, 'uno en la ficha y otro en la tabla de Citas');
+  const botonesCitas = [...readFileSync('src/legacy/citas.js', 'utf8').matchAll(/data-ev="click:deleteLeadAppointment\(/g)];
+  assert.equal(botones.length + botonesCitas.length, 2, 'uno en la ficha y otro en la tabla de Citas');
   for (const match of botones) {
     const previo = script.slice(Math.max(0, match.index - 160), match.index);
     assert.match(previo, /isAdmin \?/, 'el boton de borrar debe quedar tras una comprobacion de isAdmin');

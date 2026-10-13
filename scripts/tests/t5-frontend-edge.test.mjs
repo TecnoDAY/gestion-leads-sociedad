@@ -20,7 +20,7 @@ const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, 
   histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
   periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
   computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
-  buildPeriodSummary, validatePeriodoSummary } = reportesMod;
+  buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines } = reportesMod;
 // Helpers puros del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
 const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, withOrigin, getLeadOrigin,
@@ -66,7 +66,7 @@ const names = [
   'resetReportePeriodo', 'setReporteVista', 'setPeriodoPreset', 'periodoRangeKey',
   'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'renderReportePeriodo', 'exportReportePeriodoCSV', 'initReporteDiario',
   'markPeriodoReportDirty', 'updatePeriodoCsvState', 'upsertLeadInState', 'removeLeadFromState',
-  'loadPeriodoActividad', 'validatePeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
+  'loadPeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
   'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'confirmAppointmentCreation', 'syncNewLeadMes', 'syncNewUltimaGestion',
   'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentCampusFrom',
@@ -123,7 +123,7 @@ function frontend(extra = {}) {
     histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
     periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
     computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
-    buildPeriodSummary, validatePeriodoSummary,
+    buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines,
     // Helpers del area Leads extraidos a src/legacy/leads.js
     sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
     haveSameLeadIds, isAgendadoGestion, validAppointmentId,

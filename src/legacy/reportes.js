@@ -713,6 +713,66 @@ export function validatePeriodoSummary(data, desde, hasta) {
   return data;
 }
 
+/**
+ * Valida la actividad del periodo (RPC management_period_summary): desde/
+ * hasta coinciden, gestiones/canales/citas presentes con conteos enteros no
+ * negativos y filas por estado coherentes. Lanza mensaje claro si no.
+ * @param {object} data
+ * @param {string} desde
+ * @param {string} hasta
+ * @returns {object} El mismo data si es valido.
+ */
+export function validatePeriodoActividad(data, desde, hasta) {
+  const fail = () => { throw new Error('La actividad del período devolvió una respuesta inválida. Actualiza e inténtalo nuevamente.'); };
+  const count = n => Number.isSafeInteger(Number(n)) && Number(n) >= 0;
+  if (!data || data.desde !== desde || data.hasta !== hasta) fail();
+  for (const key of ['gestiones', 'canales', 'citas']) if (!data[key] || typeof data[key] !== 'object') fail();
+  const g = data.gestiones, q = data.canales, c = data.citas;
+  if (![g.total_eventos, g.leads_unicos, g.agendados_normales, g.agendados_data_dura, g.inscritos_normales, g.inscritos_data_dura].every(count)) fail();
+  if (![q.llamadas_normales, q.llamadas_data_dura, q.llamada_whatsapp, q.whatsapp, q.otros].every(count)) fail();
+  if (![c.programadas_normales, c.programadas_data_dura, c.asistieron, c.no_asistieron, c.canceladas, c.reprogramadas, c.doral_normal, c.doral_data_dura, c.weston_normal, c.weston_data_dura, c.sin_sede].every(count)) fail();
+  if (!Array.isArray(g.por_estado) || g.por_estado.some(r => !r || typeof r.label !== 'string' || !count(r.eventos) || !count(r.leads))) fail();
+  return data;
+}
+
+/**
+ * Lineas del CSV del reporte por periodo (misma estructura del export
+ * original): titulo, rango, excluidos, tres bloques de resumen con %,
+ * matriz gestion x campana, actividad (por estado ordenado alfabeticamente),
+ * canales y agenda. Cada campo pasa por csvReporteField; % via periodoPct.
+ * @param {object} summary Resumen validado (buildPeriodSummary).
+ * @param {object} actividad Actividad validada (validatePeriodoActividad).
+ * @param {string} generado Fecha Miami del momento (el wrapper evalua miamiToday).
+ * @returns {string[]} Lineas de texto (unir con \\n para downloadCSV).
+ */
+export function periodoCsvLines(summary, actividad, generado) {
+  const d = summary, a = actividad, lines = [], row = values => lines.push(values.map(csvReporteField).join(','));
+  row(['Reporte por período']);
+  row(['Desde (inclusive)', d.desde, 'Hasta (inclusive)', d.hasta]);
+  row(['Gestión actual; no estado histórico al cierre del período']);
+  row(['Generado (Miami)', generado]);
+  row(['Leads sin fecha válida (excluidos)', d.fechas_invalidas]);
+  for (const [title, rows] of [['Resumen general de leads por entrada (Medio)', d.medios], ['Resumen general de campañas', d.campanas], ['Resumen específico de gestión actual', d.gestiones]]) {
+    row([]); row([title]); row(['Categoría', 'Leads', '%']);
+    rows.forEach(r => row([r.label, r.count, periodoPct(r.count, d.total)]));
+    row(['TOTAL', d.total, periodoPct(d.total, d.total)]);
+  }
+  row([]); row(['Matriz gestión actual × campaña']); row(['Gestión', ...d.matriz.campanas, 'Total']);
+  d.matriz.filas.forEach(r => row([r.label, ...r.counts, r.total]));
+  row(['TOTAL', ...d.matriz.totales_columnas, d.total]);
+  const ga = a.gestiones, qa = a.canales, ca = a.citas;
+  row([]); row(['Actividad realizada en el período (gestiones por fecha trabajada)']); row(['Métrica', 'Cantidad']);
+  row(['Leads únicos gestionados', ga.leads_unicos]); row(['Pasados a Agendado', ga.agendados_normales]); row(['Pasados a Agendado Data Dura', ga.agendados_data_dura]); row(['Pasados a Inscrito', ga.inscritos_normales]); row(['Pasados a Inscrito Data Dura', ga.inscritos_data_dura]); row(['Total de gestiones', ga.total_eventos]);
+  row([]); row(['Gestiones por estado']); row(['Estado', 'Leads únicos', 'Total de gestiones']);
+  [...ga.por_estado].sort((a, b) => compareAlphaEs(a.label, b.label)).forEach(r => row([r.label, r.leads, r.eventos]));
+  row(['Nota: Leads únicos cuenta personas distintas; Total de gestiones suma todos los intentos. Un mismo lead puede repetirse en varios estados, por eso los leads únicos no se suman.']);
+  row([]); row(['Canales de la actividad']); row(['Canal', 'Cantidad']);
+  row(['Llamada y WhatsApp', qa.llamada_whatsapp]); row(['Llamadas', qa.llamadas_normales]); row(['Llamadas Data Dura', qa.llamadas_data_dura]); row(['Otros o sin canal', qa.otros]); row(['WhatsApp', qa.whatsapp]);
+  row([]); row(['Agenda (citas por fecha programada)']); row(['Estado', 'Cantidad']);
+  row(['Asistieron', ca.asistieron]); row(['Canceladas', ca.canceladas]); row(['Doral: programadas normales', ca.doral_normal]); row(['Doral: programadas Data Dura', ca.doral_data_dura]); row(['No asistieron', ca.no_asistieron]); row(['Programadas Data Dura', ca.programadas_data_dura]); row(['Programadas normales', ca.programadas_normales]); row(['Reprogramadas', ca.reprogramadas]); row(['Sin sede (históricas)', ca.sin_sede]); row(['Weston: programadas normales', ca.weston_normal]); row(['Weston: programadas Data Dura', ca.weston_data_dura]);
+  return lines;
+}
+
 
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
@@ -745,6 +805,8 @@ if (typeof window !== 'undefined') {
   window.historicalChartSeries = historicalChartSeries;
   window.buildPeriodSummary = buildPeriodSummary;
   window.validatePeriodoSummary = validatePeriodoSummary;
+  window.validatePeriodoActividad = validatePeriodoActividad;
+  window.periodoCsvLines = periodoCsvLines;
   window.historicalFilterOptions = historicalFilterOptions;
   window.totalCanalesVisibles = totalCanalesVisibles;
 }

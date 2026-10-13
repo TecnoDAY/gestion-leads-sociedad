@@ -11,7 +11,7 @@ const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayB
 // Helpers de Reportes extraidos a src/legacy/reportes.js
 const reportesMod = await import('../../src/legacy/reportes.js');
 const { parseFechaLead, periodoPresetRange, periodoValidDate, periodoPct,
-  buildPeriodSummary, validatePeriodoSummary } = reportesMod;
+  buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines } = reportesMod;
 // Helpers del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
 const { withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion } = leadsMod;
@@ -40,7 +40,7 @@ const names = ['clearSessionState', 'closeInvalidSession', 'validateCurrentSessi
   'loadReportePeriodo', 'renderReportePeriodo',
   'markPeriodoReportDirty', 'updatePeriodoCsvState',
   'resetReportePeriodo', 'setReporteVista', 'setPeriodoPreset', 'periodoRangeKey',
-  'loadPeriodoActividad', 'validatePeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
+  'loadPeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
   'stopIdleTracking', 'endAgentSessionLocally', 'startAgentActivityTracking'];
 const sessionCacheNames = ['loadHistoricoData', 'performLoadHistoricoData', 'loadLeadsData', 'performLoadLeadsData',
   'getExactLeadsCount', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor',
@@ -143,7 +143,7 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     // Funciones puras importadas desde src/legacy/helpers.js (extraídas del monolito)
     getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds,
     parseFechaLead, periodoPresetRange, periodoValidDate, periodoPct,
-    buildPeriodSummary, validatePeriodoSummary,
+    buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines,
     compareLeadIdsDescending, withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion,
     consolidateLeadsById,
   });

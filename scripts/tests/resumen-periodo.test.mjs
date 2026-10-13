@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { consolidateLeadsById } from '../../src/legacy/helpers.js';
-import { buildPeriodSummary, validatePeriodoSummary } from '../../src/legacy/reportes.js';
+import {
+  buildPeriodSummary,
+  csvReporteField,
+  periodoCsvLines,
+  periodoPct,
+  validatePeriodoActividad,
+  validatePeriodoSummary,
+} from '../../src/legacy/reportes.js';
 
 // --- consolidateLeadsById (helpers) ---
 test('consolida por id mas reciente primero y hace merge de campos', () => {
@@ -71,4 +78,69 @@ test('validador lanza si los totales no cuadran', () => {
   const s = buildPeriodSummary(leads, catalogs, '2026-02-01', '2026-02-28');
   const bad = { ...s, total: 99 };
   assert.throws(() => validatePeriodoSummary(bad, '2026-02-01', '2026-02-28'), /no coinciden/);
+});
+
+// --- periodoCsvLines + validatePeriodoActividad (fase 14) ---
+const actividad = {
+  desde: '2026-02-01', hasta: '2026-02-28',
+  gestiones: {
+    total_eventos: 5, leads_unicos: 3, agendados_normales: 2, agendados_data_dura: 1,
+    inscritos_normales: 1, inscritos_data_dura: 0,
+    por_estado: [
+      { label: 'INSCRITO', eventos: 2, leads: 1 },
+      { label: 'AGENDADO C', eventos: 3, leads: 2 },
+    ],
+  },
+  canales: { llamadas_normales: 2, llamadas_data_dura: 1, llamada_whatsapp: 1, whatsapp: 0, otros: 0 },
+  citas: {
+    programadas_normales: 1, programadas_data_dura: 0, asistieron: 1, no_asistieron: 0,
+    canceladas: 0, reprogramadas: 0, doral_normal: 0, doral_data_dura: 0,
+    weston_normal: 1, weston_data_dura: 0, sin_sede: 0,
+  },
+};
+
+test('validatePeriodoActividad aprueba una respuesta coherente y falla alterada', () => {
+  assert.equal(validatePeriodoActividad(actividad, '2026-02-01', '2026-02-28'), actividad);
+  const alterada = { ...actividad, gestiones: { ...actividad.gestiones, total_eventos: -1 } };
+  assert.throws(() => validatePeriodoActividad(alterada, '2026-02-01', '2026-02-28'), /actividad del período/);
+  assert.throws(() => validatePeriodoActividad(actividad, '2026-03-01', '2026-02-28'), /actividad del período/);
+  const malEstado = { ...actividad, gestiones: { ...actividad.gestiones, por_estado: [{ label: 'X', eventos: 'n', leads: 1 }] } };
+  assert.throws(() => validatePeriodoActividad(malEstado, '2026-02-01', '2026-02-28'), /actividad del período/);
+});
+
+test('csv del periodo: cabecera, generado y excluidos en orden', () => {
+  const s = buildPeriodSummary(leads, catalogs, '2026-02-01', '2026-02-28');
+  const lines = periodoCsvLines(s, actividad, '2026-10-13');
+  assert.equal(lines[0], csvReporteField('Reporte por período'));
+  assert.equal(lines[1], [csvReporteField('Desde (inclusive)'), csvReporteField(s.desde), csvReporteField('Hasta (inclusive)'), csvReporteField(s.hasta)].join(','));
+  assert.equal(lines[3], [csvReporteField('Generado (Miami)'), csvReporteField('2026-10-13')].join(','));
+  assert.equal(lines[4], [csvReporteField('Leads sin fecha válida (excluidos)'), csvReporteField(s.fechas_invalidas)].join(','));
+});
+
+test('csv del periodo: tres bloques de resumen con TOTAL y % via periodoPct', () => {
+  const s = buildPeriodSummary(leads, catalogs, '2026-02-01', '2026-02-28');
+  const texto = periodoCsvLines(s, actividad, '2026-10-13');
+  const iMedios = texto.findIndex(t => t.includes('Resumen general de leads por entrada (Medio)'));
+  assert.ok(iMedios > 0);
+  // la fila de cabecera Categoría/Leads/% y el TOTAL cierran cada bloque
+  assert.ok(texto[iMedios + 1].includes('Categoría'));
+  assert.ok(texto.slice(iMedios, iMedios + 6).some(t => t === [csvReporteField('TOTAL'), csvReporteField(s.total), csvReporteField(periodoPct(s.total, s.total))].join(',')));
+  const iMatriz = texto.findIndex(t => t.includes('Matriz gestión actual × campaña'));
+  assert.ok(iMatriz > iMedios);
+  // por_estado sale ordenado alfabeticamente: AGENDADO C antes que INSCRITO
+  const iPorEstado = texto.findIndex(t => t.includes('Gestiones por estado'));
+  const entre = texto.slice(iPorEstado, iPorEstado + 4).join('|');
+  assert.ok(entre.indexOf('AGENDADO C') < entre.indexOf('INSCRITO'));
+  // canales y agenda cierran el documento con su orden exacto
+  assert.ok(texto.some(t => t.includes('Canales de la actividad')));
+  assert.ok(texto.some(t => t.includes('Llamada y WhatsApp')));
+  assert.equal(texto.filter(t => t.includes('Reporte por período')).length, 1);
+});
+
+test('csv del periodo usa siempre campos envueltos por csvReporteField', () => {
+  const s = buildPeriodSummary(leads, catalogs, '2026-02-01', '2026-02-28');
+  const lines = periodoCsvLines(s, actividad, '2026-10-13');
+  // Las lineas separadoras son vacias; el resto empieza y termina entre
+  // comillas (los textos con comas internas romperian un split naive).
+  assert.ok(lines.every(l => l === '' || (l.startsWith('"') && l.endsWith('"'))));
 });

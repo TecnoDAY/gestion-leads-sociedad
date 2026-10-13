@@ -6,7 +6,7 @@
  * (registro al final de este modulo); las llamadas quedaron intactas.
  */
 
-import { getField, miamiToday } from './helpers.js';
+import { compareAlphaEs, getField, miamiToday } from './helpers.js';
 
 // Meses en orden cronologico canonico; nunca alfabetico. Fuente unica.
 export const MONTH_CHRONO = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
@@ -280,6 +280,85 @@ export function computeHistoricalAggregates(data) {
   return { monthlyStats, activeMonths, stateTotals, stateByMonth, campTotals, campByMonth, funnelGestionados };
 }
 
+/**
+ * Filtrado puro del panel historico: campana, agente, ano y rango Desde/Hasta.
+ * El rango activo tiene precedencia y anula el filtro de mes; los leads sin
+ * fecha parseable se excluyen del rango y se cuentan en excludedNoDate.
+ * No muta la entrada; las lecturas del DOM quedan en index.html.
+ * @param {Array<object>} data Leads base (origen actual/historico/todos ya aplicado).
+ * @param {{campana?: string, agente?: string, anio?: string, mes?: string, range?: {from: number|null, to: number|null}|null}} [filters]
+ * @returns {{data: Array<object>, rangeActive: boolean, excludedNoDate: number}}
+ */
+export function applyHistoricalFilters(data, filters = {}) {
+  const campana = filters.campana || '';
+  const agente = filters.agente || '';
+  const anio = filters.anio || '';
+  const mes = filters.mes || '';
+  const range = filters.range || { from: null, to: null };
+  const rangeActive = range.from !== null || range.to !== null;
+
+  let filtered = Array.isArray(data) ? data : [];
+  if (campana) filtered = filtered.filter(l => getField(l, 'Campaña').trim() === campana);
+  if (agente) filtered = filtered.filter(l => getField(l, 'Agente ').trim() === agente);
+  if (anio === 'SIN-FECHA') {
+    filtered = filtered.filter(l => leadReportDate(l) === null);
+  } else if (anio) {
+    filtered = filtered.filter(l => String(leadReportDate(l)?.anio || '') === anio);
+  }
+
+  let excludedNoDate = 0;
+  if (rangeActive) {
+    const inRange = [];
+    filtered.forEach(l => {
+      const ts = parseFechaLead(l);
+      if (ts === null) { excludedNoDate++; return; }
+      if (range.from !== null && ts < range.from) return;
+      if (range.to !== null && ts > range.to) return;
+      inRange.push(l);
+    });
+    filtered = inRange;
+  } else if (mes) {
+    filtered = filtered.filter(l => normalizeLeadMonth(l) === mes);
+  }
+  return { data: filtered, rangeActive, excludedNoDate };
+}
+
+/**
+ * Construye los valores de filtros historicos sin DOM ni HTML. Los agentes
+ * devueltos son los presentes en datos; el wrapper puede unirlos al catalogo
+ * activo mediante catalogOptions antes de renderizarlos.
+ * @param {Array<object>} data
+ * @returns {{campanas: string[], agentes: string[], meses: string[], anios: string[], haySinFecha: boolean}}
+ */
+export function historicalFilterOptions(data) {
+  const campanas = new Set();
+  const agentes = new Set();
+  const meses = new Set();
+  const anios = new Set();
+  let haySinFecha = false;
+
+  (Array.isArray(data) ? data : []).forEach(lead => {
+    const campana = getField(lead, 'Campaña').trim();
+    const agente = getField(lead, 'Agente ').trim();
+    if (campana) campanas.add(campana);
+    if (agente) agentes.add(agente);
+    meses.add(normalizeLeadMonth(lead));
+    const reportDate = leadReportDate(lead);
+    if (reportDate) anios.add(String(reportDate.anio));
+    else haySinFecha = true;
+  });
+
+  const mesesOrdenados = MONTH_CHRONO.filter(month => meses.has(month));
+  if (meses.has('OTRO')) mesesOrdenados.push('OTRO');
+  return {
+    campanas: [...campanas].sort(compareAlphaEs),
+    agentes: [...agentes].sort(compareAlphaEs),
+    meses: mesesOrdenados,
+    anios: [...anios].sort(),
+    haySinFecha,
+  };
+}
+
 
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
@@ -301,5 +380,7 @@ if (typeof window !== 'undefined') {
   window.campaignCosteResultado = campaignCosteResultado;
   window.campaignTotals = campaignTotals;
   window.computeHistoricalAggregates = computeHistoricalAggregates;
+  window.applyHistoricalFilters = applyHistoricalFilters;
+  window.historicalFilterOptions = historicalFilterOptions;
   window.totalCanalesVisibles = totalCanalesVisibles;
 }

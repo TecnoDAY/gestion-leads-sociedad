@@ -5554,7 +5554,9 @@ async function deleteLeadAppointment(id) {
     }
 
     // Filtro común del panel histórico (render y export CSV).
-    // El rango Desde/Hasta tiene precedencia sobre el filtro de mes.
+    // La lógica de filtrado (precedencia rango sobre mes, excluidos sin
+    // fecha) vive en src/legacy/reportes.js y llega via window; aquí solo
+    // se leen los controles del DOM y la base según el origen.
     // T5: respeta el selector de origen (actual/histórico/todos), distingue
     // años (clave año-mes) y añade filtro de año; OTRO se conserva como mes.
     function filterHistoricalLeads() {
@@ -5563,32 +5565,13 @@ async function deleteLeadAppointment(id) {
       const selectedMes = document.getElementById('histFilterMes')?.value || '';
       const selectedAnio = document.getElementById('histFilterAnio')?.value || '';
       const range = readHistRange();
-      const rangeActive = range.from !== null || range.to !== null;
-
-      let data = getHistoricalBaseLeads();
-      if (selectedCampana) data = data.filter(l => getField(l, 'Campaña').trim() === selectedCampana);
-      if (selectedAgente) data = data.filter(l => getField(l, 'Agente ').trim() === selectedAgente);
-      if (selectedAnio === 'SIN-FECHA') {
-        data = data.filter(l => leadReportDate(l) === null);
-      } else if (selectedAnio) {
-        data = data.filter(l => String(leadReportDate(l)?.anio || '') === selectedAnio);
-      }
-
-      let excludedNoDate = 0;
-      if (rangeActive) {
-        const inRange = [];
-        data.forEach(l => {
-          const ts = parseFechaLead(l);
-          if (ts === null) { excludedNoDate++; return; }
-          if (range.from !== null && ts < range.from) return;
-          if (range.to !== null && ts > range.to) return;
-          inRange.push(l);
-        });
-        data = inRange;
-      } else if (selectedMes) {
-        data = data.filter(l => normalizeLeadMonth(l) === selectedMes);
-      }
-
+      const { data, rangeActive, excludedNoDate } = applyHistoricalFilters(getHistoricalBaseLeads(), {
+        campana: selectedCampana,
+        agente: selectedAgente,
+        mes: selectedMes,
+        anio: selectedAnio,
+        range,
+      });
       return { data, range, rangeActive, selectedMes, selectedAnio, excludedNoDate };
     }
 
@@ -5623,49 +5606,32 @@ async function deleteLeadAppointment(id) {
       const currentMes = mesSelect.value;
       const currentAnio = anioSelect?.value || '';
 
-      const campanas = new Set();
-      const agentes = new Set();
-      const meses = new Set();
-      const anios = new Set();
-      let haySinFecha = false;
-
-      getHistoricalBaseLeads().forEach(l => {
-        const c = getField(l, 'Campaña').trim();
-        const a = getField(l, 'Agente ').trim();
-        if (c) campanas.add(c);
-        if (a) agentes.add(a);
-        meses.add(normalizeLeadMonth(l));
-        const r = leadReportDate(l);
-        if (r) anios.add(String(r.anio));
-        else haySinFecha = true;
-      });
+      const options = historicalFilterOptions(getHistoricalBaseLeads());
 
       const campOptions = ['<option value="">Todas las Campañas</option>'];
-      Array.from(campanas).sort(compareAlphaEs).forEach(c => {
+      options.campanas.forEach(c => {
         campOptions.push(`<option value="${escapeAttr(c)}" ${c === currentCamp ? 'selected' : ''}>${escapeHtml(catalogLabel(c))}</option>`);
       });
       campanaSelect.innerHTML = campOptions.join('');
 
       const agentOptions = ['<option value="">Todos los Asesores</option>'];
-      catalogOptions('agente', Array.from(agentes)).forEach(a => {
+      catalogOptions('agente', options.agentes).forEach(a => {
         agentOptions.push(`<option value="${escapeAttr(a)}" ${a === currentAgent ? 'selected' : ''}>${escapeHtml(catalogLabel(a))}</option>`);
       });
       agenteSelect.innerHTML = agentOptions.join('');
 
-      const mesOrder = MONTH_CHRONO.filter(m => meses.has(m));
-      if (meses.has('OTRO')) mesOrder.push('OTRO');
       const mesOptions = ['<option value="">Todos los Meses</option>'];
-      mesOrder.forEach(m => {
+      options.meses.forEach(m => {
         mesOptions.push(`<option value="${escapeAttr(m)}" ${m === currentMes ? 'selected' : ''}>${escapeHtml(catalogLabel(m))}</option>`);
       });
       mesSelect.innerHTML = mesOptions.join('');
 
       if (anioSelect) {
         const anioOptions = ['<option value="">Todos los Años</option>'];
-        [...anios].sort().forEach(y => {
+        options.anios.forEach(y => {
           anioOptions.push(`<option value="${escapeAttr(y)}" ${y === currentAnio ? 'selected' : ''}>${escapeHtml(y)}</option>`);
         });
-        if (haySinFecha) anioOptions.push(`<option value="SIN-FECHA" ${currentAnio === 'SIN-FECHA' ? 'selected' : ''}>Sin fecha</option>`);
+        if (options.haySinFecha) anioOptions.push(`<option value="SIN-FECHA" ${currentAnio === 'SIN-FECHA' ? 'selected' : ''}>Sin fecha</option>`);
         anioSelect.innerHTML = anioOptions.join('');
       }
     }

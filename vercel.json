@@ -25,6 +25,14 @@
           "value": "same-origin"
         },
         {
+          "key": "Cross-Origin-Resource-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "Cross-Origin-Embedder-Policy",
+          "value": "credentialless"
+        },
+        {
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://hkkuyomlcqyxtzblowle.supabase.co; font-src 'self' data:; connect-src 'self' https://hkkuyomlcqyxtzblowle.supabase.co wss://hkkuyomlcqyxtzblowle.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
         }

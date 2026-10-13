@@ -381,6 +381,101 @@ export function historicalRecordMonth(monthlyStats, activeMonths) {
 }
 
 /**
+ * Series de datos de los 8 graficos del panel historico (logica pura).
+ * Recibe los agregados y KPIs ya calculados por el render para no
+ * recomputar. Replica el original: top6 campanas/medios/asesores, top6
+ * estados + 'Otros', top5 campanas mensuales + 'Otras' y embudo fijo.
+ * @param {Array<object>} data Leads ya filtrados por el panel.
+ * @param {object} aggregates Salida de computeHistoricalAggregates.
+ * @param {{totalAgendados?: number, totalInscritos?: number}} kpis Salida de historicalKpiTotals.
+ */
+export function historicalChartSeries(data, aggregates, kpis) {
+  const leids = Array.isArray(data) ? data : [];
+  const agg = aggregates || {};
+  const monthlyStats = agg.monthlyStats || {};
+  const activeMonths = Array.isArray(agg.activeMonths) ? agg.activeMonths : [];
+  const totalLeads = leids.length;
+
+  const monthly = {
+    inscritos: activeMonths.map(k => (monthlyStats[k] || {}).inscritos || 0),
+    total: activeMonths.map(k => (monthlyStats[k] || {}).total || 0),
+    conversion: activeMonths.map(k => {
+      const st = monthlyStats[k] || {};
+      return st.total > 0 ? Number(((st.inscritos / st.total) * 100).toFixed(1)) : 0;
+    }),
+  };
+
+  const campMap = {};
+  leids.forEach(l => {
+    const c = getField(l, 'Campaña').trim() || 'Sin Campaña';
+    if (!campMap[c]) campMap[c] = { total: 0, inscritos: 0 };
+    campMap[c].total++;
+    if (normalizeGestion(l).includes('INSCRIT')) campMap[c].inscritos++;
+  });
+  const sortedCamps = Object.entries(campMap).sort((a, b) => b[1].total - a[1].total).slice(0, 6);
+  const campaigns = {
+    labels: sortedCamps.map(c => c[0]),
+    totals: sortedCamps.map(c => c[1].total),
+    inscritos: sortedCamps.map(c => c[1].inscritos),
+  };
+
+  const medioCounts = {};
+  leids.forEach(l => {
+    const m = getField(l, 'Medio').trim() || 'Directo/Otro';
+    medioCounts[m] = (medioCounts[m] || 0) + 1;
+  });
+  const sortedMedios = Object.entries(medioCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const medios = {
+    labels: sortedMedios.map(m => m[0]),
+    counts: sortedMedios.map(m => m[1]),
+  };
+
+  const agentMap = {};
+  leids.forEach(l => {
+    const a = getField(l, 'Agente ').trim() || 'Sin Asignar';
+    if (!agentMap[a]) agentMap[a] = { total: 0, inscritos: 0 };
+    agentMap[a].total++;
+    if (normalizeGestion(l).includes('INSCRIT')) agentMap[a].inscritos++;
+  });
+  const sortedAgents = Object.entries(agentMap).filter(a => a[0] !== 'Sin Asignar' || a[1].total > 2).sort((a, b) => b[1].inscritos - a[1].inscritos).slice(0, 6);
+  const agents = {
+    labels: sortedAgents.map(a => a[0]),
+    totals: sortedAgents.map(a => a[1].total),
+    inscritos: sortedAgents.map(a => a[1].inscritos),
+  };
+
+  const stacked = (totals, byMonth, n, otherLabel) => {
+    const topNames = Object.entries(totals || {}).sort((a, b) => b[1] - a[1]).slice(0, n).map(e => e[0]);
+    const series = topNames.map(s => ({
+      label: s,
+      data: activeMonths.map(m => ((byMonth || {})[m] && byMonth[m][s]) || 0),
+    }));
+    let other = null;
+    if (Object.keys(totals || {}).length > topNames.length) {
+      other = {
+        label: otherLabel,
+        data: activeMonths.map(m => {
+          const monthStats = (monthlyStats[m] || { total: 0 });
+          const inTop = topNames.reduce((sum, s) => sum + (((byMonth || {})[m] && byMonth[m][s]) || 0), 0);
+          return Math.max(monthStats.total - inTop, 0);
+        }),
+      };
+    }
+    return { series, other };
+  };
+
+  const statesStacked = stacked(agg.stateTotals, agg.stateByMonth, 6, 'Otros');
+  const campsStacked = stacked(agg.campTotals, agg.campByMonth, 5, 'Otras');
+
+  const funnel = {
+    stages: ['Recibidos', 'Gestionados', 'Agendados', 'Inscritos'],
+    values: [totalLeads, agg.funnelGestionados || 0, (kpis && kpis.totalAgendados) || 0, (kpis && kpis.totalInscritos) || 0],
+  };
+
+  return { monthly, campaigns, medios, agents, statesStacked, campsStacked, funnel };
+}
+
+/**
  * Texto del aviso de rango activo del historico. mismo orden y redaccion
  * del original: desde/hasta, conteo en rango, aviso de mes anulado y
  * excluidos; separador ' · ' con prefijo 'Rango: '. Invasores devuelven
@@ -546,6 +641,7 @@ if (typeof window !== 'undefined') {
   window.historicalKpiTotals = historicalKpiTotals;
   window.historicalRecordMonth = historicalRecordMonth;
   window.histRangeNoticeText = histRangeNoticeText;
+  window.historicalChartSeries = historicalChartSeries;
   window.historicalFilterOptions = historicalFilterOptions;
   window.totalCanalesVisibles = totalCanalesVisibles;
 }

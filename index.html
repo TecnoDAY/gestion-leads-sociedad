@@ -5658,6 +5658,12 @@ async function deleteLeadAppointment(id) {
         return;
       }
 
+      // Series puras de los 8 graficos en src/legacy/reportes.js (una sola
+      // fuente de datos); aca solo paletas, opciones y Chart.js.
+      const series = historicalChartSeries(data,
+        { monthlyStats, activeMonths, stateTotals, stateByMonth, campTotals, campByMonth, funnelGestionados },
+        kpis);
+
       const chartTheme = document.documentElement.dataset.theme === 'light' ? { text: '#334155', grid: 'rgba(148, 163, 184, 0.35)' } : { text: '#94a3b8', grid: 'rgba(51, 65, 85, 0.35)' };
       Chart.defaults.color = chartTheme.text;
       Chart.defaults.font.family = '"Plus Jakarta Sans", sans-serif';
@@ -5679,7 +5685,7 @@ async function deleteLeadAppointment(id) {
               {
                 type: 'line',
                 label: 'Inscritos Matriculados',
-                data: activeMonths.map(k => monthlyStats[k].inscritos),
+                data: series.monthly.inscritos,
                 borderColor: '#10b981',
                 backgroundColor: 'rgba(16, 185, 129, 0.15)',
                 borderWidth: 3,
@@ -5690,7 +5696,7 @@ async function deleteLeadAppointment(id) {
               {
                 type: 'bar',
                 label: 'Total Leads Captados',
-                data: activeMonths.map(k => monthlyStats[k].total),
+                data: series.monthly.total,
                 backgroundColor: 'rgba(99, 102, 241, 0.75)',
                 borderRadius: 6,
                 order: 2
@@ -5712,10 +5718,7 @@ async function deleteLeadAppointment(id) {
             labels: labels,
             datasets: [{
               label: 'Tasa de Conversión (%)',
-              data: activeMonths.map(k => {
-                const st = monthlyStats[k];
-                return st.total > 0 ? Number(((st.inscritos / st.total) * 100).toFixed(1)) : 0;
-              }),
+              data: series.monthly.conversion,
               borderColor: '#818cf8',
               backgroundColor: 'rgba(129, 140, 248, 0.12)',
               fill: true,
@@ -5736,21 +5739,13 @@ async function deleteLeadAppointment(id) {
       const ctxCamp = document.getElementById('chartCampaignPerformance');
       if (ctxCamp) {
         if (histCharts.campaign) histCharts.campaign.destroy();
-        const campMap = {};
-        data.forEach(l => {
-          const c = getField(l, 'Campaña').trim() || 'Sin Campaña';
-          if (!campMap[c]) campMap[c] = { total: 0, inscritos: 0 };
-          campMap[c].total++;
-          if (normalizeGestion(l).includes('INSCRIT')) campMap[c].inscritos++;
-        });
-        const sortedCamps = Object.entries(campMap).sort((a, b) => b[1].total - a[1].total).slice(0, 6);
         histCharts.campaign = new Chart(ctxCamp, {
           type: 'bar',
           data: {
-            labels: sortedCamps.map(c => c[0]),
+            labels: series.campaigns.labels,
             datasets: [
-              { label: 'Total Leads', data: sortedCamps.map(c => c[1].total), backgroundColor: 'rgba(59, 130, 246, 0.65)', borderRadius: 4 },
-              { label: 'Inscritos', data: sortedCamps.map(c => c[1].inscritos), backgroundColor: 'rgba(16, 185, 129, 0.85)', borderRadius: 4 }
+              { label: 'Total Leads', data: series.campaigns.totals, backgroundColor: 'rgba(59, 130, 246, 0.65)', borderRadius: 4 },
+              { label: 'Inscritos', data: series.campaigns.inscritos, backgroundColor: 'rgba(16, 185, 129, 0.85)', borderRadius: 4 }
             ]
           },
           options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: commonScales }
@@ -5761,18 +5756,12 @@ async function deleteLeadAppointment(id) {
       const ctxMedio = document.getElementById('chartMedioDistribution');
       if (ctxMedio) {
         if (histCharts.medio) histCharts.medio.destroy();
-        const medioCounts = {};
-        data.forEach(l => {
-          const m = getField(l, 'Medio').trim() || 'Directo/Otro';
-          medioCounts[m] = (medioCounts[m] || 0) + 1;
-        });
-        const sortedMedios = Object.entries(medioCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
         histCharts.medio = new Chart(ctxMedio, {
           type: 'doughnut',
           data: {
-            labels: sortedMedios.map(m => m[0]),
+            labels: series.medios.labels,
             datasets: [{
-              data: sortedMedios.map(m => m[1]),
+              data: series.medios.counts,
               backgroundColor: ['#10b981', '#8b5cf6', '#3b82f6', '#f59e0b', '#ec4899', '#06b6d4'],
               borderColor: '#1e293b',
               borderWidth: 2
@@ -5786,21 +5775,13 @@ async function deleteLeadAppointment(id) {
       const ctxAgent = document.getElementById('chartAgentPerformance');
       if (ctxAgent) {
         if (histCharts.agent) histCharts.agent.destroy();
-        const agentMap = {};
-        data.forEach(l => {
-          const a = getField(l, 'Agente ').trim() || 'Sin Asignar';
-          if (!agentMap[a]) agentMap[a] = { total: 0, inscritos: 0 };
-          agentMap[a].total++;
-          if (normalizeGestion(l).includes('INSCRIT')) agentMap[a].inscritos++;
-        });
-        const sortedAgents = Object.entries(agentMap).filter(a => a[0] !== 'Sin Asignar' || a[1].total > 2).sort((a, b) => b[1].inscritos - a[1].inscritos).slice(0, 6);
         histCharts.agent = new Chart(ctxAgent, {
           type: 'bar',
           data: {
-            labels: sortedAgents.map(a => a[0]),
+            labels: series.agents.labels,
             datasets: [
-              { label: 'Leads Atendidos', data: sortedAgents.map(a => a[1].total), backgroundColor: 'rgba(148, 163, 184, 0.4)', borderRadius: 4 },
-              { label: 'Inscripciones Logradas', data: sortedAgents.map(a => a[1].inscritos), backgroundColor: '#10b981', borderRadius: 4 }
+              { label: 'Leads Atendidos', data: series.agents.totals, backgroundColor: 'rgba(148, 163, 184, 0.4)', borderRadius: 4 },
+              { label: 'Inscripciones Logradas', data: series.agents.inscritos, backgroundColor: '#10b981', borderRadius: 4 }
             ]
           },
           options: { responsive: true, maintainAspectRatio: false, scales: commonScales }
@@ -5821,21 +5802,12 @@ async function deleteLeadAppointment(id) {
       if (ctxStates) {
         if (histCharts.monthlyStates) histCharts.monthlyStates.destroy();
         const statePalette = ['#3b82f6', '#10b981', '#f59e0b', '#f43f5e', '#60a5fa', '#34d399'];
-        const topStates = Object.entries(stateTotals).sort((a, b) => b[1] - a[1]).slice(0, 6).map(e => e[0]);
-        const stateDatasets = topStates.map((s, i) => ({
-          label: s,
-          data: activeMonths.map(m => (stateByMonth[m] && stateByMonth[m][s]) || 0),
+        const stateDatasets = series.statesStacked.series.map((s, i) => ({
+          ...s,
           backgroundColor: statePalette[i]
         }));
-        if (Object.keys(stateTotals).length > topStates.length) {
-          stateDatasets.push({
-            label: 'Otros',
-            data: activeMonths.map(m => {
-              const inTop = topStates.reduce((sum, s) => sum + ((stateByMonth[m] && stateByMonth[m][s]) || 0), 0);
-              return Math.max(monthlyStats[m].total - inTop, 0);
-            }),
-            backgroundColor: 'rgba(100, 116, 139, 0.55)'
-          });
+        if (series.statesStacked.other) {
+          stateDatasets.push({ ...series.statesStacked.other, backgroundColor: 'rgba(100, 116, 139, 0.55)' });
         }
         histCharts.monthlyStates = new Chart(ctxStates, {
           type: 'bar',
@@ -5848,21 +5820,12 @@ async function deleteLeadAppointment(id) {
       if (ctxCampMonth) {
         if (histCharts.monthlyCampaigns) histCharts.monthlyCampaigns.destroy();
         const campPalette = ['#3b82f6', '#f59e0b', '#10b981', '#f43f5e', '#60a5fa'];
-        const topCamps = Object.entries(campTotals).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => e[0]);
-        const campDatasets = topCamps.map((c, i) => ({
-          label: c,
-          data: activeMonths.map(m => (campByMonth[m] && campByMonth[m][c]) || 0),
+        const campDatasets = series.campsStacked.series.map((c, i) => ({
+          ...c,
           backgroundColor: campPalette[i]
         }));
-        if (Object.keys(campTotals).length > topCamps.length) {
-          campDatasets.push({
-            label: 'Otras',
-            data: activeMonths.map(m => {
-              const inTop = topCamps.reduce((sum, c) => sum + ((campByMonth[m] && campByMonth[m][c]) || 0), 0);
-              return Math.max(monthlyStats[m].total - inTop, 0);
-            }),
-            backgroundColor: 'rgba(100, 116, 139, 0.55)'
-          });
+        if (series.campsStacked.other) {
+          campDatasets.push({ ...series.campsStacked.other, backgroundColor: 'rgba(100, 116, 139, 0.55)' });
         }
         histCharts.monthlyCampaigns = new Chart(ctxCampMonth, {
           type: 'bar',
@@ -5875,8 +5838,7 @@ async function deleteLeadAppointment(id) {
       const ctxFunnel = document.getElementById('chartFunnel');
       if (ctxFunnel) {
         if (histCharts.funnel) histCharts.funnel.destroy();
-        const funnelValues = [totalLeads, funnelGestionados, totalAgendados, totalInscritos];
-        const funnelStages = ['Recibidos', 'Gestionados', 'Agendados', 'Inscritos'];
+        const { stages: funnelStages, values: funnelValues } = series.funnel;
         histCharts.funnel = new Chart(ctxFunnel, {
           type: 'bar',
           data: {

@@ -3618,7 +3618,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     }
 
     function activeCatalogValues(kind) {
-      return (catalogRows[kind] || []).filter(r => r.active).map(r => r.value);
+      return catalogosApi.activeCatalogValues(catalogRows, kind);
     }
 
     // Opciones de un filtro: valores activos del catálogo + valores presentes
@@ -3626,12 +3626,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     // catálogo queda oculto aunque aparezca en los leads. Orden de salida:
     // alfabético en español; el kind 'mes' mantiene el orden cronológico.
     function catalogOptions(kind, dataValues) {
-      const known = new Set((catalogRows[kind] || []).map(r => r.value));
-      // Los valores de los datos pueden venir repetidos (p. ej. la misma campaña
-      // en varias citas) y no hay que convertirlos en varias opciones del menú.
-      const extra = (dataValues || []).filter(v => !known.has(v));
-      const all = [...new Set([...activeCatalogValues(kind), ...extra])];
-      return kind === 'mes' ? sortMonthCatalog(all) : sortAlphaEs(all);
+      return catalogosApi.catalogOptions(catalogRows, kind, dataValues);
     }
 
     // Rellena un <select> desde el catálogo preservando la selección actual
@@ -6917,5 +6912,6 @@ async function deleteLeadAppointment(id) {
   <script type="module" src="/src/legacy/reportes.js"></script>
   <script type="module" src="/src/legacy/leads.js"></script>
   <script type="module" src="/src/legacy/help.js"></script>
+  <script type="module" src="/src/legacy/catalogos.js"></script>
 </body>
 </html>

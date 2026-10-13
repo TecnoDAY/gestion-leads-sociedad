@@ -25,6 +25,7 @@ const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescendi
 // Centro de ayuda extraido a src/legacy/help.js (seccion 10b del monolito)
 const helpMod = await import('../../src/legacy/help.js');
 const { normalizeHelpText, helpHighlight } = helpMod;
+const catalogosApi = await import('../../src/legacy/catalogos.js');
 // validAppointmentId vive en src/legacy/citas.js
 const { validAppointmentId } = citasMod;
 
@@ -122,6 +123,7 @@ function frontend(extra = {}) {
     haveSameLeadIds, isAgendadoGestion, validAppointmentId,
     // Centro de ayuda extraido a src/legacy/help.js
     normalizeHelpText, helpHighlight,
+    catalogosApi,
     // miamiToday se stubbea en el test para determinismo (2026-09-30)
     miamiToday: () => '2026-09-30',
     supabaseClient: null, currentUser: { id: 'user-test' }, currentAccess: { activo: true, nombre: 'Test', updated_at: 'v1' },

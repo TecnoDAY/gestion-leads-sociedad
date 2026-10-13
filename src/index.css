@@ -468,33 +468,62 @@
     #reporteAuto .daily-note-actions button { min-height: 2.3rem; border-radius: .6rem; cursor: pointer; }
     #modalHelp { background: rgba(10,20,42,.78); }
     .help-shell { width: min(100%, 53rem); border: 1px solid #e4e7ec; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
-    .help-header { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.2rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: linear-gradient(115deg,#fff 45%,#f0efff); }
+    .help-header { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.2rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: #fff; }
     .help-header h3 { color: #17203b; }
     .help-header p { color: #526174; }
-    .help-searchbar { flex: none; display: flex; align-items: center; gap: .65rem; padding: .9rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: #fff; }
-    .help-searchbar input { min-height: 2.7rem; border: 1px solid #98a2b3; border-radius: .65rem; padding: .65rem .85rem; background: #fff; color: #17203b; }
+    .help-mark { display: grid; place-items: center; flex: none; width: 2.25rem; height: 2.25rem; border-radius: .7rem; background: #eef2ff; border: 1px solid #e0e7ff; color: #4338ca; }
+    .help-meta { flex: none; padding: .25rem .65rem; border-radius: 9999px; border: 1px solid #e4e7ec; background: #f9fafb; color: #526174; font-size: .68rem; font-weight: 700; white-space: nowrap; }
+    .help-searchbar { flex: none; display: flex; align-items: center; gap: .65rem; padding: .9rem 1.5rem 0; background: #fff; }
+    .help-search-field { position: relative; display: flex; align-items: center; flex: 1 1 auto; min-width: 0; }
+    .help-search-icon { position: absolute; left: .85rem; width: 1rem; height: 1rem; color: #667085; pointer-events: none; }
+    .help-searchbar input { width: 100%; min-height: 2.7rem; border: 1px solid #98a2b3; border-radius: .65rem; padding: .65rem .85rem .65rem 2.45rem; background: #fff; color: #17203b; }
+    .help-searchbar input:focus-visible { outline: 2px solid #6366f1; outline-offset: 1px; border-color: #6366f1; }
     .help-searchbar input::placeholder { color: #667085; }
+    .help-results { flex: none; padding: .55rem 1.5rem; background: #fff; color: #667085; font-size: .7rem; font-weight: 600; }
+    .help-index { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; padding: 0 1.5rem .9rem; background: #fff; }
+    .help-index:empty { display: none; }
+    .help-index-label { margin-right: .2rem; font-size: .65rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: #667085; }
+    .help-index-btn { padding: .35rem .7rem; border-radius: 9999px; border: 1px solid #e4e7ec; background: #fff; color: #344054; font-size: .7rem; font-weight: 600; cursor: pointer; }
+    .help-index-btn:hover { background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
+    .help-index-btn:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
     .help-body { min-height: 0; overflow-y: auto; padding: 1.5rem; background: #f7f8fc; }
     #helpContent { display: grid; gap: 1rem; }
     .help-card { border: 1px solid #e4e7ec; border-radius: .9rem; padding: 1.2rem; background: #fff; }
     .help-card h4 { color: #17203b; }
     .help-card > p { color: #526174; }
-    .help-card ol li > span:last-child { color: #344054; }
-    .help-card ol li > span:first-child { background: #eef2ff; color: #4338ca; }
-    .help-card ul li { color: #526174; }
+    .help-card-header { display: flex; align-items: center; gap: .6rem; }
+    .help-card-icon { display: grid; place-items: center; flex: none; width: 1.8rem; height: 1.8rem; border-radius: .55rem; background: #eef2ff; color: #4338ca; }
+    .help-card-icon svg { width: .95rem; height: .95rem; }
+    .help-block { display: grid; gap: .6rem; }
+    .help-block-label { font-size: .65rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: #667085; }
+    .help-step-num { display: grid; place-items: center; flex: none; width: 1.25rem; height: 1.25rem; margin-top: .1rem; border-radius: 9999px; background: #eef2ff; color: #4338ca; font-size: .65rem; font-weight: 800; }
+    .help-step-text { color: #344054; line-height: 1.6; }
+    .help-note-text { color: #526174; line-height: 1.6; }
+    .help-notes { display: grid; gap: .5rem; border-left: 2px solid #f59e0b; border-radius: 0 .6rem .6rem 0; background: #fffbeb; padding: .6rem .8rem; }
+    .help-hit { background: #fde68a; color: inherit; border-radius: .2rem; padding: 0 .12rem; }
     .help-empty { padding: 2rem 1rem; text-align: center; color: #475569; }
     .help-empty button { min-height: 2.5rem; margin-top: .75rem; padding: .5rem .9rem; border: 1px solid #c7d2fe; border-radius: .6rem; color: #4338ca; font-weight: 700; cursor: pointer; }
     .help-footer { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 1.5rem; border-top: 1px solid #e4e7ec; background: #fff; }
-    [data-theme="dark"] .help-shell, [data-theme="dark"] .help-searchbar, [data-theme="dark"] .help-footer { background: #1e293b; border-color: #334155; }
-    [data-theme="dark"] .help-header { background: linear-gradient(115deg,#1e293b,#252449); border-color: #334155; }
+    .help-footer-link { min-height: 2.5rem; padding: .5rem .85rem; border-radius: .6rem; border: 1px solid #e4e7ec; background: #fff; color: #344054; font-size: .75rem; font-weight: 600; cursor: pointer; }
+    .help-footer-link:hover { background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
+    .help-footer-link:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+    [data-theme="dark"] .help-shell, [data-theme="dark"] .help-searchbar, [data-theme="dark"] .help-footer, [data-theme="dark"] .help-results, [data-theme="dark"] .help-index, [data-theme="dark"] .help-header { background: #1e293b; border-color: #334155; }
     [data-theme="dark"] .help-header h3 { color: #f8fafc; }
-    [data-theme="dark"] .help-header p, [data-theme="dark"] .help-card > p, [data-theme="dark"] .help-card ul li { color: #cbd5e1; }
+    [data-theme="dark"] .help-header p, [data-theme="dark"] .help-card > p { color: #cbd5e1; }
+    [data-theme="dark"] .help-mark, [data-theme="dark"] .help-card-icon, [data-theme="dark"] .help-step-num { background: #312e81; color: #c7d2fe; }
+    [data-theme="dark"] .help-meta { background: #0f172a; border-color: #475569; color: #cbd5e1; }
     [data-theme="dark"] .help-body { background: #0f172a; }
     [data-theme="dark"] .help-card { background: #1e293b; border-color: #334155; }
     [data-theme="dark"] .help-empty { color: #cbd5e1; }
     [data-theme="dark"] .help-empty button { color: #c7d2fe; border-color: #6366f1; }
     [data-theme="dark"] .help-card h4 { color: #f8fafc; }
-    [data-theme="dark"] .help-card ol li > span:last-child { color: #e2e8f0; }
+    [data-theme="dark"] .help-block-label, [data-theme="dark"] .help-index-label, [data-theme="dark"] .help-results, [data-theme="dark"] .help-search-icon { color: #94a3b8; }
+    [data-theme="dark"] .help-step-text { color: #e2e8f0; }
+    [data-theme="dark"] .help-note-text { color: #cbd5e1; }
+    [data-theme="dark"] .help-notes { background: #422006; border-left-color: #f59e0b; }
+    [data-theme="dark"] .help-hit { background: #b45309; color: #fef3c7; }
+    [data-theme="dark"] .help-index-btn, [data-theme="dark"] .help-footer-link { background: #0f172a; border-color: #475569; color: #e2e8f0; }
+    [data-theme="dark"] .help-index-btn:hover, [data-theme="dark"] .help-footer-link:hover { background: #312e81; border-color: #6366f1; color: #c7d2fe; }
     [data-theme="dark"] .help-searchbar input { background: #0f172a; color: #f8fafc; border-color: #475569; }
     #panelAdminUsers { background: rgba(10,20,42,.78); }
     .users-shell { width: min(100%, 46rem); max-height: min(92dvh, 54rem); overflow: hidden; border: 1px solid #e4e7ec; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
@@ -565,14 +594,18 @@
     @media (max-width: 639px) {
       #modalHelp { padding: .5rem; }
       .help-shell { max-height: calc(100dvh - 1rem); border-radius: 1rem; }
-      .help-header, .help-searchbar, .help-body, .help-footer { padding: 1rem; }
-      .help-header > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
+      .help-header, .help-searchbar, .help-results, .help-index, .help-body, .help-footer { padding: 1rem; }
+      .help-header > div > button { min-width: 2.5rem; min-height: 2.5rem; display: grid; place-items: center; }
       .help-searchbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+      .help-search-field { width: 100%; }
       .help-searchbar input { width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
       .help-searchbar button { min-height: 2.75rem; }
+      .help-index { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+      .help-index-btn { flex: none; min-height: 2.5rem; }
       .help-card { padding: 1rem; }
       .help-footer p { display: none; }
-      .help-footer button { width: 100%; min-height: 2.75rem; }
+      .help-footer > div { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .5rem; }
+      .help-footer button { min-height: 2.75rem; }
     }
     @media (max-width: 639px) {
       #panelAdminUsers { padding: .5rem; }

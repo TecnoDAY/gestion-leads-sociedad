@@ -1107,25 +1107,34 @@
   <div id="modalHelp" class="fixed inset-0 z-[70] bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4" onclick="closeHelpModal()">
     <div class="help-shell overflow-hidden max-h-[90dvh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="modalHelpTitle" onclick="event.stopPropagation()">
       <div class="help-header">
-        <div class="flex items-center gap-2 min-w-0">
-          <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
-            <i data-lucide="help-circle" class="w-4 h-4"></i>
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="help-mark" aria-hidden="true">
+            <i data-lucide="life-buoy" class="w-4 h-4"></i>
           </div>
           <div class="min-w-0">
             <h3 id="modalHelpTitle" class="font-bold text-base">Centro de ayuda</h3>
-            <p class="text-xs">Encuentra pasos para leads, citas, reportes y administración.</p>
+            <p class="text-xs">Guías breves de las pantallas que usas cada día.</p>
           </div>
         </div>
-        <button type="button" onclick="closeHelpModal()" title="Cerrar la ayuda" aria-label="Cerrar el centro de ayuda" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer shrink-0">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <div class="flex items-center gap-2 shrink-0">
+          <span id="helpMeta" class="help-meta"></span>
+          <button type="button" onclick="closeHelpModal()" title="Cerrar la ayuda" aria-label="Cerrar el centro de ayuda" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer shrink-0">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
       </div>
 
       <div class="help-searchbar">
-        <label for="helpSearch" class="sr-only">Buscar en la ayuda</label>
-        <input id="helpSearch" type="search" oninput="renderHelpContent()" placeholder="Busca una tarea o palabra clave…" class="flex-1 min-w-0 text-sm">
+        <div class="help-search-field">
+          <label for="helpSearch" class="sr-only">Buscar en la ayuda</label>
+          <i data-lucide="search" class="help-search-icon" aria-hidden="true"></i>
+          <input id="helpSearch" type="search" oninput="renderHelpContent()" placeholder="Busca una tarea, pantalla o palabra clave…" class="flex-1 min-w-0 text-sm">
+        </div>
         <button type="button" onclick="clearHelpSearch()" title="Limpiar la búsqueda" aria-label="Limpiar la búsqueda de ayuda" class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium cursor-pointer shrink-0">Limpiar</button>
       </div>
+      <p id="helpResults" class="help-results" role="status" aria-live="polite"></p>
+
+      <nav id="helpIndex" class="help-index" aria-label="Índice de guías"></nav>
 
       <div id="helpBody" class="help-body text-xs">
         <div id="helpContent" aria-live="polite"><!-- Injected by JS --></div>
@@ -1133,7 +1142,10 @@
 
       <div class="help-footer">
         <p class="text-[11px] text-slate-400">La ayuda se muestra sobre la pantalla en la que estás; ciérrala para volver.</p>
-        <button type="button" onclick="closeHelpModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Cerrar</button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="scrollHelpToTop()" class="help-footer-link">Volver arriba</button>
+          <button type="button" onclick="closeHelpModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Cerrar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -5337,6 +5349,7 @@ async function deleteLeadAppointment(id) {
     const HELP_SECTIONS = [
       {
         id: 'ayuda-nuevo-lead',
+        icon: 'user-plus',
         title: 'Crear un lead',
         summary: 'Registrar un contacto nuevo y, si se agenda, su cita en la misma operación.',
         steps: [
@@ -5345,7 +5358,7 @@ async function deleteLeadAppointment(id) {
           'Indica la Fecha de llegada del lead: aparece hoy (Miami) por defecto y admite cualquier fecha pasada, útil cuando el contacto llegó de noche o a la madrugada y se registra al día siguiente. No admite fechas futuras.',
           'El Mes se calcula solo a partir de la Fecha de llegada y se muestra como referencia: no se elige a mano, así nunca queda inconsistente con la fecha.',
           'Si el teléfono ya está en la base verás un aviso ámbar con cuántas oportunidades existen. Es informativo: puedes guardar igualmente porque el mismo contacto puede llegar por otra campaña.',
-          'Escribe la Campaña; el Medio se elige del desplegable (Whatsapp, Instagram, Lead Directo, Referidos Andres, CogniTalkign).',
+          'Escribe la Campaña; el Medio se elige del desplegable con los valores del catálogo Medio (Whatsapp, Instagram, Referido, CogniTalking…).',
           'Elige la Gestión Inicial. Con Información el lead entra como contacto nuevo, sin cita.',
           'Al elegir Agendado o AGENDADO DATADURA aparece el bloque de cita: la Fecha y hora es obligatoria y la cita se crea junto al lead en la misma operación. Si algo falla, no se guarda ni el lead ni la cita.',
           'En ese bloque eliges la sede de la cita (Doral o Weston) y puedes añadir, si los tienes, el nombre del estudiante, un correo de contacto y su edad: los tres últimos son opcionales y también se pueden corregir después.',
@@ -5362,10 +5375,11 @@ async function deleteLeadAppointment(id) {
       },
       {
         id: 'ayuda-gestionar-lead',
+        icon: 'clipboard-check',
         title: 'Gestionar un lead existente',
         summary: 'Cambiar la gestión comercial conservando el historial y las citas.',
         steps: [
-          'Abre la ficha del lead y pulsa "Editar este Lead", o pulsa el lápiz de edición en la tabla de leads.',
+          'Abre la ficha del lead y pulsa "Editar este Lead", o ve a la pestaña Leads y pulsa el lápiz de edición de la fila. En Inicio, el bloque Acceso rápido a leads lleva a esa misma pestaña.',
           'En "Actualizar Seguimiento" elige el nuevo Estatus de Gestión y pulsa "Actualizar en Supabase".',
           'De Información a Agendado: elige Agendado, rellena la Fecha y hora de la cita y guarda. El lead y su cita se escriben en la misma operación.',
           'Verifica la cita recién creada en el bloque Citas de la ficha y comprueba que en Historial de Gestiones aparece "Información → Agendado", con su fecha, su canal y su asesor.',
@@ -5384,9 +5398,11 @@ async function deleteLeadAppointment(id) {
       },
       {
         id: 'ayuda-citas',
+        icon: 'calendar-days',
         title: 'Citas',
         summary: 'Crear, marcar el resultado y reprogramar citas de un lead agendado.',
         steps: [
+          'La pestaña Citas abre en vista Semana con el calendario del equipo; con la barra superior cambias a Lista (tabla con los datos de cada visita), Día o Mes. Mes sirve para ver la carga de cada día.',
           'Solo un lead con gestión Agendado o AGENDADO DATADURA puede tener citas. Con cualquier otra gestión el formulario aparece oculto y el servidor también lo rechaza.',
           'Todas las asesoras ven el calendario completo de citas del equipo: sirve para saber quién atiende a quién. Lo que cambia por asesora es la gestión.',
           'Solo la asesora asignada a la cita (o un administrador) puede modificarla: el resto ve la información en solo lectura, sin botones de edición.',
@@ -5411,6 +5427,7 @@ async function deleteLeadAppointment(id) {
       },
       {
         id: 'ayuda-reporte-diario',
+        icon: 'calendar-range',
         title: 'Reporte diario',
         summary: 'Hoja de trabajo del día con un bloque por asesora, datos automáticos y notas guardadas.',
         steps: [
@@ -5434,12 +5451,14 @@ async function deleteLeadAppointment(id) {
       },
       {
         id: 'ayuda-filtros-reportes',
+        icon: 'filter',
         title: 'Filtros y reportes',
         summary: 'Panel Citas, tasa de asistencia y datos históricos de 2025.',
         steps: [
           'En la pestaña Citas, el rango Desde / Hasta filtra por la fecha de la cita, no por el mes del lead.',
           'Filtra por Resultado, Campaña y Medio. El filtro Asesor aparece para administradores y supervisores.',
-          'Las métricas (Total citas, PROGRAMADA, ASISTIO, NO_ASISTIO, CANCELADA, REPROGRAMADA y Tasa asistencia) se recalculan con los filtros aplicados. La tasa divide ASISTIO entre ASISTIO + NO_ASISTIO.',
+          'Arriba se ven cuatro indicadores: Total citas, Programadas, Asistieron y Tasa asistencia. Se recalculan con los filtros aplicados; la tasa divide Asistieron entre Asistieron + No asistieron.',
+          'Abre "Ver desglose por estado y sede" debajo de la tabla para ver los ocho indicadores restantes: No asistieron, Canceladas, Reprogramadas, Doral, Doral Data Dura, Weston, Weston Data Dura y Sin sede (históricas).',
           'La columna Mes origen muestra el mes del lead, mientras que la cita se cuenta por su propia fecha: una cita de septiembre de un lead de agosto cuenta en septiembre.',
           'Todas las asesoras ven las citas de todo el equipo; la columna Asesor permite saber a quién pertenece cada una.',
           'Los datos históricos de 2025 son de solo lectura: se consultan en Gráficos Históricos y en la ficha, pero no se editan.'
@@ -5451,12 +5470,13 @@ async function deleteLeadAppointment(id) {
       },
       {
         id: 'ayuda-catalogos',
+        icon: 'list-checks',
         title: 'Catálogos',
         summary: 'Valores de Mes, Campaña, Medio, Gestión y Agente que alimentan formularios y filtros.',
         steps: [
           'Solo el administrador ve el botón Catálogos en la cabecera.',
           'Elige el tipo de catálogo (Mes, Campaña, Medio, Gestión o Agente), escribe el valor y pulsa Añadir.',
-          'Con el lápiz renembras un valor: el nuevo texto se usará en formularios y filtros.',
+          'Con el lápiz renombras un valor: el nuevo texto se usará en formularios y filtros.',
           'Con la X desactivas un valor: deja de ofrecerse en formularios y filtros, y se puede reactivar con el icono de check.',
           'Desactivar o renombrar un valor no modifica los leads ya guardados: siguen mostrando el texto con el que se crearon.',
           'Un catálogo no es una cuenta de usuario. Para dar de alta o desactivar a una persona que entra al sistema usa el botón Usuarios.'
@@ -5467,6 +5487,7 @@ async function deleteLeadAppointment(id) {
       },
       {
         id: 'ayuda-data-dura',
+        icon: 'graduation-cap',
         title: 'Estados Data Dura',
         summary: 'Como se contabilizan INSCRITO DATADURA y AGENDADO DATADURA.',
         steps: [
@@ -5480,6 +5501,7 @@ async function deleteLeadAppointment(id) {
       },
       {
         id: 'ayuda-campanas',
+        icon: 'megaphone',
         title: 'Campañas',
         summary: 'Resultados por campaña, comparación mensual y exportación a CSV.',
         steps: [
@@ -5497,16 +5519,22 @@ async function deleteLeadAppointment(id) {
       },
       {
         id: 'ayuda-seguridad-roles',
+        icon: 'shield-check',
         title: 'Seguridad y roles',
         summary: 'Qué puede ver y hacer un administrador y un agente.',
         steps: [
           'El administrador ve todos los leads, puede filtrar por asesor, editar los datos principales, gestionar Catálogos y abrir el botón Usuarios.',
           'Las asesoras ven la información compartida del equipo: los leads del CRM y el calendario completo de citas.',
+          'El supervisor es una asesora con permisos ampliados: ve el CRM como el resto y además el filtro Asesor y la edición de Campañas.',
+          'El trafficker (campañas) solo entra a la sección Campañas: no ve los leads, las citas ni los reportes.',
           'Lo que sí es individual es la gestión: una asesora solo puede editar datos, marcar resultados o reprogramar las citas que tiene asignadas; las demás las ven en solo lectura.',
           'El filtro Asesor del panel de Citas y del Reporte aparece para administradores y supervisores.',
           'La protección real está en Supabase (RLS y funciones de la base de datos), no solo en la interfaz: ocultar un botón no es la medida de seguridad.',
-          'Las cuentas se controlan desde Usuarios: activa, desactiva y asigna el rol de admin o agente.',
+          'Las cuentas se controlan desde Usuarios: activa, desactiva y asigna el rol de admin, agente, supervisor o trafficker.',
+          'Las asesoras ven un aviso a los 4 minutos sin actividad y su sesión se cierra a los 5 minutos; el botón "Continuar sesión" del aviso la mantiene abierta. La actividad se comparte entre las pestañas del mismo equipo, así que trabajar en una mantiene viva la sesión.',
+          'En Usuarios, cada asesora tiene su propio control "Cierre automático" en una línea aparte: "Desactivar cierre" quita el cierre por inactividad de esa asesora sin desactivar su cuenta; "Desactivar cuenta" sigue bloqueando el acceso en ambos casos.',
           'Una cuenta desactivada pierde el acceso: la sesión se cierra y la pantalla vuelve al inicio de sesión.',
+          'El cierre por inactividad solo aplica a asesoras: administrador, supervisores y trafficker no se desconectan por dejar la pantalla quieta.',
           'Los registros históricos de 2025 no admiten cambios desde la aplicación.'
         ]
       }
@@ -5520,11 +5548,63 @@ async function deleteLeadAppointment(id) {
       return String(value == null ? '' : value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     }
 
+    // Resalta el termino buscado sin romper el escapado ni el texto: se compara
+    // sobre una copia NFD en minusculas (para que "catalogo" encuentre
+    // "catálogo", escrito con caracter precompuesto) guardando, para cada
+    // caracter normalizado, su indice en el texto ORIGINAL. El marcado se arma
+    // cortando el original: no se alteran los caracteres ni se escapa dos veces.
+    function helpHighlight(value, term) {
+      const chars = [...String(value == null ? '' : value)];
+      if (!term) return escapeHtml(chars.join(''));
+      const flat = [], indice = [];
+      chars.forEach((char, position) => {
+        // NFD + sin marcas combinantes: igual que normalizeHelpText, para que el
+        // termino ("catalogo") y el texto ("catálogo") comparen por el mismo camino.
+        for (const part of char.normalize('NFD').toLowerCase().replace(/[\u0300-\u036f]/g, '')) { flat.push(part); indice.push(position); }
+      });
+      const haystack = flat.join('');
+      const needle = String(term).normalize('NFD').toLowerCase().replace(/[\u0300-\u036f]/g, '');
+      const html = [];
+      let cursor = 0;
+      if (!needle) return escapeHtml(chars.join(''));
+      for (let at = haystack.indexOf(needle); at !== -1; at = haystack.indexOf(needle, at + Math.max(1, needle.length))) {
+        const desde = indice[at], hasta = indice[at + needle.length - 1] + 1;
+        html.push(escapeHtml(chars.slice(cursor, desde).join('')));
+        html.push(`<mark class="help-hit">${escapeHtml(chars.slice(desde, hasta).join(''))}</mark>`);
+        cursor = hasta;
+      }
+      html.push(escapeHtml(chars.slice(cursor).join('')));
+      return html.join('');
+    }
+
+    function focusHelpSection(sectionId) {
+      const target = document.getElementById(`helpSection-${sectionId}`);
+      if (!target) return;
+      target.scrollIntoView({ block: 'start' });
+      target.focus({ preventScroll: true });
+    }
+
+    function scrollHelpToTop() {
+      const body = document.getElementById('helpBody');
+      if (body) body.scrollTop = 0;
+    }
+
+    // El indice solo muestra las guías visibles con el filtro actual: al buscar,
+    // salta directamente a lo que coincide en lugar de repetir toda la lista.
+    function renderHelpIndex(sections) {
+      const nav = document.getElementById('helpIndex');
+      if (!nav) return;
+      nav.innerHTML = sections.length > 1
+        ? `<span class="help-index-label">Índice</span>${sections.map(section => `<button type="button" class="help-index-btn" onclick="focusHelpSection('${escapeAttr(section.id)}')">${escapeHtml(section.title)}</button>`).join('')}`
+        : '';
+    }
+
     function renderHelpContent(query) {
       const container = document.getElementById('helpContent');
       if (!container) return;
       const raw = query === undefined ? (document.getElementById('helpSearch')?.value || '') : query;
       const term = normalizeHelpText(raw).trim();
+      const visibles = [];
       const html = HELP_SECTIONS.map(section => {
         const title = normalizeHelpText(section.title);
         const summary = normalizeHelpText(section.summary);
@@ -5535,21 +5615,34 @@ async function deleteLeadAppointment(id) {
           .filter(({ step }) => !term || titleHit || normalizeHelpText(step).indexOf(term) !== -1);
         const notes = (section.notes || []).filter(note => !term || titleHit || normalizeHelpText(note).indexOf(term) !== -1);
         if (term && !titleHit && !summary.includes(term) && !steps.length && !notes.length) return '';
+        visibles.push(section);
         const listHtml = steps.length
-          ? `<ol class="space-y-1.5">${steps.map(({ step, index }) => `<li class="flex gap-2"><span class="shrink-0 w-4 h-4 mt-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold flex items-center justify-center">${index + 1}</span><span class="text-slate-300 leading-relaxed">${escapeHtml(step)}</span></li>`).join('')}</ol>`
-          : '<p class="text-slate-400 text-xs leading-relaxed">Sin pasos para este término; revisa el resumen.</p>';
-        const notesHtml = notes.length ? `<ul class="space-y-1.5 border-l-2 border-amber-500/40 pl-3">${notes.map(note => `<li class="text-slate-400 leading-relaxed">${escapeHtml(note)}</li>`).join('')}</ul>` : '';
+          ? `<ol class="space-y-2">${steps.map(({ step, index }) => `<li class="flex gap-2"><span class="help-step-num">${index + 1}</span><span class="help-step-text">${helpHighlight(step, term)}</span></li>`).join('')}</ol>`
+          : '<p class="help-note-text">Ningún paso contiene ese término; revisa el resumen de la guía.</p>';
+        const notesHtml = notes.length
+          ? `<div class="help-notes"><p class="help-block-label">Importante</p><ul class="space-y-1.5">${notes.map(note => `<li class="help-note-text">${helpHighlight(note, term)}</li>`).join('')}</ul></div>`
+          : '';
         return `<section id="helpSection-${escapeAttr(section.id)}" tabindex="-1" class="help-card space-y-3 focus:outline-none">
-          <header class="flex items-center gap-2">
-            <i data-lucide="book-open" class="w-4 h-4 text-indigo-400 shrink-0"></i>
-            <h4 class="font-bold text-white text-sm">${escapeHtml(section.title)}</h4>
+          <header class="help-card-header">
+            <span class="help-card-icon" aria-hidden="true"><i data-lucide="${escapeAttr(section.icon || 'book-open')}"></i></span>
+            <h4 class="font-bold text-sm">${helpHighlight(section.title, term)}</h4>
           </header>
-          <p class="text-slate-400 leading-relaxed">${escapeHtml(section.summary)}</p>
-          ${listHtml}
+          <p>${helpHighlight(section.summary, term)}</p>
+          <div class="help-block">
+            <p class="help-block-label">Cómo hacerlo</p>
+            ${listHtml}
+          </div>
           ${notesHtml}
         </section>`;
       }).join('');
       container.innerHTML = html || '<div class="help-empty"><p class="text-sm font-semibold">No encontramos resultados para esa búsqueda.</p><p class="mt-1 text-xs">Prueba con otra palabra o vuelve a ver todas las guías.</p><button type="button" onclick="clearHelpSearch()">Ver todas las guías</button></div>';
+      renderHelpIndex(visibles);
+      const meta = document.getElementById('helpMeta');
+      if (meta) meta.textContent = `${HELP_SECTIONS.length} guías`;
+      const results = document.getElementById('helpResults');
+      if (results) results.textContent = term
+        ? `${visibles.length} de ${HELP_SECTIONS.length} guías coinciden con "${raw.trim()}"`
+        : `${HELP_SECTIONS.length} guías disponibles · la ayuda funciona sin conexión`;
       if (window.lucide) lucide.createIcons();
     }
 
@@ -5593,10 +5686,20 @@ async function deleteLeadAppointment(id) {
       if (restore && document.contains(restore) && typeof restore.focus === 'function') restore.focus();
     }
 
+    // Escape cierra y Tab queda atrapado dentro del modal: sin esto el foco se
+    // escapa al documento por detras del overlay y el teclado pierde el contexto.
     document.addEventListener('keydown', event => {
-      if (event.key !== 'Escape') return;
-      if (document.getElementById('modalHelp')?.classList.contains('hidden')) return;
-      closeHelpModal();
+      const modal = document.getElementById('modalHelp');
+      if (!modal || modal.classList.contains('hidden')) return;
+      if (event.key === 'Escape') { closeHelpModal(); return; }
+      if (event.key !== 'Tab') return;
+      const focusables = [...modal.querySelectorAll('button:not([disabled]), a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+        .filter(el => el.getClientRects().length > 0);
+      if (!focusables.length) return;
+      const first = focusables[0], last = focusables[focusables.length - 1];
+      const inside = modal.contains(document.activeElement);
+      if (event.shiftKey && (!inside || document.activeElement === first)) { event.preventDefault(); last.focus(); return; }
+      if (!event.shiftKey && (!inside || document.activeElement === last)) { event.preventDefault(); first.focus(); }
     });
 
     // -------------------------------------------------------------

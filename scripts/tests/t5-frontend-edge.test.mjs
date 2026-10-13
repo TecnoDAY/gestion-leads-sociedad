@@ -66,7 +66,8 @@ const names = [
   'createLeadAppointment', 'editAppointmentDetails', 'editAppointmentCampus', 'setLeadAppointmentStatus', 'rescheduleLeadAppointment',
   'setAppointmentMutationPending', 'updateLeadAppointmentCreateState', 'deleteLeadAppointment',
   'toggleNewAppointmentFields', 'setBlockControls',
-  'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn'
+  'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn',
+  'normalizeHelpText', 'helpHighlight'
 ];
 const frontendSource = ['let leadAppointmentCreateBlocked = true;', 'let gestionRangeLeads = [], gestionRangeKey = "";', 'let mesRangeLeads = [], mesRangeKey = "";', ...constants, ...names.map(extractFunction)].join('\n');
 
@@ -1274,6 +1275,41 @@ test('ayuda: refleja el comportamiento actual y no repite reglas retiradas', () 
   // Coherencia con el formulario real: los campos de la cita existen.
   for (const field of ['newAppointmentStudentName', 'editAppointmentStudentName', 'leadAppointmentStudentName'])
     assert.ok(html.includes(`id="${field}"`), `falta el campo ${field} descrito en la ayuda`);
+});
+
+test('ayuda: refleja los KPIs compactos, los cuatro roles y el cierre por inactividad', () => {
+  const help = html.slice(html.indexOf('const HELP_SECTIONS = ['), html.indexOf('let helpReturnFocus'));
+  // Los 12 KPIs ya no se muestran: 4 arriba y el resto en el desglose colapsable.
+  assert.match(help, /Total citas, Programadas, Asistieron y Tasa asistencia/);
+  assert.match(help, /Ver desglose por estado y sede/);
+  for (const label of ['No asistieron', 'Canceladas', 'Reprogramadas', 'Doral Data Dura', 'Weston Data Dura', 'Sin sede \(históricas\)'])
+    assert.ok(help.includes(label), `falta el indicador ${label} en la ayuda`);
+  assert.doesNotMatch(help, /PROGRAMADA, ASISTIO, NO_ASISTIO, CANCELADA, REPROGRAMADA/);
+  // Los cuatro roles reales del catalogo user_access.
+  assert.match(help, /admin, agente, supervisor o trafficker/);
+  assert.match(help, /El supervisor es una asesora con permisos ampliados/);
+  assert.match(help, /El trafficker \(campañas\) solo entra a la sección Campañas/);
+  // Cierre por inactividad: 4 min de aviso, 5 de cierre y solo para asesoras.
+  assert.match(help, /aviso a los 4 minutos sin actividad y su sesión se cierra a los 5 minutos/);
+  assert.match(help, /Continuar sesión/);
+  assert.match(help, /no se desconectan por dejar la pantalla quieta/);
+  // Erratas corregidas y referencias a la pestaña Leads.
+  assert.doesNotMatch(help, /CogniTalkign/);
+  assert.doesNotMatch(help, /renembras/);
+  assert.match(help, /pestaña Leads/);
+});
+
+test('ayuda: el resaltado marca el término con o sin acento y escapa el HTML', () => {
+  const f = frontend();
+  // "catalogo" encuentra "catálogo": la búsqueda no distingue diacríticos.
+  assert.match(f.context.helpHighlight('Usa el catálogo Medio', 'catalogo'), /<mark class="help-hit">catálogo<\/mark>/);
+  assert.equal(f.context.helpHighlight('Sin término', ''), 'Sin término');
+  // El texto original se escapa ANTES de cualquier marcado: nada de HTML inyectado.
+  assert.equal(f.context.helpHighlight('<b>Citas</b>', 'citas'), '&lt;b&gt;<mark class="help-hit">Citas</mark>&lt;/b&gt;');
+  // Un término con caracteres de regex no rompe la construcción del patrón.
+  assert.equal(f.context.helpHighlight('Precio (total) y +mas', '(total)'), 'Precio <mark class="help-hit">(total)</mark> y +mas');
+  // normalizeHelpText es la base de la búsqueda insensible a diacríticos.
+  assert.equal(f.context.normalizeHelpText('Gestión'), 'gestion');
 });
 
 test('inactividad: aviso a 4 min, cierre a 5, multi-pestaña y registro en tabla/RPC dedicadas', () => {

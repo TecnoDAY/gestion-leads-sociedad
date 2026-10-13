@@ -5625,41 +5625,26 @@ async function deleteLeadAppointment(id) {
         if (activeMonths.length === 0) {
           tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-500 font-sans">No hay registros con los filtros seleccionados</td></tr>`;
         } else {
-          tableBody.innerHTML = activeMonths.map(m => {
-            const st = monthlyStats[m];
-            const mConv = st.total > 0 ? ((st.inscritos / st.total) * 100).toFixed(1) : '0.0';
-            const mYearPct = totalLeads > 0 ? ((st.total / totalLeads) * 100).toFixed(1) : '0.0';
-
-            let topCamp = '-';
-            let topCampCount = 0;
-            Object.entries(st.campanas).forEach(([c, cnt]) => {
-              if (cnt > topCampCount) { topCampCount = cnt; topCamp = c; }
-            });
-
-            let topAg = '-';
-            let topAgCount = 0;
-            Object.entries(st.agentes).forEach(([a, cnt]) => {
-              if (cnt > topAgCount) { topAgCount = cnt; topAg = a; }
-            });
-
-            return `
+          // Filas puras de reportes.js (misma fuente que el CSV); aca solo
+          // markup y escape de presentacion.
+          const filas = historicalSummaryRows(data);
+          tableBody.innerHTML = filas.map(r => `
               <tr class="hover:bg-slate-800/40 transition-colors">
-                <td class="px-4 py-3 font-semibold text-slate-200">${escapeHtml(histMonthLabel(m))}</td>
-                <td class="px-4 py-3 text-right text-white font-bold tabular-nums">${st.total.toLocaleString()}</td>
-                <td class="px-4 py-3 text-right text-amber-400 tabular-nums">${st.agendados.toLocaleString()}</td>
-                <td class="px-4 py-3 text-right text-rose-400 tabular-nums">${st.noContesta.toLocaleString()}</td>
-                <td class="px-4 py-3 text-right text-emerald-400 font-bold tabular-nums">${st.inscritos.toLocaleString()}</td>
+                <td class="px-4 py-3 font-semibold text-slate-200">${escapeHtml(r.mes)}</td>
+                <td class="px-4 py-3 text-right text-white font-bold tabular-nums">${r.total.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right text-amber-400 tabular-nums">${r.agendados.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right text-rose-400 tabular-nums">${r.noContesta.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right text-emerald-400 font-bold tabular-nums">${r.inscritos.toLocaleString()}</td>
                 <td class="px-4 py-3 text-right tabular-nums">
-                  <span class="px-2 py-0.5 rounded text-xs font-semibold ${Number(mConv) >= 15 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}">
-                    ${mConv}%
+                  <span class="px-2 py-0.5 rounded text-xs font-semibold ${Number(r.conv) >= 15 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}">
+                    ${r.conv}%
                   </span>
                 </td>
-                <td class="px-4 py-3 text-right text-slate-400 tabular-nums">${mYearPct}%</td>
-                <td class="px-4 py-3 text-slate-300 font-sans truncate max-w-[180px]">${escapeHtml(topCamp)}</td>
-                <td class="px-4 py-3 text-slate-300 font-sans">${escapeHtml(topAg)}</td>
+                <td class="px-4 py-3 text-right text-slate-400 tabular-nums">${r.monthPct}%</td>
+                <td class="px-4 py-3 text-slate-300 font-sans truncate max-w-[180px]">${escapeHtml(r.topCamp)}</td>
+                <td class="px-4 py-3 text-slate-300 font-sans">${escapeHtml(r.topAg)}</td>
               </tr>
-            `;
-          }).join('');
+            `).join('');
         }
       }
 

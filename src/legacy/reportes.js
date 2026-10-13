@@ -281,24 +281,23 @@ export function computeHistoricalAggregates(data) {
 }
 
 /**
- * Resumen historico como CSV completo (cabecera + una fila por mes activo),
- * con la misma matriz del export original: etiqueta de mes (histMonthLabel),
- * totales, % conversion, % del total y top campana/agente del agregado.
- * El empate conserva el primero del recuento (comparador estricto >).
- * Los meses vacios de estado no activos quedan fuera como en el original.
+ * Filas mensuales del resumen historico (fuente unica de la tabla y del
+ * CSV): etiqueta de mes, totales del agregado, % conversion, % del total
+ * y top campana/agente con empate conservando el primer valor ('>' estricto).
+ * conv y monthPct son strings toFixed(1) SIN '%'; cada consumidor agrega
+ * su presentacion (to, escape, chip).
  * @param {Array<object>} data Leads ya filtrados por el panel.
- * @returns {{csv: string, months: number}} csv listo para downloadCSV.
+ * @returns {Array<{mes: string, total: number, agendados: number, noContesta: number, inscritos: number, conv: string, monthPct: string, topCamp: string, topAg: string}>}
  */
-export function historicalSummaryCsv(data) {
+export function historicalSummaryRows(data) {
   const leids = Array.isArray(data) ? data : [];
   const { monthlyStats, activeMonths } = computeHistoricalAggregates(leids);
   const totalLeads = leids.length;
 
-  const headers = ['Mes', 'Total Leads', 'Agendados', 'No Contesta', 'Inscritos', '% Conversión', '% del Total', 'Campaña Más Fuerte', 'Asesor con Más Cierres'];
-  const rows = activeMonths.map(m => {
+  return activeMonths.map(m => {
     const st = monthlyStats[m];
-    const mConv = st.total > 0 ? ((st.inscritos / st.total) * 100).toFixed(1) : '0.0';
-    const mMonthPct = totalLeads > 0 ? ((st.total / totalLeads) * 100).toFixed(1) : '0.0';
+    const conv = st.total > 0 ? ((st.inscritos / st.total) * 100).toFixed(1) : '0.0';
+    const monthPct = totalLeads > 0 ? ((st.total / totalLeads) * 100).toFixed(1) : '0.0';
 
     let topCamp = '-';
     let topCampCount = 0;
@@ -312,20 +311,35 @@ export function historicalSummaryCsv(data) {
       if (cnt > topAgCount) { topAgCount = cnt; topAg = a; }
     });
 
-    return [
-      histMonthLabel(m),
-      st.total,
-      st.agendados,
-      st.noContesta,
-      st.inscritos,
-      mConv + '%',
-      mMonthPct + '%',
+    return {
+      mes: histMonthLabel(m),
+      total: st.total,
+      agendados: st.agendados,
+      noContesta: st.noContesta,
+      inscritos: st.inscritos,
+      conv,
+      monthPct,
       topCamp,
       topAg,
-    ].map(csvReporteField).join(',');
+    };
   });
+}
 
-  return { csv: [headers.join(','), ...rows].join('\n'), months: activeMonths.length };
+/**
+ * Resumen historico como CSV completo (cabecera + una fila por mes activo),
+ * capa de escape sobre historicalSummaryRows: mismos headers y campos
+ * que el export original, cada campo por csvReporteField del modulo.
+ * @param {Array<object>} data Leads ya filtrados por el panel.
+ * @returns {{csv: string, months: number}} csv listo para downloadCSV.
+ */
+export function historicalSummaryCsv(data) {
+  const rows = historicalSummaryRows(data);
+  const headers = ['Mes', 'Total Leads', 'Agendados', 'No Contesta', 'Inscritos', '% Conversión', '% del Total', 'Campaña Más Fuerte', 'Asesor con Más Cierres'];
+  const lines = rows.map(r => [
+    r.mes, r.total, r.agendados, r.noContesta, r.inscritos,
+    r.conv + '%', r.monthPct + '%', r.topCamp, r.topAg,
+  ].map(csvReporteField).join(','));
+  return { csv: [headers.join(','), ...lines].join('\n'), months: rows.length };
 }
 
 /**
@@ -528,6 +542,7 @@ if (typeof window !== 'undefined') {
   window.histDateInputToTs = histDateInputToTs;
   window.histRangePresetDates = histRangePresetDates;
   window.historicalSummaryCsv = historicalSummaryCsv;
+  window.historicalSummaryRows = historicalSummaryRows;
   window.historicalKpiTotals = historicalKpiTotals;
   window.historicalRecordMonth = historicalRecordMonth;
   window.histRangeNoticeText = histRangeNoticeText;

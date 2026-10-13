@@ -113,7 +113,7 @@ test('renderHelpContent sin coincidencias muestra el estado vacio', () => {
   renderHelpContent('zzzz-sin-coincidencia');
   const content = el('helpContent').innerHTML;
   assert.match(content, /help-empty/);
-  assert.match(content, /onclick="clearHelpSearch\(\)"/);
+  assert.match(content, /data-ev="click:clearHelpSearch\(\)"/);
   assert.equal(el('helpResults').textContent, '0 de 9 guías coinciden con "zzzz-sin-coincidencia"');
 });
 

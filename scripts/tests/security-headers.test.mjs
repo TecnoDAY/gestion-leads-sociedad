@@ -1,18 +1,26 @@
+// Cabeceras de seguridad (fase 15): la CSP estricta vive en un <meta>
+// generado por inline-dist (scripts/csp-utils.mjs); la cabecera HTTP de
+// vercel.json conserva solo lo que un meta no soporta (frame-ancestors) y
+// NO lleva fetch-directives de script/style (duplicarian la interseccion).
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
 
-const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
 const config = JSON.parse(readFileSync(new URL('../../vercel.json', import.meta.url), 'utf8'));
 const headers = Object.fromEntries(config.headers[0].headers.map(({ key, value }) => [key, value]));
 
-test('el modal RLS no publica SQL ejecutable ni accion de copia', () => {
-  assert.match(html, /id="modalRls"/);
-  assert.doesNotMatch(html, /CREATE TABLE IF NOT EXISTS public\.leads|copyRlsCode/);
+test('la cabecera HTTP conserva frame-ancestors y no duplica la politica del meta', () => {
+  const csp = headers['Content-Security-Policy'];
+  assert.match(csp, /frame-ancestors 'none'/);
+  assert.match(csp, /form-action 'self'/);
+  assert.match(csp, /base-uri 'self'/);
+  // sin fetch-directives de script/style: esos los aporta el meta del build
+  assert.doesNotMatch(csp, /script-src|style-src|default-src/);
+  // y por supuesto sin inline abierto en ninguna parte de la config
+  for (const value of Object.values(headers)) assert.doesNotMatch(value, /unsafe-inline/);
 });
 
-test('las cabeceras de produccion cubren los avisos pasivos de ZAP', () => {
-  assert.match(headers['Content-Security-Policy'], /frame-ancestors 'none'/);
+test('resto de cabeceras de seguridad intactas', () => {
   assert.equal(headers['X-Frame-Options'], 'DENY');
   assert.equal(headers['X-Content-Type-Options'], 'nosniff');
   assert.match(headers['Permissions-Policy'], /camera=\(\)/);

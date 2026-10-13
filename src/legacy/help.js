@@ -261,7 +261,7 @@ function renderHelpIndex(sections) {
   const nav = document.getElementById('helpIndex');
   if (!nav) return;
   nav.innerHTML = sections.length > 1
-    ? `<span class="help-index-label">Índice</span>${sections.map(section => `<button type="button" class="help-index-btn" onclick="focusHelpSection('${escapeAttr(section.id)}')">${escapeHtml(section.title)}</button>`).join('')}`
+    ? `<span class="help-index-label">Índice</span>${sections.map(section => `<button type="button" class="help-index-btn" data-ev="click:focusHelpSection('${escapeAttr(section.id)}')">${escapeHtml(section.title)}</button>`).join('')}`
     : '';
 }
 
@@ -301,7 +301,7 @@ function renderHelpContent(query) {
           ${notesHtml}
         </section>`;
   }).join('');
-  container.innerHTML = html || '<div class="help-empty"><p class="text-sm font-semibold">No encontramos resultados para esa búsqueda.</p><p class="mt-1 text-xs">Prueba con otra palabra o vuelve a ver todas las guías.</p><button type="button" onclick="clearHelpSearch()">Ver todas las guías</button></div>';
+  container.innerHTML = html || '<div class="help-empty"><p class="text-sm font-semibold">No encontramos resultados para esa búsqueda.</p><p class="mt-1 text-xs">Prueba con otra palabra o vuelve a ver todas las guías.</p><button type="button" data-ev="click:clearHelpSearch()">Ver todas las guías</button></div>';
   renderHelpIndex(visibles);
   const meta = document.getElementById('helpMeta');
   if (meta) meta.textContent = `${HELP_SECTIONS.length} guías`;
@@ -376,6 +376,9 @@ if (typeof window !== 'undefined') {
   window.clearHelpSearch = clearHelpSearch;
   window.renderHelpContent = renderHelpContent;
   window.focusHelpSection = focusHelpSection;
+  // Fase 15: el boton Volver arriba llama scrollHelpToTop via data-ev;
+  // faltaba registrarla y quedaba muerta desde la extraccion a help.js.
+  window.scrollHelpToTop = scrollHelpToTop;
 }
 
 export { HELP_SECTIONS, normalizeHelpText, helpHighlight, focusHelpSection, scrollHelpToTop, renderHelpIndex, renderHelpContent, clearHelpSearch, openHelpModal, closeHelpModal };

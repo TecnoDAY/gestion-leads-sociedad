@@ -31,6 +31,7 @@ const { normalizeHelpText, helpHighlight } = helpMod;
 const catalogosApi = await import('../../src/legacy/catalogos.js');
 // validAppointmentId vive en src/legacy/citas.js
 const { validAppointmentId } = citasMod;
+// actionsMod se importa al final (tests parse-all fase 15).
 
 const baseline = process.argv.includes('--baseline');
 const source = path => baseline ? execFileSync('git', ['show', `HEAD:${path}`], { encoding: 'utf8' }) : readFileSync(path, 'utf8');
@@ -770,8 +771,8 @@ test('buscador real: callback oninput filtra cache >1000 por correo, nombre y ro
   const db = database({ admin_manage_user_access: users });
   const f = frontend({ supabaseClient: db, isAdmin: true }), c = f.context;
   await c.loadAuthorizedUsers();
-  const handler = /<input\b[^>]*id="userSearch"[^>]*oninput="([^"]+)"/.exec(html)?.[1];
-  assert.ok(handler, 'el input real debe tener callback');
+  const handler = /<input\b[^>]*id="userSearch"[^>]*data-ev="input:([^"]+)"/.exec(html)?.[1];
+  assert.ok(handler, 'el input real debe tener callback en data-ev');
   for (const search of [' target@example.TEST ', '<img', 'SUPERVISOR']) {
     f.element('userSearch').value = search;
     vm.runInContext(handler, c);
@@ -1168,7 +1169,7 @@ test('citas: los tres formularios piden estudiante, correo y edad opcionales', (
   assert.match(html, /<th class="p-3 text-left">Estudiante<\/th>/);
   assert.match(html, /<th class="p-3 text-left">Correo<\/th>/);
   assert.match(html, /<th class="p-3 text-left">Edad<\/th>/);
-  assert.match(html, /onclick="editAppointmentDetails\(\$\{r\.id\}\)"/);
+  assert.match(html, /data-ev="click:editAppointmentDetails\(\$\{r\.id\}\)"/);
   // La ficha consulta los nuevos campos y permite editarlos.
   assert.match(html, /student_name, contact_email, student_age/);
   assert.match(html, /rpc\('update_lead_appointment_details'/);
@@ -1188,7 +1189,7 @@ test('appointmentDetailsFrom recoge y recorta los tres campos opcionales', () =>
 
 test('fecha de llegada: formulario editable, Mes derivado y validación futura; create_lead valida y registra gestión', () => {
   // Formulario: campo date con max = hoy Miami y Mes solo lectura derivado.
-  assert.match(html, /id="newFechaLlegada"[^>]*onchange="syncNewLeadMes\(\)"/);
+  assert.match(html, /id="newFechaLlegada"[^>]*data-ev="change:syncNewLeadMes\(\)"/);
   assert.match(html, /<select id="newMes" disabled/);
   assert.match(html, /fechaInput\.max = miamiToday\(\)/);
   assert.match(html, /function syncNewLeadMes\(\)/);
@@ -1212,9 +1213,9 @@ test('citas: lectura compartida para el equipo y botones de edición solo para a
   assert.doesNotMatch(sql, /advisor_user_id = auth\.uid\(\)/);
   // Las escrituras siguen restringidas por RPC; el frontend oculta los botones.
   assert.match(html, /canEdit = isAdmin \|\| a\.advisor_user_id === currentUser\?\.id/);
-  assert.match(html, /\$\{canEdit \? `<button data-appointment-id="\$\{id\}" onclick="editAppointmentDetails/);
+  assert.match(html, /\$\{canEdit \? `<button data-appointment-id="\$\{id\}" data-ev="click:editAppointmentDetails/);
   assert.match(html, /\$\{scheduled && canEdit \?/);
-  assert.match(html, /\(isAdmin \|\| r\.advisor_user_id === currentUser\?\.id\) \? `<button onclick="editAppointmentDetails/);
+  assert.match(html, /\(isAdmin \|\| r\.advisor_user_id === currentUser\?\.id\) \? `<button data-ev="click:editAppointmentDetails/);
   // La ficha necesita advisor_user_id para calcular canEdit.
   assert.match(html, /advisor_name, advisor_user_id, notes, rescheduled_from_id/);
 });
@@ -2488,7 +2489,7 @@ test('cita unica: la UI no duplica funciones ni expone el borrado a no-admin', (
   assert.equal(occurrences('updateLeadAppointmentCreateState'), 1);
   assert.equal(occurrences('loadLeadAppointments'), 1);
   // El boton de borrar solo se emite dentro de una rama de administrador.
-  const botones = [...script.matchAll(/onclick="deleteLeadAppointment\(/g)];
+  const botones = [...script.matchAll(/data-ev="click:deleteLeadAppointment\(/g)];
   assert.equal(botones.length, 2, 'uno en la ficha y otro en la tabla de Citas');
   for (const match of botones) {
     const previo = script.slice(Math.max(0, match.index - 160), match.index);
@@ -2534,3 +2535,58 @@ test('reporte diario: canales e inscripciones retirados de pantalla y CSV', () =
   for (const text of ['Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas creadas y resultados registrados hoy', 'Gestiones realizadas', 'Total llamadas', 'Visitas registradas']) assert.match(html, new RegExp(text));
   assert.match(html, /Citas nuevas hoy/);
 });
+// --- fase 15: parse-all de data-ev -------------------------------------------
+// (a) estatico: cada data-ev del markup se parsea y su funcion global existe.
+// (b) plantillas dinamicas: sustituimos cada interpolacion ${...} por un
+//     literal de muestra (mismo shape que en runtime: numeros/strings/bools/
+//     null) y afirmamos que la gramatica estricta del dispatcher lo ejecuta
+//     sin eval ni Function.
+import { parseDataAtributo, llamarAccion } from '../../src/legacy/actions.js';
+
+test('parse-all data-ev: markup estatico ejecutable por el dispatcher', () => {
+  const nombres = new Set();
+  for (const m of script.matchAll(/function\s+([\w$]+)\s*\(/g)) nombres.add(m[1]);
+  for (const m of html.matchAll(/window\.([\w$]+)\s*=/g)) nombres.add(m[1]);
+  for (const f of ['help.js', 'leads.js', 'citas.js', 'reportes.js', 'catalogos.js']) {
+    const modulo = readFileSync(new URL(`../../src/legacy/${f}`, import.meta.url), 'utf8');
+    for (const m of modulo.matchAll(/window\.([\w$]+)\s*=/g)) nombres.add(m[1]);
+  }
+  const todos = [...html.matchAll(/data-ev="([^"]+)"/g)].map(m => m[1]);
+  const valores = todos.filter(v => !v.includes('${'));
+  const plantillas = todos.filter(v => v.includes('${'));
+  assert.ok(valores.length > 120, `se esperaban muchos estaticos, hay ${valores.length}`);
+  assert.ok(plantillas.length >= 14, `plantillas con data-ev interpolada: ${plantillas.length}`);
+  let revisados = 0;
+  for (const valor of valores) {
+    const { tipos, cuerpo } = parseDataAtributo(valor);
+    assert.ok(tipos.length >= 1);
+    const fn = /^([\w$]+)\s*\(/.exec(cuerpo)?.[1];
+    assert.ok(fn && nombres.has(fn), `funcion global ausente en: ${cuerpo}`);
+    llamarAccion(cuerpo, { elemento: stub(), evento: stubEvento(), buscarGlobal: () => stub() });
+    revisados++;
+  }
+  assert.equal(revisados, valores.length);
+});
+
+test('parse-all data-ev: plantillas dinamicas cumplen la gramatica (sin eval)', () => {
+  const replantillas = valor => valor
+    // las interpolaciones de IDs entran SIEMPRE entre comillas simples
+    .replace(/'\$\{[^}]+\}'/g, "'muestra'")
+    // el tercer argumento opcional de saveCampaignStat: literal null o numero
+    .replace(/, \$\{[^}]*== null \? 'null' : [^}]*\}/g, ', null')
+    // numeros/bools sin comillas (paginacion, flags de admin)
+    .replace(/\$\{[^}]+\}/g, '5');
+  let revisadas = 0;
+  for (const m of html.matchAll(/data-ev="([^"]+)"/g)) {
+    if (!m[1].includes('${')) continue;
+    const { cuerpo } = parseDataAtributo(replantillas(m[1]));
+    llamarAccion(cuerpo, { elemento: stub(), evento: stubEvento(), buscarGlobal: () => stub() });
+    const fn = /^([\w$]+)\s*\(/.exec(cuerpo)?.[1];
+    assert.ok(fn, `autorre proceso requiere fn: ${cuerpo}`);
+    revisadas++;
+  }
+  assert.ok(revisadas >= 14, `habia ${revisadas} plantillas con data-ev interpolada`);
+});
+
+function stub() { return () => {}; }
+function stubEvento() { return { type: 'click', stopPropagation() {} }; }

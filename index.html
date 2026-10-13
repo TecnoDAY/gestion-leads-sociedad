@@ -64,15 +64,15 @@
       <div class="min-w-0"><p class="font-bold text-white leading-tight">Sociedad Actoral</p><p class="text-[11px] text-slate-400 mt-1">Centro de admisiones</p></div>
     </div>
     <nav class="mt-5 space-y-1" aria-label="Secciones">
-      <button type="button" data-sidebar-tab="dashboard" data-crm-nav onclick="switchTab('dashboard')" class="sidebar-nav-button is-active"><i data-lucide="home"></i><span>Inicio</span></button>
-      <button type="button" data-sidebar-tab="leads" data-crm-nav onclick="switchTab('leads')" class="sidebar-nav-button"><i data-lucide="users"></i><span>Leads</span></button>
-      <button type="button" data-sidebar-tab="citas" data-crm-nav onclick="switchTab('citas')" class="sidebar-nav-button"><i data-lucide="calendar-check"></i><span>Citas</span></button>
-      <button type="button" data-sidebar-tab="campanas" onclick="switchTab('campanas')" class="sidebar-nav-button"><i data-lucide="megaphone"></i><span>Campañas</span></button>
-      <button type="button" data-sidebar-tab="historico" data-crm-nav onclick="switchTab('historico')" class="sidebar-nav-button"><i data-lucide="chart-no-axes-combined"></i><span>Análisis histórico</span></button>
-      <button type="button" data-sidebar-tab="reporte" data-crm-nav onclick="switchTab('reporte')" class="sidebar-nav-button"><i data-lucide="clipboard-list"></i><span>Reportes</span></button>
+      <button type="button" data-sidebar-tab="dashboard" data-crm-nav data-ev="click:switchTab('dashboard')" class="sidebar-nav-button is-active"><i data-lucide="home"></i><span>Inicio</span></button>
+      <button type="button" data-sidebar-tab="leads" data-crm-nav data-ev="click:switchTab('leads')" class="sidebar-nav-button"><i data-lucide="users"></i><span>Leads</span></button>
+      <button type="button" data-sidebar-tab="citas" data-crm-nav data-ev="click:switchTab('citas')" class="sidebar-nav-button"><i data-lucide="calendar-check"></i><span>Citas</span></button>
+      <button type="button" data-sidebar-tab="campanas" data-ev="click:switchTab('campanas')" class="sidebar-nav-button"><i data-lucide="megaphone"></i><span>Campañas</span></button>
+      <button type="button" data-sidebar-tab="historico" data-crm-nav data-ev="click:switchTab('historico')" class="sidebar-nav-button"><i data-lucide="chart-no-axes-combined"></i><span>Análisis histórico</span></button>
+      <button type="button" data-sidebar-tab="reporte" data-crm-nav data-ev="click:switchTab('reporte')" class="sidebar-nav-button"><i data-lucide="clipboard-list"></i><span>Reportes</span></button>
     </nav>
     <div class="mt-auto pt-4 border-t border-slate-700/60 space-y-1">
-      <button type="button" onclick="openHelpModal()" class="sidebar-nav-button"><i data-lucide="circle-help"></i><span>Centro de ayuda</span></button>
+      <button type="button" data-ev="click:openHelpModal()" class="sidebar-nav-button"><i data-lucide="circle-help"></i><span>Centro de ayuda</span></button>
       <p class="px-3 pt-3 text-[10px] leading-relaxed text-slate-500">Gestión comercial y seguimiento de admisiones.</p>
     </div>
   </aside>
@@ -110,38 +110,38 @@
         </div>
 
         <!-- Refresh Button -->
-        <button id="btnRefresh" onclick="refreshLeadsData()" title="Refrescar datos de Supabase" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer">
+        <button id="btnRefresh" data-ev="click:refreshLeadsData()" title="Refrescar datos de Supabase" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer">
           <i data-lucide="refresh-cw" id="refreshIcon" class="w-4 h-4"></i>
         </button>
 
         <!-- View Security / RLS Schema -->
-        <button onclick="openRlsModal()" title="Ver políticas de seguridad y esquema SQL" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
+        <button data-ev="click:openRlsModal()" title="Ver políticas de seguridad y esquema SQL" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
           <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
           <span>SQL & RLS</span>
         </button>
 
         <!-- New Lead Button -->
-        <button id="btnNewLead" onclick="openNewLeadModal()" class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/50 transition-all cursor-pointer">
+        <button id="btnNewLead" data-ev="click:openNewLeadModal()" class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/50 transition-all cursor-pointer">
           <i data-lucide="user-plus" class="w-4 h-4"></i>
           <span>+ Nuevo Lead</span>
         </button>
         <span id="userBadge" class="hidden sm:inline text-xs text-slate-400"></span>
-        <button id="btnAdminUsers" onclick="document.getElementById('panelAdminUsers').classList.remove('hidden');document.getElementById('panelAdminUsers').classList.add('flex');loadAuthorizedUsers();loadAgentSessionsReport()" class="hidden items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
+        <button id="btnAdminUsers" data-ev="click:toggleAdminUsers(true)" class="hidden items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
           <i data-lucide="users" class="w-3.5 h-3.5"></i>
           <span>Usuarios</span>
         </button>
-        <button id="btnCatalogs" onclick="openCatalogsModal()" class="hidden items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
+        <button id="btnCatalogs" data-ev="click:openCatalogsModal()" class="hidden items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
           <i data-lucide="list" class="w-3.5 h-3.5"></i>
           <span>Catálogos</span>
         </button>
-        <button id="btnHelp" onclick="openHelpModal()" title="Centro de Ayuda" aria-label="Abrir el centro de ayuda" class="hidden items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
+        <button id="btnHelp" data-ev="click:openHelpModal()" title="Centro de Ayuda" aria-label="Abrir el centro de ayuda" class="hidden items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
           <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
           <span>Ayuda</span>
         </button>
-        <button id="btnTheme" onclick="applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light')" title="Cambiar tema" aria-label="Cambiar tema" class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
+        <button id="btnTheme" data-ev="click:cycleTheme()" title="Cambiar tema" aria-label="Cambiar tema" class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
           <i data-lucide="moon" class="w-3.5 h-3.5"></i>
         </button>
-        <button id="btnSignOut" onclick="handleSignOut()" class="hidden items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
+        <button id="btnSignOut" data-ev="click:handleSignOut()" class="hidden items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
           <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
           <span>Salir</span>
         </button>
@@ -154,28 +154,28 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 py-3 overflow-x-auto">
       <nav class="flex shrink-0 items-center rounded-lg border border-slate-700/80 bg-slate-800/50 p-1" aria-label="Secciones principales">
         <!-- Pestaña 1: Panel Operativo -->
-        <button id="tabBtnDashboard" onclick="switchTab('dashboard')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
+        <button id="tabBtnDashboard" data-ev="click:switchTab('dashboard')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
           <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
           <span>Inicio</span>
         </button>
 
         <!-- Pestaña 1b: Leads -->
-        <button id="tabBtnLeads" onclick="switchTab('leads')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">
+        <button id="tabBtnLeads" data-ev="click:switchTab('leads')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">
           <i data-lucide="users" class="w-4 h-4"></i>
           <span>Leads</span>
         </button>
 
         <!-- Pestaña 2: Gráficos Históricos -->
-        <button id="tabBtnHistorico" onclick="switchTab('historico')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">
+        <button id="tabBtnHistorico" data-ev="click:switchTab('historico')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">
           <i data-lucide="line-chart" class="w-4 h-4"></i>
           <span class="sm:hidden">Histórico</span><span class="hidden sm:inline">Gráficos Históricos</span>
           <span class="tabs-year text-[11px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono font-semibold">2026</span>
         </button>
-        <button id="tabBtnReporte" onclick="switchTab('reporte')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">
+        <button id="tabBtnReporte" data-ev="click:switchTab('reporte')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent">
           <i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Reporte</span>
         </button>
-        <button id="tabBtnCitas" onclick="switchTab('citas')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent"><i data-lucide="calendar-check" class="w-4 h-4"></i><span>Citas</span></button>
-        <button id="tabBtnCampanas" onclick="switchTab('campanas')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent"><i data-lucide="megaphone" class="w-4 h-4"></i><span>Campañas</span></button>
+        <button id="tabBtnCitas" data-ev="click:switchTab('citas')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent"><i data-lucide="calendar-check" class="w-4 h-4"></i><span>Citas</span></button>
+        <button id="tabBtnCampanas" data-ev="click:switchTab('campanas')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent"><i data-lucide="megaphone" class="w-4 h-4"></i><span>Campañas</span></button>
       </nav>
 
       <div class="tabs-info flex shrink-0 items-center gap-3 border-l border-slate-700/80 pl-4 text-xs text-slate-400">
@@ -195,20 +195,20 @@
 
     <div id="reporteDiario" class="hidden text-slate-800 space-y-5">
       <div class="report-viewbar"><div><h2 class="text-sm font-bold text-slate-800">Reportes del equipo</h2><p class="text-xs text-slate-500">Consulta el trabajo diario o analiza un período.</p></div><label class="flex items-center gap-2">Vista del reporte
-        <select id="reporteVista" onchange="setReporteVista(this.value)"><option value="diario">Diario</option><option value="periodo">Por período</option></select>
+        <select id="reporteVista" data-ev="change:setReporteVista(this.value)"><option value="diario">Diario</option><option value="periodo">Por período</option></select>
       </label></div>
       <div id="reporteDiarioVista" class="space-y-5">
       <header class="report-intro">
         <div class="relative z-10 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <span class="dashboard-eyebrow"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Actividad del equipo</span>
-            <div class="mt-2 flex items-center gap-2"><h1 class="text-2xl font-bold text-indigo-900">Reporte diario de trabajo</h1><button type="button" onclick="openHelpModal('ayuda-reporte-diario')" title="Ayuda: reporte diario" aria-label="Ayuda sobre el reporte diario" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 hover:bg-indigo-600 text-[11px] font-bold text-slate-700 hover:text-white cursor-pointer shrink-0">?</button></div>
+            <div class="mt-2 flex items-center gap-2"><h1 class="text-2xl font-bold text-indigo-900">Reporte diario de trabajo</h1><button type="button" data-ev="click:openHelpModal('ayuda-reporte-diario')" title="Ayuda: reporte diario" aria-label="Ayuda sobre el reporte diario" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 hover:bg-indigo-600 text-[11px] font-bold text-slate-700 hover:text-white cursor-pointer shrink-0">?</button></div>
             <p id="reporteFechaTexto" class="mt-1 text-sm text-slate-600"></p>
           </div>
           <div class="flex flex-wrap gap-3 items-end">
-            <label>Fecha <input id="reporteFecha" type="date" onchange="loadReporteDiario()" class="block mt-1"></label>
-            <label>Asesora <select id="reporteAsesora" onchange="loadReporteDiario()" class="block mt-1"><option value="">Todas las asesoras</option></select></label>
-            <button type="button" id="reporteBtnCsv" onclick="exportReporteDiarioCSV()" class="inline-flex items-center gap-2 rounded-md px-3 py-1.5 bg-slate-700 text-white text-sm font-semibold hover:bg-indigo-600 cursor-pointer"><i data-lucide="download" class="w-4 h-4"></i> Descargar CSV</button>
+            <label>Fecha <input id="reporteFecha" type="date" data-ev="change:loadReporteDiario()" class="block mt-1"></label>
+            <label>Asesora <select id="reporteAsesora" data-ev="change:loadReporteDiario()" class="block mt-1"><option value="">Todas las asesoras</option></select></label>
+            <button type="button" id="reporteBtnCsv" data-ev="click:exportReporteDiarioCSV()" class="inline-flex items-center gap-2 rounded-md px-3 py-1.5 bg-slate-700 text-white text-sm font-semibold hover:bg-indigo-600 cursor-pointer"><i data-lucide="download" class="w-4 h-4"></i> Descargar CSV</button>
           </div>
         </div>
       </header>
@@ -229,16 +229,16 @@
           </div>
         </header>
         <div class="period-controls report-controls flex flex-wrap gap-3 items-end text-sm">
-          <label>Desde <input id="periodoDesde" type="date" onchange="loadReportePeriodo()" class="block mt-1"></label>
-          <label>Hasta <input id="periodoHasta" type="date" onchange="loadReportePeriodo()" class="block mt-1"></label>
-          <button type="button" onclick="loadReportePeriodo()" class="border border-slate-300 rounded px-3 py-1.5">Actualizar</button>
-          <button type="button" id="periodoBtnCsv" onclick="exportReportePeriodoCSV()" class="rounded bg-slate-700 text-white px-3 py-1.5">Descargar CSV</button>
+          <label>Desde <input id="periodoDesde" type="date" data-ev="change:loadReportePeriodo()" class="block mt-1"></label>
+          <label>Hasta <input id="periodoHasta" type="date" data-ev="change:loadReportePeriodo()" class="block mt-1"></label>
+          <button type="button" data-ev="click:loadReportePeriodo()" class="border border-slate-300 rounded px-3 py-1.5">Actualizar</button>
+          <button type="button" id="periodoBtnCsv" data-ev="click:exportReportePeriodoCSV()" class="rounded bg-slate-700 text-white px-3 py-1.5">Descargar CSV</button>
         </div>
         <div class="period-presets report-presets text-sm" aria-label="Rangos de calendario (Miami)">
-          <button type="button" onclick="setPeriodoPreset('semana')" class="border border-slate-300 rounded px-3 py-1.5">Esta semana (lunes–domingo)</button>
-          <button type="button" onclick="setPeriodoPreset('7d')" class="border border-slate-300 rounded px-3 py-1.5">Últimos 7 días (incluye hoy)</button>
-          <button type="button" onclick="setPeriodoPreset('30d')" class="border border-slate-300 rounded px-3 py-1.5">Últimos 30 días (incluye hoy)</button>
-          <button type="button" onclick="setPeriodoPreset('mes')" class="border border-slate-300 rounded px-3 py-1.5">Mes actual hasta hoy (Miami)</button>
+          <button type="button" data-ev="click:setPeriodoPreset('semana')" class="border border-slate-300 rounded px-3 py-1.5">Esta semana (lunes–domingo)</button>
+          <button type="button" data-ev="click:setPeriodoPreset('7d')" class="border border-slate-300 rounded px-3 py-1.5">Últimos 7 días (incluye hoy)</button>
+          <button type="button" data-ev="click:setPeriodoPreset('30d')" class="border border-slate-300 rounded px-3 py-1.5">Últimos 30 días (incluye hoy)</button>
+          <button type="button" data-ev="click:setPeriodoPreset('mes')" class="border border-slate-300 rounded px-3 py-1.5">Mes actual hasta hoy (Miami)</button>
         </div>
         <p id="periodoAviso" role="status" aria-live="polite" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800"></p>
         <div id="periodoBody" class="space-y-4"></div>
@@ -257,10 +257,10 @@
         <p class="mt-1 text-sm text-slate-400">Revisa las prioridades, atiende tus leads y acompaña a tus próximos alumnos.</p>
       </div>
       <div class="flex flex-wrap items-center gap-2 shrink-0">
-        <button type="button" onclick="switchTab('leads')" class="primary-action inline-flex items-center gap-2 px-4 py-2 border border-slate-600 bg-slate-800/70 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-colors">
+        <button type="button" data-ev="click:switchTab('leads')" class="primary-action inline-flex items-center gap-2 px-4 py-2 border border-slate-600 bg-slate-800/70 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-colors">
           <i data-lucide="list-filter" class="w-4 h-4"></i> Ver leads
         </button>
-        <button type="button" onclick="openNewLeadModal()" class="primary-action inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/25 cursor-pointer transition-all">
+        <button type="button" data-ev="click:openNewLeadModal()" class="primary-action inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/25 cursor-pointer transition-all">
           <i data-lucide="user-plus" class="w-4 h-4"></i> Nuevo lead
         </button>
       </div>
@@ -329,7 +329,7 @@
     <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden" aria-labelledby="quickLeadsTitle">
       <div class="quick-leads-header px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
         <div><h2 id="quickLeadsTitle" class="dashboard-section-title text-sm sm:text-base font-bold text-white">Acceso rápido a leads</h2><p class="text-xs text-slate-400 mt-0.5">Cuatro resultados del filtro actual; consulta o actualiza la gestión.</p></div>
-        <button type="button" onclick="switchTab('leads')" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 cursor-pointer">Ver todos los leads →</button>
+        <button type="button" data-ev="click:switchTab('leads')" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 cursor-pointer">Ver todos los leads →</button>
       </div>
       <div id="quickLeadsList" aria-live="polite"><p class="px-4 py-5 text-xs text-slate-400">Cargando leads…</p></div>
     </section>
@@ -347,10 +347,10 @@
           <span class="dashboard-section-title">Encuentra lo que necesitas</span>
           <span id="activeFiltersCount" class="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">Sin filtros</span>
           <span id="leadScopeLabel" class="text-xs text-slate-400 font-normal">Últimos 2.000 registros</span>
-          <button id="btnLoadOlderLeads" type="button" onclick="loadOlderLeads()" class="text-xs px-2 py-1 rounded border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/10 cursor-pointer">Mostrar 2.000 anteriores</button>
-          <button id="btnRecentLeads" type="button" onclick="returnToRecentLeads()" class="hidden text-xs px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700 cursor-pointer">Volver a los últimos 2.000</button>
+          <button id="btnLoadOlderLeads" type="button" data-ev="click:loadOlderLeads()" class="text-xs px-2 py-1 rounded border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/10 cursor-pointer">Mostrar 2.000 anteriores</button>
+          <button id="btnRecentLeads" type="button" data-ev="click:returnToRecentLeads()" class="hidden text-xs px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700 cursor-pointer">Volver a los últimos 2.000</button>
         </div>
-        <button onclick="resetAllFilters()" class="text-xs text-slate-400 hover:text-indigo-400 flex items-center gap-1 transition-colors cursor-pointer">
+        <button data-ev="click:resetAllFilters()" class="text-xs text-slate-400 hover:text-indigo-400 flex items-center gap-1 transition-colors cursor-pointer">
           <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
           <span>Limpiar Filtros</span>
         </button>
@@ -362,14 +362,14 @@
           <label class="block text-xs font-medium text-slate-400 mb-1">Buscar lead</label>
           <div class="relative">
             <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-            <input type="text" id="filterSearch" oninput="scheduleApplyFilters()" placeholder="Nombre, teléfono u observación…" class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
+            <input type="text" id="filterSearch" data-ev="input:scheduleApplyFilters()" placeholder="Nombre, teléfono u observación…" class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
           </div>
         </div>
 
         <!-- Filtro Mes -->
         <div>
           <label class="block text-xs font-medium text-slate-400 mb-1">Mes</label>
-          <select id="filterMes" onchange="applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+          <select id="filterMes" data-ev="change:applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
             <option value="">Todos los meses</option>
           </select>
         </div>
@@ -377,7 +377,7 @@
         <!-- Filtro Campaña -->
         <div>
           <label class="block text-xs font-medium text-slate-400 mb-1">Campaña</label>
-          <select id="filterCampana" onchange="applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+          <select id="filterCampana" data-ev="change:applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
             <option value="">Todas las campañas</option>
           </select>
         </div>
@@ -385,7 +385,7 @@
         <!-- Filtro Medio -->
         <div>
           <label class="block text-xs font-medium text-slate-400 mb-1">Medio</label>
-          <select id="filterMedio" onchange="applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+          <select id="filterMedio" data-ev="change:applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
             <option value="">Todos los medios</option>
           </select>
         </div>
@@ -393,7 +393,7 @@
         <!-- Filtro Gestión -->
         <div>
           <label class="block text-xs font-medium text-slate-400 mb-1">Estatus actual del lead</label>
-          <select id="filterGestion" onchange="applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+          <select id="filterGestion" data-ev="change:applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
             <option value="">Todas las gestiones</option>
           </select>
         </div>
@@ -404,7 +404,7 @@
       <div class="dashboard-filter-extra grid grid-cols-1 md:grid-cols-[minmax(150px,1fr)_minmax(260px,2fr)_minmax(150px,1fr)] items-end gap-4 pt-2 border-t border-slate-700/60">
         <div class="min-w-[150px]">
           <label class="block text-xs font-medium text-slate-400 mb-1">Origen</label>
-          <select id="dataSourceFilter" onchange="setDataSource(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+          <select id="dataSourceFilter" data-ev="change:setDataSource(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
             <option value="historico">Histórico 2025</option>
             <option value="actual" selected>Leads actuales</option>
             <option value="todos">Todos</option>
@@ -418,13 +418,13 @@
           <div class="dashboard-date-fields flex flex-wrap items-center gap-2">
             <div class="flex items-center gap-1.5">
               <label class="text-[11px] text-slate-400">Desde</label>
-              <input type="date" id="dashDesde" onchange="applyFilters()" class="w-[120px] bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+              <input type="date" id="dashDesde" data-ev="change:applyFilters()" class="w-[120px] bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
             </div>
             <div class="flex items-center gap-1.5">
               <label class="text-[11px] text-slate-400">Hasta</label>
-              <input type="date" id="dashHasta" onchange="applyFilters()" class="w-[120px] bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+              <input type="date" id="dashHasta" data-ev="change:applyFilters()" class="w-[120px] bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
             </div>
-            <button onclick="clearDashRange()" class="text-[11px] text-indigo-400 hover:text-indigo-300 underline cursor-pointer">Limpiar</button>
+            <button data-ev="click:clearDashRange()" class="text-[11px] text-indigo-400 hover:text-indigo-300 underline cursor-pointer">Limpiar</button>
             <span id="dashRangeScope" class="text-[11px] text-indigo-300 font-semibold hidden"></span>
             <div id="dashRangeError" class="text-[11px] text-amber-400 hidden"></div>
           </div>
@@ -432,7 +432,7 @@
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-400 mb-1">Asesora</label>
-          <select id="filterAsesora" onchange="applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+          <select id="filterAsesora" data-ev="change:applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
             <option value="">Todas las asesoras</option>
           </select>
         </div>
@@ -454,7 +454,7 @@
         <div class="flex items-center gap-2 text-xs text-slate-400">
           <span class="inline-block w-2.5 h-2.5 rounded bg-emerald-500"></span> <span>Alta densidad</span>
           <span class="inline-block w-2.5 h-2.5 rounded bg-slate-800 border border-slate-700 ml-2"></span> <span>Sin registros</span>
-          <button type="button" id="matrixToggle" class="matrix-toggle ml-2 inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-indigo-300 hover:bg-indigo-500/10 cursor-pointer" aria-controls="matrixPanel" aria-expanded="false" onclick="toggleMatrixPanel()"><span id="matrixToggleLabel">Mostrar matriz</span><i data-lucide="chevron-down" class="matrix-chevron w-3.5 h-3.5"></i></button>
+          <button type="button" id="matrixToggle" class="matrix-toggle ml-2 inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-indigo-300 hover:bg-indigo-500/10 cursor-pointer" aria-controls="matrixPanel" aria-expanded="false" data-ev="click:toggleMatrixPanel()"><span id="matrixToggleLabel">Mostrar matriz</span><i data-lucide="chevron-down" class="matrix-chevron w-3.5 h-3.5"></i></button>
         </div>
       </div>
 
@@ -489,7 +489,7 @@
           <!-- Page size selector -->
           <div class="flex items-center gap-1.5 text-xs text-slate-400">
             <span>Mostrar:</span>
-            <select id="pageSizeSelect" onchange="changePageSize(this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 focus:outline-none">
+            <select id="pageSizeSelect" data-ev="change:changePageSize(this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 focus:outline-none">
               <option value="15">15</option>
               <option value="20" selected>20</option>
               <option value="50">50</option>
@@ -498,7 +498,7 @@
           </div>
 
           <!-- Export CSV -->
-          <button onclick="exportCurrentLeadsCSV()" class="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-300 hover:text-white transition-colors cursor-pointer">
+          <button data-ev="click:exportCurrentLeadsCSV()" class="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-300 hover:text-white transition-colors cursor-pointer">
             <i data-lucide="download" class="w-3.5 h-3.5"></i>
             <span>Exportar</span>
           </button>
@@ -553,28 +553,28 @@
         <div class="historical-filter-grid">
           <!-- Filtro de Campaña en Histórico -->
           <label>Campaña
-            <select id="histFilterCampana" onchange="renderHistoricalAnalytics()" class="mt-1 text-xs">
+            <select id="histFilterCampana" data-ev="change:renderHistoricalAnalytics()" class="mt-1 text-xs">
               <option value="">Todas las Campañas</option>
             </select>
           </label>
 
           <!-- Filtro de Asesor en Histórico -->
           <label>Asesor
-            <select id="histFilterAgente" onchange="renderHistoricalAnalytics()" class="mt-1 text-xs">
+            <select id="histFilterAgente" data-ev="change:renderHistoricalAnalytics()" class="mt-1 text-xs">
               <option value="">Todos los Asesores</option>
             </select>
           </label>
 
           <!-- Filtro de Mes en Histórico -->
           <label>Mes
-            <select id="histFilterMes" onchange="renderHistoricalAnalytics()" class="mt-1 text-xs">
+            <select id="histFilterMes" data-ev="change:renderHistoricalAnalytics()" class="mt-1 text-xs">
               <option value="">Todos los Meses</option>
             </select>
           </label>
 
           <!-- Filtro de Año en Histórico (el informe distingue años: ENERO 2025 ≠ ENERO 2026) -->
           <label>Año
-            <select id="histFilterAnio" onchange="renderHistoricalAnalytics()" class="mt-1 text-xs">
+            <select id="histFilterAnio" data-ev="change:renderHistoricalAnalytics()" class="mt-1 text-xs">
               <option value="">Todos los Años</option>
             </select>
           </label>
@@ -582,18 +582,18 @@
         <div class="historical-filter-actions">
 
           <!-- Rango de fechas (Desde/Hasta) en Histórico: tiene precedencia sobre el mes -->
-          <label>Desde<input type="date" id="histRangeFrom" onchange="renderHistoricalAnalytics()" class="block mt-1 text-xs"></label>
-          <label>Hasta<input type="date" id="histRangeTo" onchange="renderHistoricalAnalytics()" class="block mt-1 text-xs"></label>
+          <label>Desde<input type="date" id="histRangeFrom" data-ev="change:renderHistoricalAnalytics()" class="block mt-1 text-xs"></label>
+          <label>Hasta<input type="date" id="histRangeTo" data-ev="change:renderHistoricalAnalytics()" class="block mt-1 text-xs"></label>
 
           <!-- Presets del rango -->
           <div class="historical-presets">
-            <button onclick="setHistRangePreset('7d')" title="Últimos 7 días" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">7d</button>
-            <button onclick="setHistRangePreset('30d')" title="Últimos 30 días" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">30d</button>
-            <button onclick="setHistRangePreset('month')" title="Este mes" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">Mes</button>
-            <button onclick="setHistRangePreset('clear')" title="Limpiar rango de fechas" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">Limpiar</button>
+            <button data-ev="click:setHistRangePreset('7d')" title="Últimos 7 días" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">7d</button>
+            <button data-ev="click:setHistRangePreset('30d')" title="Últimos 30 días" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">30d</button>
+            <button data-ev="click:setHistRangePreset('month')" title="Este mes" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">Mes</button>
+            <button data-ev="click:setHistRangePreset('clear')" title="Limpiar rango de fechas" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">Limpiar</button>
           </div>
 
-          <button onclick="renderHistoricalAnalytics()" title="Recalcular gráficos" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0">
+          <button data-ev="click:renderHistoricalAnalytics()" title="Recalcular gráficos" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span>Actualizar</span>
           </button>
@@ -853,7 +853,7 @@
               <p class="text-xs text-slate-400">Métricas clave desglosadas por año y mes</p>
             </div>
           </div>
-          <button onclick="exportHistoricalSummaryCSV()" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0">
+          <button data-ev="click:exportHistoricalSummaryCSV()" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0">
             <i data-lucide="download" class="w-3.5 h-3.5"></i>
             Exportar resumen
           </button>
@@ -893,25 +893,25 @@
 
       <!-- Filtros -->
       <div class="appointments-filters space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2"><div><h3 class="font-bold text-white text-sm">Filtrar citas</h3><p class="text-xs text-slate-400">Ajusta fechas, sede y origen para encontrar una visita.</p></div><div class="flex flex-wrap gap-2"><button type="button" onclick="loadCitas()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer">Actualizar citas</button><button type="button" onclick="resetCitasFilters()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer">Limpiar filtros</button></div></div>
+        <div class="flex flex-wrap items-center justify-between gap-2"><div><h3 class="font-bold text-white text-sm">Filtrar citas</h3><p class="text-xs text-slate-400">Ajusta fechas, sede y origen para encontrar una visita.</p></div><div class="flex flex-wrap gap-2"><button type="button" data-ev="click:loadCitas()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer">Actualizar citas</button><button type="button" data-ev="click:resetCitasFilters()" class="px-3 py-2 rounded-lg border border-slate-600 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer">Limpiar filtros</button></div></div>
         <div class="grid grid-cols-1 min-[400px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs"><label>Desde<input id="citasDesde" type="date" class="w-full mt-1"></label><label>Hasta<input id="citasHasta" type="date" class="w-full mt-1"></label><label>Resultado<select id="citasResultado" class="w-full mt-1"><option value="">Todos</option><option value="ASISTIO">Asistió</option><option value="CANCELADA">Cancelada</option><option value="NO_ASISTIO">No asistió</option><option value="PROGRAMADA">Programada</option><option value="REPROGRAMADA">Reprogramada</option></select></label><label>Sede<select id="citasSede" class="w-full mt-1"><option value="">Todas</option><option value="DORAL">Doral</option><option value="sin">Sin sede</option><option value="WESTON">Weston</option></select></label><label>Campaña<select id="citasCampana" class="w-full mt-1"></select></label><label>Medio<select id="citasMedio" class="w-full mt-1"></select></label><label id="citasAsesorWrap" class="hidden">Asesor<select id="citasAsesor" class="w-full mt-1"></select></label></div>
       </div>
 
       <!-- Barra de vista: Lista / Día / Semana / Mes -->
       <div id="citasViewBar" class="flex flex-wrap items-center gap-2 bg-slate-800/50 border border-slate-700 rounded-lg p-2" role="tablist" aria-label="Vista de citas">
-        <button id="citasViewLista" type="button" role="tab" aria-selected="false" onclick="setCitasViewMode('lista')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Lista</button>
-        <button id="citasViewDia" type="button" role="tab" aria-selected="false" onclick="setCitasViewMode('dia')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Día</button>
-        <button id="citasViewSemana" type="button" role="tab" aria-selected="true" onclick="setCitasViewMode('semana')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-indigo-600 text-white">Semana</button>
-        <button id="citasViewMes" type="button" role="tab" aria-selected="false" onclick="setCitasViewMode('mes')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Mes</button>
+        <button id="citasViewLista" type="button" role="tab" aria-selected="false" data-ev="click:setCitasViewMode('lista')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Lista</button>
+        <button id="citasViewDia" type="button" role="tab" aria-selected="false" data-ev="click:setCitasViewMode('dia')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Día</button>
+        <button id="citasViewSemana" type="button" role="tab" aria-selected="true" data-ev="click:setCitasViewMode('semana')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-indigo-600 text-white">Semana</button>
+        <button id="citasViewMes" type="button" role="tab" aria-selected="false" data-ev="click:setCitasViewMode('mes')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-700">Mes</button>
       </div>
 
       <!-- Navegación del calendario: visible de inicio porque Semana es la vista por defecto -->
       <div id="citasCalendarNav" class="flex items-center justify-between gap-3 bg-slate-800/50 border border-slate-700 rounded-lg p-3">
-        <button type="button" onclick="citasCalendarNav('today')" class="px-3 py-1.5 rounded-md text-xs font-medium bg-slate-700 text-slate-200 hover:bg-slate-600 transition-colors">Hoy</button>
+        <button type="button" data-ev="click:citasCalendarNav('today')" class="px-3 py-1.5 rounded-md text-xs font-medium bg-slate-700 text-slate-200 hover:bg-slate-600 transition-colors">Hoy</button>
         <div class="flex items-center gap-2">
-          <button type="button" onclick="citasCalendarNav('prev')" class="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" aria-label="Período anterior"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+          <button type="button" data-ev="click:citasCalendarNav('prev')" class="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" aria-label="Período anterior"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
           <span id="citasCalendarTitle" class="text-sm font-medium text-slate-200 min-w-[140px] text-center"></span>
-          <button type="button" onclick="citasCalendarNav('next')" class="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" aria-label="Período siguiente"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+          <button type="button" data-ev="click:citasCalendarNav('next')" class="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" aria-label="Período siguiente"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
         </div>
         <div class="w-20"></div>
       </div>
@@ -943,8 +943,8 @@
         <div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="megaphone" class="w-3.5 h-3.5"></i> Análisis de campañas</span><h2 class="mt-3 text-2xl font-bold text-white">Campañas</h2><p class="mt-1 text-sm text-slate-400">Compara la inversión de Meta con los resultados registrados en el CRM.</p></div>
       </div>
       <div class="campaigns-controls flex flex-wrap items-end justify-between gap-3">
-        <div><label for="campaignMesSel" class="block">Mes del informe</label><input id="campaignMesSel" type="month" onchange="loadCampanas()" class="mt-1"></div>
-        <button type="button" onclick="exportCampanasCSV()" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-700 text-white text-xs font-semibold hover:bg-indigo-600 cursor-pointer"><i data-lucide="download" class="w-4 h-4"></i> Descargar CSV</button>
+        <div><label for="campaignMesSel" class="block">Mes del informe</label><input id="campaignMesSel" type="month" data-ev="change:loadCampanas()" class="mt-1"></div>
+        <button type="button" data-ev="click:exportCampanasCSV()" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-700 text-white text-xs font-semibold hover:bg-indigo-600 cursor-pointer"><i data-lucide="download" class="w-4 h-4"></i> Descargar CSV</button>
       </div>
       <p id="campanasAviso" class="text-sm text-amber-300"></p>
       <p id="campanasLoadingStatus" role="status" class="text-sm text-slate-500" aria-live="polite"></p>
@@ -968,7 +968,7 @@
       <div class="flex items-center gap-4 text-slate-400">
         <span>Miami — Weston — Doral</span>
         <span>•</span>
-        <button onclick="openRlsModal()" class="hover:text-indigo-400 transition-colors cursor-pointer">Seguridad Supabase RLS</button>
+        <button data-ev="click:openRlsModal()" class="hover:text-indigo-400 transition-colors cursor-pointer">Seguridad Supabase RLS</button>
         <span>•</span>
         <a href="/privacidad.html" class="hover:text-indigo-400 transition-colors">Privacidad</a>
       </div>
@@ -978,7 +978,7 @@
   <!-- ================= BANNER: INACTIVIDAD (solo asesoras) ================= -->
   <div id="idleBanner" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-[65] bg-amber-600 text-white rounded-xl shadow-2xl px-4 py-3 flex items-center gap-3 max-w-md" role="alert" aria-live="assertive">
     <span class="text-xs font-medium">Sesión inactiva: se cerrará en <strong id="idleCountdown">60</strong> s.</span>
-    <button type="button" onclick="continueAgentSession()" class="px-2.5 py-1.5 rounded-lg bg-white/90 text-amber-700 text-[11px] font-bold shrink-0 cursor-pointer">Continuar sesión</button>
+    <button type="button" data-ev="click:continueAgentSession()" class="px-2.5 py-1.5 rounded-lg bg-white/90 text-amber-700 text-[11px] font-bold shrink-0 cursor-pointer">Continuar sesión</button>
   </div>
 
   <!-- ================= MODAL: INICIO DE SESIÓN ================= -->
@@ -993,12 +993,12 @@
         <span class="inline-flex items-center gap-2 text-xs font-bold text-indigo-600"><i data-lucide="shield-check" class="w-4 h-4"></i> Acceso seguro</span>
         <h2 id="loginTitle" class="mt-3 text-2xl font-bold tracking-tight">Te damos la bienvenida</h2>
         <p class="mt-2 mb-7 text-sm text-slate-600">Ingresa con tu cuenta autorizada para continuar.</p>
-        <form id="formLogin" onsubmit="handleLogin(event)" class="space-y-4">
+        <form id="formLogin" data-ev="submit:handleLogin(event)" class="space-y-4">
           <div><label for="loginEmail">Correo electrónico</label><input id="loginEmail" type="email" autocomplete="email" required placeholder="tu@correo.com"></div>
-          <div><label for="loginPassword">Contraseña</label><div class="relative"><input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Escribe tu contraseña" class="pr-20"><button id="loginPasswordToggle" type="button" class="login-password-toggle" aria-controls="loginPassword" aria-pressed="false" onclick="toggleLoginPassword(this)">Mostrar</button></div></div>
+          <div><label for="loginPassword">Contraseña</label><div class="relative"><input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Escribe tu contraseña" class="pr-20"><button id="loginPasswordToggle" type="button" class="login-password-toggle" aria-controls="loginPassword" aria-pressed="false" data-ev="click:toggleLoginPassword(this)">Mostrar</button></div></div>
           <button type="submit" class="login-submit">Ingresar al panel</button>
         </form>
-        <button type="button" onclick="handlePasswordReset()" class="mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer self-start">¿Olvidaste tu contraseña?</button>
+        <button type="button" data-ev="click:handlePasswordReset()" class="mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer self-start">¿Olvidaste tu contraseña?</button>
         <p id="loginStatus" role="status" aria-live="polite" class="mt-5 text-xs text-slate-600">La cuenta debe estar autorizada por un administrador.</p>
         <p class="mt-7 pt-5 border-t border-slate-200 text-[11px] leading-relaxed text-slate-600">El uso de este panel está sujeto a la <a href="/privacidad.html" class="text-indigo-700 underline hover:text-indigo-900">política de privacidad</a>.</p>
       </div>
@@ -1015,7 +1015,7 @@
       </div>
       <div class="password-content">
       <p id="setPasswordHint" class="mb-5 text-sm text-slate-600">Tu cuenta está autorizada. Escribe una contraseña nueva para terminar de entrar.</p>
-      <form id="formSetPassword" onsubmit="handleSetPassword(event)" class="space-y-4">
+      <form id="formSetPassword" data-ev="submit:handleSetPassword(event)" class="space-y-4">
         <!-- Chromium avisa si un formulario con contraseña no tiene campo de usuario: este modal se abre desde el enlace del correo, asi que el campo va oculto y vacio a proposito. -->
         <input type="text" id="setPasswordUsername" autocomplete="username" hidden>
         <div><label for="setPasswordNew">Nueva contraseña</label><input id="setPasswordNew" type="password" autocomplete="new-password" required minlength="8" placeholder="Mínimo 8 caracteres"></div>
@@ -1024,7 +1024,7 @@
       </form>
       <div class="mt-5 flex items-center justify-between gap-3">
         <p id="setPasswordStatus" role="status" aria-live="polite" class="text-xs text-slate-600"></p>
-        <button type="button" onclick="handleSignOut()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer">Salir</button>
+        <button type="button" data-ev="click:handleSignOut()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer">Salir</button>
       </div>
       </div>
     </div>
@@ -1033,10 +1033,10 @@
   <!-- ================= PANEL: ADMINISTRACIÓN DE ACCESOS ================= -->
   <div id="panelAdminUsers" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm items-center justify-center p-4">
     <div class="users-shell flex flex-col" role="dialog" aria-modal="true" aria-labelledby="usersTitle">
-      <div class="users-header"><div class="flex items-center gap-3"><span class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400"><i data-lucide="users-round" class="w-5 h-5"></i></span><div><h2 id="usersTitle" class="font-bold text-base">Gestión de accesos</h2><p class="text-xs">Invitaciones, usuarios y actividad del equipo.</p></div></div><button type="button" onclick="document.getElementById('panelAdminUsers').classList.add('hidden');document.getElementById('panelAdminUsers').classList.remove('flex')" aria-label="Cerrar gestión de accesos" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+      <div class="users-header"><div class="flex items-center gap-3"><span class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400"><i data-lucide="users-round" class="w-5 h-5"></i></span><div><h2 id="usersTitle" class="font-bold text-base">Gestión de accesos</h2><p class="text-xs">Invitaciones, usuarios y actividad del equipo.</p></div></div><button type="button" data-ev="click:toggleAdminUsers(false)" aria-label="Cerrar gestión de accesos" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button></div>
       <div class="users-body space-y-4">
         <section class="users-section space-y-3"><div><h3 class="text-sm font-bold">Invitar usuario</h3><p class="text-xs text-slate-500">Envía una invitación para acceder al panel.</p></div>
-          <form id="formAuthorizeUser" onsubmit="handleAuthorizeUser(event)" class="grid sm:grid-cols-2 gap-3 text-xs">
+          <form id="formAuthorizeUser" data-ev="submit:handleAuthorizeUser(event)" class="grid sm:grid-cols-2 gap-3 text-xs">
             <div><label for="authorizeEmail">Correo electrónico</label><input id="authorizeEmail" type="email" required placeholder="correo@ejemplo.com" class="w-full"></div>
             <div><label for="authorizeName">Nombre</label><input id="authorizeName" type="text" required maxlength="120" placeholder="Nombre de la persona" class="w-full"></div>
             <div><label for="authorizeRole">Rol</label><select id="authorizeRole" class="w-full"><option value="admin">Administrador</option><option value="agente" selected>Agente</option><option value="supervisor">Supervisor</option><option value="trafficker">Trafficker</option></select></div>
@@ -1045,20 +1045,20 @@
           <p class="text-[11px] text-slate-500">La persona verifica su correo y define su propia contraseña. Aquí se guardan su correo, nombre, rol y estado.</p>
         </section>
         <section class="users-section space-y-3"><div><h3 class="text-sm font-bold">Usuarios autorizados</h3><p class="text-xs text-slate-500">Busca una cuenta o administra su acceso.</p></div>
-          <label for="userSearch" class="sr-only">Buscar usuarios</label><input id="userSearch" type="search" oninput="renderAuthorizedUsers()" placeholder="Buscar por correo, nombre o rol…" class="w-full text-xs">
+          <label for="userSearch" class="sr-only">Buscar usuarios</label><input id="userSearch" type="search" data-ev="input:renderAuthorizedUsers()" placeholder="Buscar por correo, nombre o rol…" class="w-full text-xs">
           <p id="userSearchCount" class="text-[11px] text-slate-500"></p>
           <div id="authorizedUsers" class="text-xs text-slate-500"></div>
         </section>
         <section class="users-section space-y-2">
-          <div class="users-session-header flex items-center justify-between gap-3"><h3 class="text-sm font-bold">Actividad de asesoras</h3><button type="button" onclick="loadAgentSessionsReport()" class="users-session-refresh px-2 py-1 rounded border border-slate-300 hover:border-indigo-400 text-[11px] cursor-pointer">Actualizar</button></div>
+          <div class="users-session-header flex items-center justify-between gap-3"><h3 class="text-sm font-bold">Actividad de asesoras</h3><button type="button" data-ev="click:loadAgentSessionsReport()" class="users-session-refresh px-2 py-1 rounded border border-slate-300 hover:border-indigo-400 text-[11px] cursor-pointer">Actualizar</button></div>
           <p class="text-[11px] text-slate-500">Una fila por asesora. «Activa» requiere actividad en los últimos 5 minutos. Las sesiones cerradas se conservan hasta 90 días; no se registran clics ni tecleo.</p>
           <div id="agentSessionsBody" class="text-[11px] text-slate-500"><p>Cargando actividad…</p></div>
         </section>
         <section id="changeEmailBox" class="users-section hidden space-y-2 text-xs">
           <h3 class="text-sm font-bold">Cambiar correo</h3><p class="text-slate-500">Cuenta: <span id="changeEmailTarget" class="font-semibold text-slate-700"></span></p>
-          <form id="formChangeEmail" onsubmit="handleChangeEmail(event)" class="space-y-2">
+          <form id="formChangeEmail" data-ev="submit:handleChangeEmail(event)" class="space-y-2">
             <label for="changeEmailNew">Nuevo correo electrónico</label><input id="changeEmailNew" type="email" required maxlength="320" placeholder="nuevo@correo.com" class="w-full">
-            <div class="flex flex-wrap items-center gap-2"><button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Enviar confirmación</button><button type="button" onclick="closeChangeEmail()" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 cursor-pointer">Cancelar</button></div>
+            <div class="flex flex-wrap items-center gap-2"><button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Enviar confirmación</button><button type="button" data-ev="click:closeChangeEmail()" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 cursor-pointer">Cancelar</button></div>
             <p id="changeEmailStatus" class="text-[11px] text-slate-500"></p>
           </form>
           <p class="text-[11px] text-slate-500">Se envían confirmaciones a ambos correos. La cuenta, el rol y el historial se conservan.</p>
@@ -1080,11 +1080,11 @@
             <p class="text-xs">Valores de filtros y formularios del equipo.</p>
           </div>
         </div>
-        <button type="button" onclick="closeCatalogsModal()" aria-label="Cerrar catálogos" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button type="button" data-ev="click:closeCatalogsModal()" aria-label="Cerrar catálogos" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
 
       <div class="catalog-body space-y-4">
-      <div class="catalog-section space-y-3"><label for="catalogKind">Tipo de catálogo</label><select id="catalogKind" onchange="renderCatalogList()" class="w-full text-xs">
+      <div class="catalog-section space-y-3"><label for="catalogKind">Tipo de catálogo</label><select id="catalogKind" data-ev="change:renderCatalogList()" class="w-full text-xs">
         <option value="agente">Agente</option>
         <option value="campana">Campaña</option>
         <option value="gestion">Gestión</option>
@@ -1094,7 +1094,7 @@
 
       <div class="catalog-section space-y-3"><div><h3 class="text-sm font-bold">Añadir valor</h3><p class="text-xs text-slate-500">Aparecerá en los filtros y formularios.</p></div><label for="catalogNewValue" class="sr-only">Nuevo valor</label><div class="catalog-add-controls flex flex-wrap items-center gap-2">
         <input id="catalogNewValue" type="text" maxlength="120" placeholder="Nuevo valor…" class="flex-1 min-w-0 text-xs">
-        <button type="button" onclick="addCatalogValue()" class="min-h-10 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition-colors">Añadir</button>
+        <button type="button" data-ev="click:addCatalogValue()" class="min-h-10 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition-colors">Añadir</button>
       </div></div>
 
       <div class="catalog-section"><div class="mb-2"><h3 class="text-sm font-bold">Valores disponibles</h3><p class="text-xs text-slate-500">Renombra o cambia el estado de un valor cuando sea necesario.</p></div><div id="catalogList" class="text-xs"></div></div>
@@ -1104,8 +1104,8 @@
   </div>
 
   <!-- ================= MODAL: CENTRO DE AYUDA ================= -->
-  <div id="modalHelp" class="fixed inset-0 z-[70] bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4" onclick="closeHelpModal()">
-    <div class="help-shell overflow-hidden max-h-[90dvh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="modalHelpTitle" onclick="event.stopPropagation()">
+  <div id="modalHelp" class="fixed inset-0 z-[70] bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4" data-ev="click:closeHelpModal()">
+    <div class="help-shell overflow-hidden max-h-[90dvh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="modalHelpTitle" data-ev="click:stopPropagationEvent(event)">
       <div class="help-header">
         <div class="flex items-center gap-3 min-w-0">
           <div class="help-mark" aria-hidden="true">
@@ -1118,7 +1118,7 @@
         </div>
         <div class="flex items-center gap-2 shrink-0">
           <span id="helpMeta" class="help-meta"></span>
-          <button type="button" onclick="closeHelpModal()" title="Cerrar la ayuda" aria-label="Cerrar el centro de ayuda" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer shrink-0">
+          <button type="button" data-ev="click:closeHelpModal()" title="Cerrar la ayuda" aria-label="Cerrar el centro de ayuda" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer shrink-0">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
@@ -1128,9 +1128,9 @@
         <div class="help-search-field">
           <label for="helpSearch" class="sr-only">Buscar en la ayuda</label>
           <i data-lucide="search" class="help-search-icon" aria-hidden="true"></i>
-          <input id="helpSearch" type="search" oninput="renderHelpContent()" placeholder="Busca una tarea, pantalla o palabra clave…" class="flex-1 min-w-0 text-sm">
+          <input id="helpSearch" type="search" data-ev="input:renderHelpContent()" placeholder="Busca una tarea, pantalla o palabra clave…" class="flex-1 min-w-0 text-sm">
         </div>
-        <button type="button" onclick="clearHelpSearch()" title="Limpiar la búsqueda" aria-label="Limpiar la búsqueda de ayuda" class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium cursor-pointer shrink-0">Limpiar</button>
+        <button type="button" data-ev="click:clearHelpSearch()" title="Limpiar la búsqueda" aria-label="Limpiar la búsqueda de ayuda" class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium cursor-pointer shrink-0">Limpiar</button>
       </div>
       <p id="helpResults" class="help-results" role="status" aria-live="polite"></p>
 
@@ -1143,8 +1143,8 @@
       <div class="help-footer">
         <p class="text-[11px] text-slate-400">La ayuda se muestra sobre la pantalla en la que estás; ciérrala para volver.</p>
         <div class="flex items-center gap-2">
-          <button type="button" onclick="scrollHelpToTop()" class="help-footer-link">Volver arriba</button>
-          <button type="button" onclick="closeHelpModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Cerrar</button>
+          <button type="button" data-ev="click:scrollHelpToTop()" class="help-footer-link">Volver arriba</button>
+          <button type="button" data-ev="click:closeHelpModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Cerrar</button>
         </div>
       </div>
     </div>
@@ -1160,12 +1160,12 @@
           </div>
           <div><h3 id="newLeadTitle" class="font-bold text-base">Registrar nuevo lead</h3><p class="text-xs">Datos de contacto y primera gestión</p></div>
         </div>
-        <button type="button" onclick="closeNewLeadModal()" aria-label="Cerrar registro de lead" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
+        <button type="button" data-ev="click:closeNewLeadModal()" aria-label="Cerrar registro de lead" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <form id="formNewLead" onsubmit="handleCreateLead(event)" class="flex flex-col min-h-0 flex-1 text-xs">
+      <form id="formNewLead" data-ev="submit:handleCreateLead(event)" class="flex flex-col min-h-0 flex-1 text-xs">
         <div class="lead-form-scroll space-y-4">
         <div class="lead-form-primary">
           <h4>Información inicial</h4>
@@ -1179,14 +1179,14 @@
           <!-- Teléfono -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Teléfono / WhatsApp *</label>
-            <input type="text" id="newTelefono" required inputmode="tel" autocomplete="tel" placeholder="Ej: 1 (786) 555-1234" oninput="queueNewPhoneCheck()" onblur="this.value=formatPhone(this.value); checkNewPhoneDuplicate()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <input type="text" id="newTelefono" required inputmode="tel" autocomplete="tel" placeholder="Ej: 1 (786) 555-1234" data-ev="input:queueNewPhoneCheck()" data-ev="blur:formatPhoneFieldAndCheck(this)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
             <p id="newPhoneWarn" class="hidden mt-1 text-[11px] text-amber-300"></p>
           </div>
 
           <!-- Fecha de llegada (opcional, por defecto hoy en Miami; solo actual o pasada) -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Fecha de llegada</label>
-            <input type="date" id="newFechaLlegada" onchange="syncNewLeadMes()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+            <input type="date" id="newFechaLlegada" data-ev="change:syncNewLeadMes()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
           </div>
 
           <!-- Mes (se calcula de la fecha de llegada) -->
@@ -1221,11 +1221,11 @@
           </div>
 
           <div id="newAppointmentFields" class="hidden sm:col-span-2 grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end border border-indigo-500/30 rounded-lg p-3">
-            <div class="sm:col-span-3 flex items-center gap-1.5 text-[11px] text-indigo-300 font-semibold">Cita obligatoria al agendar<button type="button" onclick="openHelpModal('ayuda-nuevo-lead')" title="Ayuda: cita obligatoria" aria-label="Ayuda sobre la cita obligatoria al agendar" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button></div>
+            <div class="sm:col-span-3 flex items-center gap-1.5 text-[11px] text-indigo-300 font-semibold">Cita obligatoria al agendar<button type="button" data-ev="click:openHelpModal('ayuda-nuevo-lead')" title="Ayuda: cita obligatoria" aria-label="Ayuda sobre la cita obligatoria al agendar" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button></div>
             <label class="text-[11px] text-slate-400">Fecha y hora<input id="newAppointmentDate" type="datetime-local" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
             <div class="sm:col-span-3 flex items-center gap-3"><span class="text-[11px] text-slate-400">Sede de la cita *</span><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="newAppointmentCampus" value="DORAL" required class="accent-indigo-500"> Doral</label><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="newAppointmentCampus" value="WESTON" required class="accent-indigo-500"> Weston</label></div>
             <label class="text-[11px] text-slate-400">Nota opcional<textarea id="newAppointmentNote" maxlength="2000" rows="1" class="block w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></textarea></label>
-            <div id="newAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="newAppointmentAdvisor" onchange="toggleNewAppointmentFields()" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
+            <div id="newAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="newAppointmentAdvisor" data-ev="change:toggleNewAppointmentFields()" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
             <label class="text-[11px] text-slate-400">Nombre del estudiante (opcional)<input id="newAppointmentStudentName" type="text" maxlength="200" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
             <label class="text-[11px] text-slate-400">Correo de contacto (opcional)<input id="newAppointmentContactEmail" type="email" maxlength="254" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100" placeholder="nombre@correo.com"></label>
             <label class="text-[11px] text-slate-400">Edad (opcional)<input id="newAppointmentStudentAge" type="number" min="0" max="120" step="1" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
@@ -1234,7 +1234,7 @@
           <!-- Medio -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Medio</label>
-            <select id="newMedio" onchange="syncNewUltimaGestion()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+            <select id="newMedio" data-ev="change:syncNewUltimaGestion()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
               <option value="CogniTalkign">CogniTalkign</option>
               <option value="Instagram">Instagram</option>
               <option value="Lead Directo">Lead Directo</option>
@@ -1258,8 +1258,8 @@
           <!-- Gestión (Estatus) -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Gestión Inicial</label>
-            <div class="flex items-center gap-1.5"><button type="button" onclick="openHelpModal('ayuda-nuevo-lead')" title="Ayuda: gestión inicial" aria-label="Ayuda sobre la gestión inicial del lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button><span class="text-[11px] text-slate-400">Agendado o AGENDADO DATADURA exige cita.</span></div>
-            <select id="newGestion" onchange="toggleNewAppointmentFields()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+            <div class="flex items-center gap-1.5"><button type="button" data-ev="click:openHelpModal('ayuda-nuevo-lead')" title="Ayuda: gestión inicial" aria-label="Ayuda sobre la gestión inicial del lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button><span class="text-[11px] text-slate-400">Agendado o AGENDADO DATADURA exige cita.</span></div>
+            <select id="newGestion" data-ev="change:toggleNewAppointmentFields()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
               <option value="Agendado">Agendado</option>
               <option value="Información " selected>Información</option>
               <option value="INSCRITO">INSCRITO</option>
@@ -1300,7 +1300,7 @@
         </div>
 
         <div class="lead-form-footer">
-          <button type="button" onclick="closeNewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium cursor-pointer">Cancelar</button>
+          <button type="button" data-ev="click:closeNewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium cursor-pointer">Cancelar</button>
           <button type="submit" id="btnSubmitNewLead" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center gap-2 cursor-pointer">
             <i data-lucide="check" class="w-4 h-4"></i>
             <span>Crear lead</span>
@@ -1323,12 +1323,12 @@
             <p id="editLeadLeadInfo" class="text-xs text-slate-400">ID: -</p>
           </div>
         </div>
-        <button type="button" onclick="closeEditLeadModal()" aria-label="Cerrar actualización de seguimiento" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
+        <button type="button" data-ev="click:closeEditLeadModal()" aria-label="Cerrar actualización de seguimiento" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <form id="formEditLead" onsubmit="handleUpdateLead(event)" class="flex flex-col min-h-0 flex-1 text-xs">
+      <form id="formEditLead" data-ev="submit:handleUpdateLead(event)" class="flex flex-col min-h-0 flex-1 text-xs">
         <input type="hidden" id="editLeadId">
         <div class="lead-form-scroll space-y-4">
 
@@ -1338,8 +1338,8 @@
           <!-- GESTION -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Estatus de Gestión *</label>
-            <div class="flex items-center gap-1.5"><button type="button" onclick="openHelpModal('ayuda-gestionar-lead')" title="Ayuda: cambiar la gestión" aria-label="Ayuda sobre el cambio de gestión de un lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-amber-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button><span class="text-[11px] text-slate-400">Información → Agendado crea la cita en el mismo guardado.</span></div>
-            <select id="editGestion" onchange="toggleEditAppointmentFields()" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 font-semibold focus:outline-none focus:border-amber-500">
+            <div class="flex items-center gap-1.5"><button type="button" data-ev="click:openHelpModal('ayuda-gestionar-lead')" title="Ayuda: cambiar la gestión" aria-label="Ayuda sobre el cambio de gestión de un lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-amber-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button><span class="text-[11px] text-slate-400">Información → Agendado crea la cita en el mismo guardado.</span></div>
+            <select id="editGestion" data-ev="change:toggleEditAppointmentFields()" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 font-semibold focus:outline-none focus:border-amber-500">
               <option value="Agendado">Agendado (Cita / Visita)</option>
               <option value="Colgo">Colgo</option>
               <option value="En visto">En visto</option>
@@ -1392,7 +1392,7 @@
 
            <!-- OBSERVACIONES -->
            <div><label class="block font-medium text-slate-300 mb-1">Nombre</label><input id="editNombre" type="text" autocomplete="name" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"></div>
-           <div><label class="block font-medium text-slate-300 mb-1">Teléfono / WhatsApp</label><input id="editTelefono" type="text" inputmode="tel" autocomplete="tel" onblur="this.value=formatPhone(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500" placeholder="Ej: 1 (786) 555-1234"></div>
+           <div><label class="block font-medium text-slate-300 mb-1">Teléfono / WhatsApp</label><input id="editTelefono" type="text" inputmode="tel" autocomplete="tel" data-ev="blur:formatPhoneField(this)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500" placeholder="Ej: 1 (786) 555-1234"></div>
            <div class="sm:col-span-2">
             <label class="block font-medium text-slate-300 mb-1">Historial de Observaciones & Notas</label>
             <textarea id="editObservaciones" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono text-xs"></textarea>
@@ -1413,7 +1413,7 @@
           <label class="text-[11px] text-slate-400">Fecha y hora de la cita<input id="editAppointmentDate" type="datetime-local" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
           <div class="sm:col-span-3 flex items-center gap-3"><span class="text-[11px] text-slate-400">Sede de la cita *</span><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="editAppointmentCampus" value="DORAL" required class="accent-indigo-500"> Doral</label><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="editAppointmentCampus" value="WESTON" required class="accent-indigo-500"> Weston</label></div>
           <label class="text-[11px] text-slate-400">Nota opcional<textarea id="editAppointmentNote" maxlength="2000" rows="1" class="block w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></textarea></label>
-          <div id="editAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="editAppointmentAdvisor" onchange="updateEditSubmitState()" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
+          <div id="editAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="editAppointmentAdvisor" data-ev="change:updateEditSubmitState()" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
           <label class="text-[11px] text-slate-400">Nombre del estudiante (opcional)<input id="editAppointmentStudentName" type="text" maxlength="200" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
           <label class="text-[11px] text-slate-400">Correo de contacto (opcional)<input id="editAppointmentContactEmail" type="email" maxlength="254" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100" placeholder="nombre@correo.com"></label>
           <label class="text-[11px] text-slate-400">Edad (opcional)<input id="editAppointmentStudentAge" type="number" min="0" max="120" step="1" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
@@ -1438,7 +1438,7 @@
 
         </div>
         <div class="lead-form-footer">
-          <button type="button" onclick="closeEditLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium cursor-pointer">Cancelar</button>
+          <button type="button" data-ev="click:closeEditLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium cursor-pointer">Cancelar</button>
           <button type="submit" id="btnSubmitEditLead" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-2 cursor-pointer">
             <i data-lucide="save" class="w-4 h-4"></i>
             <span>Guardar cambios</span>
@@ -1458,7 +1458,7 @@
           </div>
           <div><h3 id="viewLeadTitle" class="font-bold text-base">Ficha del lead</h3><p class="text-xs">Información, seguimiento y próximas acciones</p></div>
         </div>
-        <button type="button" onclick="closeViewLeadModal()" aria-label="Cerrar ficha del lead" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
+        <button type="button" data-ev="click:closeViewLeadModal()" aria-label="Cerrar ficha del lead" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -1468,7 +1468,7 @@
       </div>
 
       <div class="lead-detail-footer flex justify-end shrink-0">
-        <button onclick="closeViewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Cerrar</button>
+        <button data-ev="click:closeViewLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Cerrar</button>
       </div>
     </div>
   </div>
@@ -1486,7 +1486,7 @@
             <p class="text-xs text-slate-400">Políticas de seguridad de fila, autenticación y sincronización en tiempo real</p>
           </div>
         </div>
-        <button onclick="closeRlsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
+        <button data-ev="click:closeRlsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -1506,7 +1506,7 @@
       </div>
 
       <div class="px-6 py-3 border-t border-slate-700/80 bg-slate-900/50 flex justify-end shrink-0">
-        <button onclick="closeRlsModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Entendido</button>
+        <button data-ev="click:closeRlsModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer">Entendido</button>
       </div>
     </div>
   </div>
@@ -2145,7 +2145,7 @@
       box.innerHTML = '<p role="status">Cargando actividad…</p>';
       const { data, error } = await supabaseClient.rpc('admin_agent_sessions_report', {});
       if (!box || generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt) return;
-      if (error) { box.innerHTML = '<div role="alert" class="flex flex-wrap items-center gap-2 text-rose-300"><p>No se pudo cargar la actividad.</p><button type="button" onclick="loadAgentSessionsReport()" class="min-h-11 rounded-lg border border-rose-400 px-3 py-2 font-semibold hover:bg-rose-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300">Reintentar</button></div>'; return; }
+      if (error) { box.innerHTML = '<div role="alert" class="flex flex-wrap items-center gap-2 text-rose-300"><p>No se pudo cargar la actividad.</p><button type="button" data-ev="click:loadAgentSessionsReport()" class="min-h-11 rounded-lg border border-rose-400 px-3 py-2 font-semibold hover:bg-rose-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300">Reintentar</button></div>'; return; }
       const sessions = Array.isArray(data) ? data : [];
       const advisors = new Map();
       const reportTime = Date.now();
@@ -2186,7 +2186,7 @@
       if (container) container.innerHTML = '<p class="text-slate-500">Cargando usuarios...</p>';
       const { data, error } = await supabaseClient.rpc('admin_manage_user_access', { p_action: 'list' });
       if (!container || generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt || !isAdmin) return;
-      if (error) { container.innerHTML = '<div role="alert" class="flex flex-wrap items-center gap-3 text-rose-300"><p>No se pudieron cargar los usuarios.</p><button type="button" onclick="loadAuthorizedUsers()" class="min-h-11 rounded-lg border border-rose-400 px-3 py-2 font-semibold hover:bg-rose-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300">Reintentar</button></div>'; return; }
+      if (error) { container.innerHTML = '<div role="alert" class="flex flex-wrap items-center gap-3 text-rose-300"><p>No se pudieron cargar los usuarios.</p><button type="button" data-ev="click:loadAuthorizedUsers()" class="min-h-11 rounded-lg border border-rose-400 px-3 py-2 font-semibold hover:bg-rose-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300">Reintentar</button></div>'; return; }
       // La lista se guarda para poder resolver el correo por id: pasar el correo
       // por el atributo onclick metería datos del usuario dentro de JavaScript.
       authorizedUsersList = Array.isArray(data) ? data : [];
@@ -2210,15 +2210,15 @@
           <div class="users-row-actions users-row-idle">
             <span class="users-idle-label">Cierre automático</span>
             <span class="users-status ${cierre ? 'is-active' : 'is-inactive'}">${cierre ? 'Activado' : 'Desactivado'}</span>
-            <button type="button" onclick="setIdleTimeout('${escapeAttr(item.user_id)}', ${cierre ? 'false' : 'true'})">${cierre ? 'Desactivar cierre' : 'Activar cierre'}</button>
+            <button type="button" data-ev="click:setIdleTimeout('${escapeAttr(item.user_id)}', ${cierre ? 'false' : 'true'})">${cierre ? 'Desactivar cierre' : 'Activar cierre'}</button>
           </div>` : '';
         return `
         <div class="users-row">
           <div class="min-w-0"><strong class="block">${escapeHtml(item.nombre || item.email)}</strong>${item.nombre ? `<span class="users-row-email block">${escapeHtml(item.email)}</span>` : ''}<span class="text-[11px] text-slate-500">${escapeHtml(item.role)}</span></div>
           <div class="users-row-actions">
             <span class="users-status ${item.activo ? 'is-active' : 'is-inactive'}">${item.activo ? 'Activo' : 'Inactivo'}</span>
-            <button type="button" onclick="openChangeEmail('${escapeAttr(item.user_id)}')">Cambiar correo</button>
-            <button type="button" onclick="setUserActive('${escapeAttr(item.user_id)}', ${item.activo ? 'false' : 'true'})">${item.activo ? 'Desactivar cuenta' : 'Activar cuenta'}</button>
+            <button type="button" data-ev="click:openChangeEmail('${escapeAttr(item.user_id)}')">Cambiar correo</button>
+            <button type="button" data-ev="click:setUserActive('${escapeAttr(item.user_id)}', ${item.activo ? 'false' : 'true'})">${item.activo ? 'Desactivar cuenta' : 'Activar cuenta'}</button>
           </div>
           ${idleControl}
         </div>`;
@@ -2578,7 +2578,7 @@
       const showLoadError = message => {
         clearCitasResults();
         document.getElementById('citasAviso').textContent = message;
-        if (tableBody) tableBody.innerHTML = '<tr><td colspan="11" class="appointments-error" role="alert"><p class="text-sm font-semibold">No se pudieron cargar las citas.</p><button type="button" onclick="loadCitas()">Reintentar</button></td></tr>';
+        if (tableBody) tableBody.innerHTML = '<tr><td colspan="11" class="appointments-error" role="alert"><p class="text-sm font-semibold">No se pudieron cargar las citas.</p><button type="button" data-ev="click:loadCitas()">Reintentar</button></td></tr>';
       };
       if (tableBody) { tableBody.setAttribute?.('aria-busy', 'true'); tableBody.innerHTML = '<tr><td colspan="11" class="appointments-loading" role="status">Cargando citas…</td></tr>'; }
       const [startISO] = miamiDayBounds(desde), [, endISO] = miamiDayBounds(hasta);
@@ -2844,7 +2844,7 @@
       if (cuerpo) cuerpo.innerHTML = `<details class="mt-1"><summary class="cursor-pointer select-none text-xs text-slate-500 hover:text-indigo-300">Ver desglose por estado y sede</summary><div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">${desglose.join('')}</div></details>`;
     }
 
-    function renderCitas() { const result=document.getElementById('citasResultado')?.value||'', camp=document.getElementById('citasCampana')?.value||'', medio=document.getElementById('citasMedio')?.value||'', advisor=isAdmin || isSupervisor?(document.getElementById('citasAsesor')?.value||''):''; const sede=document.getElementById('citasSede')?.value||'';const rows=citasCache.filter(r=>(!result||r.status===result)&&(!camp||getField(r.lead,'Campaña')===camp)&&(!sede||(sede==='sin' ? !r.campus : r.campus===sede))&&(!medio||getField(r.lead,'Medio')===medio)&&(!advisor||r.advisor_name===advisor)); const counts=Object.fromEntries(['PROGRAMADA','ASISTIO','NO_ASISTIO','CANCELADA','REPROGRAMADA'].map(s=>[s,rows.filter(r=>r.status===s).length])), denom=counts.ASISTIO+counts.NO_ASISTIO; renderCitasKpis(rows, counts, denom); document.getElementById('citasCount').textContent=`${rows.length} citas`; document.getElementById('citasTableBody').innerHTML=rows.length?rows.map(r=>{const l=r.lead, id=Number(l?.id); return `<tr><td class="p-3"><span class="block font-medium">${escapeHtml(appointmentLocal(r.scheduled_at))}</span><span class="block text-[11px] text-slate-500">Cita creada: ${escapeHtml(appointmentLocal(r.created_at))}</span></td><td class="p-3">${escapeHtml(getField(l,'Nombre'))}<br>${escapeHtml(getField(l,'Telefono'))}</td><td class="p-3">${escapeHtml(r.student_name||'-')}</td><td class="p-3">${escapeHtml(r.contact_email||'-')}</td><td class="p-3">${escapeHtml(r.student_age!=null?String(r.student_age):'-')}</td><td class="p-3">${escapeHtml(r.campus||'Sin sede')}</td><td class="p-3">${escapeHtml(r.advisor_name)}</td><td class="p-3">${escapeHtml(getField(l,'Campaña'))}</td><td class="p-3">${escapeHtml(getField(l,'Mes'))}</td><td class="p-3">${escapeHtml(r.status)}</td><td class="p-3">${Number.isInteger(id)&&id>0?`<button onclick="openViewLeadModal(${id},'actual')" class="text-indigo-400 hover:underline">Ver ficha</button>${(isAdmin || r.advisor_user_id === currentUser?.id) ? `<button onclick="editAppointmentDetails(${r.id})" class="block text-indigo-400 hover:underline">Editar datos</button>` : ''}${isAdmin ? `<button onclick="deleteLeadAppointment(${r.id})" class="block text-rose-400 hover:underline">Eliminar cita</button>` : ''}`:''}</td></tr>`}).join(''):'<tr><td colspan="11" class="appointments-empty"><p class="text-sm font-semibold">No hay citas para los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otras fechas o limpia los filtros.</p><button type="button" onclick="resetCitasFilters()">Limpiar filtros</button></td></tr>'; if (citasViewMode !== 'lista') updateCitasCalendar(rows); }
+    function renderCitas() { const result=document.getElementById('citasResultado')?.value||'', camp=document.getElementById('citasCampana')?.value||'', medio=document.getElementById('citasMedio')?.value||'', advisor=isAdmin || isSupervisor?(document.getElementById('citasAsesor')?.value||''):''; const sede=document.getElementById('citasSede')?.value||'';const rows=citasCache.filter(r=>(!result||r.status===result)&&(!camp||getField(r.lead,'Campaña')===camp)&&(!sede||(sede==='sin' ? !r.campus : r.campus===sede))&&(!medio||getField(r.lead,'Medio')===medio)&&(!advisor||r.advisor_name===advisor)); const counts=Object.fromEntries(['PROGRAMADA','ASISTIO','NO_ASISTIO','CANCELADA','REPROGRAMADA'].map(s=>[s,rows.filter(r=>r.status===s).length])), denom=counts.ASISTIO+counts.NO_ASISTIO; renderCitasKpis(rows, counts, denom); document.getElementById('citasCount').textContent=`${rows.length} citas`; document.getElementById('citasTableBody').innerHTML=rows.length?rows.map(r=>{const l=r.lead, id=Number(l?.id); return `<tr><td class="p-3"><span class="block font-medium">${escapeHtml(appointmentLocal(r.scheduled_at))}</span><span class="block text-[11px] text-slate-500">Cita creada: ${escapeHtml(appointmentLocal(r.created_at))}</span></td><td class="p-3">${escapeHtml(getField(l,'Nombre'))}<br>${escapeHtml(getField(l,'Telefono'))}</td><td class="p-3">${escapeHtml(r.student_name||'-')}</td><td class="p-3">${escapeHtml(r.contact_email||'-')}</td><td class="p-3">${escapeHtml(r.student_age!=null?String(r.student_age):'-')}</td><td class="p-3">${escapeHtml(r.campus||'Sin sede')}</td><td class="p-3">${escapeHtml(r.advisor_name)}</td><td class="p-3">${escapeHtml(getField(l,'Campaña'))}</td><td class="p-3">${escapeHtml(getField(l,'Mes'))}</td><td class="p-3">${escapeHtml(r.status)}</td><td class="p-3">${Number.isInteger(id)&&id>0?`<button data-ev="click:openViewLeadModal(${id},'actual')" class="text-indigo-400 hover:underline">Ver ficha</button>${(isAdmin || r.advisor_user_id === currentUser?.id) ? `<button data-ev="click:editAppointmentDetails(${r.id})" class="block text-indigo-400 hover:underline">Editar datos</button>` : ''}${isAdmin ? `<button data-ev="click:deleteLeadAppointment(${r.id})" class="block text-rose-400 hover:underline">Eliminar cita</button>` : ''}`:''}</td></tr>`}).join(''):'<tr><td colspan="11" class="appointments-empty"><p class="text-sm font-semibold">No hay citas para los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otras fechas o limpia los filtros.</p><button type="button" data-ev="click:resetCitasFilters()">Limpiar filtros</button></td></tr>'; if (citasViewMode !== 'lista') updateCitasCalendar(rows); }
 
     // sortMonthCatalog, normalizePhone, isNuevoEsteMes, nuevoBadge y formatPhone
     // viven en src/legacy/leads.js (capa 2 del strangler) y llegan via window.
@@ -3652,8 +3652,8 @@
         <div class="catalog-row">
           <span class="catalog-row-value ${r.active ? '' : 'is-inactive'}">${escapeHtml(r.value)}</span>
           <div class="catalog-row-actions">
-            <button type="button" onclick="renameCatalogValue(${Number(r.id)})" title="Renombrar" aria-label="Renombrar ${escapeAttr(r.value)}"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-            <button type="button" onclick="toggleCatalogValue(${Number(r.id)}, ${r.active ? 'false' : 'true'})" title="${r.active ? 'Desactivar' : 'Reactivar'}" aria-label="${r.active ? 'Desactivar' : 'Reactivar'} ${escapeAttr(r.value)}"><i data-lucide="${r.active ? 'x-circle' : 'check-circle'}" class="w-3.5 h-3.5"></i></button>
+            <button type="button" data-ev="click:renameCatalogValue(${Number(r.id)})" title="Renombrar" aria-label="Renombrar ${escapeAttr(r.value)}"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+            <button type="button" data-ev="click:toggleCatalogValue(${Number(r.id)}, ${r.active ? 'false' : 'true'})" title="${r.active ? 'Desactivar' : 'Reactivar'}" aria-label="${r.active ? 'Desactivar' : 'Reactivar'} ${escapeAttr(r.value)}"><i data-lucide="${r.active ? 'x-circle' : 'check-circle'}" class="w-3.5 h-3.5"></i></button>
           </div>
         </div>`).join('');
       if (window.lucide) lucide.createIcons();
@@ -4078,7 +4078,7 @@
       // información adicional ni se inventa una prioridad comercial.
       const rows = [...filteredLeads].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 4);
       if (!rows.length) {
-        container.innerHTML = '<div class="quick-leads-empty"><p class="text-sm font-semibold">No hay leads con los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otros criterios o limpia los filtros para ver los registros.</p><button type="button" onclick="resetAllFilters()">Limpiar filtros</button></div>';
+        container.innerHTML = '<div class="quick-leads-empty"><p class="text-sm font-semibold">No hay leads con los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otros criterios o limpia los filtros para ver los registros.</p><button type="button" data-ev="click:resetAllFilters()">Limpiar filtros</button></div>';
         return;
       }
       container.innerHTML = rows.map(lead => {
@@ -4140,7 +4140,7 @@
             <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
             <p class="text-sm font-semibold">No se encontraron leads con los filtros actuales.</p>
             <p class="mt-1 text-xs">Prueba con otros criterios o limpia los filtros para ver los registros.</p>
-            <button type="button" onclick="resetAllFilters()">Limpiar filtros</button>
+            <button type="button" data-ev="click:resetAllFilters()">Limpiar filtros</button>
           </td>
         </tr>`;
         updatePaginationUI(0, 0, 0, 1);
@@ -4175,7 +4175,7 @@
           </td>
           <td class="px-3.5 py-3">
             <div class="flex flex-col gap-1.5">
-              <button onclick="openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" class="font-semibold text-white hover:text-indigo-400 transition-colors cursor-pointer truncate max-w-[190px] block">
+              <button data-ev="click:openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" class="font-semibold text-white hover:text-indigo-400 transition-colors cursor-pointer truncate max-w-[190px] block">
                 ${escapeHtml(nombre)}
               </button>
               ${nuevoBadge(lead)}
@@ -4200,11 +4200,11 @@
           <td class="px-3.5 py-3 text-slate-300 text-[11px]">${escapeHtml(agente)}</td>
           <td class="px-3.5 py-3 text-right">
             <div class="flex items-center justify-end gap-1.5">
-              <button onclick="openEditLeadModal('${escapeAttr(leadId)}', '${origin}')" title="Editar seguimiento" class="p-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 transition-colors cursor-pointer">
+              <button data-ev="click:openEditLeadModal('${escapeAttr(leadId)}', '${origin}')" title="Editar seguimiento" class="p-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 transition-colors cursor-pointer">
                 <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
               </button>
-              ${isAdmin && origin !== 'historico' ? `<button onclick="archiveLead('${escapeAttr(leadId)}', '${origin}')" title="Archivar" class="p-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-amber-300 transition-colors cursor-pointer"><i data-lucide="archive" class="w-3.5 h-3.5"></i></button>` : ''}
-              <button onclick="openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" title="Ver detalles completos" class="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 transition-colors cursor-pointer">
+              ${isAdmin && origin !== 'historico' ? `<button data-ev="click:archiveLead('${escapeAttr(leadId)}', '${origin}')" title="Archivar" class="p-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-amber-300 transition-colors cursor-pointer"><i data-lucide="archive" class="w-3.5 h-3.5"></i></button>` : ''}
+              <button data-ev="click:openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" title="Ver detalles completos" class="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 transition-colors cursor-pointer">
                 <i data-lucide="eye" class="w-3.5 h-3.5"></i>
               </button>
             </div>
@@ -4256,7 +4256,7 @@
       if (!controlsEl) return;
 
       let html = '';
-      html += `<button aria-label="Página anterior" onclick="goToPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled class="pagination-arrow px-2 py-1 rounded bg-slate-800 text-slate-600 cursor-not-allowed"' : 'class="pagination-arrow px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer"'}>
+      html += `<button aria-label="Página anterior" data-ev="click:goToPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled class="pagination-arrow px-2 py-1 rounded bg-slate-800 text-slate-600 cursor-not-allowed"' : 'class="pagination-arrow px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer"'}>
         <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
       </button>`;
 
@@ -4266,14 +4266,14 @@
           html += `<span class="pagination-ellipsis px-2 py-1 text-slate-500">...</span>`;
         } else {
           const isActive = p === currentPage;
-          html += `<button onclick="goToPage(${p})" aria-label="Ir a la página ${p}" ${isActive ? 'aria-current="page"' : ''} class="pagination-page-number px-2.5 py-1 rounded text-xs font-mono font-semibold transition-colors cursor-pointer ${isActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}">
+          html += `<button data-ev="click:goToPage(${p})" aria-label="Ir a la página ${p}" ${isActive ? 'aria-current="page"' : ''} class="pagination-page-number px-2.5 py-1 rounded text-xs font-mono font-semibold transition-colors cursor-pointer ${isActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}">
             ${p}
           </button>`;
         }
       });
 
       html += `<span class="pagination-mobile-label hidden" aria-live="polite">Página ${currentPage} de ${totalPages}</span>`;
-      html += `<button aria-label="Página siguiente" onclick="goToPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled class="pagination-arrow px-2 py-1 rounded bg-slate-800 text-slate-600 cursor-not-allowed"' : 'class="pagination-arrow px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer"'}>
+      html += `<button aria-label="Página siguiente" data-ev="click:goToPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled class="pagination-arrow px-2 py-1 rounded bg-slate-800 text-slate-600 cursor-not-allowed"' : 'class="pagination-arrow px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer"'}>
         <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
       </button>`;
 
@@ -4902,7 +4902,7 @@
                 <div>${renderGestionBadge(getField(l, 'GESTION'))}</div>
                 ${obs ? `<p class="text-[11px] text-slate-500 leading-snug">${escapeHtml(obs)}</p>` : ''}
               </div>
-              ${esActual ? '' : `<button onclick="closeViewLeadModal(); openLeadModal('${itemOrigin}', '${escapeAttr(l.id)}')" class="shrink-0 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 border border-slate-700 text-[11px] font-medium cursor-pointer transition-colors">Abrir</button>`}
+              ${esActual ? '' : `<button data-ev="click:openLeadFromView('${itemOrigin}', '${escapeAttr(l.id)}')" class="shrink-0 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 border border-slate-700 text-[11px] font-medium cursor-pointer transition-colors">Abrir</button>`}
             </li>`;
           }).join('');
           const total = items.length;
@@ -4985,15 +4985,15 @@
           <div id="leadNotesList" class="space-y-2"><p class="text-[11px] text-slate-500">Cargando notas…</p></div>
           <div class="lead-note-compose flex items-start gap-2 pt-1">
             <textarea id="leadNoteInput" rows="2" maxlength="2000" placeholder="Añadir una nota para el equipo" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 resize-y"></textarea>
-            <button id="leadNoteSubmit" onclick="addLeadNote()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition-colors shrink-0 flex items-center gap-1.5">
+            <button id="leadNoteSubmit" data-ev="click:addLeadNote()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition-colors shrink-0 flex items-center gap-1.5">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Añadir</span>
             </button>
            </div>
          </div>`}
           ${finalOrigin === 'historico' ? '' : `<div id="leadAppointmentsSection" class="lead-detail-section space-y-3">
-            <div class="flex items-center justify-between gap-2"><span class="text-[11px] uppercase text-slate-400 font-semibold">Citas</span><button type="button" onclick="openHelpModal('ayuda-citas')" title="Ayuda: citas del lead" aria-label="Ayuda sobre la gestión de citas del lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 cursor-pointer shrink-0">?</button></div>
+            <div class="flex items-center justify-between gap-2"><span class="text-[11px] uppercase text-slate-400 font-semibold">Citas</span><button type="button" data-ev="click:openHelpModal('ayuda-citas')" title="Ayuda: citas del lead" aria-label="Ayuda sobre la gestión de citas del lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 cursor-pointer shrink-0">?</button></div>
             <div id="leadAppointmentCreate" class="${isAgendadoGestion(getField(lead, 'GESTION')) ? '' : 'hidden'}">
-            <form id="leadAppointmentForm" onsubmit="createLeadAppointment(event)" class="grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end">
+            <form id="leadAppointmentForm" data-ev="submit:createLeadAppointment(event)" class="grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end">
              <label class="text-[11px] text-slate-400">Fecha y hora<input id="leadAppointmentDate" type="datetime-local" required class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
              <div class="lead-appointment-campus sm:col-span-3 flex items-center gap-3"><span class="text-[11px] text-slate-400">Sede de la cita *</span><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="leadAppointmentCampus" value="DORAL" required class="accent-indigo-500"> Doral</label><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="leadAppointmentCampus" value="WESTON" required class="accent-indigo-500"> Weston</label></div>
              <label class="text-[11px] text-slate-400">Nota opcional<textarea id="leadAppointmentNote" maxlength="2000" rows="1" class="block w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></textarea></label>
@@ -5011,7 +5011,7 @@
         <div class="flex justify-end pt-2">
           ${finalOrigin === 'historico'
             ? '<span class="text-[11px] text-slate-500 italic">Registro histórico de solo lectura (2025)</span>'
-            : `<button onclick="closeViewLeadModal(); openEditLeadModal('${escapeAttr(lead.id)}', '${finalOrigin}')" class="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-1.5 text-xs cursor-pointer">
+            : `<button data-ev="click:openEditLeadFromView('${escapeAttr(lead.id)}', '${finalOrigin}')" class="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-1.5 text-xs cursor-pointer">
             <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
             <span>Editar este Lead</span>
           </button>`}
@@ -5081,7 +5081,7 @@ async function loadLeadAppointments(leadId, lead) {
     }
     function renderLeadAppointments() {
       const list = document.getElementById('leadAppointmentsList'); if (!list) return;
-       list.innerHTML = leadAppointmentsCache.length ? leadAppointmentsCache.map(a => { const id = validAppointmentId(a.id); if (!id) return ''; const scheduled = String(a.status) === 'PROGRAMADA'; const canEdit = isAdmin || a.advisor_user_id === currentUser?.id; return `<div data-appointment-id="${id}" class="border-b border-slate-800 last:border-0 py-2 space-y-1"><div class="flex flex-wrap items-center gap-2 text-xs"><span class="text-slate-200 font-medium">Cita para: ${escapeHtml(appointmentLocal(a.scheduled_at))}</span>${appointmentBadge(a.status)}<span class="text-slate-400">Creada: ${escapeHtml(appointmentLocal(a.created_at))}</span><span class="text-slate-400">${escapeHtml(a.advisor_name || '-')}</span>${a.rescheduled_from_id ? `<span class="text-[11px] text-slate-500">reprogramada desde #${escapeHtml(String(validAppointmentId(a.rescheduled_from_id) || ''))}</span>` : ''}</div>${a.notes ? `<p class="text-[11px] text-slate-400 whitespace-pre-line">${escapeHtml(a.notes)}</p>` : ''}${a.student_name || a.contact_email || a.student_age != null ? `<p class="text-[11px] text-slate-300">Estudiante: ${escapeHtml(a.student_name || '-')} · Correo: ${escapeHtml(a.contact_email || '-')} · Edad: ${escapeHtml(a.student_age != null ? String(a.student_age) : '-')}</p>` : ''}<p class="text-[11px] text-slate-300">Sede: ${escapeHtml(a.campus || 'Sin sede')}</p>${canEdit ? `<button data-appointment-id="${id}" onclick="editAppointmentDetails(${id})" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-[11px]">Editar datos</button><button data-appointment-id="${id}" onclick="editAppointmentCampus(${id})" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-[11px]">Sede</button>` : ''}${scheduled && canEdit ? `<div class="flex flex-wrap gap-1.5"><button data-appointment-id="${id}" onclick="setLeadAppointmentStatus(${id}, 'ASISTIO')" class="px-2 py-1 rounded bg-emerald-600 text-white text-[11px]">Asistió</button><button data-appointment-id="${id}" onclick="setLeadAppointmentStatus(${id}, 'NO_ASISTIO')" class="px-2 py-1 rounded bg-amber-600 text-white text-[11px]">No asistió</button><button data-appointment-id="${id}" onclick="setLeadAppointmentStatus(${id}, 'CANCELADA')" class="px-2 py-1 rounded bg-rose-600 text-white text-[11px]">Cancelada</button><input data-appointment-id="${id}" id="reschedule-${id}" type="datetime-local" class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-[11px]"><button data-appointment-id="${id}" onclick="rescheduleLeadAppointment(${id})" class="px-2 py-1 rounded bg-indigo-600 text-white text-[11px]">Reprogramar</button></div>` : ''}${isAdmin ? `<button data-appointment-id="${id}" onclick="deleteLeadAppointment(${id})" class="px-2 py-1 rounded bg-rose-700 hover:bg-rose-600 text-white text-[11px]">Eliminar cita</button>` : ''}</div>`; }).join('') : '<p class="text-[11px] text-slate-500">Sin citas registradas.</p>';
+       list.innerHTML = leadAppointmentsCache.length ? leadAppointmentsCache.map(a => { const id = validAppointmentId(a.id); if (!id) return ''; const scheduled = String(a.status) === 'PROGRAMADA'; const canEdit = isAdmin || a.advisor_user_id === currentUser?.id; return `<div data-appointment-id="${id}" class="border-b border-slate-800 last:border-0 py-2 space-y-1"><div class="flex flex-wrap items-center gap-2 text-xs"><span class="text-slate-200 font-medium">Cita para: ${escapeHtml(appointmentLocal(a.scheduled_at))}</span>${appointmentBadge(a.status)}<span class="text-slate-400">Creada: ${escapeHtml(appointmentLocal(a.created_at))}</span><span class="text-slate-400">${escapeHtml(a.advisor_name || '-')}</span>${a.rescheduled_from_id ? `<span class="text-[11px] text-slate-500">reprogramada desde #${escapeHtml(String(validAppointmentId(a.rescheduled_from_id) || ''))}</span>` : ''}</div>${a.notes ? `<p class="text-[11px] text-slate-400 whitespace-pre-line">${escapeHtml(a.notes)}</p>` : ''}${a.student_name || a.contact_email || a.student_age != null ? `<p class="text-[11px] text-slate-300">Estudiante: ${escapeHtml(a.student_name || '-')} · Correo: ${escapeHtml(a.contact_email || '-')} · Edad: ${escapeHtml(a.student_age != null ? String(a.student_age) : '-')}</p>` : ''}<p class="text-[11px] text-slate-300">Sede: ${escapeHtml(a.campus || 'Sin sede')}</p>${canEdit ? `<button data-appointment-id="${id}" data-ev="click:editAppointmentDetails(${id})" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-[11px]">Editar datos</button><button data-appointment-id="${id}" data-ev="click:editAppointmentCampus(${id})" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-[11px]">Sede</button>` : ''}${scheduled && canEdit ? `<div class="flex flex-wrap gap-1.5"><button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'ASISTIO')" class="px-2 py-1 rounded bg-emerald-600 text-white text-[11px]">Asistió</button><button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'NO_ASISTIO')" class="px-2 py-1 rounded bg-amber-600 text-white text-[11px]">No asistió</button><button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'CANCELADA')" class="px-2 py-1 rounded bg-rose-600 text-white text-[11px]">Cancelada</button><input data-appointment-id="${id}" id="reschedule-${id}" type="datetime-local" class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-[11px]"><button data-appointment-id="${id}" data-ev="click:rescheduleLeadAppointment(${id})" class="px-2 py-1 rounded bg-indigo-600 text-white text-[11px]">Reprogramar</button></div>` : ''}${isAdmin ? `<button data-appointment-id="${id}" data-ev="click:deleteLeadAppointment(${id})" class="px-2 py-1 rounded bg-rose-700 hover:bg-rose-600 text-white text-[11px]">Eliminar cita</button>` : ''}</div>`; }).join('') : '<p class="text-[11px] text-slate-500">Sin citas registradas.</p>';
     }
     async function createLeadAppointment(event) {
       event.preventDefault(); const input = document.getElementById('leadAppointmentDate'); const scheduledAt = appointmentInputISO(input?.value); const note = (document.getElementById('leadAppointmentNote')?.value || '').trim(); const submit = document.getElementById('leadAppointmentSubmit');
@@ -5190,7 +5190,7 @@ async function deleteLeadAppointment(id) {
     // -------------------------------------------------------------
     // Notas de equipo (lead_notes): append-only vía RPC; editar/borrar solo admin.
     // -------------------------------------------------------------
-    async function loadLeadNotes(leadId) {
+    async function loadLeadNotes(leadId = currentViewId) {
       const list = document.getElementById('leadNotesList');
       if (!list) return;
       list.innerHTML = '<p class="text-[11px] text-slate-500" role="status">Cargando notas…</p>';
@@ -5204,7 +5204,7 @@ async function deleteLeadAppointment(id) {
       // respuesta obsoleta sin pintar ni limpiar datos ajenos.
       if (generation !== sessionGeneration || viewGeneration !== viewLeadGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt || String(currentViewId) !== String(leadId)) return;
       if (error) {
-        list.innerHTML = '<div role="alert" class="flex flex-wrap items-center gap-2 text-[11px] text-rose-400"><p>No se pudieron cargar las notas.</p><button type="button" onclick="loadLeadNotes(currentViewId)" class="min-h-11 rounded-lg border border-rose-400 px-3 py-2 font-semibold hover:bg-rose-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300">Reintentar</button></div>';
+        list.innerHTML = '<div role="alert" class="flex flex-wrap items-center gap-2 text-[11px] text-rose-400"><p>No se pudieron cargar las notas.</p><button type="button" data-ev="click:loadLeadNotes()" class="min-h-11 rounded-lg border border-rose-400 px-3 py-2 font-semibold hover:bg-rose-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300">Reintentar</button></div>';
         return;
       }
       if (!data || data.length === 0) {
@@ -5270,12 +5270,12 @@ async function deleteLeadAppointment(id) {
         const editing = isAdmin && editingNoteId === Number(n.id);
         const actions = editing ? `
           <div class="flex items-center gap-1.5 shrink-0">
-            <button onclick="saveLeadNoteInline(${Number(n.id)})" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold cursor-pointer transition-colors">Guardar</button>
-            <button onclick="cancelLeadNoteEdit()" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium cursor-pointer transition-colors border border-slate-700">Cancelar</button>
+            <button data-ev="click:saveLeadNoteInline(${Number(n.id)})" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold cursor-pointer transition-colors">Guardar</button>
+            <button data-ev="click:cancelLeadNoteEdit()" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium cursor-pointer transition-colors border border-slate-700">Cancelar</button>
           </div>` : isAdmin ? `
           <div class="flex items-center gap-1 shrink-0">
-            <button onclick="editLeadNote(${Number(n.id)})" title="Editar nota" class="p-1 rounded bg-slate-800 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-300 transition-colors cursor-pointer"><i data-lucide="pencil" class="w-3 h-3"></i></button>
-            <button onclick="deleteLeadNote(${Number(n.id)})" title="Borrar nota" class="p-1 rounded bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 transition-colors cursor-pointer"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+            <button data-ev="click:editLeadNote(${Number(n.id)})" title="Editar nota" class="p-1 rounded bg-slate-800 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-300 transition-colors cursor-pointer"><i data-lucide="pencil" class="w-3 h-3"></i></button>
+            <button data-ev="click:deleteLeadNote(${Number(n.id)})" title="Borrar nota" class="p-1 rounded bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 transition-colors cursor-pointer"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
           </div>` : '';
         const body = editing
           ? `<textarea id="leadNoteEditInput" rows="3" maxlength="2000" class="w-full bg-slate-950 border border-indigo-500 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none resize-y">${escapeHtml(n.note)}</textarea>`
@@ -6043,7 +6043,7 @@ async function deleteLeadAppointment(id) {
         if (!valid()) return;
         periodoActividadData = null;
         periodoActividadKey = '';
-        if (box) box.innerHTML = `<div class="rounded border border-rose-300 bg-rose-50 p-3 text-rose-700 text-sm flex flex-wrap items-center gap-2">${escapeHtml(error?.message || 'No se pudo cargar la actividad del período.')}<button type="button" onclick="loadReportePeriodo()" class="px-2 py-1 rounded border border-rose-400 hover:bg-rose-100">Reintentar</button></div>`;
+        if (box) box.innerHTML = `<div class="rounded border border-rose-300 bg-rose-50 p-3 text-rose-700 text-sm flex flex-wrap items-center gap-2">${escapeHtml(error?.message || 'No se pudo cargar la actividad del período.')}<button type="button" data-ev="click:loadReportePeriodo()" class="px-2 py-1 rounded border border-rose-400 hover:bg-rose-100">Reintentar</button></div>`;
       }
       if (valid()) updatePeriodoCsvState();
     }
@@ -6067,7 +6067,7 @@ async function deleteLeadAppointment(id) {
       };
       const text = tips[key];
       if (!text) return '';
-      return `<span class="periodo-tip"><button type="button" class="periodo-tip-btn" aria-label="Ayuda sobre este dato del reporte por período" aria-describedby="pt-${escapeAttr(key)}" onpointerenter="positionPeriodoTip(this)" onfocus="positionPeriodoTip(this)" onclick="this.focus(); positionPeriodoTip(this)">i</button><span class="periodo-tip-panel" role="tooltip" id="pt-${escapeAttr(key)}">${escapeHtml(text)}</span></span>`;
+      return `<span class="periodo-tip"><button type="button" class="periodo-tip-btn" aria-label="Ayuda sobre este dato del reporte por período" aria-describedby="pt-${escapeAttr(key)}" data-ev="pointerenter,focus,click:focusPeriodoTip(this)">i</button><span class="periodo-tip-panel" role="tooltip" id="pt-${escapeAttr(key)}">${escapeHtml(text)}</span></span>`;
     }
 
     function positionPeriodoTip(button) {
@@ -6136,7 +6136,7 @@ async function deleteLeadAppointment(id) {
       const cell = (label, value) => `<div class="daily-metric"><div class="text-xs text-slate-500">${label}</div><strong class="text-lg text-indigo-900">${value}</strong></div>`;
       const table = (title, rows) => `<div class="daily-detail-card"><h5 class="font-semibold text-indigo-900">${title}</h5><table class="text-sm"><tbody>${rows.map(([l,v]) => `<tr><td>${l}</td><td class="font-semibold">${v}</td></tr>`).join('')}</tbody></table></div>`;
       const blocks = bloques.map((b, i) => { const p=b.procedencia||{}, l=b.llamadas||{}, c=b.citas||{}, ins=b.inscritos||{}, note=noteOf(b); const pt=Object.values(p).reduce((a,v)=>a+(Number(v)||0),0); const own = b.autor_user_id ? b.autor_user_id === currentUser?.id : b.autor_name === currentAccess?.nombre; const editable=notasOk && ((isAdmin && Boolean(b.autor_user_id)) || (own && document.getElementById('reporteFecha')?.value===miamiToday()));
-        const manual=editable ? `<label for="reporte-problemas-${i}" class="block text-xs font-semibold text-slate-600">Problemas</label><textarea id="reporte-problemas-${i}" class="reporte-manual w-full p-2" rows="3" maxlength="5000">${escapeHtml(note?.problemas||'')}</textarea><label for="reporte-obs-${i}" class="block text-xs font-semibold text-slate-600">Observaciones</label><textarea id="reporte-obs-${i}" class="reporte-manual w-full p-2" rows="3" maxlength="5000">${escapeHtml(note?.observaciones||'')}</textarea><div class="daily-note-actions flex flex-wrap gap-2"><button id="reporte-save-${i}" onclick="saveReporteNota(${i})" class="px-3 py-1 bg-indigo-600 text-white">Guardar</button>${note?.id ? '<button id="reporte-delete-'+i+'" onclick="deleteReporteNota('+i+')" class="px-3 py-1 border border-slate-300">Eliminar</button>' : ''}</div>` : `<p class="text-sm">${escapeHtml(note?.problemas||'')} ${escapeHtml(note?.observaciones||'')}</p>`;
+        const manual=editable ? `<label for="reporte-problemas-${i}" class="block text-xs font-semibold text-slate-600">Problemas</label><textarea id="reporte-problemas-${i}" class="reporte-manual w-full p-2" rows="3" maxlength="5000">${escapeHtml(note?.problemas||'')}</textarea><label for="reporte-obs-${i}" class="block text-xs font-semibold text-slate-600">Observaciones</label><textarea id="reporte-obs-${i}" class="reporte-manual w-full p-2" rows="3" maxlength="5000">${escapeHtml(note?.observaciones||'')}</textarea><div class="daily-note-actions flex flex-wrap gap-2"><button id="reporte-save-${i}" data-ev="click:saveReporteNota(${i})" class="px-3 py-1 bg-indigo-600 text-white">Guardar</button>${note?.id ? '<button id="reporte-delete-'+i+'" data-ev="click:deleteReporteNota('+i+')" class="px-3 py-1 border border-slate-300">Eliminar</button>' : ''}</div>` : `<p class="text-sm">${escapeHtml(note?.problemas||'')} ${escapeHtml(note?.observaciones||'')}</p>`;
        const detailTables = table('Procedencia', [['WhatsApp',num(p,'WhatsApp')],['Facebook/Instagram',num(p,'Facebook/Instagram')],['Directo o Referido',num(p,'Directo o Referido')],['Total',pt]]) + table('Canales', [['Llamada',num(b.canales,'llamada')],['Llamada Data Dura',num(b.canales,'data_dura')],['Llamada y WhatsApp',num(b.canales,'llamada_whatsapp')],['WhatsApp',num(b.canales,'whatsapp')],['Instagram',num(b.canales,'instagram')],['Total',num(b.canales,'llamada')+num(b.canales,'data_dura')+num(b.canales,'llamada_whatsapp')+num(b.canales,'whatsapp')+num(b.canales,'instagram')]]) + table('Detalle WhatsApp', [['WhatsApp nuevos hoy',num(b.whatsapp,'nuevos')],['WhatsApp gestionados hoy',num(b.whatsapp,'gestionados')],['Total WhatsApp',num(b.whatsapp,'total')]]) + table('Citas creadas y resultados registrados hoy', [['Leads pasados a Agendado',num(c,'agendados_gestionados_dia')],['Leads pasados a Agendado Data Dura',num(c,'agendados_gestionados_data_dura')],['Citas nuevas Doral',num(c,'agendados_doral')],['Citas nuevas Data Dura Doral',num(c,'agendados_doral_data_dura')],['Citas nuevas Weston',num(c,'agendados_weston')],['Citas nuevas Data Dura Weston',num(c,'agendados_weston_data_dura')],['Citas nuevas hoy',num(c,'total_agendados')],['Citas reprogramadas hoy',num(c,'citas_reprogramadas_hoy')],['Visitas registradas',num(c,'visitas')],['No asistieron',num(c,'no_asistieron')],['Canceladas',num(c,'canceladas')],['Reprogramadas',num(c,'reprogramadas')]]);
          return `<details class="daily-advisor" ${i?'':'open'}><summary class="cursor-pointer font-bold text-indigo-900">${escapeHtml(b.autor_name||b.advisor||'Sin asesora')} — ${num(b,'gestionados')} gestiones</summary><div class="daily-advisor-body"><div class="grid md:grid-cols-2 xl:grid-cols-4 gap-3">${detailTables}</div><div class="mt-4 space-y-2"><h4 class="text-sm font-semibold text-slate-700">Problemas y observaciones</h4>${manual}</div></div></details>`;
       }).join('');
@@ -6178,7 +6178,7 @@ async function deleteLeadAppointment(id) {
         if(valid()){
           reporteDayData = [];
           reporteLoadedKey = '';
-          if(auto) auto.innerHTML='<div class="rounded border border-rose-300 bg-rose-50 p-3 text-rose-700" role="alert"><p>No se pudo cargar el reporte diario. Intenta nuevamente.</p><button type="button" onclick="loadReporteDiario()" class="mt-3 min-h-11 rounded-lg border border-rose-400 px-4 py-2 font-semibold hover:bg-rose-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600">Reintentar</button></div>';
+          if(auto) auto.innerHTML='<div class="rounded border border-rose-300 bg-rose-50 p-3 text-rose-700" role="alert"><p>No se pudo cargar el reporte diario. Intenta nuevamente.</p><button type="button" data-ev="click:loadReporteDiario()" class="mt-3 min-h-11 rounded-lg border border-rose-400 px-4 py-2 font-semibold hover:bg-rose-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600">Reintentar</button></div>';
         }
       }
     }
@@ -6375,21 +6375,21 @@ async function deleteLeadAppointment(id) {
       }
       if (!rows.length) {
         tbody.innerHTML = loadFailed
-          ? '<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">No se pudo cargar el informe.</p><p class="mt-1 text-xs">Revisa el aviso anterior e inténtalo de nuevo.</p><button type="button" class="campaigns-retry" onclick="loadCampanas()">Reintentar</button></td></tr>'
+          ? '<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">No se pudo cargar el informe.</p><p class="mt-1 text-xs">Revisa el aviso anterior e inténtalo de nuevo.</p><button type="button" class="campaigns-retry" data-ev="click:loadCampanas()">Reintentar</button></td></tr>'
           : `<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">Sin campañas para ${escapeHtml(mesLabel)}.</p><p class="mt-1 text-xs">Selecciona otro mes para consultar sus resultados.</p></td></tr>`;
         return;
       }
       const estadoOptions = sel => ['activa', 'finalizada', 'pausada'].map(e => `<option value="${e}"${e === sel ? ' selected' : ''}>${e.charAt(0).toUpperCase() + e.slice(1)}</option>`).join('');
       const numCell = (field, val) => esEditor
-        ? `<input type="number" min="0" step="0.01" data-field="${field}" value="${val}" oninput="recalcCampaignRow(this)" class="w-24 rounded border border-slate-600 bg-slate-800 px-2 py-1 text-right text-slate-100">`
+        ? `<input type="number" min="0" step="0.01" data-field="${field}" value="${val}" data-ev="input:recalcCampaignRow(this)" class="w-24 rounded border border-slate-600 bg-slate-800 px-2 py-1 text-right text-slate-100">`
         : `<span class="font-mono">${val}</span>`;
       const rowsHtml = rows.map(r => {
         const estadoCell = esEditor
           ? `<select data-field="estado" class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-slate-100">${estadoOptions(r.estado)}</select>`
           : escapeHtml(r.estado);
         const rowMonth = typeof monthStr === 'string' ? monthStr : (document.getElementById('campaignMesSel')?.value || '');
-        const btnSave = esEditor ? `<button type="button" onclick="saveCampaignStat('${escapeAttr(r.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'"))}','${escapeAttr(rowMonth)}',${r.stat_id == null ? 'null' : Number(r.stat_id)})" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Guardar</button>` : '';
-        const btnDelete = isAdmin && r.stat_id ? `<button type="button" onclick="deleteCampaignStat(${Number(r.stat_id)},'${escapeAttr(rowMonth)}')" class="px-2 py-1 rounded border border-rose-700 text-rose-300 hover:bg-rose-950 font-semibold cursor-pointer">Eliminar</button>` : '';
+        const btnSave = esEditor ? `<button type="button" data-ev="click:saveCampaignStatFromData('${encodeURIComponent(r.name)}','${escapeAttr(rowMonth)}',${r.stat_id == null ? 'null' : Number(r.stat_id)})" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Guardar</button>` : '';
+        const btnDelete = isAdmin && r.stat_id ? `<button type="button" data-ev="click:deleteCampaignStat(${Number(r.stat_id)},'${escapeAttr(rowMonth)}')" class="px-2 py-1 rounded border border-rose-700 text-rose-300 hover:bg-rose-950 font-semibold cursor-pointer">Eliminar</button>` : '';
         return `<tr id="campaign_row_${escapeAttr(r.name)}" data-month="${escapeAttr(rowMonth)}" data-stat-id="${r.stat_id == null ? '' : Number(r.stat_id)}" class="hover:bg-slate-800/50">
           <td class="p-3 text-left text-slate-200">${escapeHtml(r.name)}</td>
           <td class="p-3 text-left">${estadoCell}</td>
@@ -6528,7 +6528,32 @@ async function deleteLeadAppointment(id) {
       downloadCSV(lineas.join('\n'), `campanas_${monthStr}.csv`);
       showToast('Campañas exportadas a CSV', 'success');
     }
-  </script>
+  
+    // Fase 15: wrappers para handlers inline compuestos; se invocan via
+    // data-ev (src/legacy/actions.js) y conservan this=elemento/evento.
+    function formatPhoneField(el) { el.value = formatPhone(el.value); }
+    function formatPhoneFieldAndCheck(el) { el.value = formatPhone(el.value); checkNewPhoneDuplicate(); }
+    function cycleTheme() { applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'); }
+    function toggleAdminUsers(abrir) {
+      const panel = document.getElementById('panelAdminUsers');
+      if (!panel) return;
+      panel.classList.remove('hidden');
+      if (abrir) { panel.classList.add('flex'); loadAuthorizedUsers(); loadAgentSessionsReport(); }
+      else panel.classList.remove('flex');
+    }
+    function openLeadFromView(origin, id) { closeViewLeadModal(); openLeadModal(origin, id); }
+    function openEditLeadFromView(id, origin) { closeViewLeadModal(); openEditLeadModal(id, origin); }
+    function focusPeriodoTip(el) { if (el.focus) el.focus(); positionPeriodoTip(el); }
+    function stopPropagationEvent(e) { e.stopPropagation(); }
+    // data-ev no admite comillas en el valor: el nombre de campana viaja
+    // URL-codificado (encodeURIComponent no emite comillas ni barras).
+    function saveCampaignStatFromData(nombreCodificado, mes, id) {
+      let nombre;
+      try { nombre = decodeURIComponent(nombreCodificado); } catch { showToast('Nombre de campana invalido', 'warning'); return; }
+      return saveCampaignStat(nombre, mes, id);
+    }
+</script>
+  <script type="module" src="/src/legacy/actions.js"></script>
   <script type="module" src="/src/citas-calendar.js"></script>
   <script type="module" src="/src/legacy/helpers.js"></script>
   <script type="module" src="/src/legacy/citas.js"></script>

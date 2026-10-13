@@ -1864,8 +1864,20 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const generation = sessionGeneration;
       const { data, error } = await supabaseClient.rpc('is_active_user');
       if (generation !== sessionGeneration || error || !data) return null;
-      const { data: access, error: accessError } = await supabaseClient
-        .from('user_access').select('user_id, email, nombre, role, activo, updated_at').eq('user_id', user.id).maybeSingle();
+      // idle_timeout_enabled puede no existir aún si la migración no se aplicó:
+      // si el select falla, se reintenta sin la columna y se asume true (el
+      // comportamiento previo) en lugar de cerrar la sesión de todo el equipo.
+      let res = await supabaseClient.from('user_access')
+        .select('user_id, email, nombre, role, activo, updated_at, idle_timeout_enabled')
+        .eq('user_id', user.id).maybeSingle();
+      if (res.error) {
+        console.warn('user_access sin idle_timeout_enabled; se asume cierre automático activo.');
+        res = await supabaseClient.from('user_access')
+          .select('user_id, email, nombre, role, activo, updated_at')
+          .eq('user_id', user.id).maybeSingle();
+        if (!res.error && res.data) res.data = { ...res.data, idle_timeout_enabled: true };
+      }
+      const access = res.data, accessError = res.error;
       return generation === sessionGeneration && !accessError && access?.activo ? access : null;
     }
 
@@ -2043,7 +2055,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     let agentSessionId = null, idleWarnTimer = null, idleTickTimer = null, idleListenersOn = false, idleLastTouchSent = 0;
 
     function idleLastTs() { return Number(localStorage.getItem(IDLE_KEY) || 0); }
-    function isIdleMonitored() { return !!agentSessionId && currentAccess?.role === 'agente'; }
+    // El monitoreo exige sesion registrada, rol agente y preferencia activa:
+    // idle_timeout_enabled ausente (respuesta antigua) se trata como true.
+    function isIdleMonitored() { return !!agentSessionId && currentAccess?.role === 'agente' && currentAccess?.idle_timeout_enabled !== false; }
 
     function hideIdleBanner() { document.getElementById('idleBanner')?.classList.add('hidden'); }
     function showIdleBanner() {
@@ -2056,7 +2070,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     function continueAgentSession() { markUserActivity(); }
 
     function markUserActivity() {
-      if (!isIdleMonitored()) return;
+      // La telemetria (touch del reporte de actividad) sigue aunque el admin
+      // haya apagado el cierre automatico de esta asesora: solo el banner y
+      // los temporizadores quedan gated por isIdleMonitored().
+      if (!agentSessionId || currentAccess?.role !== 'agente') return;
       localStorage.setItem(IDLE_KEY, String(Date.now()));
       hideIdleBanner();
       restartIdleTimers();
@@ -2065,7 +2082,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
     function idleStorageSync(event) { if (event.key === IDLE_KEY && event.newValue) { hideIdleBanner(); restartIdleTimers(); } }
 
     async function touchAgentSessionThrottled() {
-      if (!isIdleMonitored() || !supabaseClient) return;
+      if (!agentSessionId || !supabaseClient) return;
       if (Date.now() - idleLastTouchSent < 60000) return;
       idleLastTouchSent = Date.now();
       const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at, sid = agentSessionId;
@@ -2092,7 +2109,43 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
 
     async function endAgentSessionForIdle() {
       if (!isIdleMonitored()) return;
-      const generation = sessionGeneration, sid = agentSessionId;
+      const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at, sid = agentSessionId;
+      // Comprobacion server-side justo antes del cierre: el admin pudo apagar
+      // la preferencia mientras la asesora tenia la pantalla quieta. Si la
+      // consulta falla, NO se cierra por inactividad (la autorizacion de cada
+      // operacion sigue validandose en el servidor).
+      let decision = 'cerrar';
+      try {
+        const { data, error } = await supabaseClient
+          .from('user_access').select('activo, idle_timeout_enabled').eq('user_id', userId).maybeSingle();
+        if (generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt) return;
+        if (error) {
+          decision = 'reintentar';
+        } else if (!data || data.activo === false) {
+          await closeInvalidSession('La sesión o el acceso fue desactivado. Inicia sesión de nuevo.');
+          return;
+        } else if (data.idle_timeout_enabled === false) {
+          decision = 'cancelar';
+        }
+      } catch (_) {
+        decision = 'reintentar';
+      }
+      if (decision === 'cancelar') {
+        // Preferencia apagada a distancia: se retira el monitoreo de esta
+        // sesion. Si el admin la reactiva, el reinicio de sesion (updated_at
+        // cambia) rearma el seguimiento en la proxima validacion.
+        stopIdleTracking();
+        hideIdleBanner();
+        return;
+      }
+      if (decision === 'reintentar') {
+        // Sin confirmacion no se cierra: se abre una ventana nueva de 5 minutos
+        // y se vuelve a comprobar entonces.
+        hideIdleBanner();
+        localStorage.setItem(IDLE_KEY, String(Date.now()));
+        restartIdleTimers();
+        return;
+      }
       stopIdleTracking();
       if (supabaseClient) { try { await supabaseClient.rpc('end_agent_session', { p_session_id: sid, p_reason: 'idle_timeout' }); } catch (_) { /* cierre best-effort: no bloquea el flujo */ } }
       if (generation !== sessionGeneration) return;
@@ -2198,15 +2251,28 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const users = authorizedUsersList.filter(item => [item.email, item.nombre, item.role].some(value => String(value ?? '').toLowerCase().includes(search)));
       const count = document.getElementById('userSearchCount');
       if (count) count.textContent = `${users.length} de ${authorizedUsersList.length} usuarios`;
-      container.innerHTML = users.map(item => `
+      container.innerHTML = users.map(item => {
+        // El control del cierre automatico solo existe para asesoras (rol
+        // agente) y va en una subfila propia: pulsarlo no debe poder
+        // confundirse con Desactivar cuenta, que invalida el acceso.
+        const cierre = item.idle_timeout_enabled !== false;
+        const idleControl = item.role === 'agente' ? `
+          <div class="users-row-actions users-row-idle">
+            <span class="users-idle-label">Cierre automático</span>
+            <span class="users-status ${cierre ? 'is-active' : 'is-inactive'}">${cierre ? 'Activado' : 'Desactivado'}</span>
+            <button type="button" onclick="setIdleTimeout('${escapeAttr(item.user_id)}', ${cierre ? 'false' : 'true'})">${cierre ? 'Desactivar cierre' : 'Activar cierre'}</button>
+          </div>` : '';
+        return `
         <div class="users-row">
           <div class="min-w-0"><strong class="block">${escapeHtml(item.nombre || item.email)}</strong>${item.nombre ? `<span class="users-row-email block">${escapeHtml(item.email)}</span>` : ''}<span class="text-[11px] text-slate-500">${escapeHtml(item.role)}</span></div>
           <div class="users-row-actions">
             <span class="users-status ${item.activo ? 'is-active' : 'is-inactive'}">${item.activo ? 'Activo' : 'Inactivo'}</span>
             <button type="button" onclick="openChangeEmail('${escapeAttr(item.user_id)}')">Cambiar correo</button>
-            <button type="button" onclick="setUserActive('${escapeAttr(item.user_id)}', ${item.activo ? 'false' : 'true'})">${item.activo ? 'Desactivar' : 'Activar'}</button>
+            <button type="button" onclick="setUserActive('${escapeAttr(item.user_id)}', ${item.activo ? 'false' : 'true'})">${item.activo ? 'Desactivar cuenta' : 'Activar cuenta'}</button>
           </div>
-        </div>`).join('') || `<p class="text-slate-500">${search ? 'No hay coincidencias.' : 'No hay usuarios.'}</p>`;
+          ${idleControl}
+        </div>`;
+      }).join('') || `<p class="text-slate-500">${search ? 'No hay coincidencias.' : 'No hay usuarios.'}</p>`;
     }
 
     function openChangeEmail(userId) {
@@ -2287,6 +2353,17 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
       const { error } = await supabaseClient.rpc('admin_manage_user_access', { p_action: 'set_active', p_user_id: userId, p_activo: activo });
       if (error) showToast('No se pudo actualizar el usuario', 'error');
       else { showToast(activo ? 'Usuario activado' : 'Usuario desactivado', 'success'); loadAuthorizedUsers(); }
+    }
+
+    // Preferencia por asesora del cierre automatico por inactividad. Es una
+    // accion reversible: no pide confirmacion, y el refresco de la lista deja
+    // el estado visible de inmediato. p_activo transporta el valor (misma firma
+    // del RPC, accion 'set_idle_timeout').
+    async function setIdleTimeout(userId, enabled) {
+      if (!isAdmin) return;
+      const { error } = await supabaseClient.rpc('admin_manage_user_access', { p_action: 'set_idle_timeout', p_user_id: userId, p_activo: enabled });
+      if (error) showToast('No se pudo cambiar el cierre automático', 'error');
+      else { showToast(enabled ? 'Cierre automático activado' : 'Cierre automático desactivado', 'success'); loadAuthorizedUsers(); }
     }
 
     async function handleAuthorizeUser(event) {

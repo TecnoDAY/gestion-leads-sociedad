@@ -540,6 +540,12 @@
     .users-row:first-child { border-top: 0; }
     .users-row strong { color: #17203b; }
     .users-row-email { color: #526174; overflow-wrap: anywhere; }
+    /* Subfila del cierre automatico por asesora: ocupa su propia linea para que
+       no se confunda con los controles de la cuenta. Solo layout y colores con
+       par claro/oscuro; los badges y botones reutilizan .users-status y
+       .users-row-actions button. */
+    .users-row-idle { flex: none; width: 100%; justify-content: flex-end; gap: .5rem; }
+    .users-idle-label { color: #526174; font-size: .7rem; font-weight: 600; }
     .users-row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
     .users-row-actions button { min-height: 2rem; padding: .35rem .6rem; border: 1px solid #cbd5e1; border-radius: .5rem; color: #344054; font-size: .7rem; cursor: pointer; }
     .users-row-actions button:hover { border-color: #6366f1; color: #4338ca; }
@@ -554,7 +560,7 @@
     [data-theme="dark"] .users-shell, [data-theme="dark"] .users-section { background: #1e293b; border-color: #334155; }
     [data-theme="dark"] .users-header { background: linear-gradient(115deg,#1e293b,#252449); border-color: #334155; }
     [data-theme="dark"] .users-header h2, [data-theme="dark"] .users-section h3, [data-theme="dark"] .users-row strong { color: #f8fafc; }
-    [data-theme="dark"] .users-header p, [data-theme="dark"] .users-row-email { color: #cbd5e1; }
+    [data-theme="dark"] .users-header p, [data-theme="dark"] .users-row-email, [data-theme="dark"] .users-idle-label { color: #cbd5e1; }
     [data-theme="dark"] .users-body { background: #0f172a; }
     [data-theme="dark"] .users-body label { color: #cbd5e1; }
     [data-theme="dark"] .users-body input, [data-theme="dark"] .users-body select { background: #0f172a; color: #f8fafc; border-color: #475569; }

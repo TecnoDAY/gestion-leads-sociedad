@@ -18,7 +18,7 @@ const reportesMod = await import('../../src/legacy/reportes.js');
 const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
   histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
   periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
-  computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions } = reportesMod;
+  computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates } = reportesMod;
 // Helpers puros del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
 const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
@@ -119,7 +119,7 @@ function frontend(extra = {}) {
     MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
     histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
     periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
-    computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions,
+    computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates,
     // Helpers del area Leads extraidos a src/legacy/leads.js
     sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
     haveSameLeadIds, isAgendadoGestion, validAppointmentId,

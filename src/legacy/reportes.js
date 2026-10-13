@@ -324,6 +324,40 @@ export function applyHistoricalFilters(data, filters = {}) {
 }
 
 /**
+ * Parseo del input date del rango historico (contrato exacto del codigo
+ * original): regex estricta YYYY-MM-DD; un dia imposible hace rollover
+ * sin validacion de calendario (p. ej. 2026-02-30 -> 2026-03-02).
+ * @param {string} s Valor del input (o cadena vacia).
+ * @returns {number|null} Timestamp UTC de medianoche o null.
+ */
+export function histDateInputToTs(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  return m ? Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+}
+
+/**
+ * Fechas del rango para un preset del historico, como strings YYYY-MM-DD.
+ * `todayTs` (medianoche UTC del dia local del navegador) es inyectable para
+ * tests deterministas; preset desconocido devuelve null y el wrapper no
+ * toca los inputs.
+ * @param {string|null} preset 'clear'|'7d'|'30d'|'month' u otro.
+ * @param {number} todayTs Timestamp UTC de medianoche de hoy.
+ * @returns {{from: string, to: string}|null}
+ */
+export function histRangePresetDates(preset, todayTs) {
+  const fmt = ts => new Date(ts).toISOString().slice(0, 10);
+  if (preset === 'clear') return { from: '', to: '' };
+  if (preset === '7d') return { from: fmt(todayTs - 6 * 86400000), to: fmt(todayTs) };
+  if (preset === '30d') return { from: fmt(todayTs - 29 * 86400000), to: fmt(todayTs) };
+  if (preset === 'month') {
+    const hoy = new Date(todayTs);
+    return { from: fmt(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), 1)), to: fmt(todayTs) };
+  }
+  return null;
+}
+
+
+/**
  * Construye los valores de filtros historicos sin DOM ni HTML. Los agentes
  * devueltos son los presentes en datos; el wrapper puede unirlos al catalogo
  * activo mediante catalogOptions antes de renderizarlos.
@@ -381,6 +415,8 @@ if (typeof window !== 'undefined') {
   window.campaignTotals = campaignTotals;
   window.computeHistoricalAggregates = computeHistoricalAggregates;
   window.applyHistoricalFilters = applyHistoricalFilters;
+  window.histDateInputToTs = histDateInputToTs;
+  window.histRangePresetDates = histRangePresetDates;
   window.historicalFilterOptions = historicalFilterOptions;
   window.totalCanalesVisibles = totalCanalesVisibles;
 }

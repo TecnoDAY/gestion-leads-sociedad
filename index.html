@@ -5518,37 +5518,28 @@ async function deleteLeadAppointment(id) {
     // leadReportDate, histMonth*, normalizeGestion y groupGestionEstado viven
     // en src/legacy/reportes.js (capa 2 del strangler) y llegan via window.
 
-    // Rango de fechas (Desde/Hasta): se expresa en timestamps UTC de medianoche.
+    // Rango de fechas (Desde/Hasta): se expresa en timestamps UTC de
+    // medianoche. El parseo vive en src/legacy/reportes.js y llega via
+    // window; aca solo se leen los inputs.
     function readHistRange() {
       const fromStr = document.getElementById('histRangeFrom')?.value || '';
       const toStr = document.getElementById('histRangeTo')?.value || '';
-      const toTs = s => {
-        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
-        return m ? Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
-      };
-      return { from: toTs(fromStr), to: toTs(toStr) };
+      return { from: histDateInputToTs(fromStr), to: histDateInputToTs(toStr) };
     }
 
-    // Presets: últimos 7/30 días, este mes o limpiar; luego recalcula el panel.
+    // Presets: ultimos 7/30 dias, este mes o limpiar; luego recalcula el
+    // panel. El calculo de fechas vive en reportes.js; el todayTs se usa la
+    // fecha local del navegador, exactamente como el codigo original.
     function setHistRangePreset(preset) {
       const fromInput = document.getElementById('histRangeFrom');
       const toInput = document.getElementById('histRangeTo');
       if (!fromInput || !toInput) return;
-      const fmt = ts => new Date(ts).toISOString().slice(0, 10);
       const today = new Date();
       const todayTs = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
-      if (preset === 'clear') {
-        fromInput.value = '';
-        toInput.value = '';
-      } else if (preset === '7d') {
-        fromInput.value = fmt(todayTs - 6 * 86400000);
-        toInput.value = fmt(todayTs);
-      } else if (preset === '30d') {
-        fromInput.value = fmt(todayTs - 29 * 86400000);
-        toInput.value = fmt(todayTs);
-      } else if (preset === 'month') {
-        fromInput.value = fmt(Date.UTC(today.getFullYear(), today.getMonth(), 1));
-        toInput.value = fmt(todayTs);
+      const dates = histRangePresetDates(preset, todayTs);
+      if (dates) {
+        fromInput.value = dates.from;
+        toInput.value = dates.to;
       }
       renderHistoricalAnalytics();
     }

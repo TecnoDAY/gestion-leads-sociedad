@@ -5605,32 +5605,23 @@ async function deleteLeadAppointment(id) {
       updateHistRangeNotice(filtered);
       const data = filtered.data;
 
-      const totalLeads = data.length;
-      const totalInscritos = data.filter(l => normalizeGestion(l).includes('INSCRIT')).length;
-      const totalAgendados = data.filter(l => normalizeGestion(l).includes('AGENDAD')).length;
-      const totalNoContesta = data.filter(l => normalizeGestion(l).includes('NO CONTEST')).length;
-      const convRate = totalLeads > 0 ? ((totalInscritos / totalLeads) * 100).toFixed(1) : '0.0';
+      // Los KPIs y el mes record son puros y viven en
+      // src/legacy/reportes.js; aqui solo se escribren en el DOM.
+      const kpis = historicalKpiTotals(data);
+      const { totalLeads, convRate, totalAgendados, totalInscritos } = kpis;
 
-      document.getElementById('histKpiTotalLeads').textContent = totalLeads.toLocaleString();
-      document.getElementById('histKpiInscritos').textContent = totalInscritos.toLocaleString();
-      document.getElementById('histKpiAgendados').textContent = totalAgendados.toLocaleString();
-      document.getElementById('histKpiNoContesta').textContent = totalNoContesta.toLocaleString();
+      document.getElementById('histKpiTotalLeads').textContent = kpis.totalLeads.toLocaleString();
+      document.getElementById('histKpiInscritos').textContent = kpis.totalInscritos.toLocaleString();
+      document.getElementById('histKpiAgendados').textContent = kpis.totalAgendados.toLocaleString();
+      document.getElementById('histKpiNoContesta').textContent = kpis.totalNoContesta.toLocaleString();
       document.getElementById('histKpiConversion').textContent = convRate + '%';
 
       const { monthlyStats, activeMonths, stateTotals, stateByMonth, campTotals, campByMonth, funnelGestionados } = computeHistoricalAggregates(data);
       const monthLabels = activeMonths.map(histMonthLabel);
 
-      let recordMonth = '-';
-      let recordCount = 0;
-      activeMonths.forEach(m => {
-        if (monthlyStats[m].total > recordCount) {
-          recordCount = monthlyStats[m].total;
-          recordMonth = histMonthLabel(m);
-        }
-      });
-
-      document.getElementById('histKpiRecordMonth').textContent = recordMonth;
-      document.getElementById('histKpiRecordCount').textContent = recordCount.toLocaleString() + ' leads';
+      const record = historicalRecordMonth(monthlyStats, activeMonths);
+      document.getElementById('histKpiRecordMonth').textContent = record.month;
+      document.getElementById('histKpiRecordCount').textContent = record.count.toLocaleString() + ' leads';
 
       const tableBody = document.getElementById('histMonthlyTableBody');
       if (tableBody) {

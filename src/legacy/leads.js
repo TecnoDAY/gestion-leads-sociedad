@@ -328,6 +328,151 @@ export function matrizLeadsHtml(leads) {
   return { thead: headerHtml, tbody: bodyHtml, tfoot: footHtml };
 }
 
+// --- Piezas puras de la tabla de leads y paginacion (fase 25) ----------------
+
+/** Badge de gestion con las mismas familias de color del original. */
+export function badgeGestionHtml(gestion) {
+  const g = (gestion || '').trim();
+  const lower = g.toLowerCase();
+  let colorClasses = 'bg-slate-700/50 text-slate-300 border-slate-600/60';
+  let dotColor = 'bg-slate-400';
+  if (lower.includes('inscrit')) {
+    colorClasses = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+    dotColor = 'bg-emerald-400';
+  } else if (lower.includes('agendad')) {
+    colorClasses = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+    dotColor = 'bg-amber-400';
+  } else if (lower.includes('informaci')) {
+    colorClasses = 'bg-blue-500/15 text-blue-300 border-blue-500/30';
+    dotColor = 'bg-blue-400';
+  } else if (lower.includes('no contesta') || lower.includes('colgo') || lower.includes('no procede') || lower.includes('ya no')) {
+    colorClasses = 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+    dotColor = 'bg-rose-400';
+  } else if (lower.includes('vive lejos') || lower.includes('costear') || lower.includes('menor')) {
+    colorClasses = 'bg-purple-500/15 text-purple-300 border-purple-500/30';
+    dotColor = 'bg-purple-400';
+  }
+  return `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium border ${colorClasses}">
+        <span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>
+        <span class="truncate max-w-[120px]">${escapeHtml(g)}</span>
+      </span>`;
+}
+
+/**
+ * Fila de la tabla de leads con el marcado original: badge de gestion,
+ * 2025 para origen historico, WhatsApp deshabilitado solo con telefono
+ * limpio, y acciones por permisos (archivar solo admin y no historico).
+ * @param {object} lead
+ * @param {{leadId: string|number, origin: string, isAdmin: boolean}} ctx
+ * @returns {string}
+ */
+export function filaLeadHtml(lead, { leadId, origin, isAdmin }) {
+  const originBadge = origin === 'historico'
+    ? '<span class="text-[11px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold shrink-0">2025</span>'
+    : '';
+  const mes = getField(lead, 'Mes');
+  const fecha = getField(lead, 'Fecha');
+  const nombre = getField(lead, 'Nombre') || 'Sin Nombre';
+  const telefono = getField(lead, 'Telefono');
+  const campana = getField(lead, 'Campaña');
+  const medio = getField(lead, 'Medio');
+  const gestion = getField(lead, 'GESTION') || 'Información';
+  const agente = getField(lead, 'Agente ') || getField(lead, 'Agente') || '-';
+  const badgeHtml = badgeGestionHtml(gestion);
+  const cleanPhone = telefono.replace(/\D/g, '');
+  return `<tr class="hover:bg-slate-800/80 transition-colors group">
+          <td class="px-3.5 py-3 font-mono text-[11px] text-slate-400 tabular-nums">#${leadId}</td>
+          <td class="px-3.5 py-3 text-slate-300">
+            <div class="font-medium text-white">${escapeHtml(fecha || '-')}</div>
+            <div class="text-[11px] text-slate-500">${escapeHtml(mes || '')}</div>
+          </td>
+          <td class="px-3.5 py-3">
+            <div class="flex flex-col gap-1.5">
+              <button data-ev="click:openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" class="font-semibold text-white hover:text-indigo-400 transition-colors cursor-pointer truncate max-w-[190px] block">
+                ${escapeHtml(nombre)}
+              </button>
+              ${nuevoBadge(lead)}
+            </div>
+          </td>
+          <td class="px-3.5 py-3 text-slate-300">
+            <div class="flex items-center gap-1.5">
+              ${cleanPhone ? `
+                <button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="p-1 rounded bg-slate-700/50 text-slate-400 opacity-60 cursor-not-allowed">
+                  <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                </button>
+              ` : ''}
+              <span class="font-mono text-[11px]">${escapeHtml(telefono || 'S/N')}</span>
+            </div>
+          </td>
+          <td class="px-3.5 py-3 text-slate-300 truncate max-w-[150px]">${escapeHtml(campana || '-')}</td>
+          <td class="px-3.5 py-3 text-slate-400 text-[11px] truncate max-w-[110px]">${escapeHtml(medio || '-')}</td>
+          <td class="px-3.5 py-3">
+            ${badgeHtml}
+            ${originBadge}
+          </td>
+          <td class="px-3.5 py-3 text-slate-300 text-[11px]">${escapeHtml(agente)}</td>
+          <td class="px-3.5 py-3 text-right">
+            <div class="flex items-center justify-end gap-1.5">
+              <button data-ev="click:openEditLeadModal('${escapeAttr(leadId)}', '${origin}')" title="Editar seguimiento" class="p-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 transition-colors cursor-pointer">
+                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+              </button>
+              ${isAdmin && origin !== 'historico' ? `<button data-ev="click:archiveLead('${escapeAttr(leadId)}', '${origin}')" title="Archivar" class="p-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-amber-300 transition-colors cursor-pointer"><i data-lucide="archive" class="w-3.5 h-3.5"></i></button>` : ''}
+              <button data-ev="click:openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" title="Ver detalles completos" class="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 transition-colors cursor-pointer">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+}
+
+/** Estado vacio de la tabla de leads. */
+export function tablaVaciaLeadsHtml() {
+  return `<tr>
+          <td colspan="9" class="leads-table-empty">
+            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+            <p class="text-sm font-semibold">No se encontraron leads con los filtros actuales.</p>
+            <p class="mt-1 text-xs">Prueba con otros criterios o limpia los filtros para ver los registros.</p>
+            <button type="button" data-ev="click:resetAllFilters()">Limpiar filtros</button>
+          </td>
+        </tr>`;
+}
+
+/** Texto de la info de paginacion (o 'Sin registros'). */
+export function infoPaginacion(start, end, total) {
+  return total > 0 ? `Mostrando ${start.toLocaleString()} a ${end.toLocaleString()} de ${total.toLocaleString()} registros` : 'Sin registros';
+}
+
+/** Rango de paginas con '...' segun la posicion (1..total). */
+export function rangoPaginacion(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  if (current <= 4) return [1, 2, 3, 4, 5, '...', total];
+  if (current >= total - 3) return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+  return [1, '...', current - 1, current, current + 1, '...', total];
+}
+
+/** Controles de paginacion (flechas con disabled en bordes, activa, movil). */
+export function controlesPaginacionHtml(currentPage, totalPages) {
+  let html = '';
+  html += `<button aria-label="Página anterior" data-ev="click:goToPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled class="pagination-arrow px-2 py-1 rounded bg-slate-800 text-slate-600 cursor-not-allowed"' : 'class="pagination-arrow px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer"'}>
+        <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+      </button>`;
+  rangoPaginacion(currentPage, totalPages).forEach(p => {
+    if (p === '...') {
+      html += `<span class="pagination-ellipsis px-2 py-1 text-slate-500">...</span>`;
+    } else {
+      const isActive = p === currentPage;
+      html += `<button data-ev="click:goToPage(${p})" aria-label="Ir a la página ${p}" ${isActive ? 'aria-current="page"' : ''} class="pagination-page-number px-2.5 py-1 rounded text-xs font-mono font-semibold transition-colors cursor-pointer ${isActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}">
+            ${p}
+          </button>`;
+    }
+  });
+  html += `<span class="pagination-mobile-label hidden" aria-live="polite">Página ${currentPage} de ${totalPages}</span>`;
+  html += `<button aria-label="Página siguiente" data-ev="click:goToPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled class="pagination-arrow px-2 py-1 rounded bg-slate-800 text-slate-600 cursor-not-allowed"' : 'class="pagination-arrow px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer"'}>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+      </button>`;
+  return html;
+}
+
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
   window.sortMonthCatalog = sortMonthCatalog;
@@ -344,4 +489,10 @@ if (typeof window !== 'undefined') {
   window.metricasLeads = metricasLeads;
   window.subtituloKpiTotal = subtituloKpiTotal;
   window.matrizLeadsHtml = matrizLeadsHtml;
+  window.badgeGestionHtml = badgeGestionHtml;
+  window.filaLeadHtml = filaLeadHtml;
+  window.tablaVaciaLeadsHtml = tablaVaciaLeadsHtml;
+  window.infoPaginacion = infoPaginacion;
+  window.rangoPaginacion = rangoPaginacion;
+  window.controlesPaginacionHtml = controlesPaginacionHtml;
 }

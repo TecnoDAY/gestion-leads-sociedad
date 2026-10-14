@@ -1260,7 +1260,8 @@ test('badge Nuevo: fecha de llegada del mes/año Miami actual, no de otros meses
   // El markup del badge vive en src/legacy/leads.js (extraido); el USO sigue en el monolito.
   const leadsSource = readFileSync('src/legacy/leads.js', 'utf8');
   assert.match(leadsSource, />\s*Nuevo\s*<\/span>/);
-  assert.match(html, /\$\{nuevoBadge\(lead\)\}/);
+  // La fila que usa el badge vive en src/legacy/leads.js (fase 25).
+  assert.match(leadsSource, /\$\{nuevoBadge\(lead\)\}/);
 });
 
 test('canal Llamada WhatsApp: etiqueta visible nueva, valor y conteo canónicos intactos', () => {

@@ -186,6 +186,36 @@ export function unirCitasConLeads(filas, leads) {
   return { citas, omitidas: { sinLead, archivadas }, aviso: partes.length ? 'Omitidas: ' + partes.join('; ') + '.' : '' };
 }
 
+/**
+ * Construccion HTML de las tarjetas KPI de la seccion Citas (misma
+ * estructura del export original): 4 principales y 7 del desglose por
+ * sede y estado. El wrapper solo escribe los 2 nodos DOM.
+ * @param {object[]} rows Filtras filtradas.
+ * @param {Record<string, number>} counts Conteo por estado canónico.
+ * @param {number} denom ASISTIO + NO_ASISTIO.
+ * @returns {{principales: string[], desglose: string[]}}
+ */
+export function citasKpiHtml(rows, counts, denom) {
+  const card = (label, value) => `<div class="rounded-lg border border-slate-700 bg-slate-800/60 p-3"><div class="text-[11px] text-slate-400">${escapeHtml(label)}</div><strong class="text-lg text-white">${escapeHtml(String(value))}</strong></div>`;
+  const principales = [
+    card('Total citas', rows.length),
+    card('Programadas', counts.PROGRAMADA || 0),
+    card('Asistieron', counts.ASISTIO || 0),
+    card('Tasa asistencia', `${(denom ? counts.ASISTIO / denom * 100 : 0).toFixed(1)}%`),
+  ];
+  const desglose = [
+    card('No asistieron', counts.NO_ASISTIO || 0),
+    card('Canceladas', counts.CANCELADA || 0),
+    card('Reprogramadas', counts.REPROGRAMADA || 0),
+    card('Doral', rows.filter(r => r.campus === 'DORAL' && !r.is_data_dura).length),
+    card('Doral Data Dura', rows.filter(r => r.campus === 'DORAL' && r.is_data_dura === true).length),
+    card('Weston', rows.filter(r => r.campus === 'WESTON' && !r.is_data_dura).length),
+    card('Weston Data Dura', rows.filter(r => r.campus === 'WESTON' && r.is_data_dura === true).length),
+    card('Sin sede (históricas)', rows.filter(r => !r.campus).length),
+  ];
+  return { principales, desglose };
+}
+
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
   window.appointmentDate = appointmentDate;  window.appointmentInputISO = appointmentInputISO;
@@ -200,4 +230,5 @@ if (typeof window !== 'undefined') {
   window.CITAS_TABLA_VACIA = CITAS_TABLA_VACIA;
   window.ordenarCitasDesc = ordenarCitasDesc;
   window.unirCitasConLeads = unirCitasConLeads;
+  window.citasKpiHtml = citasKpiHtml;
 }

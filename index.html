@@ -2812,23 +2812,9 @@
     // sola linea, donde un comentario // rompe el cierre y deja la pantalla
     // en blanco (regresion ya corregida).
     function renderCitasKpis(rows, counts, denom) {
-      const card = (label, value) => `<div class="rounded-lg border border-slate-700 bg-slate-800/60 p-3"><div class="text-[11px] text-slate-400">${escapeHtml(label)}</div><strong class="text-lg text-white">${escapeHtml(String(value))}</strong></div>`;
-      const principales = [
-        card('Total citas', rows.length),
-        card('Programadas', counts.PROGRAMADA || 0),
-        card('Asistieron', counts.ASISTIO || 0),
-        card('Tasa asistencia', `${(denom ? counts.ASISTIO / denom * 100 : 0).toFixed(1)}%`)
-      ];
-      const desglose = [
-        card('No asistieron', counts.NO_ASISTIO || 0),
-        card('Canceladas', counts.CANCELADA || 0),
-        card('Reprogramadas', counts.REPROGRAMADA || 0),
-        card('Doral', rows.filter(r => r.campus === 'DORAL' && !r.is_data_dura).length),
-        card('Doral Data Dura', rows.filter(r => r.campus === 'DORAL' && r.is_data_dura === true).length),
-        card('Weston', rows.filter(r => r.campus === 'WESTON' && !r.is_data_dura).length),
-        card('Weston Data Dura', rows.filter(r => r.campus === 'WESTON' && r.is_data_dura === true).length),
-        card('Sin sede (históricas)', rows.filter(r => !r.campus).length)
-      ];
+      // La construccion de tarjetas es pura (src/legacy/citas.js, fase 19);
+      // aqui solo se escriben los 2 nodos DOM.
+      const { principales, desglose } = citasKpiHtml(rows, counts, denom);
       const kpis = document.getElementById('citasKpis');
       if (kpis) kpis.innerHTML = principales.join('');
       const cuerpo = document.getElementById('sedeBreakdownBody');

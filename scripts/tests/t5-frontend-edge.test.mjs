@@ -13,7 +13,7 @@ const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayB
   compareLeadIdsDescending, consolidateLeadsById } = legacyMod;
 // Funciones puras del area Citas extraidas a src/legacy/citas.js
 const citasMod = await import('../../src/legacy/citas.js');
-const { appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc, unirCitasConLeads } = citasMod;
+const { appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc, unirCitasConLeads, citasKpiHtml } = citasMod;
 // Helpers puros de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js
 const reportesMod = await import('../../src/legacy/reportes.js');
 const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
@@ -118,7 +118,7 @@ function frontend(extra = {}) {
     getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel,
     compareLeadIdsDescending, consolidateLeadsById,
     // Helpers del area Citas extraidos a src/legacy/citas.js
-    appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc, unirCitasConLeads,
+    appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc, unirCitasConLeads, citasKpiHtml,
     // Helpers de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js
     MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
     histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
@@ -1740,12 +1740,12 @@ test('citas por sede: requerida en las 3 rutas, filro/KPIs, corrección y report
   assert.match(html, /appointmentCampusFrom\('editAppointment'\)/);
   assert.match(html, /appointmentCampusFrom\('leadAppointment'\)/);
   // Tabla, filtro y KPIs por sede; corrección con RPC dedicada.
-  // Los KPIs viven ahora en renderCitasKpis (Fase 5: 4 principales + desglose),
-  // por lo que el cálculo por sede se verifica sobre la función nueva.
+  // Los KPIs viven en citas.js (fase 19): el calculo por sede se verifica alli.
+  const citasModFuente = readFileSync('src/legacy/citas.js', 'utf8');
   assert.match(html, /<th class="p-3 text-left">Sede<\/th>/);
   assert.match(html, /id="citasSede"/);
-  assert.match(html, /card\('Doral', rows\.filter\(r => r\.campus === 'DORAL' && !r\.is_data_dura\)\.length\)/);
-  assert.match(html, /card\('Weston', rows\.filter\(r => r\.campus === 'WESTON' && !r\.is_data_dura\)\.length\)/);
+  assert.match(citasModFuente, /card\('Doral', rows\.filter\(r => r\.campus === 'DORAL' && !r\.is_data_dura\)\.length\)/);
+  assert.match(citasModFuente, /card\('Weston', rows\.filter\(r => r\.campus === 'WESTON' && !r\.is_data_dura\)\.length\)/);
   assert.match(html, /update_lead_appointment_campus/);
   // Lead ya Agendado: el modal de Actualizar Seguimiento tambien seda la cita
   // vigente sin crear otra (bloque con radios reutilizando la RPC existente).

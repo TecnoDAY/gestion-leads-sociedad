@@ -7,6 +7,10 @@ import vm from 'node:vm';
 import { test } from 'node:test';
 import path from 'node:path';
 import { escapeHtml, escapeAttr } from '../../src/legacy/helpers.js';
+// Fase 33: las plantillas de usuarios viven en src/legacy/admin.js. Se inyecta
+// el modulo real como adminApi para que el wrapper extraido (arbol de trabajo)
+// funcione igual que en el navegador; en modo --baseline (HEAD) se ignora.
+import * as adminApi from '../../src/legacy/admin.js';
 
 const baseline = process.argv.includes('--baseline');
 const read = p => baseline ? execFileSync('git', ['show', `HEAD:${p}`], { encoding: 'utf8' }) : readFileSync(p, 'utf8');
@@ -168,6 +172,7 @@ function renderUsuarios(lista) {
     isAdmin: true,
     authorizedUsersList: lista,
     escapeHtml, escapeAttr,
+    adminApi,
     document: { getElementById: element, querySelectorAll: () => [] },
   });
   new vm.Script(extractFunction('renderAuthorizedUsers')).runInContext(ctx);

@@ -31,6 +31,8 @@ const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, withOrigin, getLeadOri
 const helpMod = await import('../../src/legacy/help.js');
 const { normalizeHelpText, helpHighlight } = helpMod;
 const catalogosApi = await import('../../src/legacy/catalogos.js');
+// Panel de administracion extraido a src/legacy/admin.js (fase 33)
+const adminApi = await import('../../src/legacy/admin.js');
 // validAppointmentId vive en src/legacy/citas.js
 const { validAppointmentId } = citasMod;
 // actionsMod se importa al final (tests parse-all fase 15).
@@ -140,6 +142,7 @@ function frontend(extra = {}) {
     // Centro de ayuda extraido a src/legacy/help.js
     normalizeHelpText, helpHighlight,
     catalogosApi,
+    adminApi,
     // miamiToday se stubbea en el test para determinismo (2026-09-30)
     miamiToday: () => '2026-09-30',
     supabaseClient: null, currentUser: { id: 'user-test' }, currentAccess: { activo: true, nombre: 'Test', updated_at: 'v1' },
@@ -1414,7 +1417,14 @@ test('inactividad: aviso a 4 min, cierre a 5, multi-pestaña y registro en tabla
 });
 
 test('actividad de asesoras: solo una sesion abierta con señal reciente figura activa', () => {
-  const isRecent = vm.runInNewContext(`const IDLE_LIMIT_MS = 300000; ${extractFunction('isRecentAgentSession')}; isRecentAgentSession`);
+  // Redirect fase 33: isRecentAgentSession vive ahora en src/legacy/admin.js y
+  // recibe idleLimitMs por parametro. Con --baseline (HEAD) se ejecuta la
+  // funcion del monolito tal cual; en el arbol se usa el modulo real. Los
+  // asserts y su umbral (300000 ms, borde exclusive) no cambian.
+  const fuente = extractFunction('isRecentAgentSession');
+  const isRecent = fuente
+    ? vm.runInNewContext(`const IDLE_LIMIT_MS = 300000; ${fuente}; isRecentAgentSession`)
+    : (session, now) => adminApi.isRecentAgentSession(session, now, 300000);
   const now = Date.parse('2026-10-10T12:00:00Z');
   assert.equal(isRecent({ active: true, last_activity_at: '2026-10-10T11:55:01Z' }, now), true);
   assert.equal(isRecent({ active: true, last_activity_at: '2026-10-10T11:55:00Z' }, now), false);
@@ -2590,13 +2600,17 @@ test('reporte diario: canales e inscripciones retirados de pantalla y CSV', () =
 //     null) y afirmamos que la gramatica estricta del dispatcher lo ejecuta
 //     sin eval ni Function.
 import { parseDataAtributo, llamarAccion } from '../../src/legacy/actions.js';
-const markupCitas = html + readFileSync(new URL('../../src/legacy/citas.js', import.meta.url), 'utf8');
+// Fase 33: las plantillas de filas de usuarios salieron de index.html a
+// src/legacy/admin.js; se escanea tambien ese modulo para que el parse-all siga
+// cubriendo los mismos data-ev interpolados (umbral sin debilitar).
+const markupCitas = html + readFileSync(new URL('../../src/legacy/citas.js', import.meta.url), 'utf8')
+  + readFileSync(new URL('../../src/legacy/admin.js', import.meta.url), 'utf8');
 
 test('parse-all data-ev: markup estatico ejecutable por el dispatcher', () => {
   const nombres = new Set();
   for (const m of script.matchAll(/function\s+([\w$]+)\s*\(/g)) nombres.add(m[1]);
   for (const m of html.matchAll(/window\.([\w$]+)\s*=/g)) nombres.add(m[1]);
-  for (const f of ['help.js', 'leads.js', 'citas.js', 'reportes.js', 'catalogos.js']) {
+  for (const f of ['help.js', 'leads.js', 'citas.js', 'reportes.js', 'catalogos.js', 'admin.js']) {
     const modulo = readFileSync(new URL(`../../src/legacy/${f}`, import.meta.url), 'utf8');
     for (const m of modulo.matchAll(/window\.([\w$]+)\s*=/g)) nombres.add(m[1]);
   }

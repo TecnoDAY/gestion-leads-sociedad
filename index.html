@@ -2137,11 +2137,9 @@
       } catch (_) { /* sesión operativa no registrada; la app sigue funcionando */ }
     }
 
-    function idleMiami(ts) { if (!ts) return '-'; const d = new Date(ts); return Number.isNaN(d.getTime()) ? '-' : d.toLocaleString('es-ES', { timeZone: 'America/New_York', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); }
-    function isRecentAgentSession(session, now = Date.now()) {
-      const lastActivity = Date.parse(session.last_activity_at || session.started_at || '');
-      return Boolean(session.active) && Number.isFinite(lastActivity) && now - lastActivity < IDLE_LIMIT_MS;
-    }
+    // idleMiami e isRecentAgentSession viven en src/legacy/admin.js (fase 33
+    // del strangler) y llegan via window.adminApi; IDLE_LIMIT_MS entra al
+    // modulo como parametro, nunca se lee de window.
     async function loadAgentSessionsReport() {
       const box = document.getElementById('agentSessionsBody'); if (!box || !isAdmin || !supabaseClient) return;
       const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
@@ -2150,26 +2148,9 @@
       if (!box || generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt) return;
       if (error) { box.innerHTML = '<div role="alert" class="flex flex-wrap items-center gap-2 text-rose-300"><p>No se pudo cargar la actividad.</p><button type="button" data-ev="click:loadAgentSessionsReport()" class="min-h-11 rounded-lg border border-rose-400 px-3 py-2 font-semibold hover:bg-rose-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300">Reintentar</button></div>'; return; }
       const sessions = Array.isArray(data) ? data : [];
-      const advisors = new Map();
-      const reportTime = Date.now();
-      sessions.forEach(s => {
-        const key = s.user_id || s.agent_name;
-        const activity = Date.parse(s.last_activity_at || s.ended_at || s.started_at) || 0;
-        const entry = advisors.get(key) || { name: s.agent_name || '-', count: 0, active: false, stale: false, activity: 0 };
-        entry.count += 1;
-        const recent = isRecentAgentSession(s, reportTime);
-        entry.active ||= recent;
-        entry.stale ||= Boolean(s.active) && !recent;
-        if (activity > entry.activity) entry.activity = activity;
-        advisors.set(key, entry);
-      });
-      const rows = [...advisors.values()].sort((a, b) => b.activity - a.activity).map(a =>
-        `<div class="users-session-row"><span class="font-semibold">${escapeHtml(a.name)}</span><span class="text-slate-500">Última actividad: ${idleMiami(a.activity)}</span><span class="${a.active ? 'text-emerald-600' : a.stale ? 'text-amber-600' : 'text-slate-500'}">${a.active ? 'Activa' : a.stale ? 'Sin actividad reciente' : 'Sin sesión activa'}</span><span class="text-slate-500">${a.count} ${a.count === 1 ? 'sesión' : 'sesiones'}</span></div>`
-      ).join('');
-      const activeCount = [...advisors.values()].filter(a => a.active).length;
-      box.innerHTML = rows
-        ? `<p class="font-semibold text-slate-600">Últimos 7 días · ${advisors.size} asesoras · ${activeCount} activas</p><div class="users-session-list">${rows}</div>`
-        : '<p class="text-slate-500">Sin sesiones de asesoras en los últimos 7 días.</p>';
+      // Un unico reloj para la agrupacion y la plantilla (era reportTime).
+      const now = Date.now();
+      box.innerHTML = adminApi.agentSessionsListHtml(adminApi.agentSessionsByAdvisor(sessions, now, IDLE_LIMIT_MS), now);
       if (window.lucide) lucide.createIcons();
     }
 
@@ -2186,46 +2167,27 @@
       if (!isAdmin) return;
       const generation = sessionGeneration, userId = currentUser?.id, accessUpdatedAt = currentAccess?.updated_at;
       const container = document.getElementById('authorizedUsers');
-      if (container) container.innerHTML = '<p class="text-slate-500">Cargando usuarios...</p>';
+      if (container) container.innerHTML = adminApi.authorizedUsersLoadingHtml();
       const { data, error } = await supabaseClient.rpc('admin_manage_user_access', { p_action: 'list' });
       if (!container || generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt || !isAdmin) return;
-      if (error) { container.innerHTML = '<div role="alert" class="flex flex-wrap items-center gap-3 text-rose-300"><p>No se pudieron cargar los usuarios.</p><button type="button" data-ev="click:loadAuthorizedUsers()" class="min-h-11 rounded-lg border border-rose-400 px-3 py-2 font-semibold hover:bg-rose-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300">Reintentar</button></div>'; return; }
+      if (error) { container.innerHTML = adminApi.authorizedUsersErrorHtml(); return; }
       // La lista se guarda para poder resolver el correo por id: pasar el correo
       // por el atributo onclick metería datos del usuario dentro de JavaScript.
       authorizedUsersList = Array.isArray(data) ? data : [];
       renderAuthorizedUsers();
     }
 
+    // Las plantillas y el filtro viven en src/legacy/admin.js (fase 33 del
+    // strangler): el wrapper solo lee DOM, delega y pinta el resultado.
     function renderAuthorizedUsers() {
       if (!isAdmin) return;
       const container = document.getElementById('authorizedUsers');
       if (!container) return;
       const search = (document.getElementById('userSearch')?.value || '').trim().toLowerCase();
-      const users = authorizedUsersList.filter(item => [item.email, item.nombre, item.role].some(value => String(value ?? '').toLowerCase().includes(search)));
+      const users = adminApi.filterAuthorizedUsers(authorizedUsersList, search);
       const count = document.getElementById('userSearchCount');
-      if (count) count.textContent = `${users.length} de ${authorizedUsersList.length} usuarios`;
-      container.innerHTML = users.map(item => {
-        // El control del cierre automatico solo existe para asesoras (rol
-        // agente) y va en una subfila propia: pulsarlo no debe poder
-        // confundirse con Desactivar cuenta, que invalida el acceso.
-        const cierre = item.idle_timeout_enabled !== false;
-        const idleControl = item.role === 'agente' ? `
-          <div class="users-row-actions users-row-idle">
-            <span class="users-idle-label">Cierre automático</span>
-            <span class="users-status ${cierre ? 'is-active' : 'is-inactive'}">${cierre ? 'Activado' : 'Desactivado'}</span>
-            <button type="button" data-ev="click:setIdleTimeout('${escapeAttr(item.user_id)}', ${cierre ? 'false' : 'true'})">${cierre ? 'Desactivar cierre' : 'Activar cierre'}</button>
-          </div>` : '';
-        return `
-        <div class="users-row">
-          <div class="min-w-0"><strong class="block">${escapeHtml(item.nombre || item.email)}</strong>${item.nombre ? `<span class="users-row-email block">${escapeHtml(item.email)}</span>` : ''}<span class="text-[11px] text-slate-500">${escapeHtml(item.role)}</span></div>
-          <div class="users-row-actions">
-            <span class="users-status ${item.activo ? 'is-active' : 'is-inactive'}">${item.activo ? 'Activo' : 'Inactivo'}</span>
-            <button type="button" data-ev="click:openChangeEmail('${escapeAttr(item.user_id)}')">Cambiar correo</button>
-            <button type="button" data-ev="click:setUserActive('${escapeAttr(item.user_id)}', ${item.activo ? 'false' : 'true'})">${item.activo ? 'Desactivar cuenta' : 'Activar cuenta'}</button>
-          </div>
-          ${idleControl}
-        </div>`;
-      }).join('') || `<p class="text-slate-500">${search ? 'No hay coincidencias.' : 'No hay usuarios.'}</p>`;
+      if (count) count.textContent = adminApi.usuariosConteoText(users, authorizedUsersList.length);
+      container.innerHTML = adminApi.authorizedUsersHtml(users, search);
     }
 
     function openChangeEmail(userId) {
@@ -2249,15 +2211,8 @@
       document.getElementById('changeEmailBox')?.classList.add('hidden');
     }
 
-    const changeEmailMessages = {
-      invalid_email: 'El correo no tiene un formato válido.',
-      same_email: 'El correo nuevo es el mismo que el actual.',
-      email_taken: 'Ese correo ya está en uso por otra cuenta.',
-      email_rate_limit: 'Se agotó el límite de correos del proyecto. Inténtalo en unos minutos.',
-      user_not_found: 'Esa cuenta ya no existe.',
-      change_rejected: 'Supabase rechazó el cambio. Inténtalo de nuevo.',
-      internal: 'Algo falló en el servidor. Inténtalo de nuevo.',
-    };
+    // changeEmailMessages y su fallback viven en src/legacy/admin.js (fase 33):
+    // mensajeCambioCorreo(code) replica `changeEmailMessages[code] || fallback`.
 
     // supabase-js devuelve el cuerpo del error del lado de error.context (un
     // Response). Si en otra versión no está, o su cuerpo ya fue leído, se pasa
@@ -2292,7 +2247,7 @@
           return;
         }
         const code = (typeof data?.error === 'string' ? data.error : null) ?? await readFunctionErrorCode(error);
-        if (status) status.textContent = changeEmailMessages[code] || 'No se pudo solicitar el cambio de correo.';
+        if (status) status.textContent = adminApi.mensajeCambioCorreo(code);
       } catch (err) {
         console.warn('No se pudo solicitar el cambio de correo:', err);
         if (status) status.textContent = 'No se pudo solicitar el cambio de correo.';
@@ -5815,5 +5770,6 @@ async function deleteLeadAppointment(id) {
   <script type="module" src="/src/legacy/leads.js"></script>
   <script type="module" src="/src/legacy/help.js"></script>
   <script type="module" src="/src/legacy/catalogos.js"></script>
+  <script type="module" src="/src/legacy/admin.js"></script>
 </body>
 </html>

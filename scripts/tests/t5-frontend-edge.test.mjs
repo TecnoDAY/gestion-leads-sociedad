@@ -26,7 +26,8 @@ const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, 
 // Helpers puros del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
 const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, withOrigin, getLeadOrigin,
-  haveSameLeadIds, isAgendadoGestion, aplicarUpsertLead, aplicarRemoveLead , metricasLeads, subtituloKpiTotal, matrizLeadsHtml, notasLeadHtml, gestionesLeadHtml } = leadsMod;
+  haveSameLeadIds, isAgendadoGestion, aplicarUpsertLead, aplicarRemoveLead , metricasLeads, subtituloKpiTotal, matrizLeadsHtml, notasLeadHtml, gestionesLeadHtml,
+  fechaLlegadaDisplay, leadCreatePayload, leadUpdateFields, formatSaveErrorLead } = leadsMod;
 // Centro de ayuda extraido a src/legacy/help.js (seccion 10b del monolito)
 const helpMod = await import('../../src/legacy/help.js');
 const { normalizeHelpText, helpHighlight } = helpMod;
@@ -139,6 +140,8 @@ function frontend(extra = {}) {
     metricasLeads, subtituloKpiTotal, matrizLeadsHtml,
     notasLeadHtml, gestionesLeadHtml,
     haveSameLeadIds, isAgendadoGestion, validAppointmentId,
+    // Formularios de alta/edicion extraidos a src/legacy/leads.js (fase 34)
+    fechaLlegadaDisplay, leadCreatePayload, leadUpdateFields, formatSaveErrorLead,
     // Centro de ayuda extraido a src/legacy/help.js
     normalizeHelpText, helpHighlight,
     catalogosApi,
@@ -1208,9 +1211,12 @@ test('fecha de llegada: formulario editable, Mes derivado y validación futura; 
   assert.match(html, /<select id="newMes" disabled/);
   assert.match(html, /fechaInput\.max = miamiToday\(\)/);
   assert.match(html, /function syncNewLeadMes\(\)/);
-  // Guardar: fecha futura rechazada en frontend; vacía usa hoy.
+  // Guardar: fecha futura rechazada en frontend; vacía usa hoy. LaConversion
+  // a 'd/m/aaaa' vive en fechaLlegadaDisplay (src/legacy/leads.js, fase 34),
+  // dorada contra el fixture fase34-golden.json; aqui se fija el enlace.
   assert.match(html, /fechaSel > hoyMiami/);
-  assert.match(html, /\(fechaSel \|\| hoyMiami\)\.split\('-'\)/);
+  assert.match(html, /fechaLlegadaDisplay\(fechaSel, hoyMiami\)/);
+  assert.match(fichaFuente, /\(fechaSel \|\| hoyMiami\)\.split\('-'\)/);
   // Backend create_lead: valida formato/pasado, deriva Mes y registra la gestión.
   const sql = readFileSync('supabase/migrations/202610020004_create_lead_fecha_gestion.sql', 'utf8');
   assert.match(sql, /fecha_llegada_invalida/);
@@ -1685,11 +1691,13 @@ test('hotfix alta atomica: create_lead_with_appointment usa la interna y los blo
   assert.match(sql, /create or replace function public\._create_lead_with_gestion\(p_lead jsonb\)/);
   assert.match(sql, /created := public\._create_lead_with_gestion\(p_lead\);\n  perform public\.create_lead_appointment/);
   assert.match(sql, /revoke all on function public\._create_lead_with_gestion\(jsonb\) from public, anon, authenticated, service_role/);
-  // La traduccion de errores evita mensajes tecnicos en el navegador.
+  // La traduccion de errores evita mensajes tecnicos en el navegador. El
+  // wrapper del monolito conserva la firma; el cuerpo vivo en leads.js (fase 34).
   assert.match(html, /function formatSaveError\(error, agendado\)/);
-  assert.match(html, /Correo de contacto no válido/);
-  assert.match(html, /Edad no válida/);
-  assert.match(html, /Asesor no activo|campaign_not_in_catalog/);
+  assert.match(html, /return formatSaveErrorLead\(error, agendado\)/);
+  assert.match(fichaFuente, /Correo de contacto no válido/);
+  assert.match(fichaFuente, /Edad no válida/);
+  assert.match(fichaFuente, /Asesor no activo|campaign_not_in_catalog/);
   // Los bloques de cita dentro del formulario no pueden quedar required+ocultos:
   assert.match(html, /function setBlockControls\(container, disabled\)/);
   assert.match(html, /setBlockControls\(block, !visible\)/);

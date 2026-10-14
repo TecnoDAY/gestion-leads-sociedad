@@ -4072,22 +4072,23 @@
       const fechaSel = document.getElementById('newFechaLlegada')?.value || '';
       const hoyMiami = miamiToday();
       if (fechaSel && (!/^\d{4}-\d{2}-\d{2}$/.test(fechaSel) || fechaSel > hoyMiami)) { showToast('La fecha de llegada no puede ser futura', 'warning'); return; }
-      const [year, month, day] = (fechaSel || hoyMiami).split('-');
-      const fechaHoy = `${day}/${month}/${year}`;
+      const fechaHoy = fechaLlegadaDisplay(fechaSel, hoyMiami);
 
-      const newLeadData = {
-        "Nombre": document.getElementById('newNombre')?.value.trim() || 'Sin Nombre',
-        "Telefono": formatPhone(document.getElementById('newTelefono')?.value.trim() || ''),
-        "Mes": document.getElementById('newMes')?.value || '',
-        "Fecha": fechaHoy,
-        "Campaña": document.getElementById('newCampana')?.value || 'Sin definir',
-        "Medio": document.getElementById('newMedio')?.value || 'Whatsapp',
-        "GESTION": document.getElementById('newGestion')?.value || 'Información ',
-        "ULTIMA GESTION": document.getElementById('newUltimaGestion')?.value || 'WhatsApp',
-        "AGENTE": isAdmin ? (document.getElementById('newAgente')?.value.trim() || currentAccess.nombre || 'Agente') : currentAccess.nombre,
-        "Ciudad": document.getElementById('newCiudad')?.value.trim() || '',
-        "OBSERVACIONES": document.getElementById('newObservaciones')?.value.trim() || 'Nuevo lead registrado desde el panel.'
-      };
+      // El payload exacto (claves, literales con espacios finales, AGENTE por
+      // rol) vive en src/legacy/leads.js (fase 34); aqui solo se leen inputs.
+      const newLeadData = leadCreatePayload({
+        nombre: document.getElementById('newNombre')?.value || '',
+        telefono: document.getElementById('newTelefono')?.value || '',
+        mes: document.getElementById('newMes')?.value || '',
+        fechaHoy,
+        campana: document.getElementById('newCampana')?.value || '',
+        medio: document.getElementById('newMedio')?.value || '',
+        gestion: document.getElementById('newGestion')?.value || '',
+        ultimaGestion: document.getElementById('newUltimaGestion')?.value || '',
+        agente: document.getElementById('newAgente')?.value || '',
+        ciudad: document.getElementById('newCiudad')?.value || '',
+        observaciones: document.getElementById('newObservaciones')?.value || '',
+      }, { isAdmin, nombreAcceso: currentAccess?.nombre });
 
       const requestGeneration = ++newLeadRequestGeneration;
       const capturedSessionGeneration = sessionGeneration, capturedUserId = currentUser.id, capturedAccessUpdatedAt = currentAccess.updated_at;
@@ -4316,20 +4317,10 @@
       hideEditAppointmentFields();
     }
 
+    // La traduccion de errores vive en src/legacy/leads.js (fase 34); este
+    // wrapper conserva la firma historica (agendado sin uso, como en HEAD).
     function formatSaveError(error, agendado) {
-      const m = String(error?.message || '');
-      if (String(error?.code || '').includes('PGRST202') || m.includes('Could not find the function')) return 'La aplicación necesita actualizarse. Recarga la página con Ctrl + F5 e inténtalo de nuevo';
-      if (m.includes('appointment_required_for_agendado_transition') || m.includes('agendado_transition_required')) return 'Un lead agendado necesita fecha y hora de cita';
-      if (m.includes('appointment_email_invalid')) return 'Correo de contacto no válido';
-      if (m.includes('appointment_age_invalid')) return 'Edad no válida';
-      if (m.includes('campus_invalid')) return 'Sede no válida';
-      if (m.includes('advisor_not_active')) return 'Asesor no activo';
-      if (m.includes('campaign_not_in_catalog')) return 'Campaña no disponible';
-      if (m.includes('fecha_llegada_invalida')) return 'Fecha de llegada no válida';
-      if (m.includes('scheduled_at_required')) return 'Fecha y hora de cita requeridas';
-      if (m.includes('notes_too_long')) return 'Nota demasiado larga';
-      if (!m) return 'No se pudo conectar para guardar. Revisa tu conexión e inténtalo nuevamente';
-      return 'No se pudo guardar. Revisa los datos e inténtalo nuevamente';
+      return formatSaveErrorLead(error, agendado);
     }
     async function handleUpdateLead(event) {
       event.preventDefault();
@@ -4362,33 +4353,27 @@
       editLeadSubmitting = true;
       if (btn) btn.disabled = true;
 
-      const updatedFields = {
-        "Nombre": document.getElementById('editNombre')?.value.trim() || 'Sin Nombre',
-        "GESTION": document.getElementById('editGestion')?.value || 'Información ',
-        "Fecha Última Gestión": document.getElementById('editFechaUltima')?.value.trim() || '',
-        "ULTIMA GESTION": document.getElementById('editUltimaGestion')?.value || 'Llamada',
-        "OBSERVACIONES": document.getElementById('editObservaciones')?.value.trim() || ''
-      };
-      // Teléfono editable por asesoras; se envía solo si cambió, para no
-      // bloquear guardados con teléfonos históricos vacíos o inválidos.
+      // Base + regla del telefono (solo si cambio) + bloque admin: viven en
+      // src/legacy/leads.js (leadUpdateFields, fase 34). Aqui solo inputs.
       const telInput = document.getElementById('editTelefono');
-      const telNuevo = formatPhone(telInput?.value.trim() || '');
-      const telOriginal = formatPhone(telInput?.dataset?.original || '');
-      if (telNuevo !== telOriginal) updatedFields["Telefono"] = telNuevo;
-      if (isAdmin) {
-        Object.assign(updatedFields, {
-          "Telefono": formatPhone(document.getElementById('editTelefono')?.value.trim() || ''),
-          "Mes": document.getElementById('editMes')?.value.trim() || '',
-          "Fecha": document.getElementById('editFecha')?.value.trim() || '',
-          "Campaña": document.getElementById('editCampana')?.value.trim() || '',
-          "Medio": document.getElementById('editMedio')?.value.trim() || '',
-          "Ciudad": document.getElementById('editCiudad')?.value.trim() || '',
-          "AGENTE": document.getElementById('editAgenteAdmin')?.value.trim() || currentAccess.nombre || '',
-          "Odoo": document.getElementById('editOdoo')?.value.trim() || '',
-          "Fecha de Atencion": document.getElementById('editFechaAtencion')?.value.trim() || '',
-          "LANDING": document.getElementById('editLanding')?.value.trim() || ''
-        });
-      }
+      const updatedFields = leadUpdateFields({
+        nombre: document.getElementById('editNombre')?.value || '',
+        gestion: document.getElementById('editGestion')?.value || '',
+        fechaUltima: document.getElementById('editFechaUltima')?.value || '',
+        ultimaGestion: document.getElementById('editUltimaGestion')?.value || '',
+        observaciones: document.getElementById('editObservaciones')?.value || '',
+        telefono: telInput?.value || '',
+        telOriginal: telInput?.dataset?.original || '',
+        mes: document.getElementById('editMes')?.value || '',
+        fecha: document.getElementById('editFecha')?.value || '',
+        campana: document.getElementById('editCampana')?.value || '',
+        medio: document.getElementById('editMedio')?.value || '',
+        ciudad: document.getElementById('editCiudad')?.value || '',
+        agenteAdmin: document.getElementById('editAgenteAdmin')?.value || '',
+        odoo: document.getElementById('editOdoo')?.value || '',
+        fechaAtencion: document.getElementById('editFechaAtencion')?.value || '',
+        landing: document.getElementById('editLanding')?.value || '',
+      }, { isAdmin, nombreAcceso: currentAccess?.nombre });
 
       try {
         if (supabaseClient) {

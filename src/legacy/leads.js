@@ -823,6 +823,114 @@ export function fichaLeadHtml(lead, ctx) {
       `;
 }
 
+// --- Formularios de alta/edicion (fase 34 del strangler) ----------------------
+/**
+ * Fecha textual de llegada tal como la mostraba handleCreateLead: del input
+ * 'YYYY-MM-DD' a 'dd/mm/aaaa' (los componentes se copian sin rellenos nuevos).
+ * Pura: recibe la fecha seleccionada (el wrapper ya rechazo fechas futuras y
+ * el formato invalido) y el hoy de Miami como respaldo cuando no hay fecha.
+ * @param {string} fechaSel - Valor del input de fecha ('' si vacio).
+ * @param {string} hoyMiami - 'YYYY-MM-DD' de miamiToday().
+ * @returns {string}
+ */
+export function fechaLlegadaDisplay(fechaSel, hoyMiami) {
+  const [year, month, day] = (fechaSel || hoyMiami).split('-');
+  return `${day}/${month}/${year}`;
+}
+
+/**
+ * Payload exacto de alta (p_lead del RPC create_lead*). Las claves, su orden
+ * y los literales con espacios finales ('Información ') son contrato con la
+ * base de datos; replica byte a byte el objeto que handleCreateLead armaba
+ * inline (golden en scripts/tests/fixtures/fase34-golden.json, fase 34).
+ * ctx.nombreAcceso es currentAccess?.nombre: para la asesora AGENTE toma ese
+ * valor tal cual (puede ser undefined/null, como en HEAD).
+ * @param {object} v - Valores crudos leidos por el wrapper (siempre string).
+ * @param {{isAdmin: boolean, nombreAcceso: *}} ctx
+ * @returns {object}
+ */
+export function leadCreatePayload(v, ctx) {
+  return {
+    "Nombre": v.nombre.trim() || 'Sin Nombre',
+    "Telefono": formatPhone(v.telefono.trim() || ''),
+    "Mes": v.mes || '',
+    "Fecha": v.fechaHoy,
+    "Campaña": v.campana || 'Sin definir',
+    "Medio": v.medio || 'Whatsapp',
+    "GESTION": v.gestion || 'Información ',
+    "ULTIMA GESTION": v.ultimaGestion || 'WhatsApp',
+    "AGENTE": ctx.isAdmin ? (v.agente.trim() || ctx.nombreAcceso || 'Agente') : ctx.nombreAcceso,
+    "Ciudad": v.ciudad.trim() || '',
+    "OBSERVACIONES": v.observaciones.trim() || 'Nuevo lead registrado desde el panel.'
+  };
+}
+
+/**
+ * Campos de edicion (p_fields / p_lead de update_lead*) que handleUpdateLead
+ * armaba inline (fase 34; golden en fixtures/fase34-golden.json). Regla del
+ * telefono: una asesora solo lo envia si cambio (formatPhone de valor vs
+ * dataset.original) para no bloquear historicos vacios; el admin lo incluye
+ * SIEMPRE via Object.assign — sobrescribiendo la clave existente sin moverla
+ * de su posicion, detalle de orden que la fixture fija con payloadKeys.
+ * @param {object} v - Valores crudos: nombre, gestion, fechaUltima,
+ *   ultimaGestion, observaciones, telefono, telOriginal, mes, fecha, campana,
+ *   medio, ciudad, agenteAdmin, odoo, fechaAtencion, landing (todos string).
+ * @param {{isAdmin: boolean, nombreAcceso: *}} ctx
+ * @returns {object}
+ */
+export function leadUpdateFields(v, ctx) {
+  const updatedFields = {
+    "Nombre": v.nombre.trim() || 'Sin Nombre',
+    "GESTION": v.gestion || 'Información ',
+    "Fecha Última Gestión": v.fechaUltima.trim() || '',
+    "ULTIMA GESTION": v.ultimaGestion || 'Llamada',
+    "OBSERVACIONES": v.observaciones.trim() || ''
+  };
+  const telNuevo = formatPhone(v.telefono.trim() || '');
+  const telOriginal = formatPhone(v.telOriginal || '');
+  if (telNuevo !== telOriginal) updatedFields["Telefono"] = telNuevo;
+  if (ctx.isAdmin) {
+    Object.assign(updatedFields, {
+      "Telefono": formatPhone(v.telefono.trim() || ''),
+      "Mes": v.mes.trim() || '',
+      "Fecha": v.fecha.trim() || '',
+      "Campaña": v.campana.trim() || '',
+      "Medio": v.medio.trim() || '',
+      "Ciudad": v.ciudad.trim() || '',
+      "AGENTE": v.agenteAdmin.trim() || ctx.nombreAcceso || '',
+      "Odoo": v.odoo.trim() || '',
+      "Fecha de Atencion": v.fechaAtencion.trim() || '',
+      "LANDING": v.landing.trim() || ''
+    });
+  }
+  return updatedFields;
+}
+
+/**
+ * Traduce errores del guardado de leads a mensajes de toast (movida tal cual
+ * de handleCreateLead/handleUpdateLead, fase 34). `agendado` llega del
+ * monolito pero HEAD no lo usaba: la firma se conserva intacta.
+ * @param {*} error - Objeto { message, code } del RPC de Supabase.
+ * @param {boolean} agendado - Sin uso (firma historica).
+ * @returns {string}
+ */
+export function formatSaveErrorLead(error, agendado) {
+  // agendado: deliberadamente sin uso; ver JSDoc (no romper la firma del wrapper).
+  const m = String(error?.message || '');
+  if (String(error?.code || '').includes('PGRST202') || m.includes('Could not find the function')) return 'La aplicación necesita actualizarse. Recarga la página con Ctrl + F5 e inténtalo de nuevo';
+  if (m.includes('appointment_required_for_agendado_transition') || m.includes('agendado_transition_required')) return 'Un lead agendado necesita fecha y hora de cita';
+  if (m.includes('appointment_email_invalid')) return 'Correo de contacto no válido';
+  if (m.includes('appointment_age_invalid')) return 'Edad no válida';
+  if (m.includes('campus_invalid')) return 'Sede no válida';
+  if (m.includes('advisor_not_active')) return 'Asesor no activo';
+  if (m.includes('campaign_not_in_catalog')) return 'Campaña no disponible';
+  if (m.includes('fecha_llegada_invalida')) return 'Fecha de llegada no válida';
+  if (m.includes('scheduled_at_required')) return 'Fecha y hora de cita requeridas';
+  if (m.includes('notes_too_long')) return 'Nota demasiado larga';
+  if (!m) return 'No se pudo conectar para guardar. Revisa tu conexión e inténtalo nuevamente';
+  return 'No se pudo guardar. Revisa los datos e inténtalo nuevamente';
+}
+
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
   window.sortMonthCatalog = sortMonthCatalog;
@@ -855,4 +963,8 @@ if (typeof window !== 'undefined') {
   window.bannerPrimeraEntradaHtml = bannerPrimeraEntradaHtml;
   window.fichaLeadHtml = fichaLeadHtml;
   window.repetidosYBannerHtml = repetidosYBannerHtml;
+  window.fechaLlegadaDisplay = fechaLlegadaDisplay;
+  window.leadCreatePayload = leadCreatePayload;
+  window.leadUpdateFields = leadUpdateFields;
+  window.formatSaveErrorLead = formatSaveErrorLead;
 }

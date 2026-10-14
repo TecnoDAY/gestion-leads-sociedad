@@ -4545,140 +4545,18 @@
       const container = document.getElementById('viewLeadContent');
       if (!container) return;
 
-      const nombre = getField(lead, 'Nombre');
-      const telefono = getField(lead, 'Telefono');
-      const telefonoFmt = formatPhone(telefono);
-      const cleanPhone = telefono.replace(/\D/g, '');
-
-      // Posibles repetidos y primera entrada (fase 29): la deteccion por
-      // telefono, el orden, el bloque de la lista y el banner viven en
-      // src/legacy/leads.js; aqui solo composicion y DOM. Fuentes del
-      // monolito: datos actuales cargados (o ventana cargada completa) e
-      // historico; el aviso de alcance queda condicionado al panel.
-      let repetidosHtml = '';
-      let firstEntryHtml = '';
-      const duplicateScopeHtml = completeCurrentLoaded && historicoLoaded ? '' : `
-        <p class="text-[11px] text-slate-500">Las coincidencias telefónicas se revisan sobre los datos cargados. Selecciona el origen “Todos” para comprobar la base completa.</p>`;
+      // Fases 29-30: la deteccion de repetidos, el banner de primera entrada y
+      // la plantilla completa de la ficha viven en src/legacy/leads.js; aqui
+      // solo queda busqueda del lead, fuentes hibridas, estado global y
+      // escritura del contenedor.
       const fuentes = [completeCurrentLoaded ? completeCurrentLeads : allLeads, allHistorico];
-      const relacionados = relacionadosPorTelefono(lead, fuentes, finalOrigin);
-      if (relacionados.length) {
-        const first = primeraEntradaLead(lead, relacionados);
-        if (first && first.firstIsHistorico) {
-          firstEntryHtml = bannerPrimeraEntradaHtml(first.firstFecha, new Date(first.firstTs).getUTCFullYear());
-        }
-        const items = ordenRepetidos([...relacionados, lead]);
-        const filas = bloqueRepetidosHtml(items, finalOrigin, lead.id);
-        const total = items.length;
-        repetidosHtml = `
-          <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
-          <div class="flex items-center justify-between gap-3">
-            <span class="text-[11px] uppercase text-amber-400 font-semibold flex items-center gap-1.5">
-              <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
-              <span>Posible lead repetido</span>
-            </span>
-            <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold border bg-amber-500/15 text-amber-300 border-amber-500/30">${total} registros</span>
-          </div>
-          <p class="text-[11px] text-slate-400">Teléfono ${escapeHtml(formatPhone(telefono) || 'S/N')} — la coincidencia es por número de teléfono.</p>
-          <ol class="space-y-0">${filas}</ol>
-        </div>`;
-      }
-
-      container.innerHTML = `
-        <div class="lead-detail-hero flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div>
-            <div class="flex items-center gap-2 flex-wrap">
-              <div class="lead-detail-name font-bold">${escapeHtml(nombre)}</div>
-              ${finalOrigin === 'historico' ? '<span class="text-[11px] uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">Histórico 2025</span>' : ''}
-            </div>
-            <div class="lead-detail-meta text-xs mt-1 flex flex-wrap items-center gap-2">
-              <span>ID: #${escapeHtml(String(lead.id))}</span>
-              <span>•</span>
-              <span>Ingreso: ${escapeHtml(getField(lead, 'Fecha'))} (${escapeHtml(getField(lead, 'Mes'))})</span>
-            </div>
-          </div>
-          <div>${renderGestionBadge(getField(lead, 'GESTION'))}</div>
-        </div>${firstEntryHtml}
-
-        <div class="lead-detail-grid grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-3 gap-3">
-          <div class="lead-detail-card">
-            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Teléfono / WhatsApp</span>
-            <div class="flex items-center gap-1.5 mt-0.5">
-              ${cleanPhone ? `<button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="text-slate-400 opacity-60 cursor-not-allowed"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></button>` : ''}
-              <span class="lead-detail-value font-mono">${escapeHtml(telefonoFmt || 'S/N')}</span>
-            </div>
-          </div>
-
-          <div class="lead-detail-card">
-            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Campaña</span>
-            <span class="lead-detail-value font-medium mt-0.5 block truncate">${escapeHtml(getField(lead, 'Campaña') || '-')}</span>
-          </div>
-
-          <div class="lead-detail-card">
-            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Medio</span>
-            <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'Medio') || '-')}</span>
-          </div>
-
-          <div class="lead-detail-card">
-            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Asesor Principal</span>
-            <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'Agente ') || '-')}</span>
-          </div>
-
-          <div class="lead-detail-card">
-            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Último Asesor</span>
-            <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'ULTIMO AGENTE ') || '-')}</span>
-          </div>
-
-          <div class="lead-detail-card">
-            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Última Gestión</span>
-            <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'Fecha Última Gestión ') || '-')}</span>
-          </div>
-        </div>${duplicateScopeHtml}${repetidosHtml}
-
-        <div class="lead-detail-section space-y-1">
-          <span class="text-[11px] uppercase text-slate-400 font-semibold block">Historial de Observaciones</span>
-          <p class="text-slate-300 font-mono text-xs whitespace-pre-line leading-relaxed">${escapeHtml(getField(lead, 'OBSERVACIONES ') || 'Sin observaciones registradas.')}</p>
-         </div>${finalOrigin === 'historico' ? '' : `
-         <div id="leadGestionesSection" class="hidden lead-detail-section space-y-2">
-           <span class="text-[11px] uppercase text-slate-400 font-semibold block">Historial de gestiones</span>
-           <div id="leadGestionesList"><p class="text-[11px] text-slate-500">Cargando historial…</p></div>
-         </div>
-         <div class="lead-detail-section space-y-2">
-          <span class="text-[11px] uppercase text-slate-400 font-semibold block">Notas del Equipo</span>
-          <div id="leadNotesList" class="space-y-2"><p class="text-[11px] text-slate-500">Cargando notas…</p></div>
-          <div class="lead-note-compose flex items-start gap-2 pt-1">
-            <textarea id="leadNoteInput" rows="2" maxlength="2000" placeholder="Añadir una nota para el equipo" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 resize-y"></textarea>
-            <button id="leadNoteSubmit" data-ev="click:addLeadNote()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition-colors shrink-0 flex items-center gap-1.5">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Añadir</span>
-            </button>
-           </div>
-         </div>`}
-          ${finalOrigin === 'historico' ? '' : `<div id="leadAppointmentsSection" class="lead-detail-section space-y-3">
-            <div class="flex items-center justify-between gap-2"><span class="text-[11px] uppercase text-slate-400 font-semibold">Citas</span><button type="button" data-ev="click:openHelpModal('ayuda-citas')" title="Ayuda: citas del lead" aria-label="Ayuda sobre la gestión de citas del lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 cursor-pointer shrink-0">?</button></div>
-            <div id="leadAppointmentCreate" class="${isAgendadoGestion(getField(lead, 'GESTION')) ? '' : 'hidden'}">
-            <form id="leadAppointmentForm" data-ev="submit:createLeadAppointment(event)" class="grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end">
-             <label class="text-[11px] text-slate-400">Fecha y hora<input id="leadAppointmentDate" type="datetime-local" required class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
-             <div class="lead-appointment-campus sm:col-span-3 flex items-center gap-3"><span class="text-[11px] text-slate-400">Sede de la cita *</span><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="leadAppointmentCampus" value="DORAL" required class="accent-indigo-500"> Doral</label><label class="inline-flex items-center gap-1 text-[11px] text-slate-200"><input type="radio" name="leadAppointmentCampus" value="WESTON" required class="accent-indigo-500"> Weston</label></div>
-             <label class="text-[11px] text-slate-400">Nota opcional<textarea id="leadAppointmentNote" maxlength="2000" rows="1" class="block w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></textarea></label>
-             <div id="leadAppointmentAdvisorWrap" class="hidden"><label class="text-[11px] text-slate-400">Asesor<select id="leadAppointmentAdvisor" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"><option value="">Cargando…</option></select></label></div>
-             <label class="text-[11px] text-slate-400">Nombre del estudiante (opcional)<input id="leadAppointmentStudentName" type="text" maxlength="200" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
-             <label class="text-[11px] text-slate-400">Correo de contacto (opcional)<input id="leadAppointmentContactEmail" type="email" maxlength="254" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100" placeholder="nombre@correo.com"></label>
-             <label class="text-[11px] text-slate-400">Edad (opcional)<input id="leadAppointmentStudentAge" type="number" min="0" max="120" step="1" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
-             <button id="leadAppointmentSubmit" data-appointment-create class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Crear cita</button>
-            </form>
-            </div>
-            <p id="leadAppointmentNotice" class="${isAgendadoGestion(getField(lead, 'GESTION')) ? 'hidden' : 'text-[11px] text-slate-500'}">El lead no está agendado; no se pueden crear nuevas citas.</p>
-           <div id="leadAppointmentsList"><p class="text-[11px] text-slate-500">Cargando citas…</p></div>
-         </div>`}
-
-        <div class="flex justify-end pt-2">
-          ${finalOrigin === 'historico'
-            ? '<span class="text-[11px] text-slate-500 italic">Registro histórico de solo lectura (2025)</span>'
-            : `<button data-ev="click:openEditLeadFromView('${escapeAttr(lead.id)}', '${finalOrigin}')" class="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-1.5 text-xs cursor-pointer">
-            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-            <span>Editar este Lead</span>
-          </button>`}
-        </div>
-      `;
+      const { repetidosHtml, firstEntryHtml } = repetidosYBannerHtml(lead, fuentes, finalOrigin);
+      container.innerHTML = fichaLeadHtml(lead, {
+        finalOrigin,
+        alcanceCompleto: completeCurrentLoaded && historicoLoaded,
+        repetidosHtml,
+        firstEntryHtml,
+      });
 
       const modal = document.getElementById('modalViewLead');
       if (modal) {

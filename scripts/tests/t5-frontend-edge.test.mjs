@@ -37,6 +37,8 @@ const { validAppointmentId } = citasMod;
 const baseline = process.argv.includes('--baseline');
 const source = path => baseline ? execFileSync('git', ['show', `HEAD:${path}`], { encoding: 'utf8' }) : readFileSync(path, 'utf8');
 const html = source('index.html');
+// Plantilla de la ficha del lead: fichaLeadHtml vive en src/legacy/leads.js (fase 30).
+const fichaFuente = readFileSync('src/legacy/leads.js', 'utf8');
 const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).find(s => s.includes('async function loadCitas'));
 // El parser nativo de Node confirma el cierre de cada función; no copia su lógica.
 function extractFunction(name) {
@@ -1167,7 +1169,9 @@ test('migración canal data dura manual: trigger normaliza, RPC prioriza marca y
 test('citas: los tres formularios piden estudiante, correo y edad opcionales', () => {
   for (const prefix of ['newAppointment', 'editAppointment', 'leadAppointment']) {
     for (const field of ['StudentName', 'ContactEmail', 'StudentAge']) {
-      assert.ok(html.includes(`id="${prefix}${field}"`), `falta ${prefix}${field}`);
+      // leadAppointment vive en la plantilla de la ficha (leads.js, fase 30).
+      const fuente = prefix === 'leadAppointment' ? fichaFuente : html;
+      assert.ok(fuente.includes(`id="${prefix}${field}"`), `falta ${prefix}${field}`);
     }
   }
   // La pestaña Citas muestra las tres columnas y el botón de edición.
@@ -1315,7 +1319,8 @@ test('ayuda: refleja el comportamiento actual y no repite reglas retiradas', () 
   assert.match(help, /id: 'ayuda-campanas'/);
   // Coherencia con el formulario real: los campos de la cita existen.
   for (const field of ['newAppointmentStudentName', 'editAppointmentStudentName', 'leadAppointmentStudentName'])
-    assert.ok(html.includes(`id="${field}"`), `falta el campo ${field} descrito en la ayuda`);
+    // leadAppointment vive en la plantilla de la ficha (leads.js, fase 30).
+    assert.ok((field.startsWith('lead') ? fichaFuente : html).includes(`id="${field}"`), `falta el campo ${field} descrito en la ayuda`);
 });
 
 test('ayuda: refleja los KPIs compactos, los cuatro roles y el cierre por inactividad', () => {
@@ -1757,8 +1762,9 @@ test('citas por sede: requerida en las 3 rutas, filro/KPIs, corrección y report
   assert.match(sql, /old_appointment\.campus/);
 
   // Frontend: radios obligatorios en las tres rutas
+  // leadAppointment vive en la plantilla de la ficha (leads.js, fase 30).
   for (const prefix of ['newAppointment', 'editAppointment', 'leadAppointment'])
-    assert.match(html, new RegExp(`name="${prefix + 'Campus'}" value="DORAL" required`));
+    assert.match(prefix === 'leadAppointment' ? fichaFuente : html, new RegExp(`name="${prefix + 'Campus'}" value="DORAL" required`));
   // Se rechaza la cita nueva sin sede
   assert.match(html, /appointmentCampusFrom\('newAppointment'\)/);
   assert.match(html, /appointmentCampusFrom\('editAppointment'\)/);

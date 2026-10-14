@@ -3451,20 +3451,10 @@
     // 4. FILTROS Y BÚSQUEDA
     // -------------------------------------------------------------
     function populateFilterOptions() {
-      const getUniqueValues = (key) => {
-        const set = new Set();
-        getVisibleBaseLeads().forEach(item => {
-          const val = getField(item, key).trim();
-          if (val && val !== 'SN') set.add(val);
-        });
-        return Array.from(set).sort();
-      };
-
-      populateSelect('filterMes', catalogOptions('mes', getUniqueValues('Mes')));
-      populateSelect('filterCampana', catalogOptions('campana', getUniqueValues('Campaña')));
-      populateSelect('filterMedio', catalogOptions('medio', getUniqueValues('Medio')));
-      populateSelect('filterGestion', catalogOptions('gestion', getUniqueValues('GESTION')));
-      populateSelect('filterAsesora', catalogOptions('agente', getUniqueValues('Agente ')));
+      // Deduccion de valores y declaracion de filtros: piezas puras en
+      // src/legacy/catalogos.js (fase 32); aqui solo se recorre la lista.
+      catalogosApi.FILTROS_CATALOGO.forEach(({ id, kind, campo }) =>
+        populateSelect(id, catalogOptions(kind, catalogosApi.uniqueFieldValues(getVisibleBaseLeads(), campo))));
     }
 
     function populateSelect(elementId, values) {
@@ -3474,12 +3464,12 @@
       const firstOption = select.options[0];
       select.innerHTML = '';
       select.appendChild(firstOption);
-
-      values.forEach(v => {
+      // Las opciones ya vienen calculadas como datos (fase 32); aqui solo DOM.
+      catalogosApi.opcionesSelectData(values, currentVal).forEach(({ value, label, selected }) => {
         const opt = document.createElement('option');
-        opt.value = v;
-        opt.innerText = catalogLabel(v);
-        if (v === currentVal) opt.selected = true;
+        opt.value = value;
+        opt.textContent = label;
+        if (selected) opt.selected = true;
         select.appendChild(opt);
       });
     }
@@ -3525,19 +3515,15 @@
     function fillSelectFromCatalog(id, values) {
       const select = document.getElementById(id);
       if (!select || !values.length) return;
-      // Compara formatos ('SEPTIEMBRE' vs 'Septiembre') y conserva la forma
-      // canónica del catálogo; sin equivalente, conserva el valor actual.
-      const key = v => String(v == null ? '' : v).trim().toLocaleLowerCase('es');
-      const current = select.value;
-      const canonical = current ? values.find(v => key(v) === key(current)) : undefined;
-      const selected = canonical !== undefined ? canonical : current;
+      // Canonicalización 'es', forma canónica preferida y current al final:
+      // pieza pura en src/legacy/catalogos.js (fase 32); aqui solo DOM.
+      const opciones = catalogosApi.opcionesCatalogoData(values, select.value);
       select.innerHTML = '';
-      const all = current && canonical === undefined ? [...values, current] : values;
-      all.forEach(v => {
+      opciones.forEach(({ value, label, selected }) => {
         const opt = document.createElement('option');
-        opt.value = v;
-        opt.innerText = catalogLabel(v);
-        if (v === selected) opt.selected = true;
+        opt.value = value;
+        opt.textContent = label;
+        if (selected) opt.selected = true;
         select.appendChild(opt);
       });
     }

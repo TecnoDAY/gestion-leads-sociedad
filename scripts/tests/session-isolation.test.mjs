@@ -14,7 +14,7 @@ const { parseFechaLead, periodoPresetRange, periodoValidDate, periodoPct,
   buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque , campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines } = reportesMod;
 // Helpers del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
-const { withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion, aplicarUpsertLead, aplicarRemoveLead , metricasLeads, subtituloKpiTotal, matrizLeadsHtml } = leadsMod;
+const { withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion, aplicarUpsertLead, aplicarRemoveLead , metricasLeads, subtituloKpiTotal, matrizLeadsHtml, notasLeadHtml, gestionesLeadHtml } = leadsMod;
 
 const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
 const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
@@ -147,6 +147,7 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines,
     compareLeadIdsDescending, withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion, aplicarUpsertLead, aplicarRemoveLead,
     metricasLeads, subtituloKpiTotal, matrizLeadsHtml,
+    notasLeadHtml, gestionesLeadHtml,
     consolidateLeadsById,
   });
   const renders = [];

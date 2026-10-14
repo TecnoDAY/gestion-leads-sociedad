@@ -4981,58 +4981,16 @@ async function deleteLeadAppointment(id) {
     function renderLeadGestiones() {
       const list = document.getElementById('leadGestionesList');
       if (!list) return;
-      if (!leadGestionesCache.length) {
-        list.innerHTML = '<p class="text-[11px] text-slate-500">Sin cambios registrados todavía.</p>';
-        return;
-      }
-      list.innerHTML = leadGestionesCache.map(g => {
-        const fecha = String(g.fecha_gestion || '').split('-').reverse().join('/') || '-';
-        const anterior = String(g.gestion_anterior || '').trim();
-        const estados = anterior
-          ? `${renderGestionBadge(anterior)} <span class="text-slate-500 mx-1">→</span> ${renderGestionBadge(g.gestion_nueva || '-')}`
-          : renderGestionBadge(g.gestion_nueva || '-');
-        return `<div class="border-b border-slate-800 last:border-0 pb-2 last:pb-0 space-y-1">
-          <div class="flex items-center gap-2 text-[11px]"><span class="text-slate-300 font-medium">${escapeHtml(fecha)}</span>${estados}</div>
-          <div class="text-[11px] text-slate-400">${escapeHtml((g.is_data_dura === true && String(g.canal||'').trim().toLowerCase() === 'llamada') ? 'Llamada Data Dura' : (String(g.canal || '') === 'Llamada y WhatsApp' ? 'Llamada WhatsApp' : (g.canal || '-')))} · ${escapeHtml(g.autor_name || 'Agente')}</div>
-        </div>`;
-      }).join('');
+      // La plantilla es pura (src/legacy/leads.js, fase 26).
+      list.innerHTML = gestionesLeadHtml(leadGestionesCache);
     }
 
     // Render del timeline desde cache. editingNoteId (solo admin) muestra el textarea inline.
     function renderLeadNotes() {
       const list = document.getElementById('leadNotesList');
       if (!list) return;
-      if (!leadNotesCache.length) {
-        list.innerHTML = '<p class="text-[11px] text-slate-500">Sin notas registradas.</p>';
-        return;
-      }
-      list.innerHTML = leadNotesCache.map(n => {
-        const fecha = n.created_at ? new Date(n.created_at).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) : '';
-        const edited = n.updated_at && n.updated_at !== n.created_at ? ' · editada' : '';
-        const editing = isAdmin && editingNoteId === Number(n.id);
-        const actions = editing ? `
-          <div class="flex items-center gap-1.5 shrink-0">
-            <button data-ev="click:saveLeadNoteInline(${Number(n.id)})" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold cursor-pointer transition-colors">Guardar</button>
-            <button data-ev="click:cancelLeadNoteEdit()" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium cursor-pointer transition-colors border border-slate-700">Cancelar</button>
-          </div>` : isAdmin ? `
-          <div class="flex items-center gap-1 shrink-0">
-            <button data-ev="click:editLeadNote(${Number(n.id)})" title="Editar nota" class="p-1 rounded bg-slate-800 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-300 transition-colors cursor-pointer"><i data-lucide="pencil" class="w-3 h-3"></i></button>
-            <button data-ev="click:deleteLeadNote(${Number(n.id)})" title="Borrar nota" class="p-1 rounded bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 transition-colors cursor-pointer"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
-          </div>` : '';
-        const body = editing
-          ? `<textarea id="leadNoteEditInput" rows="3" maxlength="2000" class="w-full bg-slate-950 border border-indigo-500 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none resize-y">${escapeHtml(n.note)}</textarea>`
-          : `<p class="text-xs text-slate-300 whitespace-pre-line leading-relaxed break-words">${escapeHtml(n.note)}</p>`;
-        return `<div data-note-id="${Number(n.id)}" class="flex items-start justify-between gap-2 border-b border-slate-800 last:border-0 pb-2 last:pb-0">
-          <div class="min-w-0 flex-1 space-y-0.5">
-            <div class="flex items-center gap-2 text-[11px]">
-              <span class="text-indigo-300 font-semibold">${escapeHtml(n.author_name || 'Agente')}</span>
-              <span class="text-slate-500">${escapeHtml(fecha)}${escapeHtml(edited)}</span>
-            </div>
-            ${body}
-          </div>
-          ${actions}
-        </div>`;
-      }).join('');
+      // La plantilla es pura (src/legacy/leads.js, fase 26).
+      list.innerHTML = notasLeadHtml(leadNotesCache, { isAdmin, editingNoteId });
       if (window.lucide) lucide.createIcons();
       if (editingNoteId !== null) {
         const ta = document.getElementById('leadNoteEditInput');

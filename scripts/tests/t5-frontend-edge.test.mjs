@@ -25,7 +25,7 @@ const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, 
 // Helpers puros del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
 const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, withOrigin, getLeadOrigin,
-  haveSameLeadIds, isAgendadoGestion, aplicarUpsertLead, aplicarRemoveLead , metricasLeads, subtituloKpiTotal, matrizLeadsHtml } = leadsMod;
+  haveSameLeadIds, isAgendadoGestion, aplicarUpsertLead, aplicarRemoveLead , metricasLeads, subtituloKpiTotal, matrizLeadsHtml, notasLeadHtml, gestionesLeadHtml } = leadsMod;
 // Centro de ayuda extraido a src/legacy/help.js (seccion 10b del monolito)
 const helpMod = await import('../../src/legacy/help.js');
 const { normalizeHelpText, helpHighlight } = helpMod;
@@ -131,6 +131,7 @@ function frontend(extra = {}) {
     // Helpers del area Leads extraidos a src/legacy/leads.js
     sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin, aplicarUpsertLead, aplicarRemoveLead,
     metricasLeads, subtituloKpiTotal, matrizLeadsHtml,
+    notasLeadHtml, gestionesLeadHtml,
     haveSameLeadIds, isAgendadoGestion, validAppointmentId,
     // Centro de ayuda extraido a src/legacy/help.js
     normalizeHelpText, helpHighlight,
@@ -1271,7 +1272,8 @@ test('canal Llamada WhatsApp: etiqueta visible nueva, valor y conteo canónicos 
   // La cabecera del CSV diario vive en src/legacy/reportes.js (fase 16).
   assert.match(readFileSync('src/legacy/reportes.js', 'utf8'), /'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas'/);
   // El historial traduce el canal almacenado a la nueva etiqueta.
-  assert.match(html, /String\(g\.canal \|\| ''\) === 'Llamada y WhatsApp' \? 'Llamada WhatsApp'/);
+  // La normalizacion del canal ahora vive en src/legacy/leads.js (fase 26).
+  assert.match(readFileSync('src/legacy/leads.js', 'utf8'), /String\(g\.canal \|\| ''\) === 'Llamada y WhatsApp' \? 'Llamada WhatsApp'/);
 });
 
 test('ayuda: refleja el comportamiento actual y no repite reglas retiradas', () => {

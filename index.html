@@ -5746,9 +5746,11 @@ async function deleteLeadAppointment(id) {
     function toggleAdminUsers(abrir) {
       const panel = document.getElementById('panelAdminUsers');
       if (!panel) return;
-      panel.classList.remove('hidden');
-      if (abrir) { panel.classList.add('flex'); loadAuthorizedUsers(); loadAgentSessionsReport(); }
-      else panel.classList.remove('flex');
+      // Al abrir: visible como overlay centrado (flex). Al cerrar: hidden de
+      // verdad; quitar solo 'flex' dejaba el fixed/inset-0 como bloque opaco
+      // (regresion reportada: el formulario "cambiaba de posicion").
+      if (abrir) { panel.classList.remove('hidden'); panel.classList.add('flex'); loadAuthorizedUsers(); loadAgentSessionsReport(); }
+      else { panel.classList.remove('flex'); panel.classList.add('hidden'); }
     }
     function openLeadFromView(origin, id) { closeViewLeadModal(); openLeadModal(origin, id); }
     function openEditLeadFromView(id, origin) { closeViewLeadModal(); openEditLeadModal(id, origin); }

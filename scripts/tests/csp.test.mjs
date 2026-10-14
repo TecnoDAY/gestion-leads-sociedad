@@ -2,7 +2,7 @@
 // bloques inline finales, meta insertada antes del primer script, guardias.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { bloquesInline, cspHtml, cspPaginaEstatica, insertarMetaCsp, problemasCsp } from '../csp-utils.mjs';
+import { bloquesInline, cspHtml, cspPaginaEstatica, insertarMetaCsp, insertarMetaCspNonce, problemasCsp } from '../csp-utils.mjs';
 
 const HTML_BASICO = `<html><head>
   <script src="https://cdn.jsdelivr.net/npm/x@1"></script>
@@ -90,4 +90,46 @@ test('pagina estatica: insercion del meta y guardia limpia', () => {
   // un <style> cambiado invalida el hash
   const stale = con.replace('color: #0f172a', 'color: #000');
   assert.match(problemasCsp(stale, cspPaginaEstatica(stale))[0], /desincronizado/);
+});
+
+// --- regresion calendario (2026-10-14): nonce para FullCalendar --------------
+test('cspHtml: sin meta csp-nonce no anade nonce (comportamiento previo)', () => {
+  assert.doesNotMatch(cspHtml(HTML_BASICO), /nonce-/);
+});
+
+test('cspHtml: con meta csp-nonce anade el nonce a style-src y conserva hashes', () => {
+  const conNonce = insertarMetaCspNonce(HTML_BASICO, 'NONCE-TEST-123');
+  const csp = cspHtml(conNonce);
+  assert.match(csp, /style-src 'self' 'sha256-[^']*' 'nonce-NONCE-TEST-123'/);
+  assert.doesNotMatch(csp, /unsafe-inline/);
+  // script-src sigue sin nonce (FC solo necesita style)
+  assert.doesNotMatch(csp.split(';').find(d => d.includes('script-src')), /nonce-/);
+  // determinista
+  assert.equal(csp, cspHtml(conNonce));
+});
+
+test('insertarMetaCspNonce: anade tras <head> y es idempotente (reemplaza)', () => {
+  const una = insertarMetaCspNonce(HTML_BASICO, 'AAA');
+  assert.ok(una.indexOf('<meta name="csp-nonce" content="AAA">') > una.indexOf('<head>'));
+  const dos = insertarMetaCspNonce(una, 'BBB');
+  assert.equal((dos.match(/<meta name="csp-nonce"/g) || []).length, 1);
+  assert.match(dos, /content="BBB"/);
+  assert.doesNotMatch(dos, /content="AAA"/);
+});
+
+test('flujo inline-dist: nonce + meta CSP coherentes pasan la guardia', () => {
+  let html = insertarMetaCspNonce(HTML_BASICO, 'NONCE-X');
+  html = insertarMetaCsp(html);
+  assert.match(html, /<meta http-equiv="Content-Security-Policy"/);
+  assert.match(html, /'nonce-NONCE-X'/);
+  // el meta CSP va antes del primer script inline a pesar del nonce
+  assert.ok(html.indexOf('<meta http-equiv="Content-Security-Policy"') < html.indexOf('<script src='));
+  assert.deepEqual(problemasCsp(html), []);
+  // reinyectar no duplica ni desincroniza
+  assert.deepEqual(problemasCsp(insertarMetaCsp(html)), []);
+});
+
+test('cspPaginaEstatica: ignora el nonce (paginas sin FC)', () => {
+  const conNonce = insertarMetaCspNonce(PAGINA, 'ZZZ');
+  assert.doesNotMatch(cspPaginaEstatica(conNonce), /nonce-/);
 });

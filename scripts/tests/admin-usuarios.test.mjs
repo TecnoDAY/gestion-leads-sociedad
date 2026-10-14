@@ -17,7 +17,12 @@ import { escapeHtml, escapeAttr } from '../../src/legacy/helpers.js';
 import * as adminApi from '../../src/legacy/admin.js';
 
 const root = new URL('../..', import.meta.url).pathname;
-const headHtml = execSync('git show HEAD:index.html', { cwd: root, encoding: 'utf8' });
+// Golden anclado al ultimo commit donde index.html llevaba estas piezas
+// INLINE (idleMiami, changeEmailMessages, loadAgentSessionsReport sin
+// delegar): la fase 33 las movio a admin.js, asi que 'HEAD' ya no sirve
+// como fuente a partir del commit de la fase (898f88f queda fijo en la
+// historia local; si se reescribiera, el golden deberia re-serializarse).
+const headHtml = execSync('git show 898f88f:index.html', { cwd: root, encoding: 'utf8' });
 const treeHtml = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
 const scriptOf = html => [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
   .map(m => m[1]).find(s => s.includes('async function loadCurrentAccess'));

@@ -28,6 +28,30 @@ export function bloquesInline(html) {
 const CDNS = 'https://cdn.jsdelivr.net https://unpkg.com';
 const SUPABASE = 'https://hkkuyomlcqyxtzblowle.supabase.co';
 
+// Nonce del artefacto (regresion calendario, 2026-10-14): FullCalendar v6
+// inyecta su CSS base en runtime creando un <style> vacio y llenandolo con
+// insertRule; con style-src de hashes ese estilo queda BLOQUEADO (dia/semana
+// se ven sin layout y mes sale en blanco en dist). FC lee el nonce del
+// <meta name="csp-nonce"> documentado. cspHtml lo detecta si el HTML ya lo
+// lleva, asi problemasCsp recalcula la misma politica (guardas idempotentes).
+// Las paginas estaticas (cspPaginaEstatica) no usan FC: sin nonce.
+const META_NONCE = /<meta\s+name="csp-nonce"\s+content="([^"]+)"/i;
+
+/**
+ * Genera el <meta name="csp-nonce"> idempotente: si ya existe lo sustituye,
+ * si no lo anade tras <head> (antes que el meta CSP no importa: FC lo lee en
+ * runtime; insertarMetaCsp lo coloca tras <head> igualmente).
+ * @param {string} html
+ * @param {string} nonce
+ */
+export function insertarMetaCspNonce(html, nonce) {
+  const meta = `<meta name="csp-nonce" content="${nonce}">`;
+  if (META_NONCE.test(html)) return html.replace(META_NONCE, meta);
+  const m = /<head\b[^>]*>/i.exec(html);
+  if (!m) throw new Error('csp: no encuentro <head>');
+  return html.slice(0, m.index + m[0].length) + '\n  ' + meta + html.slice(m.index + m[0].length);
+}
+
 /**
  * Genera el valor de la politicia estricta para un HTML final dado.
  * frame-ancestors NO va en el meta (la spec lo ignora alli): vive en la
@@ -39,7 +63,9 @@ export function cspHtml(html) {
   if (!scripts.length || !styles.length) throw new Error('csp: faltan bloques inline que hashear');
   const hashScripts = [...new Set(scripts.map(HASH))].join(' ');
   const hashStyles = [...new Set(styles.map(HASH))].join(' ');
-  return `default-src 'self'; script-src 'self' ${CDNS} ${hashScripts}; style-src 'self' ${hashStyles}; img-src 'self' data: ${SUPABASE}; font-src 'self' data:; connect-src 'self' ${SUPABASE} wss://hkkuyomlcqyxtzblowle.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'`;
+  const nonceMatch = META_NONCE.exec(html);
+  const nonceSrc = nonceMatch ? ` 'nonce-${nonceMatch[1]}'` : '';
+  return `default-src 'self'; script-src 'self' ${CDNS} ${hashScripts}; style-src 'self' ${hashStyles}${nonceSrc}; img-src 'self' data: ${SUPABASE}; font-src 'self' data:; connect-src 'self' ${SUPABASE} wss://hkkuyomlcqyxtzblowle.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'`;
 }
 
 /** Meta CSP completo tal como debe quedar en el artefacto. */

@@ -12,7 +12,8 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { cspPaginaEstatica, insertarMetaCsp, problemasCsp } from './csp-utils.mjs';
+import { cspPaginaEstatica, insertarMetaCsp, insertarMetaCspNonce, problemasCsp } from './csp-utils.mjs';
+import { randomBytes } from 'node:crypto';
 
 const dist = new URL('../dist/', import.meta.url);
 const htmlPath = join(dist.pathname, 'index.html');
@@ -75,6 +76,14 @@ if (/url\((['"]?)\.\/fonts\//.test(html)) {
 // cabecera HTTP (vercel.json) conserva solo lo que el meta no soporta
 // (frame-ancestors). Sin este paso, la CSP por defecto bloquearia los
 // bloques inline del artefacto autocontenido.
+// Regresion calendario (2026-10-14): FullCalendar v6 inyecta su CSS base con
+// un <style> creado en runtime (nonce via meta[name=csp-nonce]); los hashes
+// de style-src no lo cubren. Se fija/un genera un nonce por artefacto y la
+// politica (cspHtml) lo detecta del propio HTML, manteniendo problemasCsp
+// idempotente.
+if (!/<meta\s+name="csp-nonce"\s+content="[^"]+"/i.test(html)) {
+  html = insertarMetaCspNonce(html, randomBytes(16).toString('base64'));
+}
 html = insertarMetaCsp(html);
 const problemas = problemasCsp(html);
 if (problemas.length > 0) {

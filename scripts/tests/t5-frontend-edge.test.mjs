@@ -21,7 +21,7 @@ const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, 
   periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
   computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
   buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
-  indiceNotas, notaDeBloque, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles } = reportesMod;
+  indiceNotas, notaDeBloque, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles , campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines } = reportesMod;
 // Helpers puros del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
 const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, withOrigin, getLeadOrigin,
@@ -127,6 +127,7 @@ function frontend(extra = {}) {
     computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
     buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
     indiceNotas, notaDeBloque, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles,
+    campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines,
     // Helpers del area Leads extraidos a src/legacy/leads.js
     sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin, aplicarUpsertLead, aplicarRemoveLead,
     haveSameLeadIds, isAgendadoGestion, validAppointmentId,

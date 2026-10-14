@@ -6,7 +6,7 @@
  * (registro al final de este modulo); las llamadas quedaron intactas.
  */
 
-import { compareAlphaEs, consolidateLeadsById, escapeHtml, getField, miamiToday } from './helpers.js';
+import { compareAlphaEs, consolidateLeadsById, escapeAttr, escapeHtml, getField, miamiToday } from './helpers.js';
 
 // Meses en orden cronologico canonico; nunca alfabetico. Fuente unica.
 export const MONTH_CHRONO = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
@@ -907,6 +907,117 @@ export function asesorasDisponibles(bloques, catalogoNombres, previas) {
   return [...porNombre.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
 }
 
+// --- Piezas puras de la seccion Campanas (fase 22) ---------------------------
+
+/**
+ * Universo de campanas: catalogo activo + rollup del CRM + filas manuales,
+ * con el mapeo y fallbacks exactos del export original; orden alfabetico es.
+ * @param {string[]} catalogo Nombres del catalogo activo.
+ * @param {object[]} rollupRows Filas del RPC campaign_monthly_rollup.
+ * @param {object[]} statRows Filas de campaign_stats.
+ * @returns {object[]}
+ */
+export function campanasDeFuentes(catalogo, rollupRows, statRows) {
+  const statsMap = new Map((statRows || []).map(s => [s.campaign_name, s]));
+  const rollupMap = new Map((rollupRows || []).map(r => [r.campaign_name, r]));
+  const names = new Set([...(catalogo || []), ...(rollupRows || []).map(r => r.campaign_name), ...(statRows || []).map(s => s.campaign_name)].filter(v => String(v || '').trim() !== ''));
+  return [...names].sort((a, b) => String(a).localeCompare(String(b))).map(name => {
+    const r = rollupMap.get(name) || {};
+    const s = statsMap.get(name);
+    return {
+      name: String(name),
+      stat_id: s?.id ?? null,
+      estado: s?.estado || 'activa',
+      alcance: Number(s?.alcance) || 0,
+      gasto: Number(s?.gasto) || 0,
+      resultados: Number(s?.resultados) || 0,
+      leads_nuevos: Number(r.leads_nuevos) || 0,
+      agendados: Number(r.agendados) || 0,
+      asistieron: Number(r.asistieron) || 0,
+      inscritos: Number(r.inscritos) || 0,
+      agendados_previos: Number(r.agendados_previos) || 0,
+      pendientes: Number(r.pendientes) || 0,
+    };
+  });
+}
+
+/** Resumen de 4 metricas (o vacio sin filas). */
+export function resumenCampanasHtml(rows, totals) {
+  if (!rows?.length) return '';
+  return [
+    ['Inversión Meta', `$${totals.gasto.toFixed(2)}`],
+    ['Resultados Meta', totals.resultados],
+    ['Leads nuevos', totals.leads_nuevos],
+    ['Inscritos', totals.inscritos],
+  ].map(([label, value]) => `<div><span class="text-[11px] text-slate-400">${label}</span><strong>${escapeHtml(String(value))}</strong></div>`).join('');
+}
+
+/** Estado vacio de la tabla (carga fallida o sin campanas del mes). */
+export function estadoVacioCampanasHtml(loadFailed, mesLabel) {
+  return loadFailed
+    ? '<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">No se pudo cargar el informe.</p><p class="mt-1 text-xs">Revisa el aviso anterior e inténtalo de nuevo.</p><button type="button" class="campaigns-retry" data-ev="click:loadCampanas()">Reintentar</button></td></tr>'
+    : `<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">Sin campañas para ${escapeHtml(mesLabel)}.</p><p class="mt-1 text-xs">Selecciona otro mes para consultar sus resultados.</p></td></tr>`;
+}
+
+/** Fila de campana: inputs y botones en modo editor, spans en lectura. */
+export function filaCampanaHtml(r, { esEditor, isAdmin, monthStr } = {}) {
+  const estadoOptions = sel => ['activa', 'finalizada', 'pausada'].map(e => `<option value="${e}"${e === sel ? ' selected' : ''}>${e.charAt(0).toUpperCase() + e.slice(1)}</option>`).join('');
+  const numCell = (field, val) => esEditor
+    ? `<input type="number" min="0" step="0.01" data-field="${field}" value="${val}" data-ev="input:recalcCampaignRow(this)" class="w-24 rounded border border-slate-600 bg-slate-800 px-2 py-1 text-right text-slate-100">`
+    : `<span class="font-mono">${val}</span>`;
+  const estadoCell = esEditor
+    ? `<select data-field="estado" class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-slate-100">${estadoOptions(r.estado)}</select>`
+    : escapeHtml(r.estado);
+  const btnSave = esEditor ? `<button type="button" data-ev="click:saveCampaignStatFromData('${encodeURIComponent(r.name)}','${escapeAttr(monthStr)}',${r.stat_id == null ? 'null' : Number(r.stat_id)})" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Guardar</button>` : '';
+  const btnDelete = isAdmin && r.stat_id ? `<button type="button" data-ev="click:deleteCampaignStat(${Number(r.stat_id)},'${escapeAttr(monthStr)}')" class="px-2 py-1 rounded border border-rose-700 text-rose-300 hover:bg-rose-950 font-semibold cursor-pointer">Eliminar</button>` : '';
+  return `<tr id="campaign_row_${escapeAttr(r.name)}" data-month="${escapeAttr(monthStr)}" data-stat-id="${r.stat_id == null ? '' : Number(r.stat_id)}" class="hover:bg-slate-800/50">
+          <td class="p-3 text-left text-slate-200">${escapeHtml(r.name)}</td>
+          <td class="p-3 text-left">${estadoCell}</td>
+          <td class="p-3 text-right">${numCell('alcance', r.alcance)}</td>
+          <td class="p-3 text-right">${numCell('gasto', r.gasto)}</td>
+          <td class="p-3 text-right">${numCell('resultados', r.resultados)}</td>
+          <td class="p-3 text-right font-mono" data-field="coste">${campaignCosteResultado(r.gasto, r.resultados)}</td>
+          <td class="p-3 text-right font-mono">${r.leads_nuevos}</td>
+          <td class="p-3 text-right font-mono">${r.agendados}</td>
+          <td class="p-3 text-right font-mono">${r.asistieron}</td>
+          <td class="p-3 text-right font-mono">${r.inscritos}</td>
+          <td class="p-3 text-right font-mono">${r.agendados_previos}</td>
+          <td class="p-3 text-right font-mono">${r.pendientes}</td>
+          <td class="p-3 text-right whitespace-nowrap space-x-1">${btnSave}${btnDelete}</td>
+        </tr>`;
+}
+
+/** Fila TOTAL de la tabla de campanas. */
+export function totalCampanasHtml(totals, mesLabel) {
+  return `<tr class="campaigns-total-row font-semibold text-slate-100 border-t-2 border-indigo-600">
+        <td class="p-3 text-left">TOTAL · ${escapeHtml(mesLabel)}</td>
+        <td class="p-3"></td>
+        <td class="p-3 text-right font-mono">${totals.alcance}</td>
+        <td class="p-3 text-right font-mono">${totals.gasto.toFixed(2)}</td>
+        <td class="p-3 text-right font-mono">${totals.resultados}</td>
+        <td class="p-3 text-right font-mono">${campaignCosteResultado(totals.gasto, totals.resultados)}</td>
+        <td class="p-3 text-right font-mono">${totals.leads_nuevos}</td>
+        <td class="p-3 text-right font-mono">${totals.agendados}</td>
+        <td class="p-3 text-right font-mono">${totals.asistieron}</td>
+        <td class="p-3 text-right font-mono">${totals.inscritos}</td>
+        <td class="p-3 text-right font-mono">${totals.agendados_previos}</td>
+        <td class="p-3 text-right font-mono">${totals.pendientes}</td>
+        <td class="p-3"></td>
+      </tr>`;
+}
+
+/** Lineas del CSV de campanas (mismo orden y total que el export). */
+export function campanasCsvLines(rows, monthStr, generado) {
+  const headers = ['Campaña', 'Estado', 'Alcance', 'Gasto (USD)', 'Resultados Meta', 'Coste/Resultado', 'Leads Nuevos', 'Agendados', 'Asistieron', 'Inscritos', 'Agendados Meses Anteriores', 'Pendientes'];
+  const lineas = [`Campañas · ${monthStr}`, `Generado: ${generado} Miami`, '', headers.join(',')];
+  for (const r of rows || []) {
+    lineas.push([csvReporteField(r.name), csvReporteField(r.estado), csvReporteField(r.alcance), csvReporteField(r.gasto), csvReporteField(r.resultados), csvReporteField(campaignCosteResultado(r.gasto, r.resultados)), csvReporteField(r.leads_nuevos), csvReporteField(r.agendados), csvReporteField(r.asistieron), csvReporteField(r.inscritos), csvReporteField(r.agendados_previos), csvReporteField(r.pendientes)].join(','));
+  }
+  const t = campaignTotals(rows || []);
+  lineas.push([csvReporteField('TOTAL'), csvReporteField(''), csvReporteField(t.alcance), csvReporteField(t.gasto.toFixed(2)), csvReporteField(t.resultados), csvReporteField(campaignCosteResultado(t.gasto, t.resultados)), csvReporteField(t.leads_nuevos), csvReporteField(t.agendados), csvReporteField(t.asistieron), csvReporteField(t.inscritos), csvReporteField(t.agendados_previos), csvReporteField(t.pendientes)].join(','));
+  return lineas;
+}
+
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
   window.MONTH_CHRONO = MONTH_CHRONO;
@@ -950,6 +1061,12 @@ if (typeof window !== 'undefined') {
   window.bloqueDiaHtml = bloqueDiaHtml;
   window.cuerpoReporteDiario = cuerpoReporteDiario;
   window.asesorasDisponibles = asesorasDisponibles;
+  window.campanasDeFuentes = campanasDeFuentes;
+  window.resumenCampanasHtml = resumenCampanasHtml;
+  window.estadoVacioCampanasHtml = estadoVacioCampanasHtml;
+  window.filaCampanaHtml = filaCampanaHtml;
+  window.totalCampanasHtml = totalCampanasHtml;
+  window.campanasCsvLines = campanasCsvLines;
   window.historicalFilterOptions = historicalFilterOptions;
   window.totalCanalesVisibles = totalCanalesVisibles;
 }

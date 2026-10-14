@@ -9,25 +9,40 @@ import path from 'node:path';
 
 // Importar funciones puras desde el módulo legacy (extraídas del monolito)
 const legacyMod = await import('../../src/legacy/helpers.js');
-const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel, miamiToday } = legacyMod;
+const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel, miamiToday,
+  compareLeadIdsDescending, consolidateLeadsById } = legacyMod;
 // Funciones puras del area Citas extraidas a src/legacy/citas.js
 const citasMod = await import('../../src/legacy/citas.js');
-const { appointmentDate, appointmentInputISO, appointmentLocal } = citasMod;
+const { appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc, unirCitasConLeads, citasKpiHtml, citasLeadHtml, filaCitaHtml } = citasMod;
 // Helpers puros de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js
 const reportesMod = await import('../../src/legacy/reportes.js');
 const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
   histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
-  periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles } = reportesMod;
+  periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
+  computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
+  tablaVaciaHistoricoHtml, tablaHistoricoHtml, histChartMonthly, histChartConversion, histChartCampaign, histChartMedio, histChartAgent, histChartMonthlyStates, histChartMonthlyCampaigns, histChartFunnel,
+  buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
+  indiceNotas, notaDeBloque, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles , campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines } = reportesMod;
 // Helpers puros del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
-const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
-  haveSameLeadIds, isAgendadoGestion } = leadsMod;
+const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, withOrigin, getLeadOrigin,
+  haveSameLeadIds, isAgendadoGestion, aplicarUpsertLead, aplicarRemoveLead , metricasLeads, subtituloKpiTotal, matrizLeadsHtml, notasLeadHtml, gestionesLeadHtml,
+  fechaLlegadaDisplay, leadCreatePayload, leadUpdateFields, formatSaveErrorLead } = leadsMod;
+// Centro de ayuda extraido a src/legacy/help.js (seccion 10b del monolito)
+const helpMod = await import('../../src/legacy/help.js');
+const { normalizeHelpText, helpHighlight } = helpMod;
+const catalogosApi = await import('../../src/legacy/catalogos.js');
+// Panel de administracion extraido a src/legacy/admin.js (fase 33)
+const adminApi = await import('../../src/legacy/admin.js');
 // validAppointmentId vive en src/legacy/citas.js
 const { validAppointmentId } = citasMod;
+// actionsMod se importa al final (tests parse-all fase 15).
 
 const baseline = process.argv.includes('--baseline');
 const source = path => baseline ? execFileSync('git', ['show', `HEAD:${path}`], { encoding: 'utf8' }) : readFileSync(path, 'utf8');
 const html = source('index.html');
+// Plantilla de la ficha del lead: fichaLeadHtml vive en src/legacy/leads.js (fase 30).
+const fichaFuente = readFileSync('src/legacy/leads.js', 'utf8');
 const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).find(s => s.includes('async function loadCitas'));
 // El parser nativo de Node confirma el cierre de cada función; no copia su lógica.
 function extractFunction(name) {
@@ -46,20 +61,20 @@ const constants = ['LEADS_BATCH_SIZE'].map(name => {
 // MONTH_CHRONO y GESTION_STATE_GROUPS viven en src/legacy/reportes.js (extraidos).
 // Funciones que siguen en el script clásico (no extraídas a legacy)
 const names = [
-  'consolidateLeadsById', 'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads', 'getHistoricalBaseLeads', 'updateKpis',
+  'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads', 'getHistoricalBaseLeads', 'updateKpis',
   'fetchRowsByIdCursor', 'fetchPagedResult', 'fetchRowsByIds', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'haveSameLeadIds',
   'performLoadOlderLeads', 'returnToRecentLeads', 'refillLoadedWindow', 'applyRealtimeEvent', 'updateCompleteCacheOnly', 'removeFromCompleteCacheOnly',
-  'loadCitas', 'clearCitasResults', 'appointmentSessionValid', 'loadLeadAppointments', 'renderCitasKpis',
+  'loadCitas', 'clearCitasResults', 'appointmentSessionValid', 'loadLeadAppointments', 'renderLeadAppointments', 'renderCitasKpis',
   'loadLeadNotes', 'loadLeadGestiones', 'loadLeadsByGestionRange', 'loadLeadsByMonth', 'clearDashRange', 'applyFilters', 'resetAllFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
   'activeCatalogValues', 'catalogOptions', 'readHistRange',
-  'filterHistoricalLeads', 'populateHistoricalFilterOptions', 'computeHistoricalAggregates',
+  'filterHistoricalLeads', 'populateHistoricalFilterOptions',
   'loadReporteDiario', 'renderReporteV2', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
   'exportReporteDiarioCSV', 'exportCampanasCSV', 'loadCampanas',
   'saveReporteNota', 'deleteReporteNota', 'reporteNotaErrorMsg',
   'resetReportePeriodo', 'setReporteVista', 'setPeriodoPreset', 'periodoRangeKey',
   'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'renderReportePeriodo', 'exportReportePeriodoCSV', 'initReporteDiario',
   'markPeriodoReportDirty', 'updatePeriodoCsvState', 'upsertLeadInState', 'removeLeadFromState',
-  'loadPeriodoActividad', 'validatePeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
+  'loadPeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
   'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'confirmAppointmentCreation', 'syncNewLeadMes', 'syncNewUltimaGestion',
   'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentCampusFrom',
@@ -67,7 +82,7 @@ const names = [
   'setAppointmentMutationPending', 'updateLeadAppointmentCreateState', 'deleteLeadAppointment',
   'toggleNewAppointmentFields', 'setBlockControls',
   'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn',
-  'normalizeHelpText', 'helpHighlight'
+  'closeInvalidSession'
 ];
 const frontendSource = ['let leadAppointmentCreateBlocked = true;', 'let gestionRangeLeads = [], gestionRangeKey = "";', 'let mesRangeLeads = [], mesRangeKey = "";', ...constants, ...names.map(extractFunction)].join('\n');
 
@@ -101,29 +116,43 @@ function frontend(extra = {}) {
     },
     window: {}, setTimeout: fn => { timers.push(fn); return timers.length; }, clearTimeout() {},
     showToast: (...args) => toasts.push(args), confirm: () => true,
-    fillCitasSelect() {}, renderCitas() {}, renderLeadNotes() {}, renderLeadGestiones() {}, renderLeadAppointments() {},
+    fillCitasSelect() {}, renderCitas() {}, renderLeadNotes() {}, renderLeadGestiones() {},
     updateKpis() {}, renderMatrix() {}, renderTable() {}, renderHistoricalAnalytics() {}, updateLeadScopeControls() {},
     refillLoadedWindow() {}, scheduleExactLeadCountRefresh() {},
     renderCampanas() {}, canEditCampaigns: () => false,
     isAgendadoGestion: value => value.startsWith('AGENDAD'),
     // Funciones puras importadas desde src/legacy/helpers.js (extraídas del monolito)
     getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel,
+    compareLeadIdsDescending, consolidateLeadsById,
     // Helpers del area Citas extraidos a src/legacy/citas.js
-    appointmentDate, appointmentInputISO, appointmentLocal,
+    appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc, unirCitasConLeads, citasKpiHtml, citasLeadHtml,
     // Helpers de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js
     MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
     histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
     periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
+    computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
+    tablaVaciaHistoricoHtml, tablaHistoricoHtml, histChartMonthly, histChartConversion, histChartCampaign, histChartMedio, histChartAgent, histChartMonthlyStates, histChartMonthlyCampaigns, histChartFunnel,
+    buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
+    indiceNotas, notaDeBloque, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles,
+    campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines,
     // Helpers del area Leads extraidos a src/legacy/leads.js
-    sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
+    sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin, aplicarUpsertLead, aplicarRemoveLead,
+    metricasLeads, subtituloKpiTotal, matrizLeadsHtml,
+    notasLeadHtml, gestionesLeadHtml,
     haveSameLeadIds, isAgendadoGestion, validAppointmentId,
+    // Formularios de alta/edicion extraidos a src/legacy/leads.js (fase 34)
+    fechaLlegadaDisplay, leadCreatePayload, leadUpdateFields, formatSaveErrorLead,
+    // Centro de ayuda extraido a src/legacy/help.js
+    normalizeHelpText, helpHighlight,
+    catalogosApi,
+    adminApi,
     // miamiToday se stubbea en el test para determinismo (2026-09-30)
     miamiToday: () => '2026-09-30',
     supabaseClient: null, currentUser: { id: 'user-test' }, currentAccess: { activo: true, nombre: 'Test', updated_at: 'v1' },
     sessionGeneration: 1, currentMainTab: 'citas', isAdmin: false, isSupervisor: false, newPhoneCheckGeneration: 0, newPhoneCheckTimer: null,
     citasRequestGeneration: 0, citasCache: [], citasRangeKey: '', leadAppointmentsCache: [], leadNotesCache: [], leadGestionesCache: [],
     viewLeadGeneration: 1, currentViewId: 1, dashRangeGen: 0, filterDebounceTimer: null,
-   reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], reporteDayNotes: [], reporteAsesorasDisponibles: [], reporteLoadedKey: '', campanasData: [],
+   reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], reporteDayNotes: [], reporteAsesorasDisponibles: [], reporteAsesorasCatalogo: [], reporteLoadedKey: '', campanasData: [],
     periodoRequestGeneration: 0, periodoData: null, periodoLoadedKey: '', reporteVistaActiva: 'diario',
     periodoSourceRevision: 0, periodoLoadedRevision: -1, periodoRefreshTimer: null,
     periodoActividadData: null, periodoActividadKey: '', periodoActividadGeneration: 0,
@@ -757,8 +786,8 @@ test('buscador real: callback oninput filtra cache >1000 por correo, nombre y ro
   const db = database({ admin_manage_user_access: users });
   const f = frontend({ supabaseClient: db, isAdmin: true }), c = f.context;
   await c.loadAuthorizedUsers();
-  const handler = /<input\b[^>]*id="userSearch"[^>]*oninput="([^"]+)"/.exec(html)?.[1];
-  assert.ok(handler, 'el input real debe tener callback');
+  const handler = /<input\b[^>]*id="userSearch"[^>]*data-ev="input:([^"]+)"/.exec(html)?.[1];
+  assert.ok(handler, 'el input real debe tener callback en data-ev');
   for (const search of [' target@example.TEST ', '<img', 'SUPERVISOR']) {
     f.element('userSearch').value = search;
     vm.runInContext(handler, c);
@@ -1148,14 +1177,17 @@ test('migración canal data dura manual: trigger normaliza, RPC prioriza marca y
 test('citas: los tres formularios piden estudiante, correo y edad opcionales', () => {
   for (const prefix of ['newAppointment', 'editAppointment', 'leadAppointment']) {
     for (const field of ['StudentName', 'ContactEmail', 'StudentAge']) {
-      assert.ok(html.includes(`id="${prefix}${field}"`), `falta ${prefix}${field}`);
+      // leadAppointment vive en la plantilla de la ficha (leads.js, fase 30).
+      const fuente = prefix === 'leadAppointment' ? fichaFuente : html;
+      assert.ok(fuente.includes(`id="${prefix}${field}"`), `falta ${prefix}${field}`);
     }
   }
   // La pestaña Citas muestra las tres columnas y el botón de edición.
   assert.match(html, /<th class="p-3 text-left">Estudiante<\/th>/);
   assert.match(html, /<th class="p-3 text-left">Correo<\/th>/);
   assert.match(html, /<th class="p-3 text-left">Edad<\/th>/);
-  assert.match(html, /onclick="editAppointmentDetails\(\$\{r\.id\}\)"/);
+  // La plantilla de la fila de citas vive en src/legacy/citas.js (fase 17).
+  assert.match(readFileSync('src/legacy/citas.js', 'utf8'), /data-ev="click:editAppointmentDetails\(\$\{r\.id\}\)"/);
   // La ficha consulta los nuevos campos y permite editarlos.
   assert.match(html, /student_name, contact_email, student_age/);
   assert.match(html, /rpc\('update_lead_appointment_details'/);
@@ -1175,13 +1207,16 @@ test('appointmentDetailsFrom recoge y recorta los tres campos opcionales', () =>
 
 test('fecha de llegada: formulario editable, Mes derivado y validación futura; create_lead valida y registra gestión', () => {
   // Formulario: campo date con max = hoy Miami y Mes solo lectura derivado.
-  assert.match(html, /id="newFechaLlegada"[^>]*onchange="syncNewLeadMes\(\)"/);
+  assert.match(html, /id="newFechaLlegada"[^>]*data-ev="change:syncNewLeadMes\(\)"/);
   assert.match(html, /<select id="newMes" disabled/);
   assert.match(html, /fechaInput\.max = miamiToday\(\)/);
   assert.match(html, /function syncNewLeadMes\(\)/);
-  // Guardar: fecha futura rechazada en frontend; vacía usa hoy.
+  // Guardar: fecha futura rechazada en frontend; vacía usa hoy. LaConversion
+  // a 'd/m/aaaa' vive en fechaLlegadaDisplay (src/legacy/leads.js, fase 34),
+  // dorada contra el fixture fase34-golden.json; aqui se fija el enlace.
   assert.match(html, /fechaSel > hoyMiami/);
-  assert.match(html, /\(fechaSel \|\| hoyMiami\)\.split\('-'\)/);
+  assert.match(html, /fechaLlegadaDisplay\(fechaSel, hoyMiami\)/);
+  assert.match(fichaFuente, /\(fechaSel \|\| hoyMiami\)\.split\('-'\)/);
   // Backend create_lead: valida formato/pasado, deriva Mes y registra la gestión.
   const sql = readFileSync('supabase/migrations/202610020004_create_lead_fecha_gestion.sql', 'utf8');
   assert.match(sql, /fecha_llegada_invalida/);
@@ -1193,15 +1228,31 @@ test('fecha de llegada: formulario editable, Mes derivado y validación futura; 
   // Rollback documentado.
   assert.match(sql, /Rollback manual/);
 });
+test('citas: wrapper publica plantilla y no la evalua si falta el nodo', () => {
+  const f = frontend();
+  f.context.renderLeadAppointments();
+  assert.equal(f.element('leadAppointmentsList').innerHTML, citasLeadHtml([], { isAdmin: false, userId: 'user-test' }));
+  f.context.document.getElementById = () => null;
+  f.context.citasLeadHtml = () => { throw new Error('no debe renderizar sin nodo'); };
+  assert.doesNotThrow(() => f.context.renderLeadAppointments());
+});
+
 test('citas: lectura compartida para el equipo y botones de edición solo para asesora asignada o admin', () => {
   const sql = readFileSync('supabase/migrations/202610020003_citas_lectura_equipo.sql', 'utf8').split('-- Rollback')[0];
   assert.match(sql, /using \(public\.is_active_user\(\) and public\.is_crm_user\(\)\)/);
   assert.doesNotMatch(sql, /advisor_user_id = auth\.uid\(\)/);
   // Las escrituras siguen restringidas por RPC; el frontend oculta los botones.
-  assert.match(html, /canEdit = isAdmin \|\| a\.advisor_user_id === currentUser\?\.id/);
-  assert.match(html, /\$\{canEdit \? `<button data-appointment-id="\$\{id\}" onclick="editAppointmentDetails/);
-  assert.match(html, /\$\{scheduled && canEdit \?/);
-  assert.match(html, /\(isAdmin \|\| r\.advisor_user_id === currentUser\?\.id\) \? `<button onclick="editAppointmentDetails/);
+  for (const [isAdmin, userId, canEdit] of [[true, 'other', true], [false, 'assigned', true], [false, 'other', false]]) {
+    const cita = { id: 21, status: 'PROGRAMADA', advisor_user_id: 'assigned', lead: { id: 1 } };
+    const f = frontend({ isAdmin, currentUser: { id: userId }, leadAppointmentsCache: [cita] });
+    f.context.renderLeadAppointments();
+    const body = f.element('leadAppointmentsList').innerHTML;
+    assert.equal(body.includes('click:editAppointmentDetails(21)'), canEdit);
+    assert.equal(body.includes('click:editAppointmentCampus(21)'), canEdit);
+    assert.equal(body.includes('click:setLeadAppointmentStatus(21,'), canEdit);
+    assert.equal(body.includes('click:rescheduleLeadAppointment(21)'), canEdit);
+    assert.equal(filaCitaHtml(cita, { isAdmin, userId }).includes('click:editAppointmentDetails(21)'), canEdit);
+  }
   // La ficha necesita advisor_user_id para calcular canEdit.
   assert.match(html, /advisor_name, advisor_user_id, notes, rescheduled_from_id/);
 });
@@ -1241,19 +1292,24 @@ test('badge Nuevo: fecha de llegada del mes/año Miami actual, no de otros meses
   // El markup del badge vive en src/legacy/leads.js (extraido); el USO sigue en el monolito.
   const leadsSource = readFileSync('src/legacy/leads.js', 'utf8');
   assert.match(leadsSource, />\s*Nuevo\s*<\/span>/);
-  assert.match(html, /\$\{nuevoBadge\(lead\)\}/);
+  // La fila que usa el badge vive en src/legacy/leads.js (fase 25).
+  assert.match(leadsSource, /\$\{nuevoBadge\(lead\)\}/);
 });
 
 test('canal Llamada WhatsApp: etiqueta visible nueva, valor y conteo canónicos intactos', () => {
   assert.match(html, /<option value="Llamada y WhatsApp">Llamada WhatsApp<\/option>/);
-  assert.match(html, /\['Llamada y WhatsApp',num\(b\.canales,'llamada_whatsapp'\)\]/);
-  assert.match(html, /'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas'/);
+  // Las tablas de detalle viven en src/legacy/reportes.js (fase 21).
+  assert.match(readFileSync('src/legacy/reportes.js', 'utf8'), /\['Llamada y WhatsApp', num\(b\.canales, 'llamada_whatsapp'\)\]/);
+  // La cabecera del CSV diario vive en src/legacy/reportes.js (fase 16).
+  assert.match(readFileSync('src/legacy/reportes.js', 'utf8'), /'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas'/);
   // El historial traduce el canal almacenado a la nueva etiqueta.
-  assert.match(html, /String\(g\.canal \|\| ''\) === 'Llamada y WhatsApp' \? 'Llamada WhatsApp'/);
+  // La normalizacion del canal ahora vive en src/legacy/leads.js (fase 26).
+  assert.match(readFileSync('src/legacy/leads.js', 'utf8'), /String\(g\.canal \|\| ''\) === 'Llamada y WhatsApp' \? 'Llamada WhatsApp'/);
 });
 
 test('ayuda: refleja el comportamiento actual y no repite reglas retiradas', () => {
-  const help = html.slice(html.indexOf('const HELP_SECTIONS = ['), html.indexOf('let helpReturnFocus'));
+  // La ayuda vive en src/legacy/help.js (extraida del monolito).
+  const help = readFileSync('src/legacy/help.js', 'utf8');
   // Reglas que ya no aplican: el Mes no se elige a mano y las citas no son privadas.
   assert.doesNotMatch(help, /Elige el Mes de origen del lead/);
   assert.doesNotMatch(help, /solo ves tus propias citas/);
@@ -1274,11 +1330,13 @@ test('ayuda: refleja el comportamiento actual y no repite reglas retiradas', () 
   assert.match(help, /id: 'ayuda-campanas'/);
   // Coherencia con el formulario real: los campos de la cita existen.
   for (const field of ['newAppointmentStudentName', 'editAppointmentStudentName', 'leadAppointmentStudentName'])
-    assert.ok(html.includes(`id="${field}"`), `falta el campo ${field} descrito en la ayuda`);
+    // leadAppointment vive en la plantilla de la ficha (leads.js, fase 30).
+    assert.ok((field.startsWith('lead') ? fichaFuente : html).includes(`id="${field}"`), `falta el campo ${field} descrito en la ayuda`);
 });
 
 test('ayuda: refleja los KPIs compactos, los cuatro roles y el cierre por inactividad', () => {
-  const help = html.slice(html.indexOf('const HELP_SECTIONS = ['), html.indexOf('let helpReturnFocus'));
+  // La ayuda vive en src/legacy/help.js (extraida del monolito).
+  const help = readFileSync('src/legacy/help.js', 'utf8');
   // Los 12 KPIs ya no se muestran: 4 arriba y el resto en el desglose colapsable.
   assert.match(help, /Total citas, Programadas, Asistieron y Tasa asistencia/);
   assert.match(help, /Ver desglose por estado y sede/);
@@ -1312,6 +1370,35 @@ test('ayuda: el resaltado marca el término con o sin acento y escapa el HTML', 
   assert.equal(f.context.normalizeHelpText('Gestión'), 'gestion');
 });
 
+test('sesión: el cierre por inactividad es local y los cierres de acceso son globales', async () => {
+  // signOut() sin scope es global en supabase-js: tumbaria tambien el movil y
+  // las demas pestanas de la asesora. El guardian de inactividad debe ser local.
+  const llamadas = [];
+  const f = frontend({
+    supabaseClient: { auth: { signOut: async options => { llamadas.push(options?.scope); } } },
+    endAgentSessionLocally: async () => {},
+    clearSessionState: () => {},
+  });
+  await f.context.closeInvalidSession('Tu sesión se cerró por 5 minutos de inactividad.', 'idle_timeout');
+  assert.deepEqual(llamadas, ['local'], 'el cierre por inactividad debe ser local');
+
+  llamadas.length = 0;
+  await f.context.closeInvalidSession('La sesión no está disponible. Inicia sesión de nuevo.', 'session_invalid');
+  assert.deepEqual(llamadas, ['global'], 'una sesión caducada o acceso desactivado sigue siendo global');
+
+  llamadas.length = 0;
+  await f.context.closeInvalidSession();
+  assert.deepEqual(llamadas, ['global'], 'sin motivo explicito se conserva el cierre global');
+
+  // La salida manual ya era local antes: no debe cambiar.
+  assert.match(html, /auth\.signOut\(\{ scope: 'local' \}\)/);
+  assert.match(html, /const scope = sessionEndReason === 'idle_timeout' \? 'local' : 'global'/);
+  // La ayuda refleja el alcance real del cierre.
+  // La ayuda vive en src/legacy/help.js (extraida del monolito).
+  const help = readFileSync('src/legacy/help.js', 'utf8');
+  assert.match(help, /afecta solo al equipo donde se quedó inactivo/);
+});
+
 test('inactividad: aviso a 4 min, cierre a 5, multi-pestaña y registro en tabla/RPC dedicadas', () => {
   // Frontend: banner con countdown, solo para rol agente, y storage compartido.
   assert.match(html, /id="idleBanner"[^>]*role="alert"/);
@@ -1336,7 +1423,14 @@ test('inactividad: aviso a 4 min, cierre a 5, multi-pestaña y registro en tabla
 });
 
 test('actividad de asesoras: solo una sesion abierta con señal reciente figura activa', () => {
-  const isRecent = vm.runInNewContext(`const IDLE_LIMIT_MS = 300000; ${extractFunction('isRecentAgentSession')}; isRecentAgentSession`);
+  // Redirect fase 33: isRecentAgentSession vive ahora en src/legacy/admin.js y
+  // recibe idleLimitMs por parametro. Con --baseline (HEAD) se ejecuta la
+  // funcion del monolito tal cual; en el arbol se usa el modulo real. Los
+  // asserts y su umbral (300000 ms, borde exclusive) no cambian.
+  const fuente = extractFunction('isRecentAgentSession');
+  const isRecent = fuente
+    ? vm.runInNewContext(`const IDLE_LIMIT_MS = 300000; ${fuente}; isRecentAgentSession`)
+    : (session, now) => adminApi.isRecentAgentSession(session, now, 300000);
   const now = Date.parse('2026-10-10T12:00:00Z');
   assert.equal(isRecent({ active: true, last_activity_at: '2026-10-10T11:55:01Z' }, now), true);
   assert.equal(isRecent({ active: true, last_activity_at: '2026-10-10T11:55:00Z' }, now), false);
@@ -1597,11 +1691,13 @@ test('hotfix alta atomica: create_lead_with_appointment usa la interna y los blo
   assert.match(sql, /create or replace function public\._create_lead_with_gestion\(p_lead jsonb\)/);
   assert.match(sql, /created := public\._create_lead_with_gestion\(p_lead\);\n  perform public\.create_lead_appointment/);
   assert.match(sql, /revoke all on function public\._create_lead_with_gestion\(jsonb\) from public, anon, authenticated, service_role/);
-  // La traduccion de errores evita mensajes tecnicos en el navegador.
+  // La traduccion de errores evita mensajes tecnicos en el navegador. El
+  // wrapper del monolito conserva la firma; el cuerpo vivo en leads.js (fase 34).
   assert.match(html, /function formatSaveError\(error, agendado\)/);
-  assert.match(html, /Correo de contacto no válido/);
-  assert.match(html, /Edad no válida/);
-  assert.match(html, /Asesor no activo|campaign_not_in_catalog/);
+  assert.match(html, /return formatSaveErrorLead\(error, agendado\)/);
+  assert.match(fichaFuente, /Correo de contacto no válido/);
+  assert.match(fichaFuente, /Edad no válida/);
+  assert.match(fichaFuente, /Asesor no activo|campaign_not_in_catalog/);
   // Los bloques de cita dentro del formulario no pueden quedar required+ocultos:
   assert.match(html, /function setBlockControls\(container, disabled\)/);
   assert.match(html, /setBlockControls\(block, !visible\)/);
@@ -1686,19 +1782,20 @@ test('citas por sede: requerida en las 3 rutas, filro/KPIs, corrección y report
   assert.match(sql, /old_appointment\.campus/);
 
   // Frontend: radios obligatorios en las tres rutas
+  // leadAppointment vive en la plantilla de la ficha (leads.js, fase 30).
   for (const prefix of ['newAppointment', 'editAppointment', 'leadAppointment'])
-    assert.match(html, new RegExp(`name="${prefix + 'Campus'}" value="DORAL" required`));
+    assert.match(prefix === 'leadAppointment' ? fichaFuente : html, new RegExp(`name="${prefix + 'Campus'}" value="DORAL" required`));
   // Se rechaza la cita nueva sin sede
   assert.match(html, /appointmentCampusFrom\('newAppointment'\)/);
   assert.match(html, /appointmentCampusFrom\('editAppointment'\)/);
   assert.match(html, /appointmentCampusFrom\('leadAppointment'\)/);
   // Tabla, filtro y KPIs por sede; corrección con RPC dedicada.
-  // Los KPIs viven ahora en renderCitasKpis (Fase 5: 4 principales + desglose),
-  // por lo que el cálculo por sede se verifica sobre la función nueva.
+  // Los KPIs viven en citas.js (fase 19): el calculo por sede se verifica alli.
+  const citasModFuente = readFileSync('src/legacy/citas.js', 'utf8');
   assert.match(html, /<th class="p-3 text-left">Sede<\/th>/);
   assert.match(html, /id="citasSede"/);
-  assert.match(html, /card\('Doral', rows\.filter\(r => r\.campus === 'DORAL' && !r\.is_data_dura\)\.length\)/);
-  assert.match(html, /card\('Weston', rows\.filter\(r => r\.campus === 'WESTON' && !r\.is_data_dura\)\.length\)/);
+  assert.match(citasModFuente, /card\('Doral', rows\.filter\(r => r\.campus === 'DORAL' && !r\.is_data_dura\)\.length\)/);
+  assert.match(citasModFuente, /card\('Weston', rows\.filter\(r => r\.campus === 'WESTON' && !r\.is_data_dura\)\.length\)/);
   assert.match(html, /update_lead_appointment_campus/);
   // Lead ya Agendado: el modal de Actualizar Seguimiento tambien seda la cita
   // vigente sin crear otra (bloque con radios reutilizando la RPC existente).
@@ -2007,6 +2104,14 @@ test('comparativa RPC muestra campos y detalle las cuatro tablas y notas', async
 test('filtro de asesora reconsulta RPC y deja una sola fila', async () => {
   const f = reportFixture(args => ({ asesoras: [advisor('Ana', 'a'), advisor('Bea', 'b')].filter(x => !args.p_autor_user_id || x.autor_user_id === args.p_autor_user_id) })); await f.context.loadReporteDiario(); f.element('reporteAsesora').value = 'a'; await f.context.loadReporteDiario();
   assert.deepEqual(plain(f.db.rpcCalls.at(-1).args), { p_fecha: '2026-03-05', p_autor_user_id: 'a' }); assert.match(f.element('reporteAuto').innerHTML, /Ana/); assert.doesNotMatch(f.element('reporteAuto').innerHTML, /Bea/);
+  // Regresion: tras filtrar por Ana, la opcion de Bea conserva su id real
+  // (antes quedaba en value="" y cambiar de asesora volvia a Todas).
+  const opciones = f.element('reporteAsesora').innerHTML;
+  assert.match(opciones, /<option value="a">Ana<\/option>/);
+  assert.match(opciones, /<option value="b">Bea<\/option>/);
+  // Y pasar de Ana a Bea vuelve a consultar por el id de Bea.
+  f.element('reporteAsesora').value = 'b'; await f.context.loadReporteDiario();
+  assert.deepEqual(plain(f.db.rpcCalls.at(-1).args), { p_fecha: '2026-03-05', p_autor_user_id: 'b' }); assert.match(f.element('reporteAuto').innerHTML, /Bea/); assert.doesNotMatch(f.element('reporteAuto').innerHTML, /Ana/);
 });
 test('CSV del reporte v2 exporta columnas nuevas y totaliza los bloques visibles', async () => {
   const a = { ...advisor('Ana', 'a', 2), procedencia: { WhatsApp: 1, 'Facebook/Instagram': 2, CogniTalking: 3, 'Directo o Referido': 4, Otros: 5 }, llamadas: { del_dia: 1, data_dura: 2, llamada_whatsapp: 3, total: 6 }, citas: { agendados_dia: 1, agendados_data_dura: 2, total_agendados: 3, visitas: 4, no_asistieron: 5, canceladas: 6, reprogramadas: 7 }, inscritos: { del_dia: 1, data_dura: 2, total: 3 } };
@@ -2025,14 +2130,17 @@ test('CSV reporte: separa citas nuevas y reprogramadas y suma las columnas visib
   await f.context.loadReporteDiario(); f.context.exportReporteDiarioCSV();
   const rows = decodeCSV(new TextDecoder().decode(await f.downloads[0].blob.arrayBuffer()).slice(1));
   const headers = rows[4], total = rows.at(-1), col = n => Number(total[headers.indexOf(n)]);
-  assert.equal(headers.length, 32); assert.equal(total.length, 32);
+  // Nueva columna coherente con pantalla: 33 cabeceras (fase 16).
+  assert.equal(headers.length, 33); assert.equal(total.length, 33);
   assert.equal(col('Gestiones realizadas'), 2); assert.equal(col('Citas nuevas Doral'), 2); assert.equal(col('Citas nuevas Data Dura Weston'), 2);
   assert.equal(col('Total citas nuevas'), 4); assert.equal(col('Citas reprogramadas hoy'), 6); assert.equal(col('Reprogramadas'), 2);
   assert.equal(headers.includes('Inscritos del día'), false, 'inscripciones fuera del CSV diario');
   assert.equal(col('Pasados a Agendado hoy'), 4); assert.equal(col('Pasados a Agendado Data Dura hoy'), 2);
   assert.equal(col('WhatsApp nuevos hoy'), 2); assert.equal(col('WhatsApp gestionados hoy'), 2); assert.equal(col('Total WhatsApp'), 4);
-  // Total canales solo suma las categorias visibles: 1+1+1+2+0 = 5 por asesora.
+  // Total canales = suma exclusiva de 5 categorias visibles; los buckets
+  // retirados (visita 0, sin_clasificar 0) van juntos en 'Otros o sin canal'.
   assert.equal(col('Total canales'), 10);
+  assert.equal(col('Otros o sin canal'), 0);
   assert.equal(col('Canal Instagram'), 0);
   const panel = f.element('reporteAuto').innerHTML;
   assert.match(panel, /Citas nuevas hoy/);
@@ -2170,7 +2278,8 @@ test('errores de nota se muestran traducidos, no crudos', async () => {
 
 test('reporte: textareas limitados a 5000, aviso accesible, fecha de cabecera civil y nombres de fichero en Miami', () => {
   assert.match(html, /id="reporteAviso"[^>]*aria-live="polite"/);
-  assert.match(html, /id="reporte-problemas-\$\{i\}"[^>]*maxlength="5000"/);
+  // El manual de edicion vive en src/legacy/reportes.js (fase 21).
+  assert.match(readFileSync('src/legacy/reportes.js', 'utf8'), /id="reporte-problemas-\$\{i\}"[^>]*maxlength="5000"/);
   assert.match(html, /`Leads_Sociedad_Actoral_\$\{miamiToday\(\)\}\.csv`/);
   assert.match(html, /`Historical_Summary_\$\{miamiToday\(\)\}\.csv`/);
   assert.match(html, /new Date\(`\$\{fecha\}T12:00:00Z`\)/);
@@ -2443,12 +2552,12 @@ test('cita unica: la UI no duplica funciones ni expone el borrado a no-admin', (
   assert.equal(occurrences('deleteLeadAppointment'), 1);
   assert.equal(occurrences('updateLeadAppointmentCreateState'), 1);
   assert.equal(occurrences('loadLeadAppointments'), 1);
-  // El boton de borrar solo se emite dentro de una rama de administrador.
-  const botones = [...script.matchAll(/onclick="deleteLeadAppointment\(/g)];
-  assert.equal(botones.length, 2, 'uno en la ficha y otro en la tabla de Citas');
-  for (const match of botones) {
-    const previo = script.slice(Math.max(0, match.index - 160), match.index);
-    assert.match(previo, /isAdmin \?/, 'el boton de borrar debe quedar tras una comprobacion de isAdmin');
+  for (const isAdmin of [false, true]) {
+    const cita = { id: 31, advisor_user_id: 'user-test', lead: { id: 1 } };
+    const f = frontend({ isAdmin, leadAppointmentsCache: [cita] });
+    f.context.renderLeadAppointments();
+    assert.equal(f.element('leadAppointmentsList').innerHTML.includes('click:deleteLeadAppointment(31)'), isAdmin);
+    assert.equal(filaCitaHtml(cita, { isAdmin, userId: 'user-test' }).includes('click:deleteLeadAppointment(31)'), isAdmin);
   }
 });
 
@@ -2469,8 +2578,10 @@ test('migraciones de cita unica: indice parcial y RPC admin sin privilege escala
 
 test('reporte diario: canales e inscripciones retirados de pantalla y CSV', () => {
   const c = { ...frontend({}).context };
-  // El total mostrado solo suma las categorias que siguen en pantalla.
-  assert.equal(c.totalCanalesVisibles({ llamada: 1, data_dura: 1, llamada_whatsapp: 1, whatsapp: 2, instagram: 0, visita: 3, sin_clasificar: 4, total: 99 }), 5);
+  // totalCanalesVisibles = TODOS los buckets del RPC; los retirados
+  // (visita/sin_clasificar) viajan juntos en la fila 'Otros o sin canal' y
+  // aqui existe como datos, nunca como etiquetas retiradas.
+  assert.equal(c.totalCanalesVisibles({ llamada: 1, data_dura: 1, llamada_whatsapp: 1, whatsapp: 2, instagram: 0, visita: 3, sin_clasificar: 4, total: 99 }), 12);
   for (const vacio of [undefined, null, {}]) assert.equal(c.totalCanalesVisibles(vacio), 0);
 
   // El HTML del reporte ya no ofrece las cinco metricas retiradas.
@@ -2490,3 +2601,63 @@ test('reporte diario: canales e inscripciones retirados de pantalla y CSV', () =
   for (const text of ['Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas creadas y resultados registrados hoy', 'Gestiones realizadas', 'Total llamadas', 'Visitas registradas']) assert.match(html, new RegExp(text));
   assert.match(html, /Citas nuevas hoy/);
 });
+// --- fase 15: parse-all de data-ev -------------------------------------------
+// (a) estatico: cada data-ev del markup se parsea y su funcion global existe.
+// (b) plantillas dinamicas: sustituimos cada interpolacion ${...} por un
+//     literal de muestra (mismo shape que en runtime: numeros/strings/bools/
+//     null) y afirmamos que la gramatica estricta del dispatcher lo ejecuta
+//     sin eval ni Function.
+import { parseDataAtributo, llamarAccion } from '../../src/legacy/actions.js';
+// Fase 33: las plantillas de filas de usuarios salieron de index.html a
+// src/legacy/admin.js; se escanea tambien ese modulo para que el parse-all siga
+// cubriendo los mismos data-ev interpolados (umbral sin debilitar).
+const markupCitas = html + readFileSync(new URL('../../src/legacy/citas.js', import.meta.url), 'utf8')
+  + readFileSync(new URL('../../src/legacy/admin.js', import.meta.url), 'utf8');
+
+test('parse-all data-ev: markup estatico ejecutable por el dispatcher', () => {
+  const nombres = new Set();
+  for (const m of script.matchAll(/function\s+([\w$]+)\s*\(/g)) nombres.add(m[1]);
+  for (const m of html.matchAll(/window\.([\w$]+)\s*=/g)) nombres.add(m[1]);
+  for (const f of ['help.js', 'leads.js', 'citas.js', 'reportes.js', 'catalogos.js', 'admin.js']) {
+    const modulo = readFileSync(new URL(`../../src/legacy/${f}`, import.meta.url), 'utf8');
+    for (const m of modulo.matchAll(/window\.([\w$]+)\s*=/g)) nombres.add(m[1]);
+  }
+  const todos = [...markupCitas.matchAll(/data-ev="([^"]+)"/g)].map(m => m[1]);
+  const valores = todos.filter(v => !v.includes('${'));
+  const plantillas = todos.filter(v => v.includes('${'));
+  assert.ok(valores.length > 120, `se esperaban muchos estaticos, hay ${valores.length}`);
+  assert.ok(plantillas.length >= 14, `plantillas con data-ev interpolada: ${plantillas.length}`);
+  let revisados = 0;
+  for (const valor of valores) {
+    const { tipos, cuerpo } = parseDataAtributo(valor);
+    assert.ok(tipos.length >= 1);
+    const fn = /^([\w$]+)\s*\(/.exec(cuerpo)?.[1];
+    assert.ok(fn && nombres.has(fn), `funcion global ausente en: ${cuerpo}`);
+    llamarAccion(cuerpo, { elemento: stub(), evento: stubEvento(), buscarGlobal: () => stub() });
+    revisados++;
+  }
+  assert.equal(revisados, valores.length);
+});
+
+test('parse-all data-ev: plantillas dinamicas cumplen la gramatica (sin eval)', () => {
+  const replantillas = valor => valor
+    // las interpolaciones de IDs entran SIEMPRE entre comillas simples
+    .replace(/'\$\{[^}]+\}'/g, "'muestra'")
+    // el tercer argumento opcional de saveCampaignStat: literal null o numero
+    .replace(/, \$\{[^}]*== null \? 'null' : [^}]*\}/g, ', null')
+    // numeros/bools sin comillas (paginacion, flags de admin)
+    .replace(/\$\{[^}]+\}/g, '5');
+  let revisadas = 0;
+  for (const m of markupCitas.matchAll(/data-ev="([^"]+)"/g)) {
+    if (!m[1].includes('${')) continue;
+    const { cuerpo } = parseDataAtributo(replantillas(m[1]));
+    llamarAccion(cuerpo, { elemento: stub(), evento: stubEvento(), buscarGlobal: () => stub() });
+    const fn = /^([\w$]+)\s*\(/.exec(cuerpo)?.[1];
+    assert.ok(fn, `autorre proceso requiere fn: ${cuerpo}`);
+    revisadas++;
+  }
+  assert.ok(revisadas >= 14, `habia ${revisadas} plantillas con data-ev interpolada`);
+});
+
+function stub() { return () => {}; }
+function stubEvento() { return { type: 'click', stopPropagation() {} }; }

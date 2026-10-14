@@ -6,13 +6,15 @@ import { test } from 'node:test';
 
 // Importar funciones puras desde el módulo legacy (extraídas del monolito)
 const legacyMod = await import('../../src/legacy/helpers.js');
-const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds } = legacyMod;
+const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds,
+  compareLeadIdsDescending, consolidateLeadsById } = legacyMod;
 // Helpers de Reportes extraidos a src/legacy/reportes.js
 const reportesMod = await import('../../src/legacy/reportes.js');
-const { parseFechaLead, periodoPresetRange, periodoValidDate, periodoPct } = reportesMod;
+const { parseFechaLead, periodoPresetRange, periodoValidDate, periodoPct,
+  buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque , campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines } = reportesMod;
 // Helpers del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
-const { compareLeadIdsDescending, withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion } = leadsMod;
+const { withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion, aplicarUpsertLead, aplicarRemoveLead , metricasLeads, subtituloKpiTotal, matrizLeadsHtml, notasLeadHtml, gestionesLeadHtml, relacionadosPorTelefono, primeraEntradaLead, ordenRepetidos, bloqueRepetidosHtml, bannerPrimeraEntradaHtml, fichaLeadHtml, repetidosYBannerHtml } = leadsMod;
 
 const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
 const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
@@ -35,13 +37,13 @@ const names = ['clearSessionState', 'closeInvalidSession', 'validateCurrentSessi
   'updateLeadAppointmentCreateState', 'setBlockControls',
   'fetchRowsByIdCursor', 'fetchPagedResult', 'loadLeadNotes', 'loadLeadGestiones',
   'resetReportePeriodo', 'setReporteVista', 'setPeriodoPreset', 'periodoRangeKey',
-  'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'renderReportePeriodo',
+  'loadReportePeriodo', 'renderReportePeriodo',
   'markPeriodoReportDirty', 'updatePeriodoCsvState',
-  'loadPeriodoActividad', 'validatePeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
-  'consolidateLeadsById',
+  'resetReportePeriodo', 'setReporteVista', 'setPeriodoPreset', 'periodoRangeKey',
+  'loadPeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
   'stopIdleTracking', 'endAgentSessionLocally', 'startAgentActivityTracking'];
 const sessionCacheNames = ['loadHistoricoData', 'performLoadHistoricoData', 'loadLeadsData', 'performLoadLeadsData',
-  'getExactLeadsCount', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'consolidateLeadsById',
+  'getExactLeadsCount', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor',
   'loadCatalogs', 'refreshCatalogs',
   'handleRealtimeEvent', 'applyRealtimeEvent', 'upsertLeadInState', 'removeLeadFromState'];
 const callbackStart = script.indexOf('if (supabaseClient) {\n      supabaseClient.auth.onAuthStateChange');
@@ -141,7 +143,14 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     // Funciones puras importadas desde src/legacy/helpers.js (extraídas del monolito)
     getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds,
     parseFechaLead, periodoPresetRange, periodoValidDate, periodoPct,
-    compareLeadIdsDescending, withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion,
+    buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
+    campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines,
+    compareLeadIdsDescending, withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion, aplicarUpsertLead, aplicarRemoveLead,
+    metricasLeads, subtituloKpiTotal, matrizLeadsHtml,
+    notasLeadHtml, gestionesLeadHtml,
+    relacionadosPorTelefono, primeraEntradaLead, ordenRepetidos, bloqueRepetidosHtml, bannerPrimeraEntradaHtml,
+    fichaLeadHtml, repetidosYBannerHtml,
+    consolidateLeadsById,
   });
   const renders = [];
   // periodoPresetRange (extraida a src/legacy/reportes.js) usa el reloj del

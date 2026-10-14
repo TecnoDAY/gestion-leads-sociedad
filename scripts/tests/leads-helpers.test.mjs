@@ -3,8 +3,11 @@ import assert from 'node:assert/strict';
 
 // Helpers puros del area Leads extraidos del monolito (capa 2 del strangler)
 const mod = await import('../../src/legacy/leads.js');
+const helpersMod = await import('../../src/legacy/helpers.js');
+// compareLeadIdsDescending vive ahora en helpers.js (base generica de ids)
 const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, nuevoBadge, formatPhone,
-  compareLeadIdsDescending, withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion } = mod;
+  withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion } = mod;
+const { compareLeadIdsDescending } = helpersMod;
 
 describe('leads - sortMonthCatalog', () => {
   test('orden cronologico con OTRO al final y dedupe por norma (valor original preservado)', () => {

@@ -7,11 +7,17 @@ import vm from 'node:vm';
 import { test } from 'node:test';
 import path from 'node:path';
 import { escapeHtml, escapeAttr } from '../../src/legacy/helpers.js';
+// Fase 33: las plantillas de usuarios viven en src/legacy/admin.js. Se inyecta
+// el modulo real como adminApi para que el wrapper extraido (arbol de trabajo)
+// funcione igual que en el navegador; en modo --baseline (HEAD) se ignora.
+import * as adminApi from '../../src/legacy/admin.js';
 
 const baseline = process.argv.includes('--baseline');
 const read = p => baseline ? execFileSync('git', ['show', `HEAD:${p}`], { encoding: 'utf8' }) : readFileSync(p, 'utf8');
 const migration = read('supabase/migrations/202610120001_user_access_idle_timeout.sql');
 const html = read('index.html');
+// La ayuda vive en src/legacy/help.js (extraida del monolito en la fase 1).
+const helpSource = read('src/legacy/help.js');
 const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).find(s => s.includes('async function loadCurrentAccess'));
 
 function extractFunction(name) {
@@ -166,6 +172,7 @@ function renderUsuarios(lista) {
     isAdmin: true,
     authorizedUsersList: lista,
     escapeHtml, escapeAttr,
+    adminApi,
     document: { getElementById: element, querySelectorAll: () => [] },
   });
   new vm.Script(extractFunction('renderAuthorizedUsers')).runInContext(ctx);
@@ -206,6 +213,6 @@ test('RPC del toggle usa la accion set_idle_timeout y el listado alimenta el ren
 });
 
 test('centro de ayuda documenta el control por asesora', () => {
-  assert.match(script, /cada asesora tiene su propio control "Cierre automático"/);
-  assert.match(script, /"Desactivar cuenta" sigue bloqueando el acceso en ambos casos/);
+  assert.match(helpSource, /cada asesora tiene su propio control "Cierre automático"/);
+  assert.match(helpSource, /"Desactivar cuenta" sigue bloqueando el acceso en ambos casos/);
 });

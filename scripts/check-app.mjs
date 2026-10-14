@@ -64,8 +64,12 @@ try {
 // --- 2. Reglas anti-regresion cerradas ---------------------------------------
 const REGRESSION_RULES = [
   {
-    re: /onclick="filterFromMatrix\(/,
-    msg: 'la matriz NO debe interpolar datos en onclick (XSS ya cerrado: usa data-matrix-* y el listener delegado)',
+    re: /(?:\s)(?:on(?:click|change|input|submit|focus|blur|pointerenter|pointerleave))\s*=/,
+    msg: 'atributo de evento inline presente: la CSP estricta lo bloquea (usa data-ev + src/legacy/actions.js; fase 15)',
+  },
+  {
+    re: /'unsafe-inline'/,
+    msg: "'unsafe-inline' en el HTML fuente: la CSP estricta del build no lo permite (fase 15)",
   },
   {
     re: /catch\s*(\([^)]*\))?\s*\{\s*\}/s,

@@ -99,6 +99,128 @@ export function citasEventsFromRows(rows) {
  */
 export function validAppointmentId(value) { const id = Number(value); return Number.isFinite(id) && Number.isInteger(id) && id > 0 ? id : null; }
 
+/** Plantilla exacta de las citas de la ficha; sin lectura de estado ni DOM. */
+export function citasLeadHtml(citas, { isAdmin, userId }) {
+  return citas.length ? citas.map(a => { const id = validAppointmentId(a.id); if (!id) return ''; const scheduled = String(a.status) === 'PROGRAMADA'; const canEdit = isAdmin || a.advisor_user_id === userId; return `<div data-appointment-id="${id}" class="border-b border-slate-800 last:border-0 py-2 space-y-1"><div class="flex flex-wrap items-center gap-2 text-xs"><span class="text-slate-200 font-medium">Cita para: ${escapeHtml(appointmentLocal(a.scheduled_at))}</span>${appointmentBadge(a.status)}<span class="text-slate-400">Creada: ${escapeHtml(appointmentLocal(a.created_at))}</span><span class="text-slate-400">${escapeHtml(a.advisor_name || '-')}</span>${a.rescheduled_from_id ? `<span class="text-[11px] text-slate-500">reprogramada desde #${escapeHtml(String(validAppointmentId(a.rescheduled_from_id) || ''))}</span>` : ''}</div>${a.notes ? `<p class="text-[11px] text-slate-400 whitespace-pre-line">${escapeHtml(a.notes)}</p>` : ''}${a.student_name || a.contact_email || a.student_age != null ? `<p class="text-[11px] text-slate-300">Estudiante: ${escapeHtml(a.student_name || '-')} · Correo: ${escapeHtml(a.contact_email || '-')} · Edad: ${escapeHtml(a.student_age != null ? String(a.student_age) : '-')}</p>` : ''}<p class="text-[11px] text-slate-300">Sede: ${escapeHtml(a.campus || 'Sin sede')}</p>${canEdit ? `<button data-appointment-id="${id}" data-ev="click:editAppointmentDetails(${id})" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-[11px]">Editar datos</button><button data-appointment-id="${id}" data-ev="click:editAppointmentCampus(${id})" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-[11px]">Sede</button>` : ''}${scheduled && canEdit ? `<div class="flex flex-wrap gap-1.5"><button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'ASISTIO')" class="px-2 py-1 rounded bg-emerald-600 text-white text-[11px]">Asistió</button><button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'NO_ASISTIO')" class="px-2 py-1 rounded bg-amber-600 text-white text-[11px]">No asistió</button><button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'CANCELADA')" class="px-2 py-1 rounded bg-rose-600 text-white text-[11px]">Cancelada</button><input data-appointment-id="${id}" id="reschedule-${id}" type="datetime-local" class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-[11px]"><button data-appointment-id="${id}" data-ev="click:rescheduleLeadAppointment(${id})" class="px-2 py-1 rounded bg-indigo-600 text-white text-[11px]">Reprogramar</button></div>` : ''}${isAdmin ? `<button data-appointment-id="${id}" data-ev="click:deleteLeadAppointment(${id})" class="px-2 py-1 rounded bg-rose-700 hover:bg-rose-600 text-white text-[11px]">Eliminar cita</button>` : ''}</div>`; }).join('') : '<p class="text-[11px] text-slate-500">Sin citas registradas.</p>';
+}
+
+/** Estados canonicos que la tabla de citas resalta por separado. */
+const ESTADOS_CITAS = ['PROGRAMADA', 'ASISTIO', 'NO_ASISTIO', 'CANCELADA', 'REPROGRAMADA'];
+
+/**
+ * Filtra la cache de citas con las mismas 5 condiciones de renderCitas,
+ * en el mismo orden (status, campana del lead, sede con especial 'sin',
+ * medio del lead y asesora). Un filtro vacio no filtra.
+ * @param {object[]} citas
+ * @param {{status?:string, campana?:string, sede?:string, medio?:string, advisor?:string}} filtros
+ * @returns {object[]}
+ */
+export function filtrarCitas(citas, filtros) {
+  const { status = '', campana = '', sede = '', medio = '', advisor = '' } = filtros || {};
+  return (citas || []).filter(r => (!status || r.status === status)
+    && (!campana || getField(r.lead, 'Campaña') === campana)
+    && (!sede || (sede === 'sin' ? !r.campus : r.campus === sede))
+    && (!medio || getField(r.lead, 'Medio') === medio)
+    && (!advisor || r.advisor_name === advisor));
+}
+
+/**
+ * Cuenta las citas por los estados canonicos y denom = ASISTIO + NO_ASISTIO.
+ * @returns {{counts: Record<string, number>, denom: number}}
+ */
+export function conteoCitas(rows) {
+  const counts = Object.fromEntries(ESTADOS_CITAS.map(s => [s, (rows || []).filter(r => r.status === s).length]));
+  return { counts, denom: counts.ASISTIO + counts.NO_ASISTIO };
+}
+
+/**
+ * Fila de la tabla de citas con la plantilla exacta del export original.
+ * Los botones viajan via data-ev (fase 15); permisos identicos a hoy:
+ * Editar para admin o asesora de la cita, borrar solo para admin.
+ * @param {object} r Cita con lead incluido.
+ * @param {{isAdmin: boolean, userId: string}} permisos
+ * @returns {string}
+ */
+export function filaCitaHtml(r, { isAdmin, userId } = { isAdmin: false, userId: '' }) {
+  const l = r.lead, id = Number(l?.id);
+  return `<tr><td class="p-3"><span class="block font-medium">${escapeHtml(appointmentLocal(r.scheduled_at))}</span><span class="block text-[11px] text-slate-500">Cita creada: ${escapeHtml(appointmentLocal(r.created_at))}</span></td><td class="p-3">${escapeHtml(getField(l, 'Nombre'))}<br>${escapeHtml(getField(l, 'Telefono'))}</td><td class="p-3">${escapeHtml(r.student_name || '-')}</td><td class="p-3">${escapeHtml(r.contact_email || '-')}</td><td class="p-3">${escapeHtml(r.student_age != null ? String(r.student_age) : '-')}</td><td class="p-3">${escapeHtml(r.campus || 'Sin sede')}</td><td class="p-3">${escapeHtml(r.advisor_name)}</td><td class="p-3">${escapeHtml(getField(l, 'Campaña'))}</td><td class="p-3">${escapeHtml(getField(l, 'Mes'))}</td><td class="p-3">${escapeHtml(r.status)}</td><td class="p-3">${Number.isInteger(id) && id > 0 ? `<button data-ev="click:openViewLeadModal(${id},'actual')" class="text-indigo-400 hover:underline">Ver ficha</button>${(isAdmin || r.advisor_user_id === userId) ? `<button data-ev="click:editAppointmentDetails(${r.id})" class="block text-indigo-400 hover:underline">Editar datos</button>` : ''}${isAdmin ? `<button data-ev="click:deleteLeadAppointment(${r.id})" class="block text-rose-400 hover:underline">Eliminar cita</button>` : ''}` : ''}</td></tr>`;
+}
+
+/** Marcado exacto del cuerpo vacio de la tabla de citas. */
+export const CITAS_TABLA_VACIA = '<tr><td colspan="11" class="appointments-empty"><p class="text-sm font-semibold">No hay citas para los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otras fechas o limpia los filtros.</p><button type="button" data-ev="click:resetCitasFilters()">Limpiar filtros</button></td></tr>';
+
+/**
+ * Ordena citas por scheduled_at descendente y empate por id descendente,
+ * sin mutar la entrada (regla original del wrapper de loadCitas).
+ * @param {object[]} filas
+ * @returns {object[]}
+ */
+export function ordenarCitasDesc(filas) {
+  return [...(filas || [])].sort((a, b) => String(b.scheduled_at).localeCompare(String(a.scheduled_at)) || Number(b.id) - Number(a.id));
+}
+
+/**
+ * Reune citas con sus leads activos con la semantica original: filas sin
+ * lead_id se descuentan en silencio; archivados y faltantes cuentan y se
+ * avisan en el orden fijo (sin lead, luego archivadas).
+ * @param {object[]} filas Citas del RPC (pueden venir desordenadas).
+ * @param {object[]|null} leads Leades consultados por id (con archived_at).
+ * @returns {{citas: object[], omitidas: {sinLead: number, archivadas: number}, aviso: string}}
+ */
+export function unirCitasConLeads(filas, leads) {
+  const todas = leads || [];
+  const activos = todas.filter(l => !l.archived_at);
+  const archivados = new Set(todas.filter(l => l.archived_at).map(l => String(l.id)));
+  const map = new Map(activos.map(l => [String(l.id), l]));
+  let sinLead = 0, archivadas = 0;
+  const citas = (filas || []).filter(r => {
+    if (!r.lead_id) return false;
+    if (archivados.has(String(r.lead_id))) {
+      archivadas++;
+      return false;
+    }
+    if (!map.has(String(r.lead_id))) {
+      sinLead++;
+      return false;
+    }
+    return true;
+  }).map(r => ({ ...r, lead: map.get(String(r.lead_id)) }));
+  const partes = [];
+  if (sinLead) partes.push(`${sinLead} cita(s) sin lead asociado`);
+  if (archivadas) partes.push(`${archivadas} cita(s) de lead(s) archivado(s)`);
+  return { citas, omitidas: { sinLead, archivadas }, aviso: partes.length ? 'Omitidas: ' + partes.join('; ') + '.' : '' };
+}
+
+/**
+ * Construccion HTML de las tarjetas KPI de la seccion Citas (misma
+ * estructura del export original): 4 principales y 7 del desglose por
+ * sede y estado. El wrapper solo escribe los 2 nodos DOM.
+ * @param {object[]} rows Filtras filtradas.
+ * @param {Record<string, number>} counts Conteo por estado canónico.
+ * @param {number} denom ASISTIO + NO_ASISTIO.
+ * @returns {{principales: string[], desglose: string[]}}
+ */
+export function citasKpiHtml(rows, counts, denom) {
+  const card = (label, value) => `<div class="rounded-lg border border-slate-700 bg-slate-800/60 p-3"><div class="text-[11px] text-slate-400">${escapeHtml(label)}</div><strong class="text-lg text-white">${escapeHtml(String(value))}</strong></div>`;
+  const principales = [
+    card('Total citas', rows.length),
+    card('Programadas', counts.PROGRAMADA || 0),
+    card('Asistieron', counts.ASISTIO || 0),
+    card('Tasa asistencia', `${(denom ? counts.ASISTIO / denom * 100 : 0).toFixed(1)}%`),
+  ];
+  const desglose = [
+    card('No asistieron', counts.NO_ASISTIO || 0),
+    card('Canceladas', counts.CANCELADA || 0),
+    card('Reprogramadas', counts.REPROGRAMADA || 0),
+    card('Doral', rows.filter(r => r.campus === 'DORAL' && !r.is_data_dura).length),
+    card('Doral Data Dura', rows.filter(r => r.campus === 'DORAL' && r.is_data_dura === true).length),
+    card('Weston', rows.filter(r => r.campus === 'WESTON' && !r.is_data_dura).length),
+    card('Weston Data Dura', rows.filter(r => r.campus === 'WESTON' && r.is_data_dura === true).length),
+    card('Sin sede (históricas)', rows.filter(r => !r.campus).length),
+  ];
+  return { principales, desglose };
+}
+
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
   window.appointmentDate = appointmentDate;  window.appointmentInputISO = appointmentInputISO;
@@ -107,4 +229,12 @@ if (typeof window !== 'undefined') {
   window.citasDateDefaults = citasDateDefaults;
   window.citasEventsFromRows = citasEventsFromRows;
   window.validAppointmentId = validAppointmentId;
+  window.citasLeadHtml = citasLeadHtml;
+  window.filtrarCitas = filtrarCitas;
+  window.conteoCitas = conteoCitas;
+  window.filaCitaHtml = filaCitaHtml;
+  window.CITAS_TABLA_VACIA = CITAS_TABLA_VACIA;
+  window.ordenarCitasDesc = ordenarCitasDesc;
+  window.unirCitasConLeads = unirCitasConLeads;
+  window.citasKpiHtml = citasKpiHtml;
 }

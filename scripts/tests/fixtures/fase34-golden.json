@@ -1,0 +1,840 @@
+{
+  "meta": {
+    "sourceCommit": "609e1df",
+    "fuente": "index.html extraido via git show (handleCreateLead/handleUpdateLead/formatSaveError)",
+    "hoyMiami": "2026-10-05",
+    "nota": "golden anclado de la fase 34: regenerable con node scripts/tests/generar-fase34-golden.mjs; salida determinista (sin timestamps). payloadKeys conserva el orden literal de HEAD; un AGENTE undefined (asesora sin currentAccess.nombre) sobrevive en payloadKeys pero no en payload JSON. En HEAD `agendado` esta declarado sin uso en formatSaveError: esperadoSinCita === esperadoConCita lo caracteriza."
+  },
+  "alta": [
+    {
+      "nombre": "alta-admin-completa",
+      "isAdmin": true,
+      "acceso": {
+        "nombre": "Admin Root"
+      },
+      "fechaSel": "2026-10-01",
+      "cita": null,
+      "inputs": {
+        "newNombre": " Ana María ",
+        "newTelefono": "(305) 123-4567",
+        "newMes": "SEPTIEMBRE",
+        "newCampana": "VERANO",
+        "newMedio": "Facebook",
+        "newGestion": "Información",
+        "newUltimaGestion": "Llamada Data Dura",
+        "newAgente": "  ",
+        "newCiudad": "  Miami  ",
+        "newObservaciones": "Hola"
+      },
+      "rpcName": "create_lead",
+      "payloadKeys": [
+        "Nombre",
+        "Telefono",
+        "Mes",
+        "Fecha",
+        "Campaña",
+        "Medio",
+        "GESTION",
+        "ULTIMA GESTION",
+        "AGENTE",
+        "Ciudad",
+        "OBSERVACIONES"
+      ],
+      "payload": {
+        "Nombre": "Ana María",
+        "Telefono": "1 (305) 123-4567",
+        "Mes": "SEPTIEMBRE",
+        "Fecha": "01/10/2026",
+        "Campaña": "VERANO",
+        "Medio": "Facebook",
+        "GESTION": "Información",
+        "ULTIMA GESTION": "Llamada Data Dura",
+        "AGENTE": "Admin Root",
+        "Ciudad": "Miami",
+        "OBSERVACIONES": "Hola"
+      }
+    },
+    {
+      "nombre": "alta-admin-vacios",
+      "isAdmin": true,
+      "acceso": {
+        "nombre": "Admin Root"
+      },
+      "fechaSel": "",
+      "cita": null,
+      "inputs": {},
+      "rpcName": "create_lead",
+      "payloadKeys": [
+        "Nombre",
+        "Telefono",
+        "Mes",
+        "Fecha",
+        "Campaña",
+        "Medio",
+        "GESTION",
+        "ULTIMA GESTION",
+        "AGENTE",
+        "Ciudad",
+        "OBSERVACIONES"
+      ],
+      "payload": {
+        "Nombre": "Sin Nombre",
+        "Telefono": "",
+        "Mes": "",
+        "Fecha": "05/10/2026",
+        "Campaña": "Sin definir",
+        "Medio": "Whatsapp",
+        "GESTION": "Información ",
+        "ULTIMA GESTION": "WhatsApp",
+        "AGENTE": "Admin Root",
+        "Ciudad": "",
+        "OBSERVACIONES": "Nuevo lead registrado desde el panel."
+      }
+    },
+    {
+      "nombre": "alta-asesora-normal",
+      "isAdmin": false,
+      "acceso": {
+        "nombre": "Loli"
+      },
+      "fechaSel": "",
+      "cita": null,
+      "inputs": {
+        "newNombre": "Pedro",
+        "newTelefono": "5551234",
+        "newGestion": "",
+        "newAgente": "Ignorado",
+        "newUltimaGestion": "WhatsApp"
+      },
+      "rpcName": "create_lead",
+      "payloadKeys": [
+        "Nombre",
+        "Telefono",
+        "Mes",
+        "Fecha",
+        "Campaña",
+        "Medio",
+        "GESTION",
+        "ULTIMA GESTION",
+        "AGENTE",
+        "Ciudad",
+        "OBSERVACIONES"
+      ],
+      "payload": {
+        "Nombre": "Pedro",
+        "Telefono": "5551234",
+        "Mes": "",
+        "Fecha": "05/10/2026",
+        "Campaña": "Sin definir",
+        "Medio": "Whatsapp",
+        "GESTION": "Información ",
+        "ULTIMA GESTION": "WhatsApp",
+        "AGENTE": "Loli",
+        "Ciudad": "",
+        "OBSERVACIONES": "Nuevo lead registrado desde el panel."
+      }
+    },
+    {
+      "nombre": "alta-asesora-sin-nombre-cita",
+      "isAdmin": false,
+      "acceso": {
+        "nombre": "Loli"
+      },
+      "fechaSel": "2026-09-15",
+      "cita": {
+        "campus": "DORAL"
+      },
+      "inputs": {
+        "newNombre": "   ",
+        "newGestion": "AGENDADO",
+        "newAppointmentDate": "2026-10-06T18:00"
+      },
+      "rpcName": "create_lead_with_appointment",
+      "payloadKeys": [
+        "Nombre",
+        "Telefono",
+        "Mes",
+        "Fecha",
+        "Campaña",
+        "Medio",
+        "GESTION",
+        "ULTIMA GESTION",
+        "AGENTE",
+        "Ciudad",
+        "OBSERVACIONES"
+      ],
+      "payload": {
+        "Nombre": "Sin Nombre",
+        "Telefono": "",
+        "Mes": "",
+        "Fecha": "15/09/2026",
+        "Campaña": "Sin definir",
+        "Medio": "Whatsapp",
+        "GESTION": "AGENDADO",
+        "ULTIMA GESTION": "WhatsApp",
+        "AGENTE": "Loli",
+        "Ciudad": "",
+        "OBSERVACIONES": "Nuevo lead registrado desde el panel."
+      }
+    },
+    {
+      "nombre": "alta-admin-agente-default",
+      "isAdmin": true,
+      "acceso": {},
+      "fechaSel": "2026-10-05",
+      "cita": null,
+      "inputs": {
+        "newNombre": "A",
+        "newAgente": "",
+        "newUltimaGestion": "",
+        "newObservaciones": "   "
+      },
+      "rpcName": "create_lead",
+      "payloadKeys": [
+        "Nombre",
+        "Telefono",
+        "Mes",
+        "Fecha",
+        "Campaña",
+        "Medio",
+        "GESTION",
+        "ULTIMA GESTION",
+        "AGENTE",
+        "Ciudad",
+        "OBSERVACIONES"
+      ],
+      "payload": {
+        "Nombre": "A",
+        "Telefono": "",
+        "Mes": "",
+        "Fecha": "05/10/2026",
+        "Campaña": "Sin definir",
+        "Medio": "Whatsapp",
+        "GESTION": "Información ",
+        "ULTIMA GESTION": "WhatsApp",
+        "AGENTE": "Agente",
+        "Ciudad": "",
+        "OBSERVACIONES": "Nuevo lead registrado desde el panel."
+      }
+    },
+    {
+      "nombre": "alta-asesora-acceso-indefinido",
+      "isAdmin": false,
+      "acceso": {},
+      "fechaSel": "2026-10-05",
+      "cita": null,
+      "inputs": {
+        "newNombre": "Zoe"
+      },
+      "rpcName": "create_lead",
+      "payloadKeys": [
+        "Nombre",
+        "Telefono",
+        "Mes",
+        "Fecha",
+        "Campaña",
+        "Medio",
+        "GESTION",
+        "ULTIMA GESTION",
+        "AGENTE",
+        "Ciudad",
+        "OBSERVACIONES"
+      ],
+      "payload": {
+        "Nombre": "Zoe",
+        "Telefono": "",
+        "Mes": "",
+        "Fecha": "05/10/2026",
+        "Campaña": "Sin definir",
+        "Medio": "Whatsapp",
+        "GESTION": "Información ",
+        "ULTIMA GESTION": "WhatsApp",
+        "Ciudad": "",
+        "OBSERVACIONES": "Nuevo lead registrado desde el panel."
+      }
+    },
+    {
+      "nombre": "alta-asesora-acceso-null",
+      "isAdmin": false,
+      "acceso": {
+        "nombre": null
+      },
+      "fechaSel": "2026-10-05",
+      "cita": null,
+      "inputs": {
+        "newNombre": "Nul"
+      },
+      "rpcName": "create_lead",
+      "payloadKeys": [
+        "Nombre",
+        "Telefono",
+        "Mes",
+        "Fecha",
+        "Campaña",
+        "Medio",
+        "GESTION",
+        "ULTIMA GESTION",
+        "AGENTE",
+        "Ciudad",
+        "OBSERVACIONES"
+      ],
+      "payload": {
+        "Nombre": "Nul",
+        "Telefono": "",
+        "Mes": "",
+        "Fecha": "05/10/2026",
+        "Campaña": "Sin definir",
+        "Medio": "Whatsapp",
+        "GESTION": "Información ",
+        "ULTIMA GESTION": "WhatsApp",
+        "AGENTE": null,
+        "Ciudad": "",
+        "OBSERVACIONES": "Nuevo lead registrado desde el panel."
+      }
+    },
+    {
+      "nombre": "alta-admin-cita-agendada",
+      "isAdmin": true,
+      "acceso": {
+        "nombre": "Admin Root"
+      },
+      "fechaSel": "",
+      "cita": {
+        "campus": "WESTON",
+        "advisor": "adv-1"
+      },
+      "inputs": {
+        "newNombre": "Con Cita",
+        "newGestion": "Agendado",
+        "newAppointmentDate": "2026-10-06T18:00",
+        "newAppointmentAdvisor": "adv-1"
+      },
+      "rpcName": "create_lead_with_appointment",
+      "payloadKeys": [
+        "Nombre",
+        "Telefono",
+        "Mes",
+        "Fecha",
+        "Campaña",
+        "Medio",
+        "GESTION",
+        "ULTIMA GESTION",
+        "AGENTE",
+        "Ciudad",
+        "OBSERVACIONES"
+      ],
+      "payload": {
+        "Nombre": "Con Cita",
+        "Telefono": "",
+        "Mes": "",
+        "Fecha": "05/10/2026",
+        "Campaña": "Sin definir",
+        "Medio": "Whatsapp",
+        "GESTION": "Agendado",
+        "ULTIMA GESTION": "WhatsApp",
+        "AGENTE": "Admin Root",
+        "Ciudad": "",
+        "OBSERVACIONES": "Nuevo lead registrado desde el panel."
+      }
+    },
+    {
+      "nombre": "alta-admin-fecha-enero",
+      "isAdmin": true,
+      "acceso": {
+        "nombre": "Admin Root"
+      },
+      "fechaSel": "2026-01-31",
+      "cita": null,
+      "inputs": {
+        "newNombre": "Ene"
+      },
+      "rpcName": "create_lead",
+      "payloadKeys": [
+        "Nombre",
+        "Telefono",
+        "Mes",
+        "Fecha",
+        "Campaña",
+        "Medio",
+        "GESTION",
+        "ULTIMA GESTION",
+        "AGENTE",
+        "Ciudad",
+        "OBSERVACIONES"
+      ],
+      "payload": {
+        "Nombre": "Ene",
+        "Telefono": "",
+        "Mes": "",
+        "Fecha": "31/01/2026",
+        "Campaña": "Sin definir",
+        "Medio": "Whatsapp",
+        "GESTION": "Información ",
+        "ULTIMA GESTION": "WhatsApp",
+        "AGENTE": "Admin Root",
+        "Ciudad": "",
+        "OBSERVACIONES": "Nuevo lead registrado desde el panel."
+      }
+    }
+  ],
+  "edicion": [
+    {
+      "nombre": "edicion-asesora-tel-igual",
+      "isAdmin": false,
+      "acceso": {
+        "nombre": "Loli"
+      },
+      "previousGestion": "Información",
+      "cita": null,
+      "inputs": {
+        "editNombre": "Sofía",
+        "editGestion": "Seguimiento",
+        "editFechaUltima": " 10/10/2026 ",
+        "editUltimaGestion": "Llamada",
+        "editObservaciones": "Nota",
+        "editTelefono": "(305) 111-2222",
+        "editTelefonoOriginal": "(305) 111-2222"
+      },
+      "rpcName": "update_lead_followup",
+      "payloadKeys": [
+        "Nombre",
+        "GESTION",
+        "Fecha Última Gestión",
+        "ULTIMA GESTION",
+        "OBSERVACIONES"
+      ],
+      "payload": {
+        "Nombre": "Sofía",
+        "GESTION": "Seguimiento",
+        "Fecha Última Gestión": "10/10/2026",
+        "ULTIMA GESTION": "Llamada",
+        "OBSERVACIONES": "Nota"
+      }
+    },
+    {
+      "nombre": "edicion-asesora-tel-distinto",
+      "isAdmin": false,
+      "acceso": {
+        "nombre": "Loli"
+      },
+      "previousGestion": "Información",
+      "cita": null,
+      "inputs": {
+        "editNombre": "Sofía",
+        "editGestion": "Seguimiento",
+        "editTelefono": "7865559999",
+        "editTelefonoOriginal": "3051112222"
+      },
+      "rpcName": "update_lead_followup",
+      "payloadKeys": [
+        "Nombre",
+        "GESTION",
+        "Fecha Última Gestión",
+        "ULTIMA GESTION",
+        "OBSERVACIONES",
+        "Telefono"
+      ],
+      "payload": {
+        "Nombre": "Sofía",
+        "GESTION": "Seguimiento",
+        "Fecha Última Gestión": "",
+        "ULTIMA GESTION": "Llamada",
+        "OBSERVACIONES": "",
+        "Telefono": "1 (786) 555-9999"
+      }
+    },
+    {
+      "nombre": "edicion-asesora-vacios",
+      "isAdmin": false,
+      "acceso": {
+        "nombre": "Loli"
+      },
+      "previousGestion": "",
+      "cita": null,
+      "inputs": {},
+      "rpcName": "update_lead_followup",
+      "payloadKeys": [
+        "Nombre",
+        "GESTION",
+        "Fecha Última Gestión",
+        "ULTIMA GESTION",
+        "OBSERVACIONES"
+      ],
+      "payload": {
+        "Nombre": "Sin Nombre",
+        "GESTION": "Información ",
+        "Fecha Última Gestión": "",
+        "ULTIMA GESTION": "Llamada",
+        "OBSERVACIONES": ""
+      }
+    },
+    {
+      "nombre": "edicion-admin-tel-igual-full",
+      "isAdmin": true,
+      "acceso": {
+        "nombre": "Admin Root"
+      },
+      "previousGestion": "Información",
+      "cita": null,
+      "inputs": {
+        "editNombre": "A",
+        "editGestion": "INSCRITO",
+        "editFechaUltima": "x",
+        "editUltimaGestion": "Visita",
+        "editObservaciones": "y",
+        "editMes": "SEPTIEMBRE",
+        "editFecha": "01/09/2026",
+        "editCampana": "VERANO",
+        "editMedio": "Facebook",
+        "editCiudad": "Miami",
+        "editAgenteAdmin": "",
+        "editOdoo": "ODOO-1",
+        "editFechaAtencion": "2026-09-02T10:00",
+        "editLanding": "LDP"
+      },
+      "rpcName": "update_lead_full",
+      "payloadKeys": [
+        "Nombre",
+        "GESTION",
+        "Fecha Última Gestión",
+        "ULTIMA GESTION",
+        "OBSERVACIONES",
+        "Telefono",
+        "Mes",
+        "Fecha",
+        "Campaña",
+        "Medio",
+        "Ciudad",
+        "AGENTE",
+        "Odoo",
+        "Fecha de Atencion",
+        "LANDING"
+      ],
+      "payload": {
+        "Nombre": "A",
+        "GESTION": "INSCRITO",
+        "Fecha Última Gestión": "x",
+        "ULTIMA GESTION": "Visita",
+        "OBSERVACIONES": "y",
+        "Telefono": "",
+        "Mes": "SEPTIEMBRE",
+        "Fecha": "01/09/2026",
+        "Campaña": "VERANO",
+        "Medio": "Facebook",
+        "Ciudad": "Miami",
+        "AGENTE": "Admin Root",
+        "Odoo": "ODOO-1",
+        "Fecha de Atencion": "2026-09-02T10:00",
+        "LANDING": "LDP"
+      }
+    },
+    {
+      "nombre": "edicion-admin-tel-distinto-cita",
+      "isAdmin": true,
+      "acceso": {},
+      "previousGestion": "Información",
+      "cita": {
+        "campus": "WESTON",
+        "advisor": "adv-9",
+        "advisors": [
+          {
+            "user_id": "adv-9"
+          }
+        ]
+      },
+      "inputs": {
+        "editNombre": "Cambiado",
+        "editGestion": "AGENDADO",
+        "editTelefono": "7860000000",
+        "editAppointmentDate": "2026-10-06T18:00",
+        "editAppointmentAdvisor": "adv-9",
+        "editTelefonoOriginal": ""
+      },
+      "rpcName": "update_lead_with_appointment",
+      "payloadKeys": [
+        "Nombre",
+        "GESTION",
+        "Fecha Última Gestión",
+        "ULTIMA GESTION",
+        "OBSERVACIONES",
+        "Telefono",
+        "Mes",
+        "Fecha",
+        "Campaña",
+        "Medio",
+        "Ciudad",
+        "AGENTE",
+        "Odoo",
+        "Fecha de Atencion",
+        "LANDING"
+      ],
+      "payload": {
+        "Nombre": "Cambiado",
+        "GESTION": "AGENDADO",
+        "Fecha Última Gestión": "",
+        "ULTIMA GESTION": "Llamada",
+        "OBSERVACIONES": "",
+        "Telefono": "1 (786) 000-0000",
+        "Mes": "",
+        "Fecha": "",
+        "Campaña": "",
+        "Medio": "",
+        "Ciudad": "",
+        "AGENTE": "",
+        "Odoo": "",
+        "Fecha de Atencion": "",
+        "LANDING": ""
+      }
+    },
+    {
+      "nombre": "edicion-admin-vacios",
+      "isAdmin": true,
+      "acceso": {},
+      "previousGestion": "",
+      "cita": null,
+      "inputs": {},
+      "rpcName": "update_lead_full",
+      "payloadKeys": [
+        "Nombre",
+        "GESTION",
+        "Fecha Última Gestión",
+        "ULTIMA GESTION",
+        "OBSERVACIONES",
+        "Telefono",
+        "Mes",
+        "Fecha",
+        "Campaña",
+        "Medio",
+        "Ciudad",
+        "AGENTE",
+        "Odoo",
+        "Fecha de Atencion",
+        "LANDING"
+      ],
+      "payload": {
+        "Nombre": "Sin Nombre",
+        "GESTION": "Información ",
+        "Fecha Última Gestión": "",
+        "ULTIMA GESTION": "Llamada",
+        "OBSERVACIONES": "",
+        "Telefono": "",
+        "Mes": "",
+        "Fecha": "",
+        "Campaña": "",
+        "Medio": "",
+        "Ciudad": "",
+        "AGENTE": "",
+        "Odoo": "",
+        "Fecha de Atencion": "",
+        "LANDING": ""
+      }
+    },
+    {
+      "nombre": "edicion-asesora-gestion-espacios",
+      "isAdmin": false,
+      "acceso": {
+        "nombre": "Loli"
+      },
+      "previousGestion": "",
+      "cita": null,
+      "inputs": {
+        "editNombre": "  ",
+        "editGestion": "   ",
+        "editUltimaGestion": "   ",
+        "editFechaUltima": " ",
+        "editObservaciones": "   ",
+        "editTelefono": "",
+        "editTelefonoOriginal": ""
+      },
+      "rpcName": "update_lead_followup",
+      "payloadKeys": [
+        "Nombre",
+        "GESTION",
+        "Fecha Última Gestión",
+        "ULTIMA GESTION",
+        "OBSERVACIONES"
+      ],
+      "payload": {
+        "Nombre": "Sin Nombre",
+        "GESTION": "   ",
+        "Fecha Última Gestión": "",
+        "ULTIMA GESTION": "   ",
+        "OBSERVACIONES": ""
+      }
+    }
+  ],
+  "fechas": [
+    {
+      "fechaSel": "2026-10-01",
+      "hoyMiami": "2026-10-05",
+      "esperado": "01/10/2026"
+    },
+    {
+      "fechaSel": "",
+      "hoyMiami": "2026-10-05",
+      "esperado": "05/10/2026"
+    },
+    {
+      "fechaSel": "",
+      "hoyMiami": "2026-10-05",
+      "esperado": "05/10/2026"
+    },
+    {
+      "fechaSel": "2026-09-15",
+      "hoyMiami": "2026-10-05",
+      "esperado": "15/09/2026"
+    },
+    {
+      "fechaSel": "2026-10-05",
+      "hoyMiami": "2026-10-05",
+      "esperado": "05/10/2026"
+    },
+    {
+      "fechaSel": "2026-10-05",
+      "hoyMiami": "2026-10-05",
+      "esperado": "05/10/2026"
+    },
+    {
+      "fechaSel": "2026-10-05",
+      "hoyMiami": "2026-10-05",
+      "esperado": "05/10/2026"
+    },
+    {
+      "fechaSel": "",
+      "hoyMiami": "2026-10-05",
+      "esperado": "05/10/2026"
+    },
+    {
+      "fechaSel": "2026-01-31",
+      "hoyMiami": "2026-10-05",
+      "esperado": "31/01/2026"
+    }
+  ],
+  "errores": [
+    {
+      "nombre": "PGRST202 por code",
+      "error": {
+        "code": "PGRST202",
+        "message": ""
+      },
+      "esperadoSinCita": "La aplicación necesita actualizarse. Recarga la página con Ctrl + F5 e inténtalo de nuevo",
+      "esperadoConCita": "La aplicación necesita actualizarse. Recarga la página con Ctrl + F5 e inténtalo de nuevo"
+    },
+    {
+      "nombre": "function missing por message",
+      "error": {
+        "message": "Could not find the function public.create_lead"
+      },
+      "esperadoSinCita": "La aplicación necesita actualizarse. Recarga la página con Ctrl + F5 e inténtalo de nuevo",
+      "esperadoConCita": "La aplicación necesita actualizarse. Recarga la página con Ctrl + F5 e inténtalo de nuevo"
+    },
+    {
+      "nombre": "transicion agendada requerida",
+      "error": {
+        "message": "appointment_required_for_agendado_transition"
+      },
+      "esperadoSinCita": "Un lead agendado necesita fecha y hora de cita",
+      "esperadoConCita": "Un lead agendado necesita fecha y hora de cita"
+    },
+    {
+      "nombre": "agendado_transition_required",
+      "error": {
+        "message": "agendado_transition_required: falta cita"
+      },
+      "esperadoSinCita": "Un lead agendado necesita fecha y hora de cita",
+      "esperadoConCita": "Un lead agendado necesita fecha y hora de cita"
+    },
+    {
+      "nombre": "correo invalido",
+      "error": {
+        "message": "appointment_email_invalid"
+      },
+      "esperadoSinCita": "Correo de contacto no válido",
+      "esperadoConCita": "Correo de contacto no válido"
+    },
+    {
+      "nombre": "edad invalida",
+      "error": {
+        "message": "appointment_age_invalid"
+      },
+      "esperadoSinCita": "Edad no válida",
+      "esperadoConCita": "Edad no válida"
+    },
+    {
+      "nombre": "campus invalido",
+      "error": {
+        "message": "campus_invalid"
+      },
+      "esperadoSinCita": "Sede no válida",
+      "esperadoConCita": "Sede no válida"
+    },
+    {
+      "nombre": "asesor inactivo",
+      "error": {
+        "message": "advisor_not_active"
+      },
+      "esperadoSinCita": "Asesor no activo",
+      "esperadoConCita": "Asesor no activo"
+    },
+    {
+      "nombre": "campana fuera de catalogo",
+      "error": {
+        "message": "campaign_not_in_catalog"
+      },
+      "esperadoSinCita": "Campaña no disponible",
+      "esperadoConCita": "Campaña no disponible"
+    },
+    {
+      "nombre": "fecha de llegada invalida",
+      "error": {
+        "message": "fecha_llegada_invalida"
+      },
+      "esperadoSinCita": "Fecha de llegada no válida",
+      "esperadoConCita": "Fecha de llegada no válida"
+    },
+    {
+      "nombre": "scheduled_at requerido",
+      "error": {
+        "message": "scheduled_at_required"
+      },
+      "esperadoSinCita": "Fecha y hora de cita requeridas",
+      "esperadoConCita": "Fecha y hora de cita requeridas"
+    },
+    {
+      "nombre": "nota larga",
+      "error": {
+        "message": "notes_too_long"
+      },
+      "esperadoSinCita": "Nota demasiado larga",
+      "esperadoConCita": "Nota demasiado larga"
+    },
+    {
+      "nombre": "message vacio",
+      "error": {
+        "message": ""
+      },
+      "esperadoSinCita": "No se pudo conectar para guardar. Revisa tu conexión e inténtalo nuevamente",
+      "esperadoConCita": "No se pudo conectar para guardar. Revisa tu conexión e inténtalo nuevamente"
+    },
+    {
+      "nombre": "sin message ni code",
+      "error": {},
+      "esperadoSinCita": "No se pudo conectar para guardar. Revisa tu conexión e inténtalo nuevamente",
+      "esperadoConCita": "No se pudo conectar para guardar. Revisa tu conexión e inténtalo nuevamente"
+    },
+    {
+      "nombre": "error null",
+      "error": null,
+      "esperadoSinCita": "No se pudo conectar para guardar. Revisa tu conexión e inténtalo nuevamente",
+      "esperadoConCita": "No se pudo conectar para guardar. Revisa tu conexión e inténtalo nuevamente"
+    },
+    {
+      "nombre": "desconocido",
+      "error": {
+        "message": "connection reset by peer"
+      },
+      "esperadoSinCita": "No se pudo guardar. Revisa los datos e inténtalo nuevamente",
+      "esperadoConCita": "No se pudo guardar. Revisa los datos e inténtalo nuevamente"
+    }
+  ]
+}

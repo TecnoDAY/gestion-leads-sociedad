@@ -6,7 +6,7 @@
  * (registro al final de este modulo); las llamadas quedaron intactas.
  */
 
-import { getField, miamiToday } from './helpers.js';
+import { compareAlphaEs, consolidateLeadsById, escapeAttr, escapeHtml, getField, miamiToday } from './helpers.js';
 
 // Meses en orden cronologico canonico; nunca alfabetico. Fuente unica.
 export const MONTH_CHRONO = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
@@ -202,7 +202,10 @@ export function csvReporteField(value) {
  */
 export function totalCanalesVisibles(canales) {
   const c = canales || {};
-  return ['llamada', 'data_dura', 'llamada_whatsapp', 'whatsapp', 'instagram'].reduce((a, k) => a + (Number(c[k]) || 0), 0);
+  // Suma TODOS los buckets de canal que emite daily_management_report
+  // (coherencia del reporte: nada se suma que no se vea; los retirados
+  // 'visita conservatorio' y 'sin canal' viajan juntos en 'Otros o sin canal').
+  return ['llamada', 'data_dura', 'llamada_whatsapp', 'whatsapp', 'instagram', 'visita', 'sin_clasificar'].reduce((a, k) => a + (Number(c[k]) || 0), 0);
 }
 
 /**
@@ -226,6 +229,995 @@ export function campaignTotals(rows) {
   return totals;
 }
 
+// Agregación mensual compartida por render y export CSV (cierra la deuda de historicos-mensuales T3).
+// Devuelve también contadores de estados/campañas y el embudo usados por los gráficos.
+// T5: la clave es año-mes ('2026-03'; ENERO 2025 ≠ ENERO 2026). Sin fecha
+// válida se agrupa por Mes declarado ('SIN-FECHA·…') u 'OTRO', que siempre
+// aparece si tiene datos.
+// No cambia la semántica de "Agendados" (incluye AGENDAD* sin distinguir
+// canceladas/reprogramadas; pendiente de definición humana).
+export function computeHistoricalAggregates(data) {
+  const monthlyStats = {};
+  const statBucket = key => {
+    if (!monthlyStats[key]) monthlyStats[key] = { total: 0, inscritos: 0, agendados: 0, noContesta: 0, campanas: {}, agentes: {} };
+    return monthlyStats[key];
+  };
+
+  const stateTotals = {};
+  const stateByMonth = {};
+  const campTotals = {};
+  const campByMonth = {};
+  let funnelGestionados = 0;
+
+  data.forEach(l => {
+    const key = histMonthKey(l);
+    const stats = statBucket(key);
+    stats.total++;
+
+    const gestion = normalizeGestion(l);
+    const inscrito = gestion.includes('INSCRIT');
+    if (inscrito) stats.inscritos++;
+    if (gestion.includes('AGENDAD')) stats.agendados++;
+    if (gestion.includes('NO CONTEST')) stats.noContesta++;
+    if (gestion && gestion !== 'INFORMACIÓN' && gestion !== 'INTERESADO') funnelGestionados++;
+
+    const estado = groupGestionEstado(gestion);
+    stateTotals[estado] = (stateTotals[estado] || 0) + 1;
+    if (!stateByMonth[key]) stateByMonth[key] = {};
+    stateByMonth[key][estado] = (stateByMonth[key][estado] || 0) + 1;
+
+    const camp = getField(l, 'Campaña').trim() || 'General';
+    stats.campanas[camp] = (stats.campanas[camp] || 0) + 1;
+    campTotals[camp] = (campTotals[camp] || 0) + 1;
+    if (!campByMonth[key]) campByMonth[key] = {};
+    campByMonth[key][camp] = (campByMonth[key][camp] || 0) + 1;
+
+    const agent = getField(l, 'Agente ').trim() || 'Sin asignar';
+    if (inscrito) {
+      stats.agentes[agent] = (stats.agentes[agent] || 0) + 1;
+    }
+  });
+
+  const activeMonths = sortHistMonthKeys(Object.keys(monthlyStats).filter(k => monthlyStats[k].total > 0));
+
+  return { monthlyStats, activeMonths, stateTotals, stateByMonth, campTotals, campByMonth, funnelGestionados };
+}
+
+/**
+ * Filas mensuales del resumen historico (fuente unica de la tabla y del
+ * CSV): etiqueta de mes, totales del agregado, % conversion, % del total
+ * y top campana/agente con empate conservando el primer valor ('>' estricto).
+ * conv y monthPct son strings toFixed(1) SIN '%'; cada consumidor agrega
+ * su presentacion (to, escape, chip).
+ * @param {Array<object>} data Leads ya filtrados por el panel.
+ * @returns {Array<{mes: string, total: number, agendados: number, noContesta: number, inscritos: number, conv: string, monthPct: string, topCamp: string, topAg: string}>}
+ */
+export function historicalSummaryRows(data) {
+  const leids = Array.isArray(data) ? data : [];
+  const { monthlyStats, activeMonths } = computeHistoricalAggregates(leids);
+  const totalLeads = leids.length;
+
+  return activeMonths.map(m => {
+    const st = monthlyStats[m];
+    const conv = st.total > 0 ? ((st.inscritos / st.total) * 100).toFixed(1) : '0.0';
+    const monthPct = totalLeads > 0 ? ((st.total / totalLeads) * 100).toFixed(1) : '0.0';
+
+    let topCamp = '-';
+    let topCampCount = 0;
+    Object.entries(st.campanas).forEach(([c, cnt]) => {
+      if (cnt > topCampCount) { topCampCount = cnt; topCamp = c; }
+    });
+
+    let topAg = '-';
+    let topAgCount = 0;
+    Object.entries(st.agentes).forEach(([a, cnt]) => {
+      if (cnt > topAgCount) { topAgCount = cnt; topAg = a; }
+    });
+
+    return {
+      mes: histMonthLabel(m),
+      total: st.total,
+      agendados: st.agendados,
+      noContesta: st.noContesta,
+      inscritos: st.inscritos,
+      conv,
+      monthPct,
+      topCamp,
+      topAg,
+    };
+  });
+}
+
+/**
+ * Resumen historico como CSV completo (cabecera + una fila por mes activo),
+ * capa de escape sobre historicalSummaryRows: mismos headers y campos
+ * que el export original, cada campo por csvReporteField del modulo.
+ * @param {Array<object>} data Leads ya filtrados por el panel.
+ * @returns {{csv: string, months: number}} csv listo para downloadCSV.
+ */
+export function historicalSummaryCsv(data) {
+  const rows = historicalSummaryRows(data);
+  const headers = ['Mes', 'Total Leads', 'Agendados', 'No Contesta', 'Inscritos', '% Conversión', '% del Total', 'Campaña Más Fuerte', 'Asesor con Más Cierres'];
+  const lines = rows.map(r => [
+    r.mes, r.total, r.agendados, r.noContesta, r.inscritos,
+    r.conv + '%', r.monthPct + '%', r.topCamp, r.topAg,
+  ].map(csvReporteField).join(','));
+  return { csv: [headers.join(','), ...lines].join('\n'), months: rows.length };
+}
+
+/**
+ * KPIs superiores del panel historico: totales por estado y % conversion.
+ * Misma semantica del render original: includes sobre normalizeGestion
+ * (INSCRIT/AGENDAD/NO CONTEST) y toFixed(1) con '0.0' cuando no hay data.
+ * @param {Array<object>} data Leads ya filtrados por el panel.
+ * @returns {{totalLeads: number, totalInscritos: number, totalAgendados: number, totalNoContesta: number, convRate: string}}
+ */
+export function historicalKpiTotals(data) {
+  const leids = Array.isArray(data) ? data : [];
+  const totalLeads = leids.length;
+  const totalInscritos = leids.filter(l => normalizeGestion(l).includes('INSCRIT')).length;
+  const totalAgendados = leids.filter(l => normalizeGestion(l).includes('AGENDAD')).length;
+  const totalNoContesta = leids.filter(l => normalizeGestion(l).includes('NO CONTEST')).length;
+  const convRate = totalLeads > 0 ? ((totalInscritos / totalLeads) * 100).toFixed(1) : '0.0';
+  return { totalLeads, totalInscritos, totalAgendados, totalNoContesta, convRate };
+}
+
+/**
+ * Mes record del panel historico: maximo de total por mes activo con
+ * comparador estricto (el empate conserva el primero de activeMonths) y
+ * etiqueta legible via histMonthLabel. '-' y 0 ante datos insuficientes.
+ * @param {object} monthlyStats Salida de computeHistoricalAggregates.
+ * @param {string[]} activeMonths Meses activos ordenados.
+ * @returns {{month: string, count: number}}
+ */
+export function historicalRecordMonth(monthlyStats, activeMonths) {
+  let recordMonth = '-';
+  let recordCount = 0;
+  const stats = monthlyStats || {};
+  (Array.isArray(activeMonths) ? activeMonths : []).forEach(m => {
+    if (stats[m] && stats[m].total > recordCount) {
+      recordCount = stats[m].total;
+      recordMonth = histMonthLabel(m);
+    }
+  });
+  return { month: recordMonth, count: recordCount };
+}
+
+/**
+ * Series de datos de los 8 graficos del panel historico (logica pura).
+ * Recibe los agregados y KPIs ya calculados por el render para no
+ * recomputar. Replica el original: top6 campanas/medios/asesores, top6
+ * estados + 'Otros', top5 campanas mensuales + 'Otras' y embudo fijo.
+ * @param {Array<object>} data Leads ya filtrados por el panel.
+ * @param {object} aggregates Salida de computeHistoricalAggregates.
+ * @param {{totalAgendados?: number, totalInscritos?: number}} kpis Salida de historicalKpiTotals.
+ */
+export function historicalChartSeries(data, aggregates, kpis) {
+  const leids = Array.isArray(data) ? data : [];
+  const agg = aggregates || {};
+  const monthlyStats = agg.monthlyStats || {};
+  const activeMonths = Array.isArray(agg.activeMonths) ? agg.activeMonths : [];
+  const totalLeads = leids.length;
+
+  const monthly = {
+    inscritos: activeMonths.map(k => (monthlyStats[k] || {}).inscritos || 0),
+    total: activeMonths.map(k => (monthlyStats[k] || {}).total || 0),
+    conversion: activeMonths.map(k => {
+      const st = monthlyStats[k] || {};
+      return st.total > 0 ? Number(((st.inscritos / st.total) * 100).toFixed(1)) : 0;
+    }),
+  };
+
+  const campMap = {};
+  leids.forEach(l => {
+    const c = getField(l, 'Campaña').trim() || 'Sin Campaña';
+    if (!campMap[c]) campMap[c] = { total: 0, inscritos: 0 };
+    campMap[c].total++;
+    if (normalizeGestion(l).includes('INSCRIT')) campMap[c].inscritos++;
+  });
+  const sortedCamps = Object.entries(campMap).sort((a, b) => b[1].total - a[1].total).slice(0, 6);
+  const campaigns = {
+    labels: sortedCamps.map(c => c[0]),
+    totals: sortedCamps.map(c => c[1].total),
+    inscritos: sortedCamps.map(c => c[1].inscritos),
+  };
+
+  const medioCounts = {};
+  leids.forEach(l => {
+    const m = getField(l, 'Medio').trim() || 'Directo/Otro';
+    medioCounts[m] = (medioCounts[m] || 0) + 1;
+  });
+  const sortedMedios = Object.entries(medioCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const medios = {
+    labels: sortedMedios.map(m => m[0]),
+    counts: sortedMedios.map(m => m[1]),
+  };
+
+  const agentMap = {};
+  leids.forEach(l => {
+    const a = getField(l, 'Agente ').trim() || 'Sin Asignar';
+    if (!agentMap[a]) agentMap[a] = { total: 0, inscritos: 0 };
+    agentMap[a].total++;
+    if (normalizeGestion(l).includes('INSCRIT')) agentMap[a].inscritos++;
+  });
+  const sortedAgents = Object.entries(agentMap).filter(a => a[0] !== 'Sin Asignar' || a[1].total > 2).sort((a, b) => b[1].inscritos - a[1].inscritos).slice(0, 6);
+  const agents = {
+    labels: sortedAgents.map(a => a[0]),
+    totals: sortedAgents.map(a => a[1].total),
+    inscritos: sortedAgents.map(a => a[1].inscritos),
+  };
+
+  const stacked = (totals, byMonth, n, otherLabel) => {
+    const topNames = Object.entries(totals || {}).sort((a, b) => b[1] - a[1]).slice(0, n).map(e => e[0]);
+    const series = topNames.map(s => ({
+      label: s,
+      data: activeMonths.map(m => ((byMonth || {})[m] && byMonth[m][s]) || 0),
+    }));
+    let other = null;
+    if (Object.keys(totals || {}).length > topNames.length) {
+      other = {
+        label: otherLabel,
+        data: activeMonths.map(m => {
+          const monthStats = (monthlyStats[m] || { total: 0 });
+          const inTop = topNames.reduce((sum, s) => sum + (((byMonth || {})[m] && byMonth[m][s]) || 0), 0);
+          return Math.max(monthStats.total - inTop, 0);
+        }),
+      };
+    }
+    return { series, other };
+  };
+
+  const statesStacked = stacked(agg.stateTotals, agg.stateByMonth, 6, 'Otros');
+  const campsStacked = stacked(agg.campTotals, agg.campByMonth, 5, 'Otras');
+
+  const funnel = {
+    stages: ['Recibidos', 'Gestionados', 'Agendados', 'Inscritos'],
+    values: [totalLeads, agg.funnelGestionados || 0, (kpis && kpis.totalAgendados) || 0, (kpis && kpis.totalInscritos) || 0],
+  };
+
+  return { monthly, campaigns, medios, agents, statesStacked, campsStacked, funnel };
+}
+
+// --- Graficos y tabla historicos: configs y plantillas puras (fase 31) ------
+// Cada histChartX devuelve el objeto { type?, data, options } EXACTO que
+// renderHistoricalAnalytics pasaba inline a new Chart; canvas, destruccion
+// previa (histCharts) y el new Chart quedan en el wrapper del monolito.
+// Sin Chart ni window: comparables byte a byte en node contra el golden.
+
+export function tablaVaciaHistoricoHtml() {
+  return `<tr><td colspan="9" class="text-center py-6 text-slate-500 font-sans">No hay registros con los filtros seleccionados</td></tr>`;
+}
+
+export function tablaHistoricoHtml(filas) {
+  return (filas || []).map(r => `
+              <tr class="hover:bg-slate-800/40 transition-colors">
+                <td class="px-4 py-3 font-semibold text-slate-200">${escapeHtml(r.mes)}</td>
+                <td class="px-4 py-3 text-right text-white font-bold tabular-nums">${r.total.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right text-amber-400 tabular-nums">${r.agendados.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right text-rose-400 tabular-nums">${r.noContesta.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right text-emerald-400 font-bold tabular-nums">${r.inscritos.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right tabular-nums">
+                  <span class="px-2 py-0.5 rounded text-xs font-semibold ${Number(r.conv) >= 15 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}">
+                    ${r.conv}%
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-right text-slate-400 tabular-nums">${r.monthPct}%</td>
+                <td class="px-4 py-3 text-slate-300 font-sans truncate max-w-[180px]">${escapeHtml(r.topCamp)}</td>
+                <td class="px-4 py-3 text-slate-300 font-sans">${escapeHtml(r.topAg)}</td>
+              </tr>
+            `).join('');
+}
+
+export function histChartMonthly(labels, series, commonScales) {
+  return {
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          type: 'line',
+          label: 'Inscritos Matriculados',
+          data: series.monthly.inscritos,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+          borderWidth: 3,
+          pointRadius: 5,
+          tension: 0.3,
+          order: 1
+        },
+        {
+          type: 'bar',
+          label: 'Total Leads Captados',
+          data: series.monthly.total,
+          backgroundColor: 'rgba(99, 102, 241, 0.75)',
+          borderRadius: 6,
+          order: 2
+        }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: commonScales }
+  };
+}
+
+export function histChartConversion(labels, series, commonScales) {
+  return {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Tasa de Conversión (%)',
+        data: series.monthly.conversion,
+        borderColor: '#818cf8',
+        backgroundColor: 'rgba(129, 140, 248, 0.12)',
+        fill: true,
+        borderWidth: 2.5,
+        tension: 0.35
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { ...commonScales, y: { ...commonScales.y, ticks: { callback: (val) => val + '%' } } }
+    }
+  };
+}
+
+export function histChartCampaign(series, commonScales) {
+  return {
+    type: 'bar',
+    data: {
+      labels: series.campaigns.labels,
+      datasets: [
+        { label: 'Total Leads', data: series.campaigns.totals, backgroundColor: 'rgba(59, 130, 246, 0.65)', borderRadius: 4 },
+        { label: 'Inscritos', data: series.campaigns.inscritos, backgroundColor: 'rgba(16, 185, 129, 0.85)', borderRadius: 4 }
+      ]
+    },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: commonScales }
+  };
+}
+
+export function histChartMedio(series) {
+  return {
+    type: 'doughnut',
+    data: {
+      labels: series.medios.labels,
+      datasets: [{
+        data: series.medios.counts,
+        backgroundColor: ['#10b981', '#8b5cf6', '#3b82f6', '#f59e0b', '#ec4899', '#06b6d4'],
+        borderColor: '#1e293b',
+        borderWidth: 2
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } }, cutout: '65%' }
+  };
+}
+
+export function histChartAgent(series, commonScales) {
+  return {
+    type: 'bar',
+    data: {
+      labels: series.agents.labels,
+      datasets: [
+        { label: 'Leads Atendidos', data: series.agents.totals, backgroundColor: 'rgba(148, 163, 184, 0.4)', borderRadius: 4 },
+        { label: 'Inscripciones Logradas', data: series.agents.inscritos, backgroundColor: '#10b981', borderRadius: 4 }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: commonScales }
+  };
+}
+
+export function histChartMonthlyStates(monthLabels, statesStacked, commonScales) {
+  const statePalette = ['#3b82f6', '#10b981', '#f59e0b', '#f43f5e', '#60a5fa', '#34d399'];
+  const stateDatasets = statesStacked.series.map((s, i) => ({
+    ...s,
+    backgroundColor: statePalette[i]
+  }));
+  if (statesStacked.other) {
+    stateDatasets.push({ ...statesStacked.other, backgroundColor: 'rgba(100, 116, 139, 0.55)' });
+  }
+  return {
+    type: 'bar',
+    data: { labels: monthLabels, datasets: stateDatasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ...commonScales.x, stacked: true },
+        y: { ...commonScales.y, stacked: true }
+      }
+    }
+  };
+}
+
+export function histChartMonthlyCampaigns(monthLabels, campsStacked, commonScales) {
+  const campPalette = ['#3b82f6', '#f59e0b', '#10b981', '#f43f5e', '#60a5fa'];
+  const campDatasets = campsStacked.series.map((c, i) => ({
+    ...c,
+    backgroundColor: campPalette[i]
+  }));
+  if (campsStacked.other) {
+    campDatasets.push({ ...campsStacked.other, backgroundColor: 'rgba(100, 116, 139, 0.55)' });
+  }
+  return {
+    type: 'bar',
+    data: { labels: monthLabels, datasets: campDatasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ...commonScales.x, stacked: true },
+        y: { ...commonScales.y, stacked: true }
+      }
+    }
+  };
+}
+
+export function histChartFunnel(funnel, commonScales) {
+  const { stages: funnelStages, values: funnelValues } = funnel;
+  return {
+    type: 'bar',
+    data: {
+      labels: funnelStages.map((s, i) => `${s}: ${funnelValues[i].toLocaleString()}`),
+      datasets: [{
+        label: 'Leads',
+        data: funnelValues,
+        backgroundColor: ['#3b82f6', '#94a3b8', '#f59e0b', '#10b981'],
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ...commonScales.x, beginAtZero: true },
+        y: commonScales.y
+      }
+    }
+  };
+}
+
+/**
+ * Texto del aviso de rango activo del historico. mismo orden y redaccion
+ * del original: desde/hasta, conteo en rango, aviso de mes anulado y
+ * excluidos; separador ' · ' con prefijo 'Rango: '. Invasores devuelven
+ * cero leads o el aviso de invisible sin lanzar.
+ * @param {{rangeActive: boolean, range?: {from: number|null, to: number|null}|null, data?: {length: number}, selectedMes?: string, excludedNoDate?: number}|null} filtered
+ * @returns {{visible: boolean, text: string}}
+ */
+export function histRangeNoticeText(filtered) {
+  const f = filtered || {};
+  if (!f.rangeActive) return { visible: false, text: '' };
+  const range = f.range || { from: null, to: null };
+  const parts = [];
+  if (range.from !== null) parts.push('desde ' + new Date(range.from).toISOString().slice(0, 10));
+  if (range.to !== null) parts.push('hasta ' + new Date(range.to).toISOString().slice(0, 10));
+  const count = Array.isArray(f.data) ? f.data.length : 0;
+  parts.push(count.toLocaleString() + ' leads en rango');
+  if (f.selectedMes) parts.push('el filtro de mes queda anulado por el rango');
+  const excluded = typeof f.excludedNoDate === 'number' ? f.excludedNoDate : 0;
+  if (excluded > 0) parts.push(excluded.toLocaleString() + ' sin fecha válida excluidos');
+  return { visible: true, text: 'Rango: ' + parts.join(' · ') };
+}
+
+
+/**
+ * Filtrado puro del panel historico: campana, agente, ano y rango Desde/Hasta.
+ * El rango activo tiene precedencia y anula el filtro de mes; los leads sin
+ * fecha parseable se excluyen del rango y se cuentan en excludedNoDate.
+ * No muta la entrada; las lecturas del DOM quedan en index.html.
+ * @param {Array<object>} data Leads base (origen actual/historico/todos ya aplicado).
+ * @param {{campana?: string, agente?: string, anio?: string, mes?: string, range?: {from: number|null, to: number|null}|null}} [filters]
+ * @returns {{data: Array<object>, rangeActive: boolean, excludedNoDate: number}}
+ */
+export function applyHistoricalFilters(data, filters = {}) {
+  const campana = filters.campana || '';
+  const agente = filters.agente || '';
+  const anio = filters.anio || '';
+  const mes = filters.mes || '';
+  const range = filters.range || { from: null, to: null };
+  const rangeActive = range.from !== null || range.to !== null;
+
+  let filtered = Array.isArray(data) ? data : [];
+  if (campana) filtered = filtered.filter(l => getField(l, 'Campaña').trim() === campana);
+  if (agente) filtered = filtered.filter(l => getField(l, 'Agente ').trim() === agente);
+  if (anio === 'SIN-FECHA') {
+    filtered = filtered.filter(l => leadReportDate(l) === null);
+  } else if (anio) {
+    filtered = filtered.filter(l => String(leadReportDate(l)?.anio || '') === anio);
+  }
+
+  let excludedNoDate = 0;
+  if (rangeActive) {
+    const inRange = [];
+    filtered.forEach(l => {
+      const ts = parseFechaLead(l);
+      if (ts === null) { excludedNoDate++; return; }
+      if (range.from !== null && ts < range.from) return;
+      if (range.to !== null && ts > range.to) return;
+      inRange.push(l);
+    });
+    filtered = inRange;
+  } else if (mes) {
+    filtered = filtered.filter(l => normalizeLeadMonth(l) === mes);
+  }
+  return { data: filtered, rangeActive, excludedNoDate };
+}
+
+/**
+ * Parseo del input date del rango historico (contrato exacto del codigo
+ * original): regex estricta YYYY-MM-DD; un dia imposible hace rollover
+ * sin validacion de calendario (p. ej. 2026-02-30 -> 2026-03-02).
+ * @param {string} s Valor del input (o cadena vacia).
+ * @returns {number|null} Timestamp UTC de medianoche o null.
+ */
+export function histDateInputToTs(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  return m ? Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+}
+
+/**
+ * Fechas del rango para un preset del historico, como strings YYYY-MM-DD.
+ * `todayTs` (medianoche UTC del dia local del navegador) es inyectable para
+ * tests deterministas; preset desconocido devuelve null y el wrapper no
+ * toca los inputs.
+ * @param {string|null} preset 'clear'|'7d'|'30d'|'month' u otro.
+ * @param {number} todayTs Timestamp UTC de medianoche de hoy.
+ * @returns {{from: string, to: string}|null}
+ */
+export function histRangePresetDates(preset, todayTs) {
+  const fmt = ts => new Date(ts).toISOString().slice(0, 10);
+  if (preset === 'clear') return { from: '', to: '' };
+  if (preset === '7d') return { from: fmt(todayTs - 6 * 86400000), to: fmt(todayTs) };
+  if (preset === '30d') return { from: fmt(todayTs - 29 * 86400000), to: fmt(todayTs) };
+  if (preset === 'month') {
+    const hoy = new Date(todayTs);
+    return { from: fmt(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), 1)), to: fmt(todayTs) };
+  }
+  return null;
+}
+
+
+/**
+ * Construye los valores de filtros historicos sin DOM ni HTML. Los agentes
+ * devueltos son los presentes en datos; el wrapper puede unirlos al catalogo
+ * activo mediante catalogOptions antes de renderizarlos.
+ * @param {Array<object>} data
+ * @returns {{campanas: string[], agentes: string[], meses: string[], anios: string[], haySinFecha: boolean}}
+ */
+export function historicalFilterOptions(data) {
+  const campanas = new Set();
+  const agentes = new Set();
+  const meses = new Set();
+  const anios = new Set();
+  let haySinFecha = false;
+
+  (Array.isArray(data) ? data : []).forEach(lead => {
+    const campana = getField(lead, 'Campaña').trim();
+    const agente = getField(lead, 'Agente ').trim();
+    if (campana) campanas.add(campana);
+    if (agente) agentes.add(agente);
+    meses.add(normalizeLeadMonth(lead));
+    const reportDate = leadReportDate(lead);
+    if (reportDate) anios.add(String(reportDate.anio));
+    else haySinFecha = true;
+  });
+
+  const mesesOrdenados = MONTH_CHRONO.filter(month => meses.has(month));
+  if (meses.has('OTRO')) mesesOrdenados.push('OTRO');
+  return {
+    campanas: [...campanas].sort(compareAlphaEs),
+    agentes: [...agentes].sort(compareAlphaEs),
+    meses: mesesOrdenados,
+    anios: [...anios].sort(),
+    haySinFecha,
+  };
+}
+
+/**
+ * Resumen del reporte por periodo: consolida leads, filtra por rango de
+ * fechas y arma categorias (catalogo activo + extras no conocidos),
+ * totales y matriz gestion x campana. Valida internamente antes de
+ * publicar. Lanza 'period_range_invalid' si el rango es invalido.
+ * @param {Array<object>} leads
+ * @param {object} catalogs Filas de catalogo por tipo ({medio,campana,gestion}).
+ * @param {string} desde YYYY-MM-DD.
+ * @param {string} hasta YYYY-MM-DD.
+ * @returns {object} Resumen validado.
+ */
+export function buildPeriodSummary(leads, catalogs, desde, hasta) {
+  if (!periodoValidDate(desde) || !periodoValidDate(hasta) || desde > hasta) throw new Error('period_range_invalid');
+  const desdeTs = Date.parse(`${desde}T00:00:00Z`), hastaTs = Date.parse(`${hasta}T00:00:00Z`);
+  const activos = consolidateLeadsById(leads || []).filter(lead => !lead.archived_at);
+  const norma = value => String(value ?? '').trim().toLocaleLowerCase('es');
+  const nuevaCategoria = kind => {
+    const porClave = new Map();
+    for (const row of catalogs?.[kind] || []) {
+      if (!row?.active) continue;
+      const label = String(row.value ?? '').trim();
+      const clave = norma(label);
+      if (!clave || porClave.has(clave)) continue; // duplicado case-insensitive: gana el primero
+      porClave.set(clave, { label, count: 0 });
+    }
+    return porClave;
+  };
+  const categorias = { medio: nuevaCategoria('medio'), campana: nuevaCategoria('campana'), gestion: nuevaCategoria('gestion') };
+  const extras = { medio: new Map(), campana: new Map(), gestion: new Map() };
+  const celdas = new Map();
+  let fechasInvalidas = 0;
+  const seleccion = [];
+  for (const lead of activos) {
+    const ts = parseFechaLead(lead);
+    if (ts === null) { fechasInvalidas++; continue; } // del conjunto cargado, excluidos
+    if (ts >= desdeTs && ts <= hastaTs) seleccion.push(lead);
+  }
+  const registrar = (kind, rawValue) => {
+    const trimmed = String(rawValue ?? '').trim() || 'Sin definir';
+    const clave = norma(trimmed);
+    const catalogo = categorias[kind].get(clave);
+    if (catalogo) { catalogo.count++; return catalogo.label; }
+    let extra = extras[kind].get(clave);
+    if (!extra) { extra = { label: trimmed, count: 0 }; extras[kind].set(clave, extra); }
+    extra.count++;
+    return extra.label;
+  };
+  // Una sola pasada: medios, campañas, gestiones y matriz salen de esta selección.
+  for (const lead of seleccion) {
+    const medio = registrar('medio', getField(lead, 'Medio'));
+    const campana = registrar('campana', getField(lead, 'Campaña'));
+    const gestion = registrar('gestion', getField(lead, 'GESTION'));
+    const clave = `${gestion}\u0000${campana}`;
+    celdas.set(clave, (celdas.get(clave) || 0) + 1);
+  }
+  const lista = kind => {
+    const resto = [...extras[kind].values()];
+    if (!extras[kind].has('sin definir') && !categorias[kind].has('sin definir')) resto.push({ label: 'Sin definir', count: 0 });
+    // Todo orden alfabético (categorías de catálogo y extras juntas).
+    return [...categorias[kind].values(), ...resto].sort((a, b) => compareAlphaEs(a.label, b.label));
+  };
+  const medios = lista('medio'), campanas = lista('campana'), gestiones = lista('gestion');
+  const total = seleccion.length;
+  const matriz = {
+    campanas: campanas.map(r => r.label),
+    filas: gestiones.map(g => ({ label: g.label, counts: campanas.map(c => celdas.get(`${g.label}\u0000${c.label}`) || 0), total: g.count })),
+    totales_columnas: campanas.map(c => c.count),
+  };
+  const summary = { desde, hasta, total, fechas_invalidas: fechasInvalidas, medios, campanas, gestiones, matriz, totales: { medios: total, campanas: total, gestiones: total, matriz: total } };
+  return validatePeriodoSummary(summary, desde, hasta); // comprobaciones internas antes de publicar
+}
+
+/**
+ * Valida la coherencia de un resumen de periodo antes de publicarlo:
+ * totales por categoria igual al total, matriz alineada con categorias y
+ * sumas por fila/columna cuadradas. Lanza mensaje claro si algo no cuadra.
+ * @param {object} data
+ * @param {string} desde
+ * @param {string} hasta
+ * @returns {object} El mismo data si es valido.
+ */
+export function validatePeriodoSummary(data, desde, hasta) {
+  const fail = () => { throw new Error('Los totales del reporte no coinciden o la respuesta es inválida. Actualiza e informa al administrador si persiste.'); };
+  const count = n => Number.isSafeInteger(n) && n >= 0;
+  const sum = rows => rows.reduce((total, row) => total + row.count, 0);
+  if (!data || data.desde !== desde || data.hasta !== hasta || !count(data.total) || !count(data.fechas_invalidas)) fail();
+  for (const key of ['medios', 'campanas', 'gestiones']) {
+    const rows = data[key];
+    if (!Array.isArray(rows) || !rows.length || rows.some(r => !r || typeof r.label !== 'string' || !count(r.count)) || new Set(rows.map(r => r.label.toLowerCase())).size !== rows.length || sum(rows) !== data.total || data.totales?.[key] !== data.total) fail();
+  }
+  const m = data.matriz;
+  if (!m || !Array.isArray(m.campanas) || !Array.isArray(m.filas) || !Array.isArray(m.totales_columnas) || m.campanas.length !== data.campanas.length || m.filas.length !== data.gestiones.length || m.totales_columnas.length !== m.campanas.length || data.totales?.matriz !== data.total) fail();
+  m.filas.forEach((row, i) => {
+    if (!row || row.label !== data.gestiones[i].label || !Array.isArray(row.counts) || row.counts.length !== m.campanas.length || !row.counts.every(count) || row.total !== row.counts.reduce((a, b) => a + b, 0) || row.total !== data.gestiones[i].count) fail();
+  });
+  m.campanas.forEach((label, i) => {
+    if (label !== data.campanas[i].label || m.totales_columnas[i] !== data.campanas[i].count || m.filas.reduce((total, r) => total + r.counts[i], 0) !== m.totales_columnas[i]) fail();
+  });
+  return data;
+}
+
+/**
+ * Valida la actividad del periodo (RPC management_period_summary): desde/
+ * hasta coinciden, gestiones/canales/citas presentes con conteos enteros no
+ * negativos y filas por estado coherentes. Lanza mensaje claro si no.
+ * @param {object} data
+ * @param {string} desde
+ * @param {string} hasta
+ * @returns {object} El mismo data si es valido.
+ */
+export function validatePeriodoActividad(data, desde, hasta) {
+  const fail = () => { throw new Error('La actividad del período devolvió una respuesta inválida. Actualiza e inténtalo nuevamente.'); };
+  const count = n => Number.isSafeInteger(Number(n)) && Number(n) >= 0;
+  if (!data || data.desde !== desde || data.hasta !== hasta) fail();
+  for (const key of ['gestiones', 'canales', 'citas']) if (!data[key] || typeof data[key] !== 'object') fail();
+  const g = data.gestiones, q = data.canales, c = data.citas;
+  if (![g.total_eventos, g.leads_unicos, g.agendados_normales, g.agendados_data_dura, g.inscritos_normales, g.inscritos_data_dura].every(count)) fail();
+  if (![q.llamadas_normales, q.llamadas_data_dura, q.llamada_whatsapp, q.whatsapp, q.otros].every(count)) fail();
+  if (![c.programadas_normales, c.programadas_data_dura, c.asistieron, c.no_asistieron, c.canceladas, c.reprogramadas, c.doral_normal, c.doral_data_dura, c.weston_normal, c.weston_data_dura, c.sin_sede].every(count)) fail();
+  if (!Array.isArray(g.por_estado) || g.por_estado.some(r => !r || typeof r.label !== 'string' || !count(r.eventos) || !count(r.leads))) fail();
+  return data;
+}
+
+/**
+ * Lineas del CSV del reporte por periodo (misma estructura del export
+ * original): titulo, rango, excluidos, tres bloques de resumen con %,
+ * matriz gestion x campana, actividad (por estado ordenado alfabeticamente),
+ * canales y agenda. Cada campo pasa por csvReporteField; % via periodoPct.
+ * @param {object} summary Resumen validado (buildPeriodSummary).
+ * @param {object} actividad Actividad validada (validatePeriodoActividad).
+ * @param {string} generado Fecha Miami del momento (el wrapper evalua miamiToday).
+ * @returns {string[]} Lineas de texto (unir con \\n para downloadCSV).
+ */
+export function periodoCsvLines(summary, actividad, generado) {
+  const d = summary, a = actividad, lines = [], row = values => lines.push(values.map(csvReporteField).join(','));
+  row(['Reporte por período']);
+  row(['Desde (inclusive)', d.desde, 'Hasta (inclusive)', d.hasta]);
+  row(['Gestión actual; no estado histórico al cierre del período']);
+  row(['Generado (Miami)', generado]);
+  row(['Leads sin fecha válida (excluidos)', d.fechas_invalidas]);
+  for (const [title, rows] of [['Resumen general de leads por entrada (Medio)', d.medios], ['Resumen general de campañas', d.campanas], ['Resumen específico de gestión actual', d.gestiones]]) {
+    row([]); row([title]); row(['Categoría', 'Leads', '%']);
+    rows.forEach(r => row([r.label, r.count, periodoPct(r.count, d.total)]));
+    row(['TOTAL', d.total, periodoPct(d.total, d.total)]);
+  }
+  row([]); row(['Matriz gestión actual × campaña']); row(['Gestión', ...d.matriz.campanas, 'Total']);
+  d.matriz.filas.forEach(r => row([r.label, ...r.counts, r.total]));
+  row(['TOTAL', ...d.matriz.totales_columnas, d.total]);
+  const ga = a.gestiones, qa = a.canales, ca = a.citas;
+  row([]); row(['Actividad realizada en el período (gestiones por fecha trabajada)']); row(['Métrica', 'Cantidad']);
+  row(['Leads únicos gestionados', ga.leads_unicos]); row(['Pasados a Agendado', ga.agendados_normales]); row(['Pasados a Agendado Data Dura', ga.agendados_data_dura]); row(['Pasados a Inscrito', ga.inscritos_normales]); row(['Pasados a Inscrito Data Dura', ga.inscritos_data_dura]); row(['Total de gestiones', ga.total_eventos]);
+  row([]); row(['Gestiones por estado']); row(['Estado', 'Leads únicos', 'Total de gestiones']);
+  [...ga.por_estado].sort((a, b) => compareAlphaEs(a.label, b.label)).forEach(r => row([r.label, r.leads, r.eventos]));
+  row(['Nota: Leads únicos cuenta personas distintas; Total de gestiones suma todos los intentos. Un mismo lead puede repetirse en varios estados, por eso los leads únicos no se suman.']);
+  row([]); row(['Canales de la actividad']); row(['Canal', 'Cantidad']);
+  row(['Llamada y WhatsApp', qa.llamada_whatsapp]); row(['Llamadas', qa.llamadas_normales]); row(['Llamadas Data Dura', qa.llamadas_data_dura]); row(['Otros o sin canal', qa.otros]); row(['WhatsApp', qa.whatsapp]);
+  row([]); row(['Agenda (citas por fecha programada)']); row(['Estado', 'Cantidad']);
+  row(['Asistieron', ca.asistieron]); row(['Canceladas', ca.canceladas]); row(['Doral: programadas normales', ca.doral_normal]); row(['Doral: programadas Data Dura', ca.doral_data_dura]); row(['No asistieron', ca.no_asistieron]); row(['Programadas Data Dura', ca.programadas_data_dura]); row(['Programadas normales', ca.programadas_normales]); row(['Reprogramadas', ca.reprogramadas]); row(['Sin sede (históricas)', ca.sin_sede]); row(['Weston: programadas normales', ca.weston_normal]); row(['Weston: programadas Data Dura', ca.weston_data_dura]);
+  return lines;
+}
+
+/** Columnas numericas del CSV diario en el orden exacto del export original. */
+const DIARIO_KEYS = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosDoral', 'agendadosDoralDura', 'agendadosWeston', 'agendadosWestonDura', 'agendadosTotal', 'reprogramadasHoy', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'agendadosGestionadosDia', 'agendadosGestionadosDura', 'whatsappNuevos', 'whatsappGestionados', 'whatsappTotal', 'canalInstagram', 'canalesOtros', 'canalesTotal'];
+
+/** 'Otros o sin canal': buckets retirados de pantalla, juntos. */
+const numCanalesOtros = c => (Number(c?.visita) || 0) + (Number(c?.sin_clasificar) || 0);
+
+/** Cabecera del CSV diario (33 columnas: ASESORA + 30 numericas + notas).
+ * 'Otros o sin canal' agrega los buckets retirados de pantalla
+ * (visita conservatorio + sin clasificar) para que el total cuadre. */
+const DIARIO_HEADERS = ['Asesora', 'Gestiones realizadas', 'WhatsApp', 'Facebook/Instagram', 'CogniTalking', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Citas nuevas hoy', 'Citas nuevas Data Dura', 'Citas nuevas Doral', 'Citas nuevas Data Dura Doral', 'Citas nuevas Weston', 'Citas nuevas Data Dura Weston', 'Total citas nuevas', 'Citas reprogramadas hoy', 'Visitas registradas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Pasados a Agendado hoy', 'Pasados a Agendado Data Dura hoy', 'WhatsApp nuevos hoy', 'WhatsApp gestionados hoy', 'Total WhatsApp', 'Canal Instagram', 'Otros o sin canal', 'Total canales', 'Problemas', 'Observaciones'];
+
+/**
+ * Resuelve la nota asociada a un bloque del reporte diario con la regla
+ * original: primero por autor_user_id; si el bloque no tiene uid, por
+ * autor_name contra notas sin uid; fallback b.nota; si nada, {}.
+ * @returns {object}
+ */
+export function resolverNotaBloque(bloque, notas) {
+  const uid = bloque.autor_user_id || '';
+  return (notas || []).find(n => (uid && n.autor_user_id === uid) || (!n.autor_user_id && n.autor_name === (bloque.autor_name ?? bloque.advisor))) || bloque.nota || {};
+}
+
+/**
+ * Lineas del CSV del reporte diario (misma estructura del export original).
+ * @param {string} fecha Fecha seleccionada.
+ * @param {string} filtro Nombre visible de la asesora filtrada ('' = todas).
+ * @param {string} generado Fecha Miami del momento (el wrapper evalua miamiToday).
+ * @param {object[]} bloques Datos por asesora en pantalla (reporteDayData).
+ * @param {object[]} notasResueltas Problemas/observaciones ya resueltos por
+ *   el wrapper (DOM primero, nota despues), en el orden de los bloques.
+ * @returns {string[]} Lineas de texto (unir con \\n para downloadCSV).
+ */
+export function diarioCsvLines(fecha, filtro, generado, bloques, notasResueltas) {
+  const lineas = ['Reporte Diario de Trabajo', csvReporteField(`Fecha: ${fecha}`), csvReporteField(`Generado: ${generado} Miami`)];
+  if (filtro) lineas.push(csvReporteField(`Filtro: ${filtro}`));
+  lineas.push('', DIARIO_HEADERS.map(csvReporteField).join(','));
+  const sumas = Object.fromEntries(DIARIO_KEYS.map(k => [k, 0]));
+  bloques.forEach((b, i) => {
+    const p = b.procedencia || {}, l = b.llamadas || {}, c = b.citas || {};
+    const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, l.total, c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.citas_reprogramadas_hoy, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, (b.whatsapp || {}).nuevos, (b.whatsapp || {}).gestionados, (b.whatsapp || {}).total, (b.canales || {}).instagram, numCanalesOtros(b.canales), totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
+    values.forEach((v, n) => { sumas[DIARIO_KEYS[n]] += v; });
+    const nota = notasResueltas[i] || {};
+    lineas.push([b.autor_name ?? b.advisor, ...values, nota.problemas ?? '', nota.observaciones ?? ''].map(csvReporteField).join(','));
+  });
+  lineas.push(['TOTAL', ...DIARIO_KEYS.map(k => sumas[k]), '', ''].map(csvReporteField).join(','));
+  return lineas;
+}
+
+// --- Piezas puras del panel del reporte diario (fase 21) ---------------------
+
+/** Indice de notas por uid y por nombre legado (respaldo sin user_id). */
+export function indiceNotas(notas) {
+  const porUid = new Map(), porNombre = new Map();
+  for (const n of notas || []) (n.autor_user_id ? porUid : porNombre).set(n.autor_user_id || n.autor_name, n);
+  return { porUid, porNombre };
+}
+
+/** Nota de una asesora: uid primero; el nombre es solo respaldo. */
+export function notaDeBloque({ porUid, porNombre }, b) {
+  return (b.autor_user_id && porUid.get(b.autor_user_id)) || porNombre.get(b.autor_name) || null;
+}
+
+/** Totales del panel (gestiones, llamadas, citas, reprogramadas, visitas). */
+export function totalDiario(bloques) {
+  const num = (o, k) => Number(o?.[k]) || 0;
+  return (bloques || []).reduce((a, b) => {
+    a.g += num(b, 'gestionados');
+    a.l += Number(b.llamadas?.total) || 0;
+    a.c += Number(b.citas?.total_agendados) || 0;
+    a.r += Number(b.citas?.citas_reprogramadas_hoy) || 0;
+    a.v += Number(b.citas?.visitas) || 0;
+    return a;
+  }, { g: 0, l: 0, c: 0, r: 0, v: 0 });
+}
+
+const celdaDiago = (label, value) => `<div class="daily-metric"><div class="text-xs text-slate-500">${label}</div><strong class="text-lg text-indigo-900">${value}</strong></div>`;
+const tablaDetalle = (title, rows) => `<div class="daily-detail-card"><h5 class="font-semibold text-indigo-900">${title}</h5><table class="text-sm"><tbody>${rows.map(([l, v]) => `<tr><td>${l}</td><td class="font-semibold">${v}</td></tr>`).join('')}</tbody></table></div>`;
+
+/** Las cuatro tablas de detalle de una asesora (pantalla coherencia fase 16). */
+export function detallesBloqueHtml(b) {
+  const num = (o, k) => Number(o?.[k]) || 0;
+  const p = b.procedencia || {}, c = b.citas || {};
+  const pt = Object.values(p).reduce((a, v) => a + (Number(v) || 0), 0);
+  return tablaDetalle('Procedencia', [['WhatsApp', num(p, 'WhatsApp')], ['Facebook/Instagram', num(p, 'Facebook/Instagram')], ['Directo o Referido', num(p, 'Directo o Referido')], ['Otras procedencias', num(p, 'CogniTalking') + num(p, 'Otros')], ['Total', pt]])
+    + tablaDetalle('Canales', [['Llamada', num(b.canales, 'llamada')], ['Llamada Data Dura', num(b.canales, 'data_dura')], ['Llamada y WhatsApp', num(b.canales, 'llamada_whatsapp')], ['WhatsApp', num(b.canales, 'whatsapp')], ['Instagram', num(b.canales, 'instagram')], ['Otros o sin canal', num(b.canales, 'visita') + num(b.canales, 'sin_clasificar')], ['Total', totalCanalesVisibles(b.canales)]])
+    + tablaDetalle('Detalle WhatsApp', [['WhatsApp nuevos hoy', num(b.whatsapp, 'nuevos')], ['WhatsApp gestionados hoy', num(b.whatsapp, 'gestionados')], ['Total WhatsApp', num(b.whatsapp, 'total')]])
+    + tablaDetalle('Citas creadas y resultados registrados hoy', [['Leads pasados a Agendado', num(c, 'agendados_gestionados_dia')], ['Leads pasados a Agendado Data Dura', num(c, 'agendados_gestionados_data_dura')], ['Citas nuevas Doral', num(c, 'agendados_doral')], ['Citas nuevas Data Dura Doral', num(c, 'agendados_doral_data_dura')], ['Citas nuevas Weston', num(c, 'agendados_weston')], ['Citas nuevas Data Dura Weston', num(c, 'agendados_weston_data_dura')], ['Citas nuevas hoy', num(c, 'total_agendados')], ['Citas reprogramadas hoy', num(c, 'citas_reprogramadas_hoy')], ['Visitas registradas', num(c, 'visitas')], ['No asistieron', num(c, 'no_asistieron')], ['Canceladas', num(c, 'canceladas')], ['Reprogramadas', num(c, 'reprogramadas')]]);
+}
+
+/** Manual de problemas/observaciones: edicion o lectura (respaldo exacto). */
+export function manualBloqueHtml(i, nota, editable) {
+  if (editable) return `<label for="reporte-problemas-${i}" class="block text-xs font-semibold text-slate-600">Problemas</label><textarea id="reporte-problemas-${i}" class="reporte-manual w-full p-2" rows="3" maxlength="5000">${escapeHtml(nota?.problemas || '')}</textarea><label for="reporte-obs-${i}" class="block text-xs font-semibold text-slate-600">Observaciones</label><textarea id="reporte-obs-${i}" class="reporte-manual w-full p-2" rows="3" maxlength="5000">${escapeHtml(nota?.observaciones || '')}</textarea><div class="daily-note-actions flex flex-wrap gap-2"><button id="reporte-save-${i}" data-ev="click:saveReporteNota(${i})" class="px-3 py-1 bg-indigo-600 text-white">Guardar</button>${nota?.id ? '<button id="reporte-delete-' + i + '" data-ev="click:deleteReporteNota(' + i + ')" class="px-3 py-1 border border-slate-300">Eliminar</button>' : ''}</div>`;
+  return `<p class="text-sm">${escapeHtml(nota?.problemas || '')} ${escapeHtml(nota?.observaciones || '')}</p>`;
+}
+
+/** Bloque de una asesora con su resumen de detail + manuales. */
+export function bloqueDiaHtml(b, i, manualHtml) {
+  const num = (o, k) => Number(o?.[k]) || 0;
+  return `<details class="daily-advisor" ${i ? '' : 'open'}><summary class="cursor-pointer font-bold text-indigo-900">${escapeHtml(b.autor_name || b.advisor || 'Sin asesora')} — ${num(b, 'gestionados')} gestiones</summary><div class="daily-advisor-body"><div class="grid md:grid-cols-2 xl:grid-cols-4 gap-3">${detallesBloqueHtml(b)}</div><div class="mt-4 space-y-2"><h4 class="text-sm font-semibold text-slate-700">Problemas y observaciones</h4>${manualHtml}</div></div></details>`;
+}
+
+/** Shell del panel diario con el aviso de notas y el Resumen general. */
+export function cuerpoReporteDiario(notasOk, total, bloquesHtml) {
+  return `${notasOk ? '' : '<div class="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">No se pudieron cargar las notas guardadas. La edicion esta desactivada para no sobrescribir datos: recarga la pagina o intentalo mas tarde.</div>'}<section class="daily-summary space-y-3"><h3 class="font-bold text-lg text-indigo-900">Resumen general</h3><div class="grid grid-cols-2 sm:grid-cols-5 gap-3">${celdaDiago('Gestiones realizadas', total.g)}${celdaDiago('Total llamadas', total.l)}${celdaDiago('Citas nuevas hoy', total.c)}${celdaDiago('Reprogramadas hoy', total.r)}${celdaDiago('Visitas registradas', total.v)}</div></section><section class="space-y-3"><h3 class="font-bold text-lg text-indigo-900">Comparativa por asesora</h3>${bloquesHtml || '<p class="text-slate-500">Sin gestiones para esta fecha.</p>'}</section>`;
+}
+
+/**
+ * Lista de asesoras del select con ids estables (bug del filtro): la
+ * respuesta filtrada solo trae a una asesora, asi que se preservan los ids
+ * ya conocidos (previas), se completan con los de la respuesta y con los
+ * nombres del catalogo (id '') sin duplicar por nombre; un id real gana.
+ * Orden alfabetico es.
+ * @param {object[]} bloques Bloques de la respuesta ({autor_user_id, autor_name}).
+ * @param {string[]} catalogoNombres Nombres del catalogo de agentes.
+ * @param {object[]} previas Lista {id,name} cacheada de una carga anterior.
+ * @returns {{id: string, name: string}[]}
+ */
+export function asesorasDisponibles(bloques, catalogoNombres, previas) {
+  const porNombre = new Map();
+  const agregar = (id, name) => {
+    const clave = String(name ?? '').trim().toLowerCase();
+    if (!clave) return;
+    const actual = porNombre.get(clave);
+    if (!actual || (!actual.id && id)) porNombre.set(clave, { id: id || '', name });
+  };
+  for (const { id, name } of previas || []) agregar(id, name);
+  for (const b of bloques || []) agregar(b.autor_user_id || '', b.autor_name || '');
+  for (const name of catalogoNombres || []) agregar('', name);
+  return [...porNombre.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+}
+
+// --- Piezas puras de la seccion Campanas (fase 22) ---------------------------
+
+/**
+ * Universo de campanas: catalogo activo + rollup del CRM + filas manuales,
+ * con el mapeo y fallbacks exactos del export original; orden alfabetico es.
+ * @param {string[]} catalogo Nombres del catalogo activo.
+ * @param {object[]} rollupRows Filas del RPC campaign_monthly_rollup.
+ * @param {object[]} statRows Filas de campaign_stats.
+ * @returns {object[]}
+ */
+export function campanasDeFuentes(catalogo, rollupRows, statRows) {
+  const statsMap = new Map((statRows || []).map(s => [s.campaign_name, s]));
+  const rollupMap = new Map((rollupRows || []).map(r => [r.campaign_name, r]));
+  const names = new Set([...(catalogo || []), ...(rollupRows || []).map(r => r.campaign_name), ...(statRows || []).map(s => s.campaign_name)].filter(v => String(v || '').trim() !== ''));
+  return [...names].sort((a, b) => String(a).localeCompare(String(b))).map(name => {
+    const r = rollupMap.get(name) || {};
+    const s = statsMap.get(name);
+    return {
+      name: String(name),
+      stat_id: s?.id ?? null,
+      estado: s?.estado || 'activa',
+      alcance: Number(s?.alcance) || 0,
+      gasto: Number(s?.gasto) || 0,
+      resultados: Number(s?.resultados) || 0,
+      leads_nuevos: Number(r.leads_nuevos) || 0,
+      agendados: Number(r.agendados) || 0,
+      asistieron: Number(r.asistieron) || 0,
+      inscritos: Number(r.inscritos) || 0,
+      agendados_previos: Number(r.agendados_previos) || 0,
+      pendientes: Number(r.pendientes) || 0,
+    };
+  });
+}
+
+/** Resumen de 4 metricas (o vacio sin filas). */
+export function resumenCampanasHtml(rows, totals) {
+  if (!rows?.length) return '';
+  return [
+    ['Inversión Meta', `$${totals.gasto.toFixed(2)}`],
+    ['Resultados Meta', totals.resultados],
+    ['Leads nuevos', totals.leads_nuevos],
+    ['Inscritos', totals.inscritos],
+  ].map(([label, value]) => `<div><span class="text-[11px] text-slate-400">${label}</span><strong>${escapeHtml(String(value))}</strong></div>`).join('');
+}
+
+/** Estado vacio de la tabla (carga fallida o sin campanas del mes). */
+export function estadoVacioCampanasHtml(loadFailed, mesLabel) {
+  return loadFailed
+    ? '<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">No se pudo cargar el informe.</p><p class="mt-1 text-xs">Revisa el aviso anterior e inténtalo de nuevo.</p><button type="button" class="campaigns-retry" data-ev="click:loadCampanas()">Reintentar</button></td></tr>'
+    : `<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">Sin campañas para ${escapeHtml(mesLabel)}.</p><p class="mt-1 text-xs">Selecciona otro mes para consultar sus resultados.</p></td></tr>`;
+}
+
+/** Fila de campana: inputs y botones en modo editor, spans en lectura. */
+export function filaCampanaHtml(r, { esEditor, isAdmin, monthStr } = {}) {
+  const estadoOptions = sel => ['activa', 'finalizada', 'pausada'].map(e => `<option value="${e}"${e === sel ? ' selected' : ''}>${e.charAt(0).toUpperCase() + e.slice(1)}</option>`).join('');
+  const numCell = (field, val) => esEditor
+    ? `<input type="number" min="0" step="0.01" data-field="${field}" value="${val}" data-ev="input:recalcCampaignRow(this)" class="w-24 rounded border border-slate-600 bg-slate-800 px-2 py-1 text-right text-slate-100">`
+    : `<span class="font-mono">${val}</span>`;
+  const estadoCell = esEditor
+    ? `<select data-field="estado" class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-slate-100">${estadoOptions(r.estado)}</select>`
+    : escapeHtml(r.estado);
+  const btnSave = esEditor ? `<button type="button" data-ev="click:saveCampaignStatFromData('${encodeURIComponent(r.name)}','${escapeAttr(monthStr)}',${r.stat_id == null ? 'null' : Number(r.stat_id)})" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Guardar</button>` : '';
+  const btnDelete = isAdmin && r.stat_id ? `<button type="button" data-ev="click:deleteCampaignStat(${Number(r.stat_id)},'${escapeAttr(monthStr)}')" class="px-2 py-1 rounded border border-rose-700 text-rose-300 hover:bg-rose-950 font-semibold cursor-pointer">Eliminar</button>` : '';
+  return `<tr id="campaign_row_${escapeAttr(r.name)}" data-month="${escapeAttr(monthStr)}" data-stat-id="${r.stat_id == null ? '' : Number(r.stat_id)}" class="hover:bg-slate-800/50">
+          <td class="p-3 text-left text-slate-200">${escapeHtml(r.name)}</td>
+          <td class="p-3 text-left">${estadoCell}</td>
+          <td class="p-3 text-right">${numCell('alcance', r.alcance)}</td>
+          <td class="p-3 text-right">${numCell('gasto', r.gasto)}</td>
+          <td class="p-3 text-right">${numCell('resultados', r.resultados)}</td>
+          <td class="p-3 text-right font-mono" data-field="coste">${campaignCosteResultado(r.gasto, r.resultados)}</td>
+          <td class="p-3 text-right font-mono">${r.leads_nuevos}</td>
+          <td class="p-3 text-right font-mono">${r.agendados}</td>
+          <td class="p-3 text-right font-mono">${r.asistieron}</td>
+          <td class="p-3 text-right font-mono">${r.inscritos}</td>
+          <td class="p-3 text-right font-mono">${r.agendados_previos}</td>
+          <td class="p-3 text-right font-mono">${r.pendientes}</td>
+          <td class="p-3 text-right whitespace-nowrap space-x-1">${btnSave}${btnDelete}</td>
+        </tr>`;
+}
+
+/** Fila TOTAL de la tabla de campanas. */
+export function totalCampanasHtml(totals, mesLabel) {
+  return `<tr class="campaigns-total-row font-semibold text-slate-100 border-t-2 border-indigo-600">
+        <td class="p-3 text-left">TOTAL · ${escapeHtml(mesLabel)}</td>
+        <td class="p-3"></td>
+        <td class="p-3 text-right font-mono">${totals.alcance}</td>
+        <td class="p-3 text-right font-mono">${totals.gasto.toFixed(2)}</td>
+        <td class="p-3 text-right font-mono">${totals.resultados}</td>
+        <td class="p-3 text-right font-mono">${campaignCosteResultado(totals.gasto, totals.resultados)}</td>
+        <td class="p-3 text-right font-mono">${totals.leads_nuevos}</td>
+        <td class="p-3 text-right font-mono">${totals.agendados}</td>
+        <td class="p-3 text-right font-mono">${totals.asistieron}</td>
+        <td class="p-3 text-right font-mono">${totals.inscritos}</td>
+        <td class="p-3 text-right font-mono">${totals.agendados_previos}</td>
+        <td class="p-3 text-right font-mono">${totals.pendientes}</td>
+        <td class="p-3"></td>
+      </tr>`;
+}
+
+/** Lineas del CSV de campanas (mismo orden y total que el export). */
+export function campanasCsvLines(rows, monthStr, generado) {
+  const headers = ['Campaña', 'Estado', 'Alcance', 'Gasto (USD)', 'Resultados Meta', 'Coste/Resultado', 'Leads Nuevos', 'Agendados', 'Asistieron', 'Inscritos', 'Agendados Meses Anteriores', 'Pendientes'];
+  const lineas = [`Campañas · ${monthStr}`, `Generado: ${generado} Miami`, '', headers.join(',')];
+  for (const r of rows || []) {
+    lineas.push([csvReporteField(r.name), csvReporteField(r.estado), csvReporteField(r.alcance), csvReporteField(r.gasto), csvReporteField(r.resultados), csvReporteField(campaignCosteResultado(r.gasto, r.resultados)), csvReporteField(r.leads_nuevos), csvReporteField(r.agendados), csvReporteField(r.asistieron), csvReporteField(r.inscritos), csvReporteField(r.agendados_previos), csvReporteField(r.pendientes)].join(','));
+  }
+  const t = campaignTotals(rows || []);
+  lineas.push([csvReporteField('TOTAL'), csvReporteField(''), csvReporteField(t.alcance), csvReporteField(t.gasto.toFixed(2)), csvReporteField(t.resultados), csvReporteField(campaignCosteResultado(t.gasto, t.resultados)), csvReporteField(t.leads_nuevos), csvReporteField(t.agendados), csvReporteField(t.asistieron), csvReporteField(t.inscritos), csvReporteField(t.agendados_previos), csvReporteField(t.pendientes)].join(','));
+  return lineas;
+}
+
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
   window.MONTH_CHRONO = MONTH_CHRONO;
@@ -245,5 +1237,46 @@ if (typeof window !== 'undefined') {
   window.csvReporteField = csvReporteField;
   window.campaignCosteResultado = campaignCosteResultado;
   window.campaignTotals = campaignTotals;
+  window.computeHistoricalAggregates = computeHistoricalAggregates;
+  window.applyHistoricalFilters = applyHistoricalFilters;
+  window.histDateInputToTs = histDateInputToTs;
+  window.histRangePresetDates = histRangePresetDates;
+  window.historicalSummaryCsv = historicalSummaryCsv;
+  window.historicalSummaryRows = historicalSummaryRows;
+  window.historicalKpiTotals = historicalKpiTotals;
+  window.historicalRecordMonth = historicalRecordMonth;
+  window.histRangeNoticeText = histRangeNoticeText;
+  window.historicalChartSeries = historicalChartSeries;
+  window.tablaVaciaHistoricoHtml = tablaVaciaHistoricoHtml;
+  window.tablaHistoricoHtml = tablaHistoricoHtml;
+  window.histChartMonthly = histChartMonthly;
+  window.histChartConversion = histChartConversion;
+  window.histChartCampaign = histChartCampaign;
+  window.histChartMedio = histChartMedio;
+  window.histChartAgent = histChartAgent;
+  window.histChartMonthlyStates = histChartMonthlyStates;
+  window.histChartMonthlyCampaigns = histChartMonthlyCampaigns;
+  window.histChartFunnel = histChartFunnel;
+  window.buildPeriodSummary = buildPeriodSummary;
+  window.validatePeriodoSummary = validatePeriodoSummary;
+  window.validatePeriodoActividad = validatePeriodoActividad;
+  window.periodoCsvLines = periodoCsvLines;
+  window.diarioCsvLines = diarioCsvLines;
+  window.resolverNotaBloque = resolverNotaBloque;
+  window.indiceNotas = indiceNotas;
+  window.notaDeBloque = notaDeBloque;
+  window.totalDiario = totalDiario;
+  window.detallesBloqueHtml = detallesBloqueHtml;
+  window.manualBloqueHtml = manualBloqueHtml;
+  window.bloqueDiaHtml = bloqueDiaHtml;
+  window.cuerpoReporteDiario = cuerpoReporteDiario;
+  window.asesorasDisponibles = asesorasDisponibles;
+  window.campanasDeFuentes = campanasDeFuentes;
+  window.resumenCampanasHtml = resumenCampanasHtml;
+  window.estadoVacioCampanasHtml = estadoVacioCampanasHtml;
+  window.filaCampanaHtml = filaCampanaHtml;
+  window.totalCampanasHtml = totalCampanasHtml;
+  window.campanasCsvLines = campanasCsvLines;
+  window.historicalFilterOptions = historicalFilterOptions;
   window.totalCanalesVisibles = totalCanalesVisibles;
 }

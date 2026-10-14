@@ -20,7 +20,8 @@ const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, 
   histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
   periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
   computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
-  buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque } = reportesMod;
+  buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
+  indiceNotas, notaDeBloque, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles } = reportesMod;
 // Helpers puros del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
 const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, withOrigin, getLeadOrigin,
@@ -125,6 +126,7 @@ function frontend(extra = {}) {
     periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
     computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
     buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
+    indiceNotas, notaDeBloque, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles,
     // Helpers del area Leads extraidos a src/legacy/leads.js
     sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin, aplicarUpsertLead, aplicarRemoveLead,
     haveSameLeadIds, isAgendadoGestion, validAppointmentId,
@@ -137,7 +139,7 @@ function frontend(extra = {}) {
     sessionGeneration: 1, currentMainTab: 'citas', isAdmin: false, isSupervisor: false, newPhoneCheckGeneration: 0, newPhoneCheckTimer: null,
     citasRequestGeneration: 0, citasCache: [], citasRangeKey: '', leadAppointmentsCache: [], leadNotesCache: [], leadGestionesCache: [],
     viewLeadGeneration: 1, currentViewId: 1, dashRangeGen: 0, filterDebounceTimer: null,
-   reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], reporteDayNotes: [], reporteAsesorasDisponibles: [], reporteLoadedKey: '', campanasData: [],
+   reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], reporteDayNotes: [], reporteAsesorasDisponibles: [], reporteAsesorasCatalogo: [], reporteLoadedKey: '', campanasData: [],
     periodoRequestGeneration: 0, periodoData: null, periodoLoadedKey: '', reporteVistaActiva: 'diario',
     periodoSourceRevision: 0, periodoLoadedRevision: -1, periodoRefreshTimer: null,
     periodoActividadData: null, periodoActividadKey: '', periodoActividadGeneration: 0,
@@ -1261,7 +1263,8 @@ test('badge Nuevo: fecha de llegada del mes/año Miami actual, no de otros meses
 
 test('canal Llamada WhatsApp: etiqueta visible nueva, valor y conteo canónicos intactos', () => {
   assert.match(html, /<option value="Llamada y WhatsApp">Llamada WhatsApp<\/option>/);
-  assert.match(html, /\['Llamada y WhatsApp',num\(b\.canales,'llamada_whatsapp'\)\]/);
+  // Las tablas de detalle viven en src/legacy/reportes.js (fase 21).
+  assert.match(readFileSync('src/legacy/reportes.js', 'utf8'), /\['Llamada y WhatsApp', num\(b\.canales, 'llamada_whatsapp'\)\]/);
   // La cabecera del CSV diario vive en src/legacy/reportes.js (fase 16).
   assert.match(readFileSync('src/legacy/reportes.js', 'utf8'), /'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas'/);
   // El historial traduce el canal almacenado a la nueva etiqueta.
@@ -2054,6 +2057,14 @@ test('comparativa RPC muestra campos y detalle las cuatro tablas y notas', async
 test('filtro de asesora reconsulta RPC y deja una sola fila', async () => {
   const f = reportFixture(args => ({ asesoras: [advisor('Ana', 'a'), advisor('Bea', 'b')].filter(x => !args.p_autor_user_id || x.autor_user_id === args.p_autor_user_id) })); await f.context.loadReporteDiario(); f.element('reporteAsesora').value = 'a'; await f.context.loadReporteDiario();
   assert.deepEqual(plain(f.db.rpcCalls.at(-1).args), { p_fecha: '2026-03-05', p_autor_user_id: 'a' }); assert.match(f.element('reporteAuto').innerHTML, /Ana/); assert.doesNotMatch(f.element('reporteAuto').innerHTML, /Bea/);
+  // Regresion: tras filtrar por Ana, la opcion de Bea conserva su id real
+  // (antes quedaba en value="" y cambiar de asesora volvia a Todas).
+  const opciones = f.element('reporteAsesora').innerHTML;
+  assert.match(opciones, /<option value="a">Ana<\/option>/);
+  assert.match(opciones, /<option value="b">Bea<\/option>/);
+  // Y pasar de Ana a Bea vuelve a consultar por el id de Bea.
+  f.element('reporteAsesora').value = 'b'; await f.context.loadReporteDiario();
+  assert.deepEqual(plain(f.db.rpcCalls.at(-1).args), { p_fecha: '2026-03-05', p_autor_user_id: 'b' }); assert.match(f.element('reporteAuto').innerHTML, /Bea/); assert.doesNotMatch(f.element('reporteAuto').innerHTML, /Ana/);
 });
 test('CSV del reporte v2 exporta columnas nuevas y totaliza los bloques visibles', async () => {
   const a = { ...advisor('Ana', 'a', 2), procedencia: { WhatsApp: 1, 'Facebook/Instagram': 2, CogniTalking: 3, 'Directo o Referido': 4, Otros: 5 }, llamadas: { del_dia: 1, data_dura: 2, llamada_whatsapp: 3, total: 6 }, citas: { agendados_dia: 1, agendados_data_dura: 2, total_agendados: 3, visitas: 4, no_asistieron: 5, canceladas: 6, reprogramadas: 7 }, inscritos: { del_dia: 1, data_dura: 2, total: 3 } };
@@ -2220,7 +2231,8 @@ test('errores de nota se muestran traducidos, no crudos', async () => {
 
 test('reporte: textareas limitados a 5000, aviso accesible, fecha de cabecera civil y nombres de fichero en Miami', () => {
   assert.match(html, /id="reporteAviso"[^>]*aria-live="polite"/);
-  assert.match(html, /id="reporte-problemas-\$\{i\}"[^>]*maxlength="5000"/);
+  // El manual de edicion vive en src/legacy/reportes.js (fase 21).
+  assert.match(readFileSync('src/legacy/reportes.js', 'utf8'), /id="reporte-problemas-\$\{i\}"[^>]*maxlength="5000"/);
   assert.match(html, /`Leads_Sociedad_Actoral_\$\{miamiToday\(\)\}\.csv`/);
   assert.match(html, /`Historical_Summary_\$\{miamiToday\(\)\}\.csv`/);
   assert.match(html, /new Date\(`\$\{fecha\}T12:00:00Z`\)/);

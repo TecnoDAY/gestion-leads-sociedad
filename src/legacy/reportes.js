@@ -6,7 +6,7 @@
  * (registro al final de este modulo); las llamadas quedaron intactas.
  */
 
-import { compareAlphaEs, consolidateLeadsById, getField, miamiToday } from './helpers.js';
+import { compareAlphaEs, consolidateLeadsById, escapeHtml, getField, miamiToday } from './helpers.js';
 
 // Meses en orden cronologico canonico; nunca alfabetico. Fuente unica.
 export const MONTH_CHRONO = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
@@ -824,6 +824,89 @@ export function diarioCsvLines(fecha, filtro, generado, bloques, notasResueltas)
   return lineas;
 }
 
+// --- Piezas puras del panel del reporte diario (fase 21) ---------------------
+
+/** Indice de notas por uid y por nombre legado (respaldo sin user_id). */
+export function indiceNotas(notas) {
+  const porUid = new Map(), porNombre = new Map();
+  for (const n of notas || []) (n.autor_user_id ? porUid : porNombre).set(n.autor_user_id || n.autor_name, n);
+  return { porUid, porNombre };
+}
+
+/** Nota de una asesora: uid primero; el nombre es solo respaldo. */
+export function notaDeBloque({ porUid, porNombre }, b) {
+  return (b.autor_user_id && porUid.get(b.autor_user_id)) || porNombre.get(b.autor_name) || null;
+}
+
+/** Totales del panel (gestiones, llamadas, citas, reprogramadas, visitas). */
+export function totalDiario(bloques) {
+  const num = (o, k) => Number(o?.[k]) || 0;
+  return (bloques || []).reduce((a, b) => {
+    a.g += num(b, 'gestionados');
+    a.l += Number(b.llamadas?.total) || 0;
+    a.c += Number(b.citas?.total_agendados) || 0;
+    a.r += Number(b.citas?.citas_reprogramadas_hoy) || 0;
+    a.v += Number(b.citas?.visitas) || 0;
+    return a;
+  }, { g: 0, l: 0, c: 0, r: 0, v: 0 });
+}
+
+const celdaDiago = (label, value) => `<div class="daily-metric"><div class="text-xs text-slate-500">${label}</div><strong class="text-lg text-indigo-900">${value}</strong></div>`;
+const tablaDetalle = (title, rows) => `<div class="daily-detail-card"><h5 class="font-semibold text-indigo-900">${title}</h5><table class="text-sm"><tbody>${rows.map(([l, v]) => `<tr><td>${l}</td><td class="font-semibold">${v}</td></tr>`).join('')}</tbody></table></div>`;
+
+/** Las cuatro tablas de detalle de una asesora (pantalla coherencia fase 16). */
+export function detallesBloqueHtml(b) {
+  const num = (o, k) => Number(o?.[k]) || 0;
+  const p = b.procedencia || {}, c = b.citas || {};
+  const pt = Object.values(p).reduce((a, v) => a + (Number(v) || 0), 0);
+  return tablaDetalle('Procedencia', [['WhatsApp', num(p, 'WhatsApp')], ['Facebook/Instagram', num(p, 'Facebook/Instagram')], ['Directo o Referido', num(p, 'Directo o Referido')], ['Otras procedencias', num(p, 'CogniTalking') + num(p, 'Otros')], ['Total', pt]])
+    + tablaDetalle('Canales', [['Llamada', num(b.canales, 'llamada')], ['Llamada Data Dura', num(b.canales, 'data_dura')], ['Llamada y WhatsApp', num(b.canales, 'llamada_whatsapp')], ['WhatsApp', num(b.canales, 'whatsapp')], ['Instagram', num(b.canales, 'instagram')], ['Otros o sin canal', num(b.canales, 'visita') + num(b.canales, 'sin_clasificar')], ['Total', totalCanalesVisibles(b.canales)]])
+    + tablaDetalle('Detalle WhatsApp', [['WhatsApp nuevos hoy', num(b.whatsapp, 'nuevos')], ['WhatsApp gestionados hoy', num(b.whatsapp, 'gestionados')], ['Total WhatsApp', num(b.whatsapp, 'total')]])
+    + tablaDetalle('Citas creadas y resultados registrados hoy', [['Leads pasados a Agendado', num(c, 'agendados_gestionados_dia')], ['Leads pasados a Agendado Data Dura', num(c, 'agendados_gestionados_data_dura')], ['Citas nuevas Doral', num(c, 'agendados_doral')], ['Citas nuevas Data Dura Doral', num(c, 'agendados_doral_data_dura')], ['Citas nuevas Weston', num(c, 'agendados_weston')], ['Citas nuevas Data Dura Weston', num(c, 'agendados_weston_data_dura')], ['Citas nuevas hoy', num(c, 'total_agendados')], ['Citas reprogramadas hoy', num(c, 'citas_reprogramadas_hoy')], ['Visitas registradas', num(c, 'visitas')], ['No asistieron', num(c, 'no_asistieron')], ['Canceladas', num(c, 'canceladas')], ['Reprogramadas', num(c, 'reprogramadas')]]);
+}
+
+/** Manual de problemas/observaciones: edicion o lectura (respaldo exacto). */
+export function manualBloqueHtml(i, nota, editable) {
+  if (editable) return `<label for="reporte-problemas-${i}" class="block text-xs font-semibold text-slate-600">Problemas</label><textarea id="reporte-problemas-${i}" class="reporte-manual w-full p-2" rows="3" maxlength="5000">${escapeHtml(nota?.problemas || '')}</textarea><label for="reporte-obs-${i}" class="block text-xs font-semibold text-slate-600">Observaciones</label><textarea id="reporte-obs-${i}" class="reporte-manual w-full p-2" rows="3" maxlength="5000">${escapeHtml(nota?.observaciones || '')}</textarea><div class="daily-note-actions flex flex-wrap gap-2"><button id="reporte-save-${i}" data-ev="click:saveReporteNota(${i})" class="px-3 py-1 bg-indigo-600 text-white">Guardar</button>${nota?.id ? '<button id="reporte-delete-' + i + '" data-ev="click:deleteReporteNota(' + i + ')" class="px-3 py-1 border border-slate-300">Eliminar</button>' : ''}</div>`;
+  return `<p class="text-sm">${escapeHtml(nota?.problemas || '')} ${escapeHtml(nota?.observaciones || '')}</p>`;
+}
+
+/** Bloque de una asesora con su resumen de detail + manuales. */
+export function bloqueDiaHtml(b, i, manualHtml) {
+  const num = (o, k) => Number(o?.[k]) || 0;
+  return `<details class="daily-advisor" ${i ? '' : 'open'}><summary class="cursor-pointer font-bold text-indigo-900">${escapeHtml(b.autor_name || b.advisor || 'Sin asesora')} — ${num(b, 'gestionados')} gestiones</summary><div class="daily-advisor-body"><div class="grid md:grid-cols-2 xl:grid-cols-4 gap-3">${detallesBloqueHtml(b)}</div><div class="mt-4 space-y-2"><h4 class="text-sm font-semibold text-slate-700">Problemas y observaciones</h4>${manualHtml}</div></div></details>`;
+}
+
+/** Shell del panel diario con el aviso de notas y el Resumen general. */
+export function cuerpoReporteDiario(notasOk, total, bloquesHtml) {
+  return `${notasOk ? '' : '<div class="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">No se pudieron cargar las notas guardadas. La edicion esta desactivada para no sobrescribir datos: recarga la pagina o intentalo mas tarde.</div>'}<section class="daily-summary space-y-3"><h3 class="font-bold text-lg text-indigo-900">Resumen general</h3><div class="grid grid-cols-2 sm:grid-cols-5 gap-3">${celdaDiago('Gestiones realizadas', total.g)}${celdaDiago('Total llamadas', total.l)}${celdaDiago('Citas nuevas hoy', total.c)}${celdaDiago('Reprogramadas hoy', total.r)}${celdaDiago('Visitas registradas', total.v)}</div></section><section class="space-y-3"><h3 class="font-bold text-lg text-indigo-900">Comparativa por asesora</h3>${bloquesHtml || '<p class="text-slate-500">Sin gestiones para esta fecha.</p>'}</section>`;
+}
+
+/**
+ * Lista de asesoras del select con ids estables (bug del filtro): la
+ * respuesta filtrada solo trae a una asesora, asi que se preservan los ids
+ * ya conocidos (previas), se completan con los de la respuesta y con los
+ * nombres del catalogo (id '') sin duplicar por nombre; un id real gana.
+ * Orden alfabetico es.
+ * @param {object[]} bloques Bloques de la respuesta ({autor_user_id, autor_name}).
+ * @param {string[]} catalogoNombres Nombres del catalogo de agentes.
+ * @param {object[]} previas Lista {id,name} cacheada de una carga anterior.
+ * @returns {{id: string, name: string}[]}
+ */
+export function asesorasDisponibles(bloques, catalogoNombres, previas) {
+  const porNombre = new Map();
+  const agregar = (id, name) => {
+    const clave = String(name ?? '').trim().toLowerCase();
+    if (!clave) return;
+    const actual = porNombre.get(clave);
+    if (!actual || (!actual.id && id)) porNombre.set(clave, { id: id || '', name });
+  };
+  for (const { id, name } of previas || []) agregar(id, name);
+  for (const b of bloques || []) agregar(b.autor_user_id || '', b.autor_name || '');
+  for (const name of catalogoNombres || []) agregar('', name);
+  return [...porNombre.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+}
+
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
   window.MONTH_CHRONO = MONTH_CHRONO;
@@ -859,6 +942,14 @@ if (typeof window !== 'undefined') {
   window.periodoCsvLines = periodoCsvLines;
   window.diarioCsvLines = diarioCsvLines;
   window.resolverNotaBloque = resolverNotaBloque;
+  window.indiceNotas = indiceNotas;
+  window.notaDeBloque = notaDeBloque;
+  window.totalDiario = totalDiario;
+  window.detallesBloqueHtml = detallesBloqueHtml;
+  window.manualBloqueHtml = manualBloqueHtml;
+  window.bloqueDiaHtml = bloqueDiaHtml;
+  window.cuerpoReporteDiario = cuerpoReporteDiario;
+  window.asesorasDisponibles = asesorasDisponibles;
   window.historicalFilterOptions = historicalFilterOptions;
   window.totalCanalesVisibles = totalCanalesVisibles;
 }

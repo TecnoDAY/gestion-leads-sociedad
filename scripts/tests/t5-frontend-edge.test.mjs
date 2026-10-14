@@ -13,7 +13,7 @@ const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayB
   compareLeadIdsDescending, consolidateLeadsById } = legacyMod;
 // Funciones puras del area Citas extraidas a src/legacy/citas.js
 const citasMod = await import('../../src/legacy/citas.js');
-const { appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc, unirCitasConLeads, citasKpiHtml } = citasMod;
+const { appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc, unirCitasConLeads, citasKpiHtml, citasLeadHtml, filaCitaHtml } = citasMod;
 // Helpers puros de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js
 const reportesMod = await import('../../src/legacy/reportes.js');
 const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
@@ -58,7 +58,7 @@ const names = [
   'withOrigin', 'getLeadOrigin', 'getVisibleBaseLeads', 'getHistoricalBaseLeads', 'updateKpis',
   'fetchRowsByIdCursor', 'fetchPagedResult', 'fetchRowsByIds', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'haveSameLeadIds',
   'performLoadOlderLeads', 'returnToRecentLeads', 'refillLoadedWindow', 'applyRealtimeEvent', 'updateCompleteCacheOnly', 'removeFromCompleteCacheOnly',
-  'loadCitas', 'clearCitasResults', 'appointmentSessionValid', 'loadLeadAppointments', 'renderCitasKpis',
+  'loadCitas', 'clearCitasResults', 'appointmentSessionValid', 'loadLeadAppointments', 'renderLeadAppointments', 'renderCitasKpis',
   'loadLeadNotes', 'loadLeadGestiones', 'loadLeadsByGestionRange', 'loadLeadsByMonth', 'clearDashRange', 'applyFilters', 'resetAllFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
   'activeCatalogValues', 'catalogOptions', 'readHistRange',
   'filterHistoricalLeads', 'populateHistoricalFilterOptions',
@@ -110,7 +110,7 @@ function frontend(extra = {}) {
     },
     window: {}, setTimeout: fn => { timers.push(fn); return timers.length; }, clearTimeout() {},
     showToast: (...args) => toasts.push(args), confirm: () => true,
-    fillCitasSelect() {}, renderCitas() {}, renderLeadNotes() {}, renderLeadGestiones() {}, renderLeadAppointments() {},
+    fillCitasSelect() {}, renderCitas() {}, renderLeadNotes() {}, renderLeadGestiones() {},
     updateKpis() {}, renderMatrix() {}, renderTable() {}, renderHistoricalAnalytics() {}, updateLeadScopeControls() {},
     refillLoadedWindow() {}, scheduleExactLeadCountRefresh() {},
     renderCampanas() {}, canEditCampaigns: () => false,
@@ -119,7 +119,7 @@ function frontend(extra = {}) {
     getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel,
     compareLeadIdsDescending, consolidateLeadsById,
     // Helpers del area Citas extraidos a src/legacy/citas.js
-    appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc, unirCitasConLeads, citasKpiHtml,
+    appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc, unirCitasConLeads, citasKpiHtml, citasLeadHtml,
     // Helpers de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js
     MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
     histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
@@ -1213,15 +1213,31 @@ test('fecha de llegada: formulario editable, Mes derivado y validación futura; 
   // Rollback documentado.
   assert.match(sql, /Rollback manual/);
 });
+test('citas: wrapper publica plantilla y no la evalua si falta el nodo', () => {
+  const f = frontend();
+  f.context.renderLeadAppointments();
+  assert.equal(f.element('leadAppointmentsList').innerHTML, citasLeadHtml([], { isAdmin: false, userId: 'user-test' }));
+  f.context.document.getElementById = () => null;
+  f.context.citasLeadHtml = () => { throw new Error('no debe renderizar sin nodo'); };
+  assert.doesNotThrow(() => f.context.renderLeadAppointments());
+});
+
 test('citas: lectura compartida para el equipo y botones de edición solo para asesora asignada o admin', () => {
   const sql = readFileSync('supabase/migrations/202610020003_citas_lectura_equipo.sql', 'utf8').split('-- Rollback')[0];
   assert.match(sql, /using \(public\.is_active_user\(\) and public\.is_crm_user\(\)\)/);
   assert.doesNotMatch(sql, /advisor_user_id = auth\.uid\(\)/);
   // Las escrituras siguen restringidas por RPC; el frontend oculta los botones.
-  assert.match(html, /canEdit = isAdmin \|\| a\.advisor_user_id === currentUser\?\.id/);
-  assert.match(html, /\$\{canEdit \? `<button data-appointment-id="\$\{id\}" data-ev="click:editAppointmentDetails/);
-  assert.match(html, /\$\{scheduled && canEdit \?/);
-  assert.match(readFileSync('src/legacy/citas.js', 'utf8'), /\(isAdmin \|\| r\.advisor_user_id === userId\) \? `<button data-ev="click:editAppointmentDetails/);
+  for (const [isAdmin, userId, canEdit] of [[true, 'other', true], [false, 'assigned', true], [false, 'other', false]]) {
+    const cita = { id: 21, status: 'PROGRAMADA', advisor_user_id: 'assigned', lead: { id: 1 } };
+    const f = frontend({ isAdmin, currentUser: { id: userId }, leadAppointmentsCache: [cita] });
+    f.context.renderLeadAppointments();
+    const body = f.element('leadAppointmentsList').innerHTML;
+    assert.equal(body.includes('click:editAppointmentDetails(21)'), canEdit);
+    assert.equal(body.includes('click:editAppointmentCampus(21)'), canEdit);
+    assert.equal(body.includes('click:setLeadAppointmentStatus(21,'), canEdit);
+    assert.equal(body.includes('click:rescheduleLeadAppointment(21)'), canEdit);
+    assert.equal(filaCitaHtml(cita, { isAdmin, userId }).includes('click:editAppointmentDetails(21)'), canEdit);
+  }
   // La ficha necesita advisor_user_id para calcular canEdit.
   assert.match(html, /advisor_name, advisor_user_id, notes, rescheduled_from_id/);
 });
@@ -2510,13 +2526,12 @@ test('cita unica: la UI no duplica funciones ni expone el borrado a no-admin', (
   assert.equal(occurrences('deleteLeadAppointment'), 1);
   assert.equal(occurrences('updateLeadAppointmentCreateState'), 1);
   assert.equal(occurrences('loadLeadAppointments'), 1);
-  // El boton de borrar solo se emite dentro de una rama de administrador.
-  const botones = [...script.matchAll(/data-ev="click:deleteLeadAppointment\(/g)];
-  const botonesCitas = [...readFileSync('src/legacy/citas.js', 'utf8').matchAll(/data-ev="click:deleteLeadAppointment\(/g)];
-  assert.equal(botones.length + botonesCitas.length, 2, 'uno en la ficha y otro en la tabla de Citas');
-  for (const match of botones) {
-    const previo = script.slice(Math.max(0, match.index - 160), match.index);
-    assert.match(previo, /isAdmin \?/, 'el boton de borrar debe quedar tras una comprobacion de isAdmin');
+  for (const isAdmin of [false, true]) {
+    const cita = { id: 31, advisor_user_id: 'user-test', lead: { id: 1 } };
+    const f = frontend({ isAdmin, leadAppointmentsCache: [cita] });
+    f.context.renderLeadAppointments();
+    assert.equal(f.element('leadAppointmentsList').innerHTML.includes('click:deleteLeadAppointment(31)'), isAdmin);
+    assert.equal(filaCitaHtml(cita, { isAdmin, userId: 'user-test' }).includes('click:deleteLeadAppointment(31)'), isAdmin);
   }
 });
 
@@ -2567,6 +2582,7 @@ test('reporte diario: canales e inscripciones retirados de pantalla y CSV', () =
 //     null) y afirmamos que la gramatica estricta del dispatcher lo ejecuta
 //     sin eval ni Function.
 import { parseDataAtributo, llamarAccion } from '../../src/legacy/actions.js';
+const markupCitas = html + readFileSync(new URL('../../src/legacy/citas.js', import.meta.url), 'utf8');
 
 test('parse-all data-ev: markup estatico ejecutable por el dispatcher', () => {
   const nombres = new Set();
@@ -2576,7 +2592,7 @@ test('parse-all data-ev: markup estatico ejecutable por el dispatcher', () => {
     const modulo = readFileSync(new URL(`../../src/legacy/${f}`, import.meta.url), 'utf8');
     for (const m of modulo.matchAll(/window\.([\w$]+)\s*=/g)) nombres.add(m[1]);
   }
-  const todos = [...html.matchAll(/data-ev="([^"]+)"/g)].map(m => m[1]);
+  const todos = [...markupCitas.matchAll(/data-ev="([^"]+)"/g)].map(m => m[1]);
   const valores = todos.filter(v => !v.includes('${'));
   const plantillas = todos.filter(v => v.includes('${'));
   assert.ok(valores.length > 120, `se esperaban muchos estaticos, hay ${valores.length}`);
@@ -2602,7 +2618,7 @@ test('parse-all data-ev: plantillas dinamicas cumplen la gramatica (sin eval)', 
     // numeros/bools sin comillas (paginacion, flags de admin)
     .replace(/\$\{[^}]+\}/g, '5');
   let revisadas = 0;
-  for (const m of html.matchAll(/data-ev="([^"]+)"/g)) {
+  for (const m of markupCitas.matchAll(/data-ev="([^"]+)"/g)) {
     if (!m[1].includes('${')) continue;
     const { cuerpo } = parseDataAtributo(replantillas(m[1]));
     llamarAccion(cuerpo, { elemento: stub(), evento: stubEvento(), buscarGlobal: () => stub() });

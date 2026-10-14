@@ -99,6 +99,11 @@ export function citasEventsFromRows(rows) {
  */
 export function validAppointmentId(value) { const id = Number(value); return Number.isFinite(id) && Number.isInteger(id) && id > 0 ? id : null; }
 
+/** Plantilla exacta de las citas de la ficha; sin lectura de estado ni DOM. */
+export function citasLeadHtml(citas, { isAdmin, userId }) {
+  return citas.length ? citas.map(a => { const id = validAppointmentId(a.id); if (!id) return ''; const scheduled = String(a.status) === 'PROGRAMADA'; const canEdit = isAdmin || a.advisor_user_id === userId; return `<div data-appointment-id="${id}" class="border-b border-slate-800 last:border-0 py-2 space-y-1"><div class="flex flex-wrap items-center gap-2 text-xs"><span class="text-slate-200 font-medium">Cita para: ${escapeHtml(appointmentLocal(a.scheduled_at))}</span>${appointmentBadge(a.status)}<span class="text-slate-400">Creada: ${escapeHtml(appointmentLocal(a.created_at))}</span><span class="text-slate-400">${escapeHtml(a.advisor_name || '-')}</span>${a.rescheduled_from_id ? `<span class="text-[11px] text-slate-500">reprogramada desde #${escapeHtml(String(validAppointmentId(a.rescheduled_from_id) || ''))}</span>` : ''}</div>${a.notes ? `<p class="text-[11px] text-slate-400 whitespace-pre-line">${escapeHtml(a.notes)}</p>` : ''}${a.student_name || a.contact_email || a.student_age != null ? `<p class="text-[11px] text-slate-300">Estudiante: ${escapeHtml(a.student_name || '-')} · Correo: ${escapeHtml(a.contact_email || '-')} · Edad: ${escapeHtml(a.student_age != null ? String(a.student_age) : '-')}</p>` : ''}<p class="text-[11px] text-slate-300">Sede: ${escapeHtml(a.campus || 'Sin sede')}</p>${canEdit ? `<button data-appointment-id="${id}" data-ev="click:editAppointmentDetails(${id})" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-[11px]">Editar datos</button><button data-appointment-id="${id}" data-ev="click:editAppointmentCampus(${id})" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-[11px]">Sede</button>` : ''}${scheduled && canEdit ? `<div class="flex flex-wrap gap-1.5"><button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'ASISTIO')" class="px-2 py-1 rounded bg-emerald-600 text-white text-[11px]">Asistió</button><button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'NO_ASISTIO')" class="px-2 py-1 rounded bg-amber-600 text-white text-[11px]">No asistió</button><button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'CANCELADA')" class="px-2 py-1 rounded bg-rose-600 text-white text-[11px]">Cancelada</button><input data-appointment-id="${id}" id="reschedule-${id}" type="datetime-local" class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-[11px]"><button data-appointment-id="${id}" data-ev="click:rescheduleLeadAppointment(${id})" class="px-2 py-1 rounded bg-indigo-600 text-white text-[11px]">Reprogramar</button></div>` : ''}${isAdmin ? `<button data-appointment-id="${id}" data-ev="click:deleteLeadAppointment(${id})" class="px-2 py-1 rounded bg-rose-700 hover:bg-rose-600 text-white text-[11px]">Eliminar cita</button>` : ''}</div>`; }).join('') : '<p class="text-[11px] text-slate-500">Sin citas registradas.</p>';
+}
+
 /** Estados canonicos que la tabla de citas resalta por separado. */
 const ESTADOS_CITAS = ['PROGRAMADA', 'ASISTIO', 'NO_ASISTIO', 'CANCELADA', 'REPROGRAMADA'];
 
@@ -224,6 +229,7 @@ if (typeof window !== 'undefined') {
   window.citasDateDefaults = citasDateDefaults;
   window.citasEventsFromRows = citasEventsFromRows;
   window.validAppointmentId = validAppointmentId;
+  window.citasLeadHtml = citasLeadHtml;
   window.filtrarCitas = filtrarCitas;
   window.conteoCitas = conteoCitas;
   window.filaCitaHtml = filaCitaHtml;

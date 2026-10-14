@@ -5,8 +5,8 @@
  * sigue resolviendolos via window.* (registro al final de este modulo).
  */
 
-import { compareAlphaEs, consolidateLeadsById, escapeAttr, escapeHtml, getField, miamiToday, sortAlphaEs } from './helpers.js';
-import { MONTH_CHRONO } from './reportes.js';
+import { compareAlphaEs, compareLeadIdsDescending, consolidateLeadsById, escapeAttr, escapeHtml, getField, miamiToday, sortAlphaEs } from './helpers.js';
+import { MONTH_CHRONO, parseFechaLead } from './reportes.js';
 
 /**
  * Orden de un catalogo de meses: cronologico canonico; valores no reconocidos
@@ -525,6 +525,151 @@ export function gestionesLeadHtml(gestiones) {
   }).join('');
 }
 
+/** Cuatro leads recientes del conjunto filtrado; mismo marcado y orden numerico. */
+export function quickLeadsHtml(leads) {
+  const rows = [...leads].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 4);
+  if (!rows.length) {
+    return '<div class="quick-leads-empty"><p class="text-sm font-semibold">No hay leads con los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otros criterios o limpia los filtros para ver los registros.</p><button type="button" data-ev="click:resetAllFilters()">Limpiar filtros</button></div>';
+  }
+  return rows.map(lead => {
+    const id = String(lead.id);
+    const origin = getLeadOrigin(lead);
+    const nombre = getField(lead, 'Nombre') || 'Sin nombre';
+    const campana = getField(lead, 'Campaña') || 'Sin campaña';
+    const fecha = getField(lead, 'Fecha') || 'Sin fecha';
+    const gestion = getField(lead, 'GESTION') || 'Sin estado';
+    return `<div class="quick-lead-row text-xs">
+          <div class="quick-lead-meta"><button type="button" data-quick-action="view" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="font-semibold text-left text-white hover:text-indigo-400 cursor-pointer">${escapeHtml(nombre)}</button><p class="mt-1 text-slate-400">${escapeHtml(fecha)}${origin === 'historico' ? ' · Histórico 2025' : ''}</p></div>
+          <span class="quick-lead-campaign quick-lead-meta text-slate-300">${escapeHtml(campana)}</span>
+          <span class="quick-lead-status">${badgeGestionHtml(gestion)}</span>
+          <div class="quick-lead-actions">
+            <button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="rounded-lg border border-slate-600 px-3 py-1.5 font-semibold text-slate-400 opacity-60 cursor-not-allowed">WhatsApp · Próximamente</button>
+            <button type="button" data-quick-action="edit" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="rounded-lg border border-indigo-500/40 px-3 py-1.5 font-semibold text-indigo-300 hover:bg-indigo-500/10 cursor-pointer">Gestionar</button>
+            <button type="button" data-quick-action="view" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="rounded-lg border border-slate-600 px-3 py-1.5 font-semibold text-slate-300 hover:bg-slate-700 cursor-pointer">Ver ficha</button>
+          </div>
+        </div>`;
+  }).join('');
+}
+
+// --- Repetidos y primera entrada de la ficha (fase 29) ----------------------
+
+/**
+ * Posibles repetidos del lead: misma clave de telefono (>= 7 digitos) en todas
+ * las fuentes, un solo recorrido por array; se excluye el propio registro por
+ * par origen+id (los ids numericos colisionan entre 'actual' e 'historico').
+ * @param {object} lead
+ * @param {Array<Array<object>>} fuentes - Arrays de leads a recorrer (actual e historico).
+ * @param {string} finalOrigin - Origen del lead en pantalla.
+ * @returns {Array<object>}
+ */
+export function relacionadosPorTelefono(lead, fuentes, finalOrigin) {
+  const phoneKey = normalizePhone(getField(lead, 'Telefono'));
+  if (phoneKey.length < 7) return [];
+  const relacionados = [];
+  for (const arr of fuentes || []) {
+    for (const l of arr) {
+      if (getLeadOrigin(l) === finalOrigin && String(l.id) === String(lead.id)) continue;
+      if (normalizePhone(getField(l, 'Telefono')) === phoneKey) relacionados.push(l);
+    }
+  }
+  return relacionados;
+}
+
+/**
+ * Primera entrada como lead: fecha minima entre este registro y sus
+ * relacionados; null si no hay relacionados o ninguna fecha parseable.
+ * @param {object} lead
+ * @param {Array<object>} relacionados
+ * @returns {{ firstTs: number, firstFecha: string, firstIsHistorico: boolean }|null}
+ */
+export function primeraEntradaLead(lead, relacionados) {
+  if (!relacionados || !relacionados.length) return null;
+  let firstTs = parseFechaLead(lead);
+  let firstFecha = getField(lead, 'Fecha').trim();
+  let firstIsHistorico = getLeadOrigin(lead) === 'historico';
+  [...relacionados, lead].forEach(l => {
+    const ts = parseFechaLead(l);
+    if (ts !== null && (firstTs === null || ts < firstTs)) {
+      firstTs = ts;
+      firstFecha = getField(l, 'Fecha').trim();
+      firstIsHistorico = getLeadOrigin(l) === 'historico';
+    }
+  });
+  if (firstTs === null) return null;
+  return { firstTs, firstFecha, firstIsHistorico };
+}
+
+/**
+ * Orden de repetidos: fecha dd/mm/yyyy -> created_at parseable -> id numero,
+ * descendente; empate final por compareLeadIdsDescending. Nunca muta la entrada.
+ * @param {Array<object>} items
+ * @returns {Array<object>}
+ */
+export function ordenRepetidos(items) {
+  const sortKey = (l) => {
+    const m = String(getField(l, 'Fecha') || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (m) {
+      const t = Date.UTC(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+      if (!Number.isNaN(t)) return t;
+    }
+    const c = Date.parse(l.created_at || '');
+    if (!Number.isNaN(c)) return c;
+    const n = Number(l.id);
+    return Number.isFinite(n) ? n : 0;
+  };
+  return [...items].sort((a, b) => sortKey(b) - sortKey(a) || compareLeadIdsDescending(a, b));
+}
+
+/**
+ * Filas <li> del bloque de repetidos: badges 2025/2026, marca 'Este lead' en el
+ * registro en pantalla, observaciones truncadas a 160 con ellipsis y espacios
+ * compactados, y botón Abrir en los relacionados (nunca en el propio).
+ * @param {Array<object>} items - Ya ordenados con ordenRepetidos.
+ * @param {string} finalOrigin - Origen del lead en pantalla.
+ * @param {object|string|number} leadId - Id del lead en pantalla.
+ * @returns {string}
+ */
+export function bloqueRepetidosHtml(items, finalOrigin, leadId) {
+  return (items || []).map(l => {
+    const itemOrigin = getLeadOrigin(l);
+    const esActual = itemOrigin === finalOrigin && String(l.id) === String(leadId);
+    const yearBadge = itemOrigin === 'historico'
+      ? '<span class="text-[11px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">2025</span>'
+      : '<span class="text-[11px] uppercase px-1.5 py-0.5 rounded bg-slate-700/60 text-slate-300 border border-slate-600/60 font-semibold">2026</span>';
+    const obsRaw = (getField(l, 'OBSERVACIONES ') || '').replace(/\s+/g, ' ').trim();
+    const obs = obsRaw.length > 160 ? obsRaw.slice(0, 160) + '…' : obsRaw;
+    return `<li class="flex items-start justify-between gap-3 border-b border-slate-800 last:border-0 py-2">
+              <div class="min-w-0 space-y-1">
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="text-slate-200 font-medium">${escapeHtml(getField(l, 'Fecha') || '-')}</span>
+                  <span class="text-slate-500 font-mono">#${escapeHtml(String(l.id))}</span>
+                  ${yearBadge}
+                  ${esActual ? '<span class="text-[11px] uppercase px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-semibold">Este lead</span>' : ''}
+                </div>
+                <div class="text-[11px] text-slate-400 truncate">${escapeHtml(getField(l, 'Campaña') || '-')} · ${escapeHtml(getField(l, 'Medio') || '-')}</div>
+                <div class="text-[11px] text-slate-400">Agente: ${escapeHtml(getField(l, 'Agente ') || '-')}</div>
+                <div>${badgeGestionHtml(getField(l, 'GESTION'))}</div>
+                ${obs ? `<p class="text-[11px] text-slate-500 leading-snug">${escapeHtml(obs)}</p>` : ''}
+              </div>
+              ${esActual ? '' : `<button data-ev="click:openLeadFromView('${itemOrigin}', '${escapeAttr(l.id)}')" class="shrink-0 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 border border-slate-700 text-[11px] font-medium cursor-pointer transition-colors">Abrir</button>`}
+            </li>`;
+  }).join('');
+}
+
+/**
+ * Banner de primera entrada como lead (solo cuando la minima es historica).
+ * @param {string} firstFecha - Fecha textual de la primera entrada.
+ * @param {number} firstYear - Anio UTC de la primera entrada.
+ * @returns {string}
+ */
+export function bannerPrimeraEntradaHtml(firstFecha, firstYear) {
+  return `
+        <div class="bg-indigo-500/10 border border-indigo-500/30 rounded-xl px-3.5 py-2 flex items-center gap-2">
+          <i data-lucide="calendar-clock" class="w-4 h-4 text-indigo-300 shrink-0"></i>
+          <span class="text-xs text-indigo-200">Primera entrada como lead: <span class="font-semibold">${escapeHtml(firstFecha)}</span> <span class="text-indigo-300">(${firstYear})</span></span>
+        </div>`;
+}
+
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
   window.sortMonthCatalog = sortMonthCatalog;
@@ -549,4 +694,10 @@ if (typeof window !== 'undefined') {
   window.controlesPaginacionHtml = controlesPaginacionHtml;
   window.notasLeadHtml = notasLeadHtml;
   window.gestionesLeadHtml = gestionesLeadHtml;
+  window.quickLeadsHtml = quickLeadsHtml;
+  window.relacionadosPorTelefono = relacionadosPorTelefono;
+  window.primeraEntradaLead = primeraEntradaLead;
+  window.ordenRepetidos = ordenRepetidos;
+  window.bloqueRepetidosHtml = bloqueRepetidosHtml;
+  window.bannerPrimeraEntradaHtml = bannerPrimeraEntradaHtml;
 }

@@ -139,3 +139,8 @@ Bloqueos: ninguno.
 Estado: implementada y contrastada independientemente; sin commit
 (2026-10-14). Siguiente tarea: T3 (visual humana y ZAP).
 Bloqueos: ninguno.
+
+## Progreso (cierre)
+- Estado: passed. Commiteada como 898f88f con revision visual humana
+  confirmada (2026-10-14). ZAP del tramo: ejecutada tras la fase 33 (fichero
+  /tmp/opencode/zap-fases32-33-4173.log).

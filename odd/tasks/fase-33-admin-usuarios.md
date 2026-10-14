@@ -53,7 +53,7 @@ activas/stale/ended, search con acentos) antes de extraer.
 ## Tareas
 - [x] T1: crear admin.js con piezas puras, wrappers minimos, golden y tests.
 - [x] T2: contraste independiente, suite, lint, build, smoke, diff-check.
-- [ ] T3: revision visual humana y ZAP separado.
+- [x] T3: revision visual humana y ZAP separado.
 
 ## Criterios de aceptacion
 - [ ] renderAuthorizedUsers y loadAgentSessionsReport sin plantillas ni
@@ -160,3 +160,10 @@ Estado: passed T3-visual. El humano reviso el panel de usuarios/actividad en
 preview y confirmo "todo fue corregido y funciona" (2026-10-14), junto con
 los dos fixes de regresiones (cierre del panel y nonce CSP del calendario).
 ZAP del tramo queda pendiente (se lanza tras commitear).
+Commiteada como 9339df3 (extraccion) tras confirmacion visual; los fixes de
+regresion van en 7154316 (cierre del panel + nonce CSP del calendario). El
+golden del test de fase 33 queda anclado a 898f88f porque 'HEAD' perdio las
+piezas inline al commitear la fase (3 tests lo detectaron y se corrigio).
+ZAP de fases 32-33 + artefacto con nonce (2026-10-14): cola cero, 0 High,
+0 Low, 0 alertas CSP con 10055 activa; 16 Medium = falso positivo Java
+conocido. Evidencia: /tmp/opencode/zap-fases32-33-4173.log. T3 cerrada.

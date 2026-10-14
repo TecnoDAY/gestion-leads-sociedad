@@ -54,7 +54,7 @@ Caracterizacion por fixture anclado (arriba).
 ## Tareas
 - [x] T1: extraer builders + formatSaveError, fixture golden, tests.
 - [x] T2: contraste independiente, suite, lint, build, smoke, diff-check.
-- [ ] T3: revision visual humana (alta + edicion con/sin cita, admin y
+- [x] T3: revision visual humana (alta + edicion con/sin cita, admin y
   asesora) y ZAP separado (limitacion: pasiva HTTP, no cubre flujos
   autenticados; la correccion de payloads queda cubierta por fixture +
   visual).
@@ -110,3 +110,13 @@ Bloqueos: ninguno. fixture/generador/test quedan untracked sin stagear (el worke
 - Estado: passed T3-visual. El humano reviso alta/edicion en preview y
   confirmo "todo funciona correctamente" (2026-10-14). ZAP pendiente tras
   el commit.
+
+## Progreso (cierre total)
+- Estado: passed T3-ZAP (2026-10-14): escaneo completo contra 4173 con el
+  artefacto post-fase-34; cola pasiva cero, 0 High, 0 Low, 0 alertas CSP con
+  10055 activa; 16 Medium = unico falso positivo 'Source Code Disclosure -
+  Java' documentado. Evidencia: /tmp/opencode/zap-fase34-4173.log.
+- Commiteada como 89fba91 tras confirmacion visual; t5 --baseline se
+  autorreparo al entrar los wrappers en HEAD (138/138).
+Estado: fase 34 cerrada. Siguiente paso pendiente de autorizacion humana
+(cierre de la rama o tramo restante).

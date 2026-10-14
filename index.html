@@ -3867,49 +3867,31 @@
     // 5. CÁLCULO DE KPIS
     // -------------------------------------------------------------
     function updateKpis() {
-      const total = filteredLeads.length;
-      const totalDatabase = totalDatabaseCount;
-
+      // Las metricas y el subtitulo son puros (src/legacy/leads.js, fase 24).
+      const m = metricasLeads(filteredLeads);
       const tabTotalEl = document.getElementById('tabTotalDatabaseCount');
       if (tabTotalEl) {
-        tabTotalEl.innerText = totalDatabase.toLocaleString();
+        tabTotalEl.innerText = totalDatabaseCount.toLocaleString();
       }
-
-      const agendados = filteredLeads.filter(l => {
-        const g = getField(l, 'GESTION').toLowerCase();
-        return g.includes('agendad');
-      }).length;
-
-      const inscritos = filteredLeads.filter(l => {
-        const g = getField(l, 'GESTION').toLowerCase();
-        return g.includes('inscrit');
-      }).length;
-
-      const conversion = total > 0 ? ((inscritos / total) * 100).toFixed(1) : "0.0";
-      const agendadosPct = total > 0 ? ((agendados / total) * 100).toFixed(1) : "0.0";
-
-      document.getElementById('kpiTotalLeads').innerText = total.toLocaleString();
+      document.getElementById('kpiTotalLeads').innerText = m.total.toLocaleString();
       const kpiTotalSubtitle = document.getElementById('kpiTotalSubtitle');
       if (kpiTotalSubtitle) {
-        const hasFilters = document.getElementById('activeFiltersCount')?.innerText !== 'Sin filtros';
-        const dashDesde = document.getElementById('dashDesde')?.value || '';
-        const dashHasta = document.getElementById('dashHasta')?.value || '';
-        const mesSel = document.getElementById('filterMes')?.value || '';
-        if (dashDesde !== '' || dashHasta !== '') {
-          kpiTotalSubtitle.innerText = 'Resultados globales por gestión';
-        } else if (mesSel !== '' && dataSource !== 'historico') {
-          kpiTotalSubtitle.innerText = 'Resultados globales del mes';
-        } else if (hasFilters) {
-          kpiTotalSubtitle.innerText = `Resultados dentro de ${getVisibleBaseLeads().length.toLocaleString()} cargados`;
-        } else {
-          kpiTotalSubtitle.innerText = loadedLeadTarget <= LEADS_BATCH_SIZE ? 'Últimos registros ingresados' : 'Incluye bloques anteriores';
-        }
+        kpiTotalSubtitle.innerText = subtituloKpiTotal({
+          hasFilters: document.getElementById('activeFiltersCount')?.innerText !== 'Sin filtros',
+          dashDesde: document.getElementById('dashDesde')?.value || '',
+          dashHasta: document.getElementById('dashHasta')?.value || '',
+          mesSel: document.getElementById('filterMes')?.value || '',
+          dataSource,
+          visiblesCargados: getVisibleBaseLeads().length,
+          loadedLeadTarget,
+          batchSize: LEADS_BATCH_SIZE,
+        });
       }
-      document.getElementById('kpiAgendados').innerText = agendados.toLocaleString();
-      document.getElementById('kpiAgendadosPct').innerText = `${agendadosPct}%`;
-      document.getElementById('kpiInscritos').innerText = inscritos.toLocaleString();
-      document.getElementById('kpiConversionRate').innerText = `${conversion}%`;
-      document.getElementById('leadsTableCount').innerText = `(${total.toLocaleString()})`;
+      document.getElementById('kpiAgendados').innerText = m.agendados.toLocaleString();
+      document.getElementById('kpiAgendadosPct').innerText = `${m.agendadosPct}%`;
+      document.getElementById('kpiInscritos').innerText = m.inscritos.toLocaleString();
+      document.getElementById('kpiConversionRate').innerText = `${m.conversion}%`;
+      document.getElementById('leadsTableCount').innerText = `(${m.total.toLocaleString()})`;
     }
 
     // -------------------------------------------------------------
@@ -3920,93 +3902,10 @@
       const tbody = document.getElementById('matrixTbody');
       const tfoot = document.getElementById('matrixTfoot');
       if (!thead || !tbody || !tfoot) return;
-
-      const gestionesMap = new Map();
-      const campanasMap = new Map();
-
-      filteredLeads.forEach(l => {
-        const g = getField(l, 'GESTION').trim() || 'Sin Definir';
-        const c = getField(l, 'Campaña').trim() || 'General';
-        gestionesMap.set(g, (gestionesMap.get(g) || 0) + 1);
-        campanasMap.set(c, (campanasMap.get(c) || 0) + 1);
-      });
-
-      // Matriz ordenada alfabéticamente (filas y columnas); solo presentación.
-      const sortedGestiones = Array.from(gestionesMap.keys()).sort(compareAlphaEs);
-
-      const sortedCampanas = Array.from(campanasMap.keys())
-        .filter(c => c !== '')
-        .sort(compareAlphaEs);
-
-      let headerHtml = `<tr>
-        <th class="px-4 py-3 bg-slate-950 font-bold text-slate-200 border-r border-slate-800">Estatus (GESTIÓN)</th>`;
-      sortedCampanas.forEach(camp => {
-        headerHtml += `<th class="px-3 py-3 text-center whitespace-nowrap text-slate-300 font-semibold">${escapeHtml(camp)}</th>`;
-      });
-      headerHtml += `<th class="px-4 py-3 text-right bg-slate-950 font-bold text-slate-100 border-l border-slate-800">Total Fila</th></tr>`;
+      // La matriz es pura (src/legacy/leads.js, fase 24).
+      const { thead: headerHtml, tbody: bodyHtml, tfoot: footHtml } = matrizLeadsHtml(filteredLeads);
       thead.innerHTML = headerHtml;
-
-      const matrixCounts = {};
-      const colTotals = {};
-      sortedCampanas.forEach(c => colTotals[c] = 0);
-
-      filteredLeads.forEach(l => {
-        const g = getField(l, 'GESTION').trim() || 'Sin Definir';
-        const c = getField(l, 'Campaña').trim() || 'General';
-        const cellKey = `${g}:::${c}`;
-        matrixCounts[cellKey] = (matrixCounts[cellKey] || 0) + 1;
-        if (colTotals[c] !== undefined) colTotals[c]++;
-      });
-
-      let bodyHtml = '';
-      sortedGestiones.forEach(gestionName => {
-        let rowTotal = 0;
-        const isClosedInscrito = gestionName.toLowerCase().includes('inscrit');
-        const isAgendado = gestionName.toLowerCase().includes('agendad');
-
-        bodyHtml += `<tr class="hover:bg-slate-800/60 transition-colors">
-          <td class="px-4 py-2.5 font-medium border-r border-slate-800 flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full ${isClosedInscrito ? 'bg-emerald-400' : isAgendado ? 'bg-amber-400' : 'bg-slate-500'}"></span>
-            <span class="truncate max-w-[180px]">${escapeHtml(gestionName)}</span>
-          </td>`;
-
-        sortedCampanas.forEach(campName => {
-          const count = matrixCounts[`${gestionName}:::${campName}`] || 0;
-          rowTotal += count;
-
-          let cellClass = "px-3 py-2 text-center tabular-nums cursor-pointer transition-colors ";
-          if (count === 0) {
-            cellClass += "text-slate-600 hover:bg-slate-800/40";
-          } else if (isClosedInscrito) {
-            cellClass += "text-emerald-400 font-semibold bg-emerald-500/10 hover:bg-emerald-500/20";
-          } else if (isAgendado) {
-            cellClass += "text-amber-300 font-semibold bg-amber-500/10 hover:bg-amber-500/20";
-          } else {
-            cellClass += "text-slate-200 font-medium hover:bg-indigo-500/10";
-          }
-
-          bodyHtml += `<td class="${cellClass}" data-matrix-gestion="${escapeAttr(gestionName)}" data-matrix-campana="${escapeAttr(campName)}">
-            ${count > 0 ? count.toLocaleString() : '-'}
-          </td>`;
-        });
-
-        bodyHtml += `<td class="px-4 py-2.5 text-right font-mono font-bold border-l border-slate-800 text-slate-100 tabular-nums">
-          ${rowTotal.toLocaleString()}
-        </td></tr>`;
-      });
       tbody.innerHTML = bodyHtml;
-
-      let grandTotal = 0;
-      let footHtml = `<tr>
-        <td class="px-4 py-3 font-bold text-slate-100 border-r border-slate-800 uppercase tracking-wider">Total Campaña</td>`;
-      sortedCampanas.forEach(campName => {
-        const colSum = colTotals[campName] || 0;
-        grandTotal += colSum;
-        footHtml += `<td class="px-3 py-3 text-center font-mono font-bold text-slate-100 tabular-nums">${colSum.toLocaleString()}</td>`;
-      });
-      footHtml += `<td class="px-4 py-3 text-right font-mono font-extrabold text-indigo-400 bg-indigo-500/10 border-l border-slate-800 tabular-nums text-sm">
-        ${grandTotal.toLocaleString()}
-      </td></tr>`;
       tfoot.innerHTML = footHtml;
     }
 

@@ -5,7 +5,7 @@
  * sigue resolviendolos via window.* (registro al final de este modulo).
  */
 
-import { consolidateLeadsById, escapeHtml, getField, miamiToday, sortAlphaEs } from './helpers.js';
+import { compareAlphaEs, consolidateLeadsById, escapeAttr, escapeHtml, getField, miamiToday, sortAlphaEs } from './helpers.js';
 import { MONTH_CHRONO } from './reportes.js';
 
 /**
@@ -208,6 +208,126 @@ export function aplicarRemoveLead(estado, leadId) {
   };
 }
 
+/**
+ * Metricas del dashboard con las reglas originales: total, agendados e
+ * inscritos por GESTION (contiene 'agendad'/'inscrit') y porcentajes con un
+ * decimal ('0.0' sin leads).
+ * @param {object[]} leads
+ * @returns {{total: number, agendados: number, inscritos: number, conversion: string, agendadosPct: string}}
+ */
+export function metricasLeads(leads) {
+  const total = (leads || []).length;
+  const agendados = (leads || []).filter(l => getField(l, 'GESTION').toLowerCase().includes('agendad')).length;
+  const inscritos = (leads || []).filter(l => getField(l, 'GESTION').toLowerCase().includes('inscrit')).length;
+  return {
+    total,
+    agendados,
+    inscritos,
+    conversion: total > 0 ? ((inscritos / total) * 100).toFixed(1) : '0.0',
+    agendadosPct: total > 0 ? ((agendados / total) * 100).toFixed(1) : '0.0',
+  };
+}
+
+/**
+ * Subtitulo del KPI de total con las mismas ramas del original: el rango
+ * del dash gana; luego el mes (salvo historico); luego filtros activos con
+ * los leads cargados; y por defecto la pista de bloques segun el limite.
+ * @param {{hasFilters: boolean, dashDesde: string, dashHasta: string, mesSel: string,
+ *   dataSource: string, visiblesCargados: number, loadedLeadTarget: number, batchSize: number}} ctx
+ * @returns {string}
+ */
+export function subtituloKpiTotal(ctx) {
+  const { hasFilters, dashDesde, dashHasta, mesSel, dataSource, visiblesCargados, loadedLeadTarget, batchSize } = ctx;
+  if (dashDesde !== '' || dashHasta !== '') return 'Resultados globales por gestión';
+  if (mesSel !== '' && dataSource !== 'historico') return 'Resultados globales del mes';
+  if (hasFilters) return `Resultados dentro de ${visiblesCargados.toLocaleString()} cargados`;
+  return loadedLeadTarget <= batchSize ? 'Últimos registros ingresados' : 'Incluye bloques anteriores';
+}
+
+/**
+ * Matriz cruzada gestion x campana (thead/tbody/tfoot) con el marcado
+ * original: orden alfabetico es, 'Sin Definir'/'General' para vacios,
+ * clases por estado, '-' en ceros y totales por fila/columna.
+ * @param {object[]} leads
+ * @returns {{thead: string, tbody: string, tfoot: string}}
+ */
+export function matrizLeadsHtml(leads) {
+  const lista = leads || [];
+  const gestionesMap = new Map();
+  const campanasMap = new Map();
+  lista.forEach(l => {
+    const g = getField(l, 'GESTION').trim() || 'Sin Definir';
+    const c = getField(l, 'Campaña').trim() || 'General';
+    gestionesMap.set(g, (gestionesMap.get(g) || 0) + 1);
+    campanasMap.set(c, (campanasMap.get(c) || 0) + 1);
+  });
+  const sortedGestiones = Array.from(gestionesMap.keys()).sort(compareAlphaEs);
+  const sortedCampanas = Array.from(campanasMap.keys()).filter(c => c !== '').sort(compareAlphaEs);
+
+  let headerHtml = `<tr>
+        <th class="px-4 py-3 bg-slate-950 font-bold text-slate-200 border-r border-slate-800">Estatus (GESTIÓN)</th>`;
+  sortedCampanas.forEach(camp => {
+    headerHtml += `<th class="px-3 py-3 text-center whitespace-nowrap text-slate-300 font-semibold">${escapeHtml(camp)}</th>`;
+  });
+  headerHtml += `<th class="px-4 py-3 text-right bg-slate-950 font-bold text-slate-100 border-l border-slate-800">Total Fila</th></tr>`;
+
+  const matrixCounts = {};
+  const colTotals = {};
+  sortedCampanas.forEach(c => colTotals[c] = 0);
+  lista.forEach(l => {
+    const g = getField(l, 'GESTION').trim() || 'Sin Definir';
+    const c = getField(l, 'Campaña').trim() || 'General';
+    const cellKey = `${g}:::${c}`;
+    matrixCounts[cellKey] = (matrixCounts[cellKey] || 0) + 1;
+    if (colTotals[c] !== undefined) colTotals[c]++;
+  });
+
+  let bodyHtml = '';
+  sortedGestiones.forEach(gestionName => {
+    let rowTotal = 0;
+    const isClosedInscrito = gestionName.toLowerCase().includes('inscrit');
+    const isAgendado = gestionName.toLowerCase().includes('agendad');
+    bodyHtml += `<tr class="hover:bg-slate-800/60 transition-colors">
+          <td class="px-4 py-2.5 font-medium border-r border-slate-800 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full ${isClosedInscrito ? 'bg-emerald-400' : isAgendado ? 'bg-amber-400' : 'bg-slate-500'}"></span>
+            <span class="truncate max-w-[180px]">${escapeHtml(gestionName)}</span>
+          </td>`;
+    sortedCampanas.forEach(campName => {
+      const count = matrixCounts[`${gestionName}:::${campName}`] || 0;
+      rowTotal += count;
+      let cellClass = 'px-3 py-2 text-center tabular-nums cursor-pointer transition-colors ';
+      if (count === 0) {
+        cellClass += 'text-slate-600 hover:bg-slate-800/40';
+      } else if (isClosedInscrito) {
+        cellClass += 'text-emerald-400 font-semibold bg-emerald-500/10 hover:bg-emerald-500/20';
+      } else if (isAgendado) {
+        cellClass += 'text-amber-300 font-semibold bg-amber-500/10 hover:bg-amber-500/20';
+      } else {
+        cellClass += 'text-slate-200 font-medium hover:bg-indigo-500/10';
+      }
+      bodyHtml += `<td class="${cellClass}" data-matrix-gestion="${escapeAttr(gestionName)}" data-matrix-campana="${escapeAttr(campName)}">
+            ${count > 0 ? count.toLocaleString() : '-'}
+          </td>`;
+    });
+    bodyHtml += `<td class="px-4 py-2.5 text-right font-mono font-bold border-l border-slate-800 text-slate-100 tabular-nums">
+          ${rowTotal.toLocaleString()}
+        </td></tr>`;
+  });
+
+  let grandTotal = 0;
+  let footHtml = `<tr>
+        <td class="px-4 py-3 font-bold text-slate-100 border-r border-slate-800 uppercase tracking-wider">Total Campaña</td>`;
+  sortedCampanas.forEach(campName => {
+    const colSum = colTotals[campName] || 0;
+    grandTotal += colSum;
+    footHtml += `<td class="px-3 py-3 text-center font-mono font-bold text-slate-100 tabular-nums">${colSum.toLocaleString()}</td>`;
+  });
+  footHtml += `<td class="px-4 py-3 text-right font-mono font-extrabold text-indigo-400 bg-indigo-500/10 border-l border-slate-800 tabular-nums text-sm">
+        ${grandTotal.toLocaleString()}
+      </td></tr>`;
+  return { thead: headerHtml, tbody: bodyHtml, tfoot: footHtml };
+}
+
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
   window.sortMonthCatalog = sortMonthCatalog;
@@ -221,4 +341,7 @@ if (typeof window !== 'undefined') {
   window.isAgendadoGestion = isAgendadoGestion;
   window.aplicarUpsertLead = aplicarUpsertLead;
   window.aplicarRemoveLead = aplicarRemoveLead;
+  window.metricasLeads = metricasLeads;
+  window.subtituloKpiTotal = subtituloKpiTotal;
+  window.matrizLeadsHtml = matrizLeadsHtml;
 }

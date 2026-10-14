@@ -5111,28 +5111,11 @@ async function deleteLeadAppointment(id) {
       const tableBody = document.getElementById('histMonthlyTableBody');
       if (tableBody) {
         if (activeMonths.length === 0) {
-          tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-500 font-sans">No hay registros con los filtros seleccionados</td></tr>`;
+          tableBody.innerHTML = tablaVaciaHistoricoHtml();
         } else {
-          // Filas puras de reportes.js (misma fuente que el CSV); aca solo
-          // markup y escape de presentacion.
-          const filas = historicalSummaryRows(data);
-          tableBody.innerHTML = filas.map(r => `
-              <tr class="hover:bg-slate-800/40 transition-colors">
-                <td class="px-4 py-3 font-semibold text-slate-200">${escapeHtml(r.mes)}</td>
-                <td class="px-4 py-3 text-right text-white font-bold tabular-nums">${r.total.toLocaleString()}</td>
-                <td class="px-4 py-3 text-right text-amber-400 tabular-nums">${r.agendados.toLocaleString()}</td>
-                <td class="px-4 py-3 text-right text-rose-400 tabular-nums">${r.noContesta.toLocaleString()}</td>
-                <td class="px-4 py-3 text-right text-emerald-400 font-bold tabular-nums">${r.inscritos.toLocaleString()}</td>
-                <td class="px-4 py-3 text-right tabular-nums">
-                  <span class="px-2 py-0.5 rounded text-xs font-semibold ${Number(r.conv) >= 15 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}">
-                    ${r.conv}%
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-right text-slate-400 tabular-nums">${r.monthPct}%</td>
-                <td class="px-4 py-3 text-slate-300 font-sans truncate max-w-[180px]">${escapeHtml(r.topCamp)}</td>
-                <td class="px-4 py-3 text-slate-300 font-sans">${escapeHtml(r.topAg)}</td>
-              </tr>
-            `).join('');
+          // Marcado puro de reportes.js (misma fuente que el CSV); aca solo
+          // se escribe en el DOM.
+          tableBody.innerHTML = tablaHistoricoHtml(historicalSummaryRows(data));
         }
       }
 
@@ -5165,190 +5148,55 @@ async function deleteLeadAppointment(id) {
       const ctxMonthly = document.getElementById('chartMonthlyEvolution');
       if (ctxMonthly) {
         if (histCharts.monthly) histCharts.monthly.destroy();
-        const labels = monthLabels;
-        histCharts.monthly = new Chart(ctxMonthly, {
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                type: 'line',
-                label: 'Inscritos Matriculados',
-                data: series.monthly.inscritos,
-                borderColor: '#10b981',
-                backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                borderWidth: 3,
-                pointRadius: 5,
-                tension: 0.3,
-                order: 1
-              },
-              {
-                type: 'bar',
-                label: 'Total Leads Captados',
-                data: series.monthly.total,
-                backgroundColor: 'rgba(99, 102, 241, 0.75)',
-                borderRadius: 6,
-                order: 2
-              }
-            ]
-          },
-          options: { responsive: true, maintainAspectRatio: false, scales: commonScales }
-        });
+        histCharts.monthly = new Chart(ctxMonthly, histChartMonthly(monthLabels, series, commonScales));
       }
 
       // GRÁFICO 2
       const ctxConv = document.getElementById('chartConversionTrend');
       if (ctxConv) {
         if (histCharts.conversion) histCharts.conversion.destroy();
-        const labels = monthLabels;
-        histCharts.conversion = new Chart(ctxConv, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'Tasa de Conversión (%)',
-              data: series.monthly.conversion,
-              borderColor: '#818cf8',
-              backgroundColor: 'rgba(129, 140, 248, 0.12)',
-              fill: true,
-              borderWidth: 2.5,
-              tension: 0.35
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { ...commonScales, y: { ...commonScales.y, ticks: { callback: (val) => val + '%' } } }
-          }
-        });
+        histCharts.conversion = new Chart(ctxConv, histChartConversion(monthLabels, series, commonScales));
       }
 
       // GRÁFICO 3
       const ctxCamp = document.getElementById('chartCampaignPerformance');
       if (ctxCamp) {
         if (histCharts.campaign) histCharts.campaign.destroy();
-        histCharts.campaign = new Chart(ctxCamp, {
-          type: 'bar',
-          data: {
-            labels: series.campaigns.labels,
-            datasets: [
-              { label: 'Total Leads', data: series.campaigns.totals, backgroundColor: 'rgba(59, 130, 246, 0.65)', borderRadius: 4 },
-              { label: 'Inscritos', data: series.campaigns.inscritos, backgroundColor: 'rgba(16, 185, 129, 0.85)', borderRadius: 4 }
-            ]
-          },
-          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: commonScales }
-        });
+        histCharts.campaign = new Chart(ctxCamp, histChartCampaign(series, commonScales));
       }
 
       // GRÁFICO 4
       const ctxMedio = document.getElementById('chartMedioDistribution');
       if (ctxMedio) {
         if (histCharts.medio) histCharts.medio.destroy();
-        histCharts.medio = new Chart(ctxMedio, {
-          type: 'doughnut',
-          data: {
-            labels: series.medios.labels,
-            datasets: [{
-              data: series.medios.counts,
-              backgroundColor: ['#10b981', '#8b5cf6', '#3b82f6', '#f59e0b', '#ec4899', '#06b6d4'],
-              borderColor: '#1e293b',
-              borderWidth: 2
-            }]
-          },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } }, cutout: '65%' }
-        });
+        histCharts.medio = new Chart(ctxMedio, histChartMedio(series));
       }
 
       // GRÁFICO 5
       const ctxAgent = document.getElementById('chartAgentPerformance');
       if (ctxAgent) {
         if (histCharts.agent) histCharts.agent.destroy();
-        histCharts.agent = new Chart(ctxAgent, {
-          type: 'bar',
-          data: {
-            labels: series.agents.labels,
-            datasets: [
-              { label: 'Leads Atendidos', data: series.agents.totals, backgroundColor: 'rgba(148, 163, 184, 0.4)', borderRadius: 4 },
-              { label: 'Inscripciones Logradas', data: series.agents.inscritos, backgroundColor: '#10b981', borderRadius: 4 }
-            ]
-          },
-          options: { responsive: true, maintainAspectRatio: false, scales: commonScales }
-        });
+        histCharts.agent = new Chart(ctxAgent, histChartAgent(series, commonScales));
       }
 
       // GRÁFICOS 6 y 7: ESTADOS Y CAMPAÑAS POR MES (barras apiladas)
-      const stackedMonthlyOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: { ...commonScales.x, stacked: true },
-          y: { ...commonScales.y, stacked: true }
-        }
-      };
-
       const ctxStates = document.getElementById('chartMonthlyStates');
       if (ctxStates) {
         if (histCharts.monthlyStates) histCharts.monthlyStates.destroy();
-        const statePalette = ['#3b82f6', '#10b981', '#f59e0b', '#f43f5e', '#60a5fa', '#34d399'];
-        const stateDatasets = series.statesStacked.series.map((s, i) => ({
-          ...s,
-          backgroundColor: statePalette[i]
-        }));
-        if (series.statesStacked.other) {
-          stateDatasets.push({ ...series.statesStacked.other, backgroundColor: 'rgba(100, 116, 139, 0.55)' });
-        }
-        histCharts.monthlyStates = new Chart(ctxStates, {
-          type: 'bar',
-          data: { labels: monthLabels, datasets: stateDatasets },
-          options: stackedMonthlyOptions
-        });
+        histCharts.monthlyStates = new Chart(ctxStates, histChartMonthlyStates(monthLabels, series.statesStacked, commonScales));
       }
 
       const ctxCampMonth = document.getElementById('chartMonthlyCampaigns');
       if (ctxCampMonth) {
         if (histCharts.monthlyCampaigns) histCharts.monthlyCampaigns.destroy();
-        const campPalette = ['#3b82f6', '#f59e0b', '#10b981', '#f43f5e', '#60a5fa'];
-        const campDatasets = series.campsStacked.series.map((c, i) => ({
-          ...c,
-          backgroundColor: campPalette[i]
-        }));
-        if (series.campsStacked.other) {
-          campDatasets.push({ ...series.campsStacked.other, backgroundColor: 'rgba(100, 116, 139, 0.55)' });
-        }
-        histCharts.monthlyCampaigns = new Chart(ctxCampMonth, {
-          type: 'bar',
-          data: { labels: monthLabels, datasets: campDatasets },
-          options: stackedMonthlyOptions
-        });
+        histCharts.monthlyCampaigns = new Chart(ctxCampMonth, histChartMonthlyCampaigns(monthLabels, series.campsStacked, commonScales));
       }
 
       // GRÁFICO 8: EMBUDO DE CONVERSIÓN
       const ctxFunnel = document.getElementById('chartFunnel');
       if (ctxFunnel) {
         if (histCharts.funnel) histCharts.funnel.destroy();
-        const { stages: funnelStages, values: funnelValues } = series.funnel;
-        histCharts.funnel = new Chart(ctxFunnel, {
-          type: 'bar',
-          data: {
-            labels: funnelStages.map((s, i) => `${s}: ${funnelValues[i].toLocaleString()}`),
-            datasets: [{
-              label: 'Leads',
-              data: funnelValues,
-              backgroundColor: ['#3b82f6', '#94a3b8', '#f59e0b', '#10b981'],
-              borderRadius: 4
-            }]
-          },
-          options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { ...commonScales.x, beginAtZero: true },
-              y: commonScales.y
-            }
-          }
-        });
+        histCharts.funnel = new Chart(ctxFunnel, histChartFunnel(series.funnel, commonScales));
       }
 
       if (window.lucide) lucide.createIcons();

@@ -478,6 +478,206 @@ export function historicalChartSeries(data, aggregates, kpis) {
   return { monthly, campaigns, medios, agents, statesStacked, campsStacked, funnel };
 }
 
+// --- Graficos y tabla historicos: configs y plantillas puras (fase 31) ------
+// Cada histChartX devuelve el objeto { type?, data, options } EXACTO que
+// renderHistoricalAnalytics pasaba inline a new Chart; canvas, destruccion
+// previa (histCharts) y el new Chart quedan en el wrapper del monolito.
+// Sin Chart ni window: comparables byte a byte en node contra el golden.
+
+export function tablaVaciaHistoricoHtml() {
+  return `<tr><td colspan="9" class="text-center py-6 text-slate-500 font-sans">No hay registros con los filtros seleccionados</td></tr>`;
+}
+
+export function tablaHistoricoHtml(filas) {
+  return (filas || []).map(r => `
+              <tr class="hover:bg-slate-800/40 transition-colors">
+                <td class="px-4 py-3 font-semibold text-slate-200">${escapeHtml(r.mes)}</td>
+                <td class="px-4 py-3 text-right text-white font-bold tabular-nums">${r.total.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right text-amber-400 tabular-nums">${r.agendados.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right text-rose-400 tabular-nums">${r.noContesta.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right text-emerald-400 font-bold tabular-nums">${r.inscritos.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right tabular-nums">
+                  <span class="px-2 py-0.5 rounded text-xs font-semibold ${Number(r.conv) >= 15 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}">
+                    ${r.conv}%
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-right text-slate-400 tabular-nums">${r.monthPct}%</td>
+                <td class="px-4 py-3 text-slate-300 font-sans truncate max-w-[180px]">${escapeHtml(r.topCamp)}</td>
+                <td class="px-4 py-3 text-slate-300 font-sans">${escapeHtml(r.topAg)}</td>
+              </tr>
+            `).join('');
+}
+
+export function histChartMonthly(labels, series, commonScales) {
+  return {
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          type: 'line',
+          label: 'Inscritos Matriculados',
+          data: series.monthly.inscritos,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+          borderWidth: 3,
+          pointRadius: 5,
+          tension: 0.3,
+          order: 1
+        },
+        {
+          type: 'bar',
+          label: 'Total Leads Captados',
+          data: series.monthly.total,
+          backgroundColor: 'rgba(99, 102, 241, 0.75)',
+          borderRadius: 6,
+          order: 2
+        }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: commonScales }
+  };
+}
+
+export function histChartConversion(labels, series, commonScales) {
+  return {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Tasa de Conversión (%)',
+        data: series.monthly.conversion,
+        borderColor: '#818cf8',
+        backgroundColor: 'rgba(129, 140, 248, 0.12)',
+        fill: true,
+        borderWidth: 2.5,
+        tension: 0.35
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { ...commonScales, y: { ...commonScales.y, ticks: { callback: (val) => val + '%' } } }
+    }
+  };
+}
+
+export function histChartCampaign(series, commonScales) {
+  return {
+    type: 'bar',
+    data: {
+      labels: series.campaigns.labels,
+      datasets: [
+        { label: 'Total Leads', data: series.campaigns.totals, backgroundColor: 'rgba(59, 130, 246, 0.65)', borderRadius: 4 },
+        { label: 'Inscritos', data: series.campaigns.inscritos, backgroundColor: 'rgba(16, 185, 129, 0.85)', borderRadius: 4 }
+      ]
+    },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: commonScales }
+  };
+}
+
+export function histChartMedio(series) {
+  return {
+    type: 'doughnut',
+    data: {
+      labels: series.medios.labels,
+      datasets: [{
+        data: series.medios.counts,
+        backgroundColor: ['#10b981', '#8b5cf6', '#3b82f6', '#f59e0b', '#ec4899', '#06b6d4'],
+        borderColor: '#1e293b',
+        borderWidth: 2
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } }, cutout: '65%' }
+  };
+}
+
+export function histChartAgent(series, commonScales) {
+  return {
+    type: 'bar',
+    data: {
+      labels: series.agents.labels,
+      datasets: [
+        { label: 'Leads Atendidos', data: series.agents.totals, backgroundColor: 'rgba(148, 163, 184, 0.4)', borderRadius: 4 },
+        { label: 'Inscripciones Logradas', data: series.agents.inscritos, backgroundColor: '#10b981', borderRadius: 4 }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: commonScales }
+  };
+}
+
+export function histChartMonthlyStates(monthLabels, statesStacked, commonScales) {
+  const statePalette = ['#3b82f6', '#10b981', '#f59e0b', '#f43f5e', '#60a5fa', '#34d399'];
+  const stateDatasets = statesStacked.series.map((s, i) => ({
+    ...s,
+    backgroundColor: statePalette[i]
+  }));
+  if (statesStacked.other) {
+    stateDatasets.push({ ...statesStacked.other, backgroundColor: 'rgba(100, 116, 139, 0.55)' });
+  }
+  return {
+    type: 'bar',
+    data: { labels: monthLabels, datasets: stateDatasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ...commonScales.x, stacked: true },
+        y: { ...commonScales.y, stacked: true }
+      }
+    }
+  };
+}
+
+export function histChartMonthlyCampaigns(monthLabels, campsStacked, commonScales) {
+  const campPalette = ['#3b82f6', '#f59e0b', '#10b981', '#f43f5e', '#60a5fa'];
+  const campDatasets = campsStacked.series.map((c, i) => ({
+    ...c,
+    backgroundColor: campPalette[i]
+  }));
+  if (campsStacked.other) {
+    campDatasets.push({ ...campsStacked.other, backgroundColor: 'rgba(100, 116, 139, 0.55)' });
+  }
+  return {
+    type: 'bar',
+    data: { labels: monthLabels, datasets: campDatasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ...commonScales.x, stacked: true },
+        y: { ...commonScales.y, stacked: true }
+      }
+    }
+  };
+}
+
+export function histChartFunnel(funnel, commonScales) {
+  const { stages: funnelStages, values: funnelValues } = funnel;
+  return {
+    type: 'bar',
+    data: {
+      labels: funnelStages.map((s, i) => `${s}: ${funnelValues[i].toLocaleString()}`),
+      datasets: [{
+        label: 'Leads',
+        data: funnelValues,
+        backgroundColor: ['#3b82f6', '#94a3b8', '#f59e0b', '#10b981'],
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ...commonScales.x, beginAtZero: true },
+        y: commonScales.y
+      }
+    }
+  };
+}
+
 /**
  * Texto del aviso de rango activo del historico. mismo orden y redaccion
  * del original: desde/hasta, conteo en rango, aviso de mes anulado y
@@ -1047,6 +1247,16 @@ if (typeof window !== 'undefined') {
   window.historicalRecordMonth = historicalRecordMonth;
   window.histRangeNoticeText = histRangeNoticeText;
   window.historicalChartSeries = historicalChartSeries;
+  window.tablaVaciaHistoricoHtml = tablaVaciaHistoricoHtml;
+  window.tablaHistoricoHtml = tablaHistoricoHtml;
+  window.histChartMonthly = histChartMonthly;
+  window.histChartConversion = histChartConversion;
+  window.histChartCampaign = histChartCampaign;
+  window.histChartMedio = histChartMedio;
+  window.histChartAgent = histChartAgent;
+  window.histChartMonthlyStates = histChartMonthlyStates;
+  window.histChartMonthlyCampaigns = histChartMonthlyCampaigns;
+  window.histChartFunnel = histChartFunnel;
   window.buildPeriodSummary = buildPeriodSummary;
   window.validatePeriodoSummary = validatePeriodoSummary;
   window.validatePeriodoActividad = validatePeriodoActividad;

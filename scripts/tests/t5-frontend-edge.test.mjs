@@ -20,6 +20,7 @@ const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, 
   histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
   periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
   computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
+  tablaVaciaHistoricoHtml, tablaHistoricoHtml, histChartMonthly, histChartConversion, histChartCampaign, histChartMedio, histChartAgent, histChartMonthlyStates, histChartMonthlyCampaigns, histChartFunnel,
   buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
   indiceNotas, notaDeBloque, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles , campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines } = reportesMod;
 // Helpers puros del area Leads extraidos a src/legacy/leads.js
@@ -127,6 +128,7 @@ function frontend(extra = {}) {
     histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
     periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
     computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
+    tablaVaciaHistoricoHtml, tablaHistoricoHtml, histChartMonthly, histChartConversion, histChartCampaign, histChartMedio, histChartAgent, histChartMonthlyStates, histChartMonthlyCampaigns, histChartFunnel,
     buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
     indiceNotas, notaDeBloque, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles,
     campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines,

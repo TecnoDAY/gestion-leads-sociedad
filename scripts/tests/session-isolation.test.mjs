@@ -14,7 +14,7 @@ const { parseFechaLead, periodoPresetRange, periodoValidDate, periodoPct,
   buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque } = reportesMod;
 // Helpers del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
-const { withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion } = leadsMod;
+const { withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion, aplicarUpsertLead, aplicarRemoveLead } = leadsMod;
 
 const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
 const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
@@ -144,7 +144,7 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds,
     parseFechaLead, periodoPresetRange, periodoValidDate, periodoPct,
     buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
-    compareLeadIdsDescending, withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion,
+    compareLeadIdsDescending, withOrigin, getLeadOrigin, haveSameLeadIds, isAgendadoGestion, aplicarUpsertLead, aplicarRemoveLead,
     consolidateLeadsById,
   });
   const renders = [];

@@ -24,7 +24,7 @@ const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, 
 // Helpers puros del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
 const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, withOrigin, getLeadOrigin,
-  haveSameLeadIds, isAgendadoGestion } = leadsMod;
+  haveSameLeadIds, isAgendadoGestion, aplicarUpsertLead, aplicarRemoveLead } = leadsMod;
 // Centro de ayuda extraido a src/legacy/help.js (seccion 10b del monolito)
 const helpMod = await import('../../src/legacy/help.js');
 const { normalizeHelpText, helpHighlight } = helpMod;
@@ -126,7 +126,7 @@ function frontend(extra = {}) {
     computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
     buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
     // Helpers del area Leads extraidos a src/legacy/leads.js
-    sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin,
+    sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin, aplicarUpsertLead, aplicarRemoveLead,
     haveSameLeadIds, isAgendadoGestion, validAppointmentId,
     // Centro de ayuda extraido a src/legacy/help.js
     normalizeHelpText, helpHighlight,

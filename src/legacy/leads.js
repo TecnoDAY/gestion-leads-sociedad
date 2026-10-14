@@ -5,7 +5,7 @@
  * sigue resolviendolos via window.* (registro al final de este modulo).
  */
 
-import { escapeHtml, getField, miamiToday, sortAlphaEs } from './helpers.js';
+import { consolidateLeadsById, escapeHtml, getField, miamiToday, sortAlphaEs } from './helpers.js';
 import { MONTH_CHRONO } from './reportes.js';
 
 /**
@@ -127,6 +127,87 @@ export function haveSameLeadIds(leads, idRows) {
  * @returns {boolean}
  */
 export function isAgendadoGestion(value) { return String(value || '').trim().toUpperCase().startsWith('AGENDAD'); }
+
+/**
+ * Alta/actualizacion de un lead en el estado con la semantica original del
+ * monolito (fase 20). Pura: devuelve el estado nuevo completo.
+ * @param {object} estado { allLeads, completeCurrentLeads,
+ *   completeCurrentLoaded, totalDatabaseCount, leadDataRevision }
+ * @param {object} lead Lead entrante (debe traer id).
+ * @param {number} [loadedLeadTarget] Limite de ventana de allLeads.
+ * @returns {{estado: object, esNuevo: boolean}}
+ */
+export function aplicarUpsertLead(estado, lead, loadedLeadTarget) {
+  if (!lead || lead.id === undefined || lead.id === null) return { estado, esNuevo: false };
+  const leadId = String(lead.id);
+  const existingLead = estado.allLeads.find(item => String(item.id) === leadId);
+  const cachedLead = estado.completeCurrentLoaded
+    ? estado.completeCurrentLeads.find(item => String(item.id) === leadId)
+    : undefined;
+  if (!existingLead && cachedLead) {
+    return {
+      estado: {
+        ...estado,
+        completeCurrentLeads: consolidateLeadsById([
+          ...estado.completeCurrentLeads.filter(item => String(item.id) !== leadId),
+          { ...cachedLead, ...lead },
+        ]),
+        leadDataRevision: estado.leadDataRevision + 1,
+      },
+      esNuevo: false,
+    };
+  }
+  const allLeads = consolidateLeadsById([
+    ...estado.allLeads.filter(item => String(item.id) !== leadId),
+    { ...(existingLead || {}), ...lead },
+  ]);
+  if (allLeads.length > loadedLeadTarget) allLeads.length = loadedLeadTarget;
+  return {
+    estado: {
+      ...estado,
+      allLeads,
+      completeCurrentLeads: estado.completeCurrentLoaded
+        ? consolidateLeadsById([
+            ...estado.completeCurrentLeads.filter(item => String(item.id) !== leadId),
+            { ...(cachedLead || {}), ...lead },
+          ])
+        : estado.completeCurrentLeads,
+      totalDatabaseCount: estado.totalDatabaseCount + (existingLead ? 0 : 1),
+      leadDataRevision: estado.leadDataRevision + 1,
+    },
+    esNuevo: !existingLead,
+  };
+}
+
+/**
+ * Elimina un lead del estado con la semantica original (fase 20). Pura.
+ * @returns {{estado: object, removedVisible: boolean}}
+ */
+export function aplicarRemoveLead(estado, leadId) {
+  if (leadId === undefined || leadId === null) return { estado, removedVisible: false };
+  const previousLength = estado.allLeads.length;
+  const allLeads = estado.allLeads.filter(lead => String(lead.id) !== String(leadId));
+  const removedVisible = allLeads.length !== previousLength;
+  let removedCached = false;
+  let completeCurrentLeads = estado.completeCurrentLeads;
+  if (estado.completeCurrentLoaded) {
+    const previousCacheLength = completeCurrentLeads.length;
+    completeCurrentLeads = completeCurrentLeads.filter(lead => String(lead.id) !== String(leadId));
+    removedCached = completeCurrentLeads.length !== previousCacheLength;
+  }
+  if (!removedVisible && !removedCached) return { estado: { ...estado, allLeads }, removedVisible: false };
+  return {
+    estado: {
+      ...estado,
+      allLeads,
+      completeCurrentLeads,
+      totalDatabaseCount: Math.max(0, estado.totalDatabaseCount - 1),
+      leadDataRevision: estado.leadDataRevision + 1,
+    },
+    removedVisible,
+  };
+}
+
 // --- Registro en window para el script clasico (solo en navegador) ----------
 if (typeof window !== 'undefined') {
   window.sortMonthCatalog = sortMonthCatalog;
@@ -138,4 +219,6 @@ if (typeof window !== 'undefined') {
   window.getLeadOrigin = getLeadOrigin;
   window.haveSameLeadIds = haveSameLeadIds;
   window.isAgendadoGestion = isAgendadoGestion;
+  window.aplicarUpsertLead = aplicarUpsertLead;
+  window.aplicarRemoveLead = aplicarRemoveLead;
 }

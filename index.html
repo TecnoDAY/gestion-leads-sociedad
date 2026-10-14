@@ -2832,54 +2832,32 @@
     // compareLeadIdsDescending vive en src/legacy/leads.js.
     // consolidateLeadsById vive ahora en src/legacy/helpers.js (base).
 
+    // aplicarUpsertLead y aplicarRemoveLead viven en src/legacy/leads.js
+    // (fase 20): aca solo se aplica el estado devuelto y se marca el
+    // problema del periodo (observador del estado del monolito).
     function upsertLeadInState(lead) {
-      if (!lead || lead.id === undefined || lead.id === null) return false;
-      const leadId = String(lead.id);
-      const existingLead = allLeads.find(item => String(item.id) === leadId);
-      const cachedLead = completeCurrentLoaded
-        ? completeCurrentLeads.find(item => String(item.id) === leadId)
-        : undefined;
-      if (!existingLead && cachedLead) {
-        completeCurrentLeads = consolidateLeadsById([
-          ...completeCurrentLeads.filter(item => String(item.id) !== leadId),
-          { ...cachedLead, ...lead }
-        ]);
-        leadDataRevision += 1;
-        markPeriodoReportDirty();
-        return false;
-      }
-      allLeads = consolidateLeadsById([
-        ...allLeads.filter(item => String(item.id) !== leadId),
-        { ...(existingLead || {}), ...lead }
-      ]);
-      if (allLeads.length > loadedLeadTarget) allLeads.length = loadedLeadTarget;
-      if (completeCurrentLoaded) {
-        completeCurrentLeads = consolidateLeadsById([
-          ...completeCurrentLeads.filter(item => String(item.id) !== leadId),
-          { ...(cachedLead || {}), ...lead }
-        ]);
-      }
-      if (!existingLead) totalDatabaseCount += 1;
-      leadDataRevision += 1;
-      markPeriodoReportDirty();
-      return !existingLead;
+      const revision = leadDataRevision;
+      const { estado, esNuevo } = aplicarUpsertLead({
+        allLeads, completeCurrentLeads, completeCurrentLoaded, totalDatabaseCount, leadDataRevision,
+      }, lead, loadedLeadTarget);
+      allLeads = estado.allLeads;
+      completeCurrentLeads = estado.completeCurrentLeads;
+      totalDatabaseCount = estado.totalDatabaseCount;
+      leadDataRevision = estado.leadDataRevision;
+      if (leadDataRevision !== revision) markPeriodoReportDirty();
+      return esNuevo;
     }
 
     function removeLeadFromState(leadId) {
-      if (leadId === undefined || leadId === null) return false;
-      const previousLength = allLeads.length;
-      allLeads = allLeads.filter(lead => String(lead.id) !== String(leadId));
-      const removedVisible = allLeads.length !== previousLength;
-      let removedCached = false;
-      if (completeCurrentLoaded) {
-        const previousCacheLength = completeCurrentLeads.length;
-        completeCurrentLeads = completeCurrentLeads.filter(lead => String(lead.id) !== String(leadId));
-        removedCached = completeCurrentLeads.length !== previousCacheLength;
-      }
-      if (!removedVisible && !removedCached) return false;
-      totalDatabaseCount = Math.max(0, totalDatabaseCount - 1);
-      leadDataRevision += 1;
-      markPeriodoReportDirty();
+      const revision = leadDataRevision;
+      const { estado, removedVisible } = aplicarRemoveLead({
+        allLeads, completeCurrentLeads, completeCurrentLoaded, totalDatabaseCount, leadDataRevision,
+      }, leadId);
+      allLeads = estado.allLeads;
+      completeCurrentLeads = estado.completeCurrentLeads;
+      totalDatabaseCount = estado.totalDatabaseCount;
+      leadDataRevision = estado.leadDataRevision;
+      if (leadDataRevision !== revision) markPeriodoReportDirty();
       return removedVisible;
     }
 

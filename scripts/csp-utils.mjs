@@ -48,11 +48,26 @@ export function metaCsp(html) {
 }
 
 /**
- * Inserta el meta CSP justo despues de <head> (siempre antes del primer
- * script inline). Idempotente: si ya existe, lo sustituye.
+ * Politica de las paginas estaticas auxiliares (privacidad/404): sin
+ * scripts ni formularios; solo su <style> inline autorizado por hash.
+ * @param {string} html HTML final de la pagina.
+ * @returns {string}
  */
-export function insertarMetaCsp(html) {
-  const meta = metaCsp(html);
+export function cspPaginaEstatica(html) {
+  const { styles } = bloquesInline(html);
+  if (!styles.length) throw new Error('csp: la pagina estatica no tiene <style> que hashear');
+  const hashStyles = [...new Set(styles.map(HASH))].join(' ');
+  return `default-src 'self'; script-src 'none'; style-src 'self' ${hashStyles}; img-src 'self' data:; base-uri 'self'; form-action 'none'`;
+}
+
+/**
+ * Inserta el meta CSP justo despues de <head> (siempre antes del primer
+ * script/style inline). Idempotente: si ya existe, lo sustituye.
+ * @param {string} html
+ * @param {string} [politica] Politica a escribir; por defecto la del panel.
+ */
+export function insertarMetaCsp(html, politica = cspHtml(html)) {
+  const meta = `<meta http-equiv="Content-Security-Policy" content="${politica}">`;
   if (/<meta\s+http-equiv="Content-Security-Policy"/i.test(html)) {
     return html.replace(/<meta\s+http-equiv="Content-Security-Policy"[^>]*>/i, meta);
   }
@@ -67,16 +82,13 @@ export function insertarMetaCsp(html) {
  * debe haber atributos on*= ni 'unsafe-inline'.
  * @returns {string[]} Lista de problemas; vacia si esta limpio.
  */
-export function problemasCsp(html) {
+export function problemasCsp(html, politicaEsperada) {
   const issues = [];
   if (/\s(?:on(?:click|change|input|submit|focus|blur|pointerenter|pointerleave|pointerdown|keydown))\s*=/i.test(html)) issues.push('atributos on*= presentes (la CSP estricta los bloquea)');
   if (/unsafe-inline/.test(html)) issues.push('unsafe-inline dentro del HTML');
-  const esperada = cspHtml(html);
+  const esperada = politicaEsperada || cspHtml(html);
   const m = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]*)">/i.exec(html);
   if (!m) issues.push('meta CSP ausente');
-  else if (m[1] !== esperada) {
-    if (m[1] === esperada.replace(/'unsafe-inline' /g, '')) issues.push('la meta CSP contiene unsafe-inline');
-    else issues.push('la meta CSP no coincide con los bloques inline actuales (hash desincronizado)');
-  }
+  else if (m[1] !== esperada) issues.push('la meta CSP no coincide con los bloques inline actuales (hash desincronizado)');
   return issues;
 }

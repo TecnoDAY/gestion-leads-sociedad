@@ -10,9 +10,9 @@
 //
 // Uso: node scripts/inline-dist.mjs  (lo encadena `pnpm build`)
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { insertarMetaCsp, problemasCsp } from './csp-utils.mjs';
+import { cspPaginaEstatica, insertarMetaCsp, problemasCsp } from './csp-utils.mjs';
 
 const dist = new URL('../dist/', import.meta.url);
 const htmlPath = join(dist.pathname, 'index.html');
@@ -84,3 +84,19 @@ if (problemas.length > 0) {
 
 writeFileSync(htmlPath, html, 'utf8');
 console.log(`inline-dist: dist/index.html autocontenido (${(originalLength / 1024).toFixed(0)} kB -> ${(html.length / 1024).toFixed(0)} kB), CSP estricta en meta`);
+
+// 6. Paginas estaticas auxiliares (fase 23): privacidad y 404 tambien
+//    llevan su propia meta estricta con el hash de su <style> inline.
+for (const pagina of ['privacidad.html', '404.html']) {
+  const ruta = join(dist.pathname, pagina);
+  if (!existsSync(ruta)) { console.error(`inline-dist: falta dist/${pagina}`); process.exit(1); }
+  const original = readFileSync(ruta, 'utf8');
+  const conMeta = insertarMetaCsp(original, cspPaginaEstatica(original));
+  const fallos = problemasCsp(conMeta, cspPaginaEstatica(conMeta));
+  if (fallos.length > 0) {
+    console.error(`inline-dist: ${pagina} no pasa la guardia CSP:\n  ${fallos.join('\n  ')}`);
+    process.exit(1);
+  }
+  writeFileSync(ruta, conMeta, 'utf8');
+  console.log(`inline-dist: dist/${pagina} con CSP estricta en meta`);
+}

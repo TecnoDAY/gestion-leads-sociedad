@@ -2,7 +2,7 @@
 // bloques inline finales, meta insertada antes del primer script, guardias.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { bloquesInline, cspHtml, insertarMetaCsp, problemasCsp } from '../csp-utils.mjs';
+import { bloquesInline, cspHtml, cspPaginaEstatica, insertarMetaCsp, problemasCsp } from '../csp-utils.mjs';
 
 const HTML_BASICO = `<html><head>
   <script src="https://cdn.jsdelivr.net/npm/x@1"></script>
@@ -49,8 +49,7 @@ test('guardia limpia cuando el artefacto es coherente', () => {
   assert.deepEqual(problemasCsp(con), []);
 });
 
-test('guardia detecta on*= y hashes desincronizados', () => {
-  // on*= presente
+test('guardia detecta on*= y hashes desincronizados', () => {  // on*= presente
   const conOn = insertarMetaCsp(HTML_BASICO).replace('<body>', '<body><button onclick="hola()">');
   const problemasOn = problemasCsp(conOn);
   assert.equal(problemasOn.length, 1);
@@ -60,4 +59,35 @@ test('guardia detecta on*= y hashes desincronizados', () => {
   const problemasStale = problemasCsp(conStale);
   assert.equal(problemasStale.length, 1);
   assert.match(problemasStale[0], /desincronizado/);
+});
+
+// --- fase 23: paginas estaticas auxiliares (privacidad/404) ------------------
+const PAGINA = `<html><head>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <style>
+    body { color: #0f172a; }
+  </style>
+</head><body><a href="/">Volver</a></body></html>`;
+
+test('pagina estatica: politica sin scripts ni formularios y hash del style', () => {
+  const csp = cspPaginaEstatica(PAGINA);
+  assert.match(csp, /default-src 'self'/);
+  assert.match(csp, /script-src 'none'/);
+  assert.match(csp, /form-action 'none'/);
+  assert.match(csp, /style-src 'self' 'sha256-/);
+  assert.doesNotMatch(csp, /unsafe-inline/);
+  assert.equal(csp.split("'sha256-").length - 1, 1);
+  // metrica generica exige que exista un <style>: sin el, lanza
+  assert.throws(() => cspPaginaEstatica('<html><head></head><body></body></html>'), /no tiene <style>/);
+});
+
+test('pagina estatica: insercion del meta y guardia limpia', () => {
+  const con = insertarMetaCsp(PAGINA, cspPaginaEstatica(PAGINA));
+  const iMeta = con.indexOf('<meta http-equiv="Content-Security-Policy"');
+  const iStyle = con.indexOf('<style>');
+  assert.ok(iMeta > con.indexOf('<head>') && iMeta < iStyle);
+  assert.deepEqual(problemasCsp(con, cspPaginaEstatica(con)), []);
+  // un <style> cambiado invalida el hash
+  const stale = con.replace('color: #0f172a', 'color: #000');
+  assert.match(problemasCsp(stale, cspPaginaEstatica(stale))[0], /desincronizado/);
 });

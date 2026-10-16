@@ -1637,6 +1637,7 @@
        editingNoteId = null;
         leadAppointmentsCache = [];
         leadAppointmentEventsCache = [];
+        leadAppointmentHistoryError = false;
        pendingAppointmentMutations?.clear();
       leadAppointmentAdvisors = [];
       loadLeadsPromise = null;
@@ -2315,6 +2316,7 @@
     let leadGestionesCache = [];
      let leadAppointmentsCache = [];
      let leadAppointmentEventsCache = [];
+     let leadAppointmentHistoryError = false;
      let leadAppointmentAdvisors = [];
       let pendingAppointmentMutations = new Map();
       let newLeadSubmitting = false;
@@ -4543,11 +4545,13 @@ async function loadLeadAppointments(leadId, lead) {
        if (error) { console.warn('No se pudieron cargar citas:', error); updateLeadAppointmentCreateState(lead || findLeadByOrigin('actual', leadId), 'error'); document.getElementById('leadAppointmentsSection')?.classList.add('hidden'); return; }
        leadAppointmentsCache = (data || []).sort((a, b) => String(b.scheduled_at).localeCompare(String(a.scheduled_at)) || Number(b.id) - Number(a.id));
         const appointmentIds = leadAppointmentsCache.map(a => validAppointmentId(a.id)).filter(Boolean);
-        leadAppointmentEventsCache = [];
-        if (appointmentIds.length) {
-          const events = await fetchPagedResult(() => supabaseClient.from('lead_appointment_events').select('appointment_id, status_anterior, status_nuevo, actor_name, created_at, scheduled_at_anterior, scheduled_at_nuevo').in('appointment_id', appointmentIds).order('created_at'));
+         leadAppointmentEventsCache = [];
+         leadAppointmentHistoryError = false;
+         if (appointmentIds.length) {
+          const events = await fetchPagedResult(() => supabaseClient.from('lead_appointment_events').select('id, appointment_id, status_anterior, status_nuevo, actor_name, created_at, scheduled_at_anterior, scheduled_at_nuevo').in('appointment_id', appointmentIds));
           if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return;
-          if (!events.error) leadAppointmentEventsCache = events.data || [];
+          leadAppointmentHistoryError = Boolean(events.error);
+          if (!events.error) leadAppointmentEventsCache = (events.data || []).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)) || Number(a.id) - Number(b.id));
         }
        const section = document.getElementById('leadAppointmentsSection'); if (section && !isAgendadoGestion(getField((lead || findLeadByOrigin('actual', leadId)), 'GESTION')) && !leadAppointmentsCache.length) section.classList.add('hidden');
        if (section && leadAppointmentsCache.length) section.classList.remove('hidden');
@@ -4556,7 +4560,7 @@ async function loadLeadAppointments(leadId, lead) {
     }
     function renderLeadAppointments() {
       const list = document.getElementById('leadAppointmentsList'); if (!list) return;
-      list.innerHTML = citasLeadHtml(leadAppointmentsCache, { isAdmin, userId: currentUser?.id, events: leadAppointmentEventsCache });
+      list.innerHTML = citasLeadHtml(leadAppointmentsCache, { isAdmin, userId: currentUser?.id, events: leadAppointmentEventsCache, historyError: leadAppointmentHistoryError });
     }
     async function createLeadAppointment(event) {
       event.preventDefault(); const input = document.getElementById('leadAppointmentDate'); const scheduledAt = appointmentInputISO(input?.value); const note = (document.getElementById('leadAppointmentNote')?.value || '').trim(); const submit = document.getElementById('leadAppointmentSubmit');

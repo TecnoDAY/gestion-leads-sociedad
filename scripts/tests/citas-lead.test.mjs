@@ -1,11 +1,85 @@
 // Caracterizacion de la plantilla de citas de la ficha (fase 27), sin DOM/red.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
 import { appointmentLocal, citaHistorialHtml, citasLeadHtml } from '../../src/legacy/citas.js';
 import { escapeHtml } from '../../src/legacy/helpers.js';
 
 const cita = { id: 21, status: 'PROGRAMADA', advisor_user_id: 'assigned', scheduled_at: '2026-10-14T14:30:00Z', created_at: '2026-10-13T13:00:00Z' };
 const permisos = { isAdmin: false, userId: 'assigned' };
+
+test('autoria del INSERT separada de asignacion y de cambios posteriores', () => {
+  const events = [
+    { appointment_id: 21, status_anterior: 'PROGRAMADA', actor_name: 'Ultima asesora' },
+    { appointment_id: 21, status_anterior: null, actor_name: 'Jessica' },
+    { appointment_id: 22, status_anterior: null, actor_name: 'Ana' },
+  ];
+  const html = citasLeadHtml([{ ...cita, advisor_name: 'Ana', rescheduled_from_id: 9 }], { ...permisos, events });
+  assert.match(html, /Reprogramada por: Jessica/);
+  assert.match(html, /Asesora asignada: Ana/);
+  assert.doesNotMatch(html, /Reprogramada por: (Ana|Ultima asesora)/);
+  assert.match(citasLeadHtml([cita], { events }), /Creada por: Jessica/);
+  assert.match(citasLeadHtml([cita], { events: events.slice(0, 1) }), /Creada por: Autor no disponible/);
+  assert.match(citasLeadHtml([cita], { events: [{ appointment_id: 21, status_anterior: null, actor_name: '  ' }] }), /Autor no disponible/);
+  assert.match(citasLeadHtml([cita], { historyError: true }), /role="alert"[^>]*>No se pudo cargar el historial/);
+  assert.doesNotMatch(html, /role="alert"/);
+  const payload = '<img src=x>';
+  assert.ok(citasLeadHtml([cita], { events: [{ appointment_id: 21, status_anterior: null, actor_name: payload }] }).includes(`Creada por: ${escapeHtml(payload)}`));
+});
+
+test('carga real usa cursor id, conserva todos los eventos y hace visible el fallo', async () => {
+  const source = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+  const pager = source.slice(source.indexOf('    async function fetchRowsByIdCursor('), source.indexOf('    // Lotes pequeños'));
+  const loader = source.slice(source.indexOf('async function loadLeadAppointments('), source.indexOf('    async function createLeadAppointment('));
+  for (const fail of [false, true]) {
+    const selected = {};
+    const rows = {
+      lead_appointments: [{ ...cita, advisor_name: 'Ana', rescheduled_from_id: 9 }],
+      lead_appointment_events: [
+        { id: 1, appointment_id: 21, status_anterior: null, actor_name: 'Jessica', created_at: '2026-10-13' },
+        { id: 2, appointment_id: 21, status_anterior: 'PROGRAMADA', status_nuevo: 'ASISTIO', actor_name: 'Ana', created_at: '2026-10-14' },
+      ],
+    };
+    const list = { innerHTML: '' };
+    const context = vm.createContext({
+      sessionGeneration: 1, viewLeadGeneration: 1, currentUser: { id: 'assigned' }, currentAccess: {}, isAdmin: false,
+      leadAppointmentsCache: [], leadAppointmentEventsCache: [], leadAppointmentHistoryError: false,
+      validAppointmentId: Number, appointmentSessionValid: () => true, updateLeadAppointmentCreateState() {},
+      isAgendadoGestion: () => true, getField() {}, findLeadByOrigin: () => ({}), citasLeadHtml,
+      document: { getElementById: id => id === 'leadAppointmentsList' ? list : null }, console,
+      supabaseClient: { from(table) {
+        let cursor = Infinity;
+        const query = {
+          select(columns) { selected[table] = columns.split(',').map(s => s.trim()); return this; },
+          eq() { return this; }, in() { return this; }, lt(_column, value) { cursor = value; return this; },
+          order(column, options) { assert.equal(column, 'id'); assert.equal(options.ascending, false); return this; },
+          range() { return this; },
+          then(resolve) {
+            if (fail && table === 'lead_appointment_events') return Promise.resolve({ error: { message: 'denied' } }).then(resolve);
+            const data = rows[table].filter(r => r.id < cursor).sort((a, b) => b.id - a.id)
+              .map(r => Object.fromEntries(Object.entries(r).filter(([key]) => selected[table].includes(key))));
+            return Promise.resolve({ data, error: null }).then(resolve);
+          },
+        };
+        return query;
+      } },
+    });
+    vm.runInContext(pager + loader, context);
+    await context.loadLeadAppointments(7, {});
+    assert.ok(selected.lead_appointment_events.includes('id'));
+    if (fail) {
+      assert.match(list.innerHTML, /role="alert"/);
+      assert.match(list.innerHTML, /Reprogramada por: Autor no disponible/);
+    } else {
+      assert.match(list.innerHTML, /Reprogramada por: Jessica/);
+      assert.match(list.innerHTML, /Asesora asignada: Ana/);
+      assert.equal(context.leadAppointmentEventsCache.length, 2);
+      assert.equal(context.leadAppointmentEventsCache[0].id, 1);
+      assert.match(list.innerHTML, /PROGRAMADA → ASISTIO/);
+    }
+  }
+});
 
 test('permisos y estados: editar admin/asignada; resolver solo PROGRAMADA; borrar solo admin', () => {
   for (const [isAdmin, userId, canEdit] of [[true, 'other', true], [false, 'assigned', true], [false, 'other', false]]) {

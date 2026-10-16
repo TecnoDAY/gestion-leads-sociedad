@@ -150,7 +150,7 @@ function frontend(extra = {}) {
     miamiToday: () => '2026-09-30',
     supabaseClient: null, currentUser: { id: 'user-test' }, currentAccess: { activo: true, nombre: 'Test', updated_at: 'v1' },
     sessionGeneration: 1, currentMainTab: 'citas', isAdmin: false, isSupervisor: false, isTrafficker: false, newPhoneCheckGeneration: 0, newPhoneCheckTimer: null,
-    citasRequestGeneration: 0, citasCache: [], citasRangeKey: '', leadAppointmentsCache: [], leadAppointmentEventsCache: [], leadNotesCache: [], leadGestionesCache: [],
+    citasRequestGeneration: 0, citasCache: [], citasRangeKey: '', leadAppointmentsCache: [], leadAppointmentEventsCache: [], leadAppointmentHistoryError: false, leadNotesCache: [], leadGestionesCache: [],
     viewLeadGeneration: 1, currentViewId: 1, dashRangeGen: 0, filterDebounceTimer: null,
    reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], reporteDayNotes: [], reporteAsesorasDisponibles: [], reporteAsesorasCatalogo: [], reporteLoadedKey: '', campanasData: [],
     periodoRequestGeneration: 0, periodoData: null, periodoLoadedKey: '', reporteVistaActiva: 'diario',

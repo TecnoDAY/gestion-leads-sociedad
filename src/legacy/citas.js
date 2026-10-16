@@ -108,7 +108,7 @@ export function citaHistorialHtml(events) {
   const rows = (events || []).filter(e => validAppointmentId(e?.appointment_id));
   if (!rows.length) return '';
   return `<div class="mt-1 space-y-0.5">${rows.map(e => {
-    const actor = e.actor_name || 'Usuario';
+    const actor = e.actor_name?.trim() || 'Autor no disponible';
     const when = appointmentLocal(e.created_at);
     const from = e.scheduled_at_anterior ? appointmentLocal(e.scheduled_at_anterior) : '';
     const to = e.scheduled_at_nuevo ? appointmentLocal(e.scheduled_at_nuevo) : '';
@@ -121,7 +121,7 @@ export function citaHistorialHtml(events) {
 }
 
 /** Plantilla de las citas de la ficha; sin lectura de estado ni DOM. */
-export function citasLeadHtml(citas, { isAdmin, userId, events } = {}) {
+export function citasLeadHtml(citas, { isAdmin, userId, events, historyError = false } = {}) {
   const byAppointment = new Map();
   for (const event of events || []) {
     const id = validAppointmentId(event?.appointment_id);
@@ -147,7 +147,10 @@ export function citasLeadHtml(citas, { isAdmin, userId, events } = {}) {
     const scheduled = String(a.status) === 'PROGRAMADA';
     const canEdit = isAdmin || a.advisor_user_id === userId;
     const canReschedule = scheduled && (Boolean(userId) || isAdmin);
-    return `<div data-appointment-id="${id}" class="border-b border-slate-800 last:border-0 py-2 space-y-1"><div class="flex flex-wrap items-center gap-2 text-xs"><span class="text-slate-200 font-medium">Cita para: ${escapeHtml(appointmentLocal(a.scheduled_at))}</span>${appointmentBadge(a.status)}<span class="text-slate-400">Creada: ${escapeHtml(appointmentLocal(a.created_at))}</span><span class="text-slate-400">${escapeHtml(a.advisor_name || '-')}</span>${a.rescheduled_from_id ? `<span class="text-[11px] text-slate-500">reprogramada desde #${escapeHtml(String(validAppointmentId(a.rescheduled_from_id) || ''))}</span>` : ''}</div>${a.notes ? `<p class="text-[11px] text-slate-400 whitespace-pre-line">${escapeHtml(a.notes)}</p>` : ''}${a.student_name || a.contact_email || a.student_age != null ? `<p class="text-[11px] text-slate-300">Estudiante: ${escapeHtml(a.student_name || '-')} · Correo: ${escapeHtml(a.contact_email || '-')} · Edad: ${escapeHtml(a.student_age != null ? String(a.student_age) : '-')}</p>` : ''}<p class="text-[11px] text-slate-300">Sede: ${escapeHtml(a.campus || 'Sin sede')}</p>${citaHistorialHtml(byAppointment.get(id))}${buttons(id, canEdit, scheduled && canEdit, canReschedule)}${isAdmin ? `<button data-appointment-id="${id}" data-ev="click:deleteLeadAppointment(${id})" class="px-2 py-1 rounded bg-rose-700 hover:bg-rose-600 text-white text-[11px]">Eliminar cita</button>` : ''}</div>`;
+    // El INSERT tiene estado anterior nulo; nunca atribuir la creacion al ultimo cambio.
+    const creation = (byAppointment.get(id) || []).find(e => e.status_anterior === null);
+    const author = creation?.actor_name?.trim() || 'Autor no disponible';
+    return `<div data-appointment-id="${id}" class="border-b border-slate-800 last:border-0 py-2 space-y-1"><div class="flex flex-wrap items-center gap-2 text-xs"><span class="text-slate-200 font-medium">Cita para: ${escapeHtml(appointmentLocal(a.scheduled_at))}</span>${appointmentBadge(a.status)}<span class="text-slate-400">Creada: ${escapeHtml(appointmentLocal(a.created_at))}</span><span class="text-slate-200">${a.rescheduled_from_id ? 'Reprogramada por' : 'Creada por'}: ${escapeHtml(author)}</span><span class="text-slate-400">Asesora asignada: ${escapeHtml(a.advisor_name || '-')}</span>${a.rescheduled_from_id ? `<span class="text-[11px] text-slate-500">reprogramada desde #${escapeHtml(String(validAppointmentId(a.rescheduled_from_id) || ''))}</span>` : ''}</div>${a.notes ? `<p class="text-[11px] text-slate-400 whitespace-pre-line">${escapeHtml(a.notes)}</p>` : ''}${a.student_name || a.contact_email || a.student_age != null ? `<p class="text-[11px] text-slate-300">Estudiante: ${escapeHtml(a.student_name || '-')} · Correo: ${escapeHtml(a.contact_email || '-')} · Edad: ${escapeHtml(a.student_age != null ? String(a.student_age) : '-')}</p>` : ''}<p class="text-[11px] text-slate-300">Sede: ${escapeHtml(a.campus || 'Sin sede')}</p>${historyError ? '<p role="alert" class="text-[11px] text-amber-400">No se pudo cargar el historial de citas. Vuelve a abrir la ficha para reintentar.</p>' : ''}${citaHistorialHtml(byAppointment.get(id))}${buttons(id, canEdit, scheduled && canEdit, canReschedule)}${isAdmin ? `<button data-appointment-id="${id}" data-ev="click:deleteLeadAppointment(${id})" class="px-2 py-1 rounded bg-rose-700 hover:bg-rose-600 text-white text-[11px]">Eliminar cita</button>` : ''}</div>`;
   }).join('') : '<p class="text-[11px] text-slate-500">Sin citas registradas.</p>';
 }
 

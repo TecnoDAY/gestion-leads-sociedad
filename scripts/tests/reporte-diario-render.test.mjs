@@ -39,7 +39,7 @@ test('totalDiario: cinco llaves con lo mismo que muestra el panel', () => {
 
 test('detallesBloqueHtml: cuatro tablas con filas exactas y coherencia', () => {
   const html = detallesBloqueHtml(bloque);
-  for (const title of ['Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas creadas y resultados registrados hoy']) assert.match(html, new RegExp(title));
+  for (const title of ['Procedencia', 'Canales', 'Detalle de gestión', 'Citas creadas y resultados registrados hoy']) assert.match(html, new RegExp(title));
   assert.match(html, /Otras procedencias/);
   assert.match(html, /Otros o sin canal/);
   // Total Procedencia = suma de todas las procedencias (2+1+1+1 = 5)

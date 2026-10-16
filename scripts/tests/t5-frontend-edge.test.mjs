@@ -2096,7 +2096,7 @@ test('reporte RPC usa la fecha y separa citas nuevas de reprogramadas', async ()
 });
 test('comparativa RPC muestra campos y detalle las cuatro tablas y notas', async () => {
   const f = reportFixture({ asesoras: [advisor('Ana', 'a')] }, [{ id: 4, autor_name: 'Ana', problemas: 'p', observaciones: 'o' }]); await f.context.loadReporteDiario(); const html = f.element('reporteAuto').innerHTML;
-  for (const text of ['Ana', 'Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas creadas y resultados registrados hoy', 'p', 'o']) assert.match(html, new RegExp(text));
+  for (const text of ['Ana', 'Procedencia', 'Canales', 'Detalle de gestión', 'Citas creadas y resultados registrados hoy', 'p', 'o']) assert.match(html, new RegExp(text));
   // Retiradas del reporte diario: inscripciones y los dos canales en desuso.
   for (const text of ['Inscripciones', 'Visita Conservatorio', 'Sin clasificar', 'Total inscritos']) assert.doesNotMatch(html, new RegExp(text));
   assert.match(html, /Ana — 1 gestiones/); // gestiones del bloque, sin la clave vieja rota
@@ -2124,19 +2124,29 @@ test('reporte RPC vacío, cargando y error muestran estado sin romper', async ()
   const failed = reportFixture(null); failed.db.rpc = async () => ({ data: null, error: { message: 'rpc failed' } }); await failed.context.loadReporteDiario(); assert.match(failed.element('reporteAuto').innerHTML, /No se pudo cargar/);
 });
 
+test('CSV bloquea detalle inconsistente con aviso sin descargar ni anunciar exito', async () => {
+  const f = reportFixture({ asesoras: [{ ...advisor('Ana', 'a'), canales: { whatsapp: 1 }, whatsapp: { nuevos: 2 } }] });
+  await f.context.loadReporteDiario();
+  assert.match(f.element('reporteAuto').innerHTML, /Detalle de gestión no disponible/);
+  f.context.exportReporteDiarioCSV();
+  assert.equal(f.downloads.length, 0);
+  assert.match(f.toasts.at(-1)[0], /WhatsApp nuevos supera el total/);
+  assert.equal(f.toasts.at(-1)[1], 'error');
+});
+
 test('CSV reporte: separa citas nuevas y reprogramadas y suma las columnas visibles', async () => {
   const full = (uid, name) => ({ autor_user_id: uid, autor_name: name, gestionados: 1, procedencia: { WhatsApp: 1, 'Facebook/Instagram': 1, CogniTalking: 1, 'Directo o Referido': 1, Otros: 1 }, llamadas: { del_dia: 1, data_dura: 1, llamada_whatsapp: 1, total: 3 }, whatsapp: { nuevos: 1, gestionados: 1, total: 2 }, canales: { llamada: 1, data_dura: 1, llamada_whatsapp: 1, whatsapp: 2, instagram: 0, visita: 0, sin_clasificar: 0, total: 5 }, citas: { agendados_dia: 1, agendados_data_dura: 1, agendados_gestionados_dia: 2, agendados_gestionados_data_dura: 1, agendados_doral: 1, agendados_doral_data_dura: 1, agendados_weston: 1, agendados_weston_data_dura: 1, total_agendados: 2, citas_reprogramadas_hoy: 3, visitas: 1, no_asistieron: 1, canceladas: 1, reprogramadas: 1 }, inscritos: { del_dia: 1, data_dura: 1, total: 2 } });
   const f = reportFixture({ asesoras: [full('a', 'Ana'), full('b', 'Bea')] });
   await f.context.loadReporteDiario(); f.context.exportReporteDiarioCSV();
   const rows = decodeCSV(new TextDecoder().decode(await f.downloads[0].blob.arrayBuffer()).slice(1));
   const headers = rows[4], total = rows.at(-1), col = n => Number(total[headers.indexOf(n)]);
-  // Nueva columna coherente con pantalla: 33 cabeceras (fase 16).
+  // Detalle: nuevos y resto son una particion del total.
   assert.equal(headers.length, 33); assert.equal(total.length, 33);
   assert.equal(col('Gestiones realizadas'), 2); assert.equal(col('Citas nuevas Doral'), 2); assert.equal(col('Citas nuevas Data Dura Weston'), 2);
   assert.equal(col('Total citas nuevas'), 4); assert.equal(col('Citas reprogramadas hoy'), 6); assert.equal(col('Reprogramadas'), 2);
   assert.equal(headers.includes('Inscritos del día'), false, 'inscripciones fuera del CSV diario');
   assert.equal(col('Pasados a Agendado hoy'), 4); assert.equal(col('Pasados a Agendado Data Dura hoy'), 2);
-  assert.equal(col('WhatsApp nuevos hoy'), 2); assert.equal(col('WhatsApp gestionados hoy'), 2); assert.equal(col('Total WhatsApp'), 4);
+  assert.equal(col('WhatsApp nuevos hoy'), 2); assert.equal(col('WhatsApp gestionados hoy'), 4); assert.equal(col('Total detalle de gestión'), 6);
   // Total canales = suma exclusiva de 5 categorias visibles; los buckets
   // retirados (visita 0, sin_clasificar 0) van juntos en 'Otros o sin canal'.
   assert.equal(col('Total canales'), 10);
@@ -2145,8 +2155,8 @@ test('CSV reporte: separa citas nuevas y reprogramadas y suma las columnas visib
   const panel = f.element('reporteAuto').innerHTML;
   assert.match(panel, /Citas nuevas hoy/);
   assert.doesNotMatch(panel, /Citas programadas hoy/);
-  assert.match(panel, /WhatsApp nuevos hoy/); assert.match(panel, /Total WhatsApp/);
-  assert.match(panel, /Canales/); assert.match(panel, /Detalle WhatsApp/);
+  assert.match(panel, /WhatsApp nuevos hoy/); assert.match(panel, /WhatsApp gestionados hoy/);
+  assert.match(panel, /Canales/); assert.match(panel, /Detalle de gestión/);
   for (const text of ['Sin clasificar', 'Visita Conservatorio', 'Inscripciones']) assert.doesNotMatch(panel, new RegExp(text));
   // comparativa: total por asesora desde el contenido real del bloque.
   assert.match(panel, /Ana — 1 gestiones/);
@@ -2598,7 +2608,7 @@ test('reporte diario: canales e inscripciones retirados de pantalla y CSV', () =
   assert.doesNotMatch(html, /<td class="py-1">Del día<\/td>/);
   assert.doesNotMatch(html, /<td class="py-1">Data Dura<\/td>/);
   assert.equal((html.match(new RegExp('<h5 class="font-semibold text-indigo-900">', 'g')) || []).length, 4, 'cuatro tablas por asesora');
-  for (const text of ['Procedencia', 'Canales', 'Detalle WhatsApp', 'Citas creadas y resultados registrados hoy', 'Gestiones realizadas', 'Total llamadas', 'Visitas registradas']) assert.match(html, new RegExp(text));
+  for (const text of ['Procedencia', 'Canales', 'Detalle de gestión', 'Citas creadas y resultados registrados hoy', 'Gestiones realizadas', 'Total llamadas', 'Visitas registradas']) assert.match(html, new RegExp(text));
   assert.match(html, /Citas nuevas hoy/);
 });
 // --- fase 15: parse-all de data-ev -------------------------------------------

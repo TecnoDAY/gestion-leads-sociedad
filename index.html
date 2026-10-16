@@ -5563,7 +5563,13 @@ async function deleteLeadAppointment(id) {
         problemas: document.getElementById(`reporte-problemas-${i}`)?.value ?? resolverNotaBloque(b, reporteDayNotes).problemas ?? '',
         observaciones: document.getElementById(`reporte-obs-${i}`)?.value ?? resolverNotaBloque(b, reporteDayNotes).observaciones ?? '',
       }));
-      const lineas = diarioCsvLines(fecha, filtro, miamiToday(), reporteDayData, notasResueltas);
+      let lineas;
+      try {
+        lineas = diarioCsvLines(fecha, filtro, miamiToday(), reporteDayData, notasResueltas);
+      } catch (error) {
+        showToast(error.message, 'error');
+        return;
+      }
       downloadCSV(lineas.join('\n'), `Reporte_Diario_${fecha}.csv`);
       showToast('Reporte diario exportado a CSV', 'success');
     }

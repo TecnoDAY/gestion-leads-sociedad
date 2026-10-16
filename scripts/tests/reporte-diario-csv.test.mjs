@@ -13,9 +13,12 @@ const bloque = {
   llamadas: { del_dia: 3, data_dura: 1, llamada_whatsapp: 1, total: 5 },
   citas: { agendados_dia: 2, agendados_data_dura: 1, agendados_doral: 1, agendados_doral_data_dura: 0, agendados_weston: 1, agendados_weston_data_dura: 1, total_agendados: 3, citas_reprogramadas_hoy: 0, visitas: 1, no_asistieron: 0, canceladas: 1, reprogramadas: 1, agendados_gestionados_dia: 2, agendados_gestionados_data_dura: 1 },
   whatsapp: { nuevos: 2, gestionados: 3, total: 5 },
-  canales: { instagram: 1 },
+  canales: { whatsapp: 2, instagram: 1 },
 };
 const bloqueVacio = { autor_name: 'Marcos', autor_user_id: 'u2' };
+
+// Separar delimitadores externos a comillas (incluye la coma de "De ellos,").
+const campos = line => line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
 
 test('cabecera del CSV diario: titulo, fecha, generado, filtro opcional y 33 columnas', () => {
   const con = diarioCsvLines('2026-10-13', 'Loli', '2026-10-14', [bloque], []);
@@ -24,7 +27,7 @@ test('cabecera del CSV diario: titulo, fecha, generado, filtro opcional y 33 col
   assert.equal(con[2], csvReporteField('Generado: 2026-10-14 Miami'));
   assert.equal(con[3], csvReporteField('Filtro: Loli'));
   assert.equal(con[4], '');
-  const headers = con[5].split(',');
+  const headers = campos(con[5]);
   assert.equal(headers.length, 33);
   assert.equal(headers[0], csvReporteField('Asesora'));
   // la columna agregada va entre Canal Instagram y Total canales
@@ -36,7 +39,7 @@ test('cabecera del CSV diario: titulo, fecha, generado, filtro opcional y 33 col
   // sin filtro no hay linea de filtro ni hueco desalineado
   const sin = diarioCsvLines('2026-10-13', '', '2026-10-14', [bloque], []);
   assert.equal(sin[3], '');
-  assert.equal(sin[4].split(',').length, 33);
+  assert.equal(campos(sin[4]).length, 33);
 });
 
 test('filas por bloque con values en el orden de keys y notas resueltas', () => {
@@ -91,16 +94,15 @@ test('coherencia del caso Jessica: fila visible y total de canales cuadran con g
   assert.equal(totalCanalesVisibles(jessica), 130);
   const con = diarioCsvLines('2026-10-13', '', '2026-10-13', [bloqueJess], []);
   const fila = con.at(-2).split(',');
-  const cabecera = con[4].split(',');
+  const cabecera = campos(con[4]);
   const el = nombres => cabecera.findIndex(h => h === csvReporteField(nombres));
   const iInstagram = el('Canal Instagram');
   const iTotales = el('Total canales');
   assert.ok(iInstagram > -1 && iTotales > -1, 'columnas de canal presentes');
   assert.equal(fila[iInstagram], csvReporteField('0'));
   assert.equal(fila[iTotales], csvReporteField('130'));
-  // la suma de las columnas de canal del CSV (llamadas del dia, data dura,
-  // llamada_whatsapp, whatsapp, instagram, otros) iguala el total
-  const sumaCanalCsv = ['Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total WhatsApp', 'Canal Instagram', 'Otros o sin canal']
+   // Total detalle ya contiene combinado, Instagram y otros: no repetirlos.
+   const sumaCanalCsv = ['Llamadas del día', 'Llamadas Data Dura', 'Total detalle de gestión']
     .reduce((a, n) => a + Number(fila[el(n)].slice(1, -1)), 0);
   assert.equal(sumaCanalCsv, 130);
 });

@@ -109,6 +109,7 @@ const HELP_SECTIONS = [
       'El agendamiento se atribuye a quien creó la cita; la asesora asignada para atenderla aparece en el calendario.',
       'Citas reprogramadas hoy cuenta las nuevas fechas registradas hoy; Reprogramadas indica cuándo se marcó la cita anterior con ese resultado. Visitas, No asistieron y Canceladas cuentan el día en que se registró el resultado.',
       'Llamada WhatsApp cuenta una sola vez, dentro del total de llamadas, y es una categoría distinta de Llamada.',
+      'Detalle de gestión: WhatsApp nuevos hoy muestra las altas sin gestión anterior por WhatsApp o Llamada WhatsApp. WhatsApp gestionados hoy muestra el resto: Total menos nuevos, incluidas altas de otros canales. Total suma WhatsApp, Llamada WhatsApp, Instagram y Otros o sin canal (incluye Visita Conservatorio y sin clasificar); excluye llamadas normales y Data Dura. Cada gestión cuenta una sola vez. Si los conteos son inválidos o nuevos supera Total, aparece un aviso y no se permite exportar el CSV. El total general y Canales no cambian.',
       'Los Inscritos Data Dura son los leads inscritos cuyo Mes de origen es distinto del mes actual.',
       'Al guardar en un bloque ajeno, administración escribe en nombre de la asesora y el bloque sigue siendo de ella.'
     ]

@@ -976,16 +976,34 @@ export function periodoCsvLines(summary, actividad, generado) {
   return lines;
 }
 
-/** Columnas numericas del CSV diario en el orden exacto del export original. */
-const DIARIO_KEYS = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosDoral', 'agendadosDoralDura', 'agendadosWeston', 'agendadosWestonDura', 'agendadosTotal', 'reprogramadasHoy', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'agendadosGestionadosDia', 'agendadosGestionadosDura', 'whatsappNuevos', 'whatsappGestionados', 'whatsappTotal', 'canalInstagram', 'canalesOtros', 'canalesTotal'];
+/** Columnas numericas del CSV diario, alineadas con DIARIO_HEADERS. */
+const DIARIO_KEYS = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosDoral', 'agendadosDoralDura', 'agendadosWeston', 'agendadosWestonDura', 'agendadosTotal', 'reprogramadasHoy', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'agendadosGestionadosDia', 'agendadosGestionadosDura', 'whatsappNuevos', 'detalleGestionados', 'detalleTotal', 'canalInstagram', 'canalesOtros', 'canalesTotal'];
 
 /** 'Otros o sin canal': buckets retirados de pantalla, juntos. */
 const numCanalesOtros = c => (Number(c?.visita) || 0) + (Number(c?.sin_clasificar) || 0);
 
+/** Altas y seguimientos de los canales visibles; nuevos es un subconjunto. */
+export const gestionadosHoy = canales => (Number(canales?.whatsapp) || 0)
+  + (Number(canales?.llamada_whatsapp) || 0) + (Number(canales?.instagram) || 0)
+  + numCanalesOtros(canales);
+
+/** Particion del detalle; ausentes/null son cero como en el reporte legado. */
+export function detalleGestionHoy(b) {
+  const count = value => {
+    const n = value == null ? 0 : (typeof value === 'number' || (typeof value === 'string' && /^\d+$/.test(value)) ? Number(value) : NaN);
+    if (!Number.isSafeInteger(n) || n < 0) throw new Error('Detalle de gestión no disponible: conteos inválidos. Actualiza el reporte e informa al administrador si persiste.');
+    return n;
+  };
+  const total = count(['whatsapp', 'llamada_whatsapp', 'instagram', 'visita', 'sin_clasificar'].reduce((sum, key) => sum + count(b.canales?.[key]), 0));
+  const nuevos = count(b.whatsapp?.nuevos);
+  if (nuevos > total) throw new Error('Detalle de gestión no disponible: WhatsApp nuevos supera el total. Actualiza el reporte e informa al administrador si persiste.');
+  return { nuevos, gestionados: total - nuevos, total };
+}
+
 /** Cabecera del CSV diario (33 columnas: ASESORA + 30 numericas + notas).
  * 'Otros o sin canal' agrega los buckets retirados de pantalla
  * (visita conservatorio + sin clasificar) para que el total cuadre. */
-const DIARIO_HEADERS = ['Asesora', 'Gestiones realizadas', 'WhatsApp', 'Facebook/Instagram', 'CogniTalking', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Citas nuevas hoy', 'Citas nuevas Data Dura', 'Citas nuevas Doral', 'Citas nuevas Data Dura Doral', 'Citas nuevas Weston', 'Citas nuevas Data Dura Weston', 'Total citas nuevas', 'Citas reprogramadas hoy', 'Visitas registradas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Pasados a Agendado hoy', 'Pasados a Agendado Data Dura hoy', 'WhatsApp nuevos hoy', 'WhatsApp gestionados hoy', 'Total WhatsApp', 'Canal Instagram', 'Otros o sin canal', 'Total canales', 'Problemas', 'Observaciones'];
+const DIARIO_HEADERS = ['Asesora', 'Gestiones realizadas', 'WhatsApp', 'Facebook/Instagram', 'CogniTalking', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Citas nuevas hoy', 'Citas nuevas Data Dura', 'Citas nuevas Doral', 'Citas nuevas Data Dura Doral', 'Citas nuevas Weston', 'Citas nuevas Data Dura Weston', 'Total citas nuevas', 'Citas reprogramadas hoy', 'Visitas registradas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Pasados a Agendado hoy', 'Pasados a Agendado Data Dura hoy', 'WhatsApp nuevos hoy', 'WhatsApp gestionados hoy', 'Total detalle de gestión', 'Canal Instagram', 'Otros o sin canal', 'Total canales', 'Problemas', 'Observaciones'];
 
 /**
  * Resuelve la nota asociada a un bloque del reporte diario con la regla
@@ -1015,11 +1033,13 @@ export function diarioCsvLines(fecha, filtro, generado, bloques, notasResueltas)
   const sumas = Object.fromEntries(DIARIO_KEYS.map(k => [k, 0]));
   bloques.forEach((b, i) => {
     const p = b.procedencia || {}, l = b.llamadas || {}, c = b.citas || {};
-    const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, l.total, c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.citas_reprogramadas_hoy, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, (b.whatsapp || {}).nuevos, (b.whatsapp || {}).gestionados, (b.whatsapp || {}).total, (b.canales || {}).instagram, numCanalesOtros(b.canales), totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
+    const detalle = detalleGestionHoy(b);
+    const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, l.total, c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.citas_reprogramadas_hoy, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, detalle.nuevos, detalle.gestionados, detalle.total, (b.canales || {}).instagram, numCanalesOtros(b.canales), totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
     values.forEach((v, n) => { sumas[DIARIO_KEYS[n]] += v; });
     const nota = notasResueltas[i] || {};
     lineas.push([b.autor_name ?? b.advisor, ...values, nota.problemas ?? '', nota.observaciones ?? ''].map(csvReporteField).join(','));
   });
+  detalleGestionHoy({ canales: { whatsapp: sumas.detalleTotal }, whatsapp: { nuevos: sumas.whatsappNuevos } });
   lineas.push(['TOTAL', ...DIARIO_KEYS.map(k => sumas[k]), '', ''].map(csvReporteField).join(','));
   return lineas;
 }
@@ -1057,11 +1077,18 @@ const tablaDetalle = (title, rows) => `<div class="daily-detail-card"><h5 class=
 /** Las cuatro tablas de detalle de una asesora (pantalla coherencia fase 16). */
 export function detallesBloqueHtml(b) {
   const num = (o, k) => Number(o?.[k]) || 0;
+  let detalle;
+  try {
+    const d = detalleGestionHoy(b);
+    detalle = tablaDetalle('Detalle de gestión', [['WhatsApp nuevos hoy', d.nuevos], ['WhatsApp gestionados hoy', d.gestionados], ['Total', d.total]]);
+  } catch (error) {
+    detalle = `<div class="daily-detail-card" role="alert"><h5 class="font-semibold text-indigo-900">Detalle de gestión</h5><p>${escapeHtml(error.message)}</p></div>`;
+  }
   const p = b.procedencia || {}, c = b.citas || {};
   const pt = Object.values(p).reduce((a, v) => a + (Number(v) || 0), 0);
   return tablaDetalle('Procedencia', [['WhatsApp', num(p, 'WhatsApp')], ['Facebook/Instagram', num(p, 'Facebook/Instagram')], ['Directo o Referido', num(p, 'Directo o Referido')], ['Otras procedencias', num(p, 'CogniTalking') + num(p, 'Otros')], ['Total', pt]])
     + tablaDetalle('Canales', [['Llamada', num(b.canales, 'llamada')], ['Llamada Data Dura', num(b.canales, 'data_dura')], ['Llamada y WhatsApp', num(b.canales, 'llamada_whatsapp')], ['WhatsApp', num(b.canales, 'whatsapp')], ['Instagram', num(b.canales, 'instagram')], ['Otros o sin canal', num(b.canales, 'visita') + num(b.canales, 'sin_clasificar')], ['Total', totalCanalesVisibles(b.canales)]])
-    + tablaDetalle('Detalle WhatsApp', [['WhatsApp nuevos hoy', num(b.whatsapp, 'nuevos')], ['WhatsApp gestionados hoy', num(b.whatsapp, 'gestionados')], ['Total WhatsApp', num(b.whatsapp, 'total')]])
+    + detalle
     + tablaDetalle('Citas creadas y resultados registrados hoy', [['Leads pasados a Agendado', num(c, 'agendados_gestionados_dia')], ['Leads pasados a Agendado Data Dura', num(c, 'agendados_gestionados_data_dura')], ['Citas nuevas Doral', num(c, 'agendados_doral')], ['Citas nuevas Data Dura Doral', num(c, 'agendados_doral_data_dura')], ['Citas nuevas Weston', num(c, 'agendados_weston')], ['Citas nuevas Data Dura Weston', num(c, 'agendados_weston_data_dura')], ['Citas nuevas hoy', num(c, 'total_agendados')], ['Citas reprogramadas hoy', num(c, 'citas_reprogramadas_hoy')], ['Visitas registradas', num(c, 'visitas')], ['No asistieron', num(c, 'no_asistieron')], ['Canceladas', num(c, 'canceladas')], ['Reprogramadas', num(c, 'reprogramadas')]]);
 }
 

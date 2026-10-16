@@ -61,13 +61,14 @@ test('manualBloqueHtml: edicion con guardar/eliminar y lectura sin acciones', ()
   assert.doesNotMatch(lectura, /saveReporteNota/);
 });
 
-test('bloqueDiaHtml: summary con gestiones, open solo en la primera y manuales', () => {
+test('bloqueDiaHtml: summary con gestiones, todas cerradas y manuales', () => {
   const primera = bloqueDiaHtml(bloque, 0, 'MANUAL_0');
-  assert.match(primera, /<details class="daily-advisor"  ?open>/);
+  assert.match(primera, /<details class="daily-advisor">/);
+  assert.doesNotMatch(primera, /<details class="daily-advisor" [^>]*open/);
   assert.match(primera, /MANUAL_0/);
   assert.match(primera, /Loli — 5 gestiones/);
   const restante = bloqueDiaHtml(bloque, 1, '');
-  assert.doesNotMatch(restante, /<details class="daily-advisor" open>/);
+  assert.doesNotMatch(restante, /<details class="daily-advisor" [^>]*open/);
   const sinNombre = bloqueDiaHtml({ gestiones: 0 }, 0, '');
   assert.match(sinNombre, /Sin asesora/);
 });

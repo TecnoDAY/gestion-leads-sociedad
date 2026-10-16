@@ -4,6 +4,9 @@ Only PostgreSQL syntax/functions are adapted. This checks aggregation semantics,
 not PL/pgSQL deployment, permissions or appointment time-zone conversion.
 """
 import json
+import calendar
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 import re
 import sqlite3
@@ -14,13 +17,20 @@ ROOT = Path(__file__).resolve().parents[2]
 MIGRATION = ROOT / 'supabase/migrations/202610160006_daily_report_management_detail.sql'
 
 
-class DailyWhatsAppTest(unittest.TestCase):
+class DailyReportHarness(unittest.TestCase):
+    migration = MIGRATION
+
     def setUp(self):
         self.db = sqlite3.connect(':memory:')
         self.addCleanup(self.db.close)
         self.db.create_function('btrim', 1, lambda value: value.strip() if value else value)
         self.db.create_function('btrim', 2, lambda value, chars: value.strip(chars) if value and chars else value)
         self.db.create_function('_daily_report_data_dura', 3, lambda *_: False)
+        self.db.create_function('regexp_match', 2, lambda text, pattern: json.dumps(re.search(pattern, text).groups()) if re.search(pattern, text) else None)
+        self.db.create_function('regexp', 2, lambda pattern, text: bool(re.search(pattern, text)))
+        self.db.create_function('make_date', 3, lambda y, m, d: date(y, m, d).isoformat())
+        self.db.create_function('month_days', 2, lambda y, m: calendar.monthrange(y, m)[1])
+        self.db.create_function('miami_date', 1, lambda value: datetime.fromisoformat(value.replace('Z', '+00:00')).astimezone(ZoneInfo('America/New_York')).date().isoformat() if value else None)
         self.db.executescript('''
           create table user_access (user_id text, nombre text, activo boolean, role text);
           create table leads (id integer, "Medio" text, "Mes" text, "Fecha" text);
@@ -30,14 +40,22 @@ class DailyWhatsAppTest(unittest.TestCase):
           create table lead_appointments (created_by_user_id text, advisor_user_id text,
             advisor_name text, created_at text, resolved_at text, rescheduled_from_id text,
             is_data_dura boolean, campus text, status text);
+          create table lead_appointment_events (id integer, appointment_id integer, status_anterior text,
+            status_nuevo text, actor_user_id text, actor_name text, notes text, created_at text);
           insert into user_access values ('a', 'Ana', true, 'agente'), ('b', 'Bea', true, 'agente');
         ''')
-        sql = MIGRATION.read_text()
+        sql = self.migration.read_text()
         # Run all report CTEs, including their actual filters and JSON shaping.
         sql = sql[sql.index('  with\n'):sql.index("  select jsonb_build_object(\n    'fecha'")]
-        sql = re.sub(r"\((a\.(?:created_at|resolved_at)) at time zone 'America/New_York'\)::date", r'date(\1)', sql)
+        sql = re.sub(r"\(((?:a|e)\.(?:created_at|resolved_at)) at time zone 'America/New_York'\)::date", r'miami_date(\1)', sql)
+        sql = sql.replace("extract(day from (make_date(capture_year, capture_month, 1) + interval '1 month - 1 day'))", 'month_days(capture_year, capture_month)')
+        sql = re.sub(r'l.date_parts\[(\d)\]::int', lambda m: f"cast(json_extract(l.date_parts, '$[{int(m[1]) - 1}]') as integer)", sql)
+        sql = sql.replace('l.date_parts[3]', "json_extract(l.date_parts, '$[2]')")
+        sql = sql.replace("~ '^[0-9]{4}-'", "regexp '^[0-9]{4}-'")
         sql = sql.replace('jsonb_build_object', 'json_object')
         sql = sql.replace('public._daily_report_data_dura', '_daily_report_data_dura')
+        sql = sql.replace('public.lead_appointment_events', 'lead_appointment_events')
+        sql = sql.replace('public.lead_appointments', 'lead_appointments')
         sql = re.sub(r'\bp_fecha\b', ':p_fecha', sql)
         sql = re.sub(r'\bp_autor_user_id\b', ':p_autor_user_id', sql)
         self.query = sql + ' select block from shaped'
@@ -52,6 +70,8 @@ class DailyWhatsAppTest(unittest.TestCase):
         return [json.loads(row[0]) for row in self.db.execute(
             self.query, {'p_fecha': date, 'p_autor_user_id': author})]
 
+
+class DailyWhatsAppTest(DailyReportHarness):
     def test_combined_new_and_followup(self):
         self.add('llamada y whatsapp', None)
         self.add('llamada y whatsapp', 'CONTACTADO', medio='Referido')

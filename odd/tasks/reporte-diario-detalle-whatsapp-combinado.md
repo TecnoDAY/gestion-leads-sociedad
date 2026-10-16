@@ -1,20 +1,53 @@
 # Detalle de gestion del reporte diario
 
+## Aplicacion remota 008 autorizada — 2026-10-16T20:02:50Z
+- Autorizacion posterior explicita del usuario «aplica la migracion a ver como se ve en local», limitada por el padre a SOLO `supabase/migrations/202610160008_daily_report_event_new.sql`; revision independiente PASS informada por el padre. Sustituye la prohibicion remota de T17-T19 exclusivamente para 008. No otras migraciones, DML usuario, frontend deploy, commit/push ni subdelegacion.
+- Proyecto `hkkuyomlcqyxtzblowle`; herramientas MCP `list_migrations`, `list_tables(public, verbose=true)`, `execute_sql` SELECT, `apply_migration`, `get_project_url`. Preflight 20:01:42Z: ultima 007 version `20261016194251`; `pg_get_functiondef`/MD5 prosrc `aed441afb09206394484f3306fb253a7` igual al archivo 007, sin drift. Avisada reversibilidad mediante compensatoria que restaure 007; no se ejecuto rollback.
+- Unico `apply_migration(name=202610160008_daily_report_event_new, query=contenido del archivo)` resultado `success:true`; `list_migrations` confirma **20261016200241**. Postflight: MD5 prosrc **4d6e7d450194d0af5305ae5c73159a86**, igualdad exacta con cuerpo local=true, comentario coincide. Owner postgres, SECURITY DEFINER, search_path=public y ACL `{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}` identicos antes/despues; sin PUBLIC/anon. Cuerpo exacto conserva guardias, DD legado y contrato JSON; no cambios de politicas/tablas.
+- Recuentos exactos antes/despues: leads **6253/6253**, gestiones **1228/1228**, citas **46/46**, eventos citas **63/63**, notas reporte **1/1**. Sin DML ni alteracion observada de recuentos.
+- PostgreSQL real SELECT directo de clasificacion por asesora/fecha Miami calculada con `now() AT TIME ZONE 'America/New_York'`: **2026-10-16**, Jessica **47** eventos, WA **22 nuevos / 11 gestionados / 33 total**, llamadas **0 nuevas / 14 gestionadas / 14 total**. Coincide con muestra anterior; no se hardcodearon cifras.
+- Segundo SELECT ejecuta CTE/JSON completo extraido del archivo 008 cuyo cuerpo coincide exactamente con remoto, reemplazando solo parametros por fecha Miami actual y UUID NULL; no ejecuta ni omite guardias dentro de una llamada RPC ni suplanta identidades. Resultado **5 bloques**, total.gestionados **47**: Jessica WA 22/11/33, llamadas 0/14/14, normales **10**, DD **4**, combinado **8**; llamadas.total legado **22 = 14 + 8**. Ana/Loli/Miguel/Tecnologia todos 0. Suma exclusiva WA+llamadas=47. Extraccion servida temporalmente por HTTP loopback limitado al SQL 008 y servidor cerrado al terminar; sin credenciales.
+- Limite: no HTTP/RPC autenticada ni navegador en sesion del usuario disponible; no se leyeron secretos ni se gestionaron identidades. El SELECT verifica agregacion y JSON PostgreSQL real, no transporte HTTP ni recorrido autenticado completo. API confirmada `https://hkkuyomlcqyxtzblowle.supabase.co`. Sin frontend deploy. Estado: 008 aplicada y verificada dentro de estos limites; parrafos previos de no aplicacion se conservan como historial.
+
+## Decision FINAL vigente T17-T19 — 2026-10-16
+- Alcance aprobado: exclusivamente LOCAL, sin subdelegar, commit/push/deploy ni escrituras remotas. Esta decision sustituye todas las reglas de llegada de T14-T16; aquellas quedan como historial.
+- Regla: `g.fecha_gestion = p_fecha`; `es_nuevo = g.gestion_anterior IS NULL` SOLO. Alta atrasada llegada ayer registrada hoy es nueva hoy. Seguimiento del mismo dia y previo vacio no NULL son gestionados. Identidad del autor del evento, no del propietario del lead.
+- [x] T17 Nueva `202610160008_daily_report_event_new.sql`, sin editar 007 aplicada. Retirados los tres CTE de parseo de llegada y su JOIN; se conserva Fecha/Mes para `_daily_report_data_dura` legado. Bloques/JSON/canales/citas/ACL intactos.
+- [x] T18 Ayuda y tests actualizados; sin modificar calculos UI/CSV ni presentacion existente de tres filas WA y tres llamadas. WA puro/combinado/Instagram/residual incluida visita; llamadas normal/DD, combinado solo WA en detalle. `llamadas.total` legado sigue incluyendo combinado por compatibilidad.
+- [x] T19 `npm test`: 661/661 Node (incluye 5 SQL Python actuales y suite SQL historica), 11/11 Python adicionales. `npm run lint`: tsc/check-app OK. `git diff --check` y whitespace de 008 OK. QA gate sin hallazgos en rutas rastreadas, staged no aplicable; no audita archivos nuevos ni sustituye revision independiente. Log efimero `/tmp/opencode/daily-event-tests.log`. Autoauditoria de codigo realizada; pruebas deterministas sin reloj/red/mocks nuevos. Entrega al padre para revision independiente.
+- Incidencias locales corregidas antes de cierre: sustitucion mecanica inicial no encontro el predicado por indentacion (tests SQL lo detectaron); luego asercion textual detecto `created_at` solo en comentario, retirado del comentario. Suite final completa PASS; sin ajustes al comportamiento para sortear pruebas.
+- Contraste remoto SOLO SELECT metadatos: MD5 cuerpo `aed441afb09206394484f3306fb253a7`, coincide con 007 aplicada version `20261016194251`; SECURITY DEFINER, search_path=public, guardias activo/campaign editor presentes; ACL postgres/authenticated/service_role, sin PUBLIC/anon. Ninguna escritura ni lectura de credenciales.
+- Pruebas reutilizan CTE/JSON real en SQLite: altas atrasadas y fechas ausentes/invalidas/futuras nuevas en WA y llamadas; seguimiento mismo dia; DD true/false/null/literal; previo vacio; canales exhaustivos sin duplicacion; autor/fecha/sin ID; created_at contradictorio y fronteras Miami de citas. Ejemplo observado 22/11/33 WA y 0/14 llamadas no hardcodeado.
+- Limites: no PostgreSQL local ni compilacion PL/pgSQL, HTTP autenticado o navegador real. Revision independiente pendiente del padre; 008 NO aplicada y remoto sigue regla 007 hasta autorizacion separada.
+
+## Aplicacion remota 007 - 2026-10-16
+- Autorizacion posterior explicita: usuario «si autorizo para verlo como quedo». Sustituye exclusivamente la prohibicion remota anterior para aplicar 007; no autoriza datos, otras migraciones, commit/push ni deploy frontend.
+- Proyecto: `hkkuyomlcqyxtzblowle`. Herramientas MCP Supabase `list_migrations`, `list_tables(public, verbose=true)`, `execute_sql` SELECT y `apply_migration`.
+- Preflight: ultima version `20261016182810`, migracion 006. `md5(pg_proc.prosrc)` remoto = local 006 `e103c602f8a068067f7a81255610f541`; sin drift. ACL `{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}`, SECURITY DEFINER, owner postgres, search_path=public.
+- Aplicada SOLO `supabase/migrations/202610160007_daily_report_arrival_partitions.sql` mediante `apply_migration(name=202610160007_daily_report_arrival_partitions, query=contenido exacto del archivo)`; resultado `success:true`. Version registrada `20261016194251`. Reversible restaurando 006 mediante compensatoria autorizada; no se ejecuto rollback.
+- Postflight: cuerpo exacto local/remoto MD5 `aed441afb09206394484f3306fb253a7`; comentario coincide; ACL, owner, SECURITY DEFINER y search_path sin cambios, sin EXECUTE PUBLIC/anon. No politicas/tablas alteradas.
+- Recuentos exactos antes/despues: leads 6253/6253, lead_gestiones 1228/1228, lead_appointments 46/46, user_access 5/5. Sin DML de usuario.
+- PostgreSQL real: SELECT CTE extraido literalmente de 007, sustituyendo solo parametros, sin suplantacion JWT/usuario. Las 20 fechas con gestiones (2026-02-05 a 2026-10-16) pasan por asesora `gestionados = llamadas_total_gestion + wa_nuevos + wa_gestionados` y `llamadas_nuevos <= llamadas_total_gestion`.
+- 2026-10-16: 5 asesoras, 47 gestionados, llamadas total_gestion 14/nuevos 0; combinado 8; WA nuevos 18/gestionados 15. SELECT JSON completo extraido: 5 asesoras, total.gestionados=47 y contrato legado llamadas.total=total_gestion+combinado PASS.
+- Parser PostgreSQL con 12 fixtures VALUES, sin insertar: 3 formatos del dia aceptados, 6 invalidos/null rechazados sin excepcion (incluidos febrero imposible, mes 13, ano desbordado y 2100 no bisiesto), bisiesto 2000 valido; anterior/futura no son el dia.
+- Incidencias de verificacion sin escrituras: reconstruccion inicial del SQL no coincidio con MD5 y se detuvo ANTES de apply; se cargo luego archivo exacto por HTTP loopback temporal. Un SELECT de comprobacion JSON tuvo delimitador de extraccion incorrecto (42601); corregido solo el SELECT, PASS. No se modifico la migracion ni la RPC para solventarlo.
+- Limite: no smoke HTTP autenticado ni comprobacion visual en sesion del usuario, por no disponer de sesion autenticada autorizada; no se leyeron credenciales. La prueba ejecuta SQL agregado/JSON real, no la barrera de autenticacion de la RPC. No frontend deploy, commit/push ni subdelegacion.
+
 ## Objetivo
-Mostrar Detalle de gestion con tres filas: WhatsApp nuevos hoy N, WhatsApp gestionados hoy T-N y Total T. T suma las cuatro categorias visibles WhatsApp, combinado, Instagram y Otros o sin canal. La decision T11-T13 sustituye criterios previos; la evidencia anterior se conserva como historial.
+Decision FINAL T17-T19: fecha_gestion decide el dia; solo gestion_anterior NULL decide nuevo, sin Fecha llegada ni created_at. Particiones N/G/T para WhatsApp ampliado y llamadas normales/DD, combinado solo WhatsApp. Historial previo sustituido donde contradiga esta regla.
 
 ## Problema y por que
 La RPC contaba solo WhatsApp puro en el detalle y reutilizaba esos contadores en Canales. Ampliarlos sin separar canales duplicaria el combinado en el total.
 
 ## Alcance
-Decision final LOCAL aprobada T11-T13: helper canonico UI/CSV en `src/legacy/reportes.js`, etiquetas, ayuda coherente, validacion proporcional, pruebas y verificacion local. Sin migracion: canales ya incluye altas y seguimientos. Conservar contrato JSON backend `whatsapp`, categorias y total general. Fuera: SQL, datos historicos, commit/push/deploy y escrituras remotas. Los criterios anteriores se conservan como historial.
+Decision FINAL LOCAL aprobada T17-T19: nueva migracion 008 basada en 007 aplicada, ayuda y pruebas. Fecha llegada no afecta nuevo. UI/CSV intactos. Preservar procedencia, canales, general, citas, permisos y trabajo ajeno. Fuera: aplicar remoto, datos historicos, commit/push/deploy y subdelegacion. Historial anterior conservado.
 
 ## Restricciones
 No commit/push/deploy ni SQL remoto mutador. No subdelegar. Preservar trabajo ajeno de campanas y endurecimiento.
 
 ## No romper
 - Canales WhatsApp solo puro, llamada_whatsapp solo combinado, total sin duplicados.
-- Procedencia no determina el detalle; nuevos conserva whatsapp.nuevos. Resto = T-N sin predicado gestion_anterior NOT NULL: incluye tambien altas de otros canales. Excluir llamada y llamada Data Dura; incluir visita y sin_clasificar como Otros visible.
+- Procedencia, Fecha llegada y created_at no determinan nuevos. Nuevo = gestion_anterior NULL; todos los canales del grupo usan la misma regla. Visita/sin_clasificar siguen como Otros visible. Llamada Data Dura literal legacy pertenece a llamadas, nunca al grupo WhatsApp.
 - Conservar permisos vigentes CRM/campaign editor y validacion de usuario activo.
 - Conservar citas, inscripciones, filtros de asesora/fecha y claves del JSON.
 
@@ -37,9 +70,19 @@ No commit/push/deploy ni SQL remoto mutador. No subdelegar. Preservar trabajo aj
 - [x] T11 Aplicar particion N/T-N/T compartida UI/CSV y actualizar ayuda.
 - [x] T12 Validar conteos y N<=T; aviso UI y bloqueo CSV claro; cubrir bordes y totalizacion.
 - [x] T13 Ejecutar tests/lint/QA y devolver evidencia al padre sin subdelegar.
+- [x] T14 Preparar migracion local con parser seguro canonico y particiones WA/llamadas por llegada y alta.
+- [x] T15 Adaptar helper UI/CSV, ayuda y pruebas de fechas/canales/autor/Miami/seleccion invalida.
+- [x] T16 Ejecutar suite/lint/QA y devolver limites al padre para revision independiente.
+
+## Criterios finales T14-T16
+- [x] Alta con llegada hoy nueva; alta atrasada y seguimiento incluso llegada hoy gestionados; fecha automatica irrelevante.
+- [x] Llegadas legacy invalidas/null/futuras gestionadas sin fallo; parser admite ISO y D/M/AA o AAAA como canonico campanas.
+- [x] WA puro/combinado/Instagram/Otros (visita+sin_clasificar); llamadas normal/DD separadas, combinado solo WA.
+- [x] UI tres filas WA y subseccion llamadas N/G/T; CSV individual/TOTAL coherente con helper compartido y validacion.
+- [x] Canales/procedencia/general 100%, permisos/citas/filtros intactos; tests y lint pasan; ninguna aplicacion remota.
 
 ## Criterios de aceptacion
-### Finales vigentes (T11-T13)
+### Historicos (T11-T13, sustituidos por T14-T16)
 - [x] UI exactamente tres filas WhatsApp nuevos hoy N, WhatsApp gestionados hoy T-N y Total T; ejemplo 20/15/35.
 - [x] T suma whatsapp + llamada_whatsapp + instagram + visita + sin_clasificar; no usa contadores historicos de seguimiento ni total backend.
 - [x] CSV individual y TOTAL con las tres columnas del detalle; categorias, procedencia y total general intactos.
@@ -63,7 +106,11 @@ No commit/push/deploy ni SQL remoto mutador. No subdelegar. Preservar trabajo aj
 - [x] No se modifica el remoto ni trabajo ajeno.
 
 ## Decisiones aceptadas
-Decision vigente T11-T13: `detalleGestionHoy(b)` calcula y valida N, T-N, T una sola vez por consumidor. Ausencia/null mantienen cero legado, sin coercion de booleanos ni texto vacio a cero. UI captura error solo del detalle y deja el resto visible. CSV falla entero con mensaje claro y wrapper muestra toast sin descargar; valida cada bloque antes de TOTAL y tambien el total acumulado seguro. CSV vuelve a 33 columnas (30 numericas); Total detalle de gestion distingue su cabecera del total general y Total canales. `gestionadosHoy` se conserva por compatibilidad pero UI/CSV usan el nuevo helper validado. Sin dependencia nueva.
+Decision vigente T14-T16: `202610160007_daily_report_arrival_partitions.sql` conserva cuerpo 006 salvo parser/particiones y normalizacion del literal legacy llamada Data Dura (antes residual, ahora llamadas DD). Fecha_gestion conserva filtro de dia; es_nuevo = gestion_anterior NULL y capture_date igual p_fecha; coalesce falso evita inventar nuevos ante Fecha desconocida, invalida, anterior o futura. Parser inline canonico de campanas 202609300004: regex acotadas, ISO/D-M-AA/AAAA, rango 2000..2100 y validacion de dia real antes de make_date; solo leads con gestiones del dia. No cast directo de texto a date, sin dependencia nueva. Nuevo aplica a todos los canales del grupo, no a Medio ni created_at.
+
+`detalleGestionHoy(b, grupo='whatsapp')` valida grupo y N/T seguros, calcula G=T-N para ambos consumidores. Total WA desde cinco buckets, llamadas desde llamada+data_dura, sin combinado. CSV 36 columnas (33 numericas), Total WhatsApp y tres columnas llamadas de gestion; TOTAL validado para ambos grupos. UI conserva cuatro cards; anade subseccion h6 Llamadas bajo tres filas WA y desglose normal/DD. Ausentes/null mantienen cero legado. UI avisa, CSV falla con toast y sin descarga ante conteos invalidos. Se conserva `llamadas.total` legado (incluye combinado, resumen previo) y se anaden `nuevos`, `gestionados`, `total_gestion` (normal/DD exclusivamente) para no romper consumidores; el detalle usa el grupo exclusivo. No se ha aplicado la migracion: frontend requiere coordinacion con backend actualizado, la RPC antigua no puede producir la nueva semantica.
+
+Historial T11-T13: `detalleGestionHoy(b)` calculaba y validaba N, T-N, T. CSV 33 columnas. Sustituido donde contradiga la decision vigente.
 
 Historial:
 Decision final T8-T10: `gestionadosHoy(canales)` reutiliza `numCanalesOtros`; nuevos conserva `whatsapp.nuevos`. No usar `whatsapp.gestionados` ni `whatsapp.total`: su semantica historica no representa todas las altas. CSV pasa de 33 a 32 columnas al quitar el total redundante, ordenando Gestionados y luego De ellos. No migracion ni cambio del JSON backend; no modificar migraciones aplicadas.
@@ -74,6 +121,8 @@ Contador `c_whatsapp` exclusivo para Canales; `wa_nuevos` y `wa_gestionados` amp
 Ampliacion actual: conservar claves y contadores internos `whatsapp`/`wa_*`; modificar solo predicado de `wa_gestionados` y etiquetas. Total detalle = nuevos + gestionados. `202610160006_daily_report_management_detail.sql` copia cuerpo aplicado con ese unico cambio funcional. No aplicar.
 
 ## Reutilizacion investigada
+T14-T16: no existe helper SQL independiente de parseo Fecha. Se reutiliza inline el parser seguro `lead_date_parts/lead_date_numbers/dated_leads` de `202609300004_campaign_monthly_rollup_year.sql`, restringiendo candidatos al dia y sin tocar campanas. Se conserva 006 aplicada SHA256 `566c6dfb79cd52558176e29a1019cc5860705d6c40ddb53986e0b2456bf58f07`. Harness SQLite compartido extraido de prueba historica, conservando sus seis casos; adaptadores traducen arrays/regex/make_date/ultimo dia y fechas Miami con zoneinfo. No sustituyen la compilacion PostgreSQL. Contraste remoto unico SELECT de metadatos RPC/ACL confirma MD5 006 `e103c602f8a068067f7a81255610f541`, campaign_guard true, SECURITY DEFINER/search_path public y ACL sin anon/PUBLIC, authenticated/service_role/postgres con EXECUTE. Ninguna escritura remota.
+
 Final: claves reales de Canales y agrupacion existente comprobadas en `detallesBloqueHtml`, `numCanalesOtros`, `diarioCsvLines`. El export TOTAL acumula `DIARIO_KEYS` desde los valores de cada bloque; se adapta el mismo vector al helper canonico, no existe otro total separado que deba leer whatsapp.gestionados. El resto de contadores y estadisticas permanece intacto. No hay docs/agent-context local ni entrada en query_context list (comprobado nuevamente).
 
 Historial:
@@ -91,6 +140,14 @@ Para el ajuste actual se reutiliza `202610160005` aplicada y el harness SQLite e
 - Limitaciones: no PostgreSQL local disponible; SQLite verifica agregacion y filtros, no compilacion PL/pgSQL, permisos efectivos ni zona horaria de citas (fuera del cambio). Migracion NO aplicada, build no ejecutado (sin cambios de frontend). Revision independiente pendiente en padre antes de aplicacion; no se subdelego.
 
 ## Progreso
+### Regla FINAL llegada y alta LOCAL — T14-T16 — 2026-10-16
+- Estado: implementado/verificado LOCAL; siguiente paso revision independiente por sesion padre. Sin subdelegar, commit, push, deploy ni escrituras remotas. No se modificaron migraciones aplicadas ni trabajo ajeno de campanas.
+- T14 passed: nueva migracion 007, basada en 006; parser seguro canonico y particiones exhaustivas WA/llamadas. SHA256 006 intacto. SELECT remoto limitado a metadatos RPC/guardia/ACL confirma base 006 vigente y permisos conservados; ningun dato personal consultado.
+- T15 passed: helper UI/CSV compartido para ambos grupos; tres filas WA/Total WhatsApp y subseccion llamadas con N/G/T y desglose normal/DD. CSV individual/TOTAL de 36 columnas. Pruebas SQL nuevas 5/5 y antiguas 6/6, ejecutadas desde Node: todos los canales alta/atrasada/seguimiento/previo vacio, DD true/false/null/literal, combinado exclusivo, Fecha legacy/null/imposible/futura, ISO y AA, bisiesto, autor/dia/nombres sin ID, created_at contradictorio y fronteras Miami 04:00 UTC. Pruebas helper con serializados, grupo invalido, invalidos ambos grupos y overflow TOTAL; wrapper UI/CSV sin descarga con toast en errores WA y llamadas.
+- T16 passed: `npm test` 661/661 Node y 11/11 Python adicionales; log efimero `/tmp/opencode/daily-arrival-tests.log`. `npm run lint` tsc/check-app OK. `git diff --check` limpio y whitespace de los tres archivos nuevos comprobado. QA strict exit 0 con staged no aplicable (solo rutas rastreadas comprobadas); no audita unstaged/nuevos ni es SAST. Revision manual de cambios propios sin secretos/debug/catch vacios; lentes fiabilidad/seguridad/legibilidad sin hallazgos nuevos, sin reloj real/red/mocks nuevos en pruebas. Autoauditoria de codigo realizada.
+- Primer run completo encontro cinco expectativas historicas de CSV 33 columnas/etiqueta retirada; ajustadas a 36/Total WhatsApp y suite completa repetida PASS. No fallo funcional SQL ni lint.
+- Limites: sin PostgreSQL local, compilacion PL/pgSQL, RPC HTTP autenticada, navegador real, build ni despliegue. Adaptador SQLite verifica CTE/JSON y aplica zoneinfo para citas, no sustituye PostgreSQL. Migracion 007 NO aplicada; backend antiguo no implementa la nueva regla de llegada ni nuevos llamadas, por lo que cualquier aplicacion remota requiere aprobacion separada y coordinar frontend. `llamadas.total` legado conserva combinado por compatibilidad; `total_gestion` y detalle N/G/T son exclusivamente normal/DD, combinado solo en grupo WA del detalle.
+
 ### Particion LOCAL aprobada T11-T13 — 2026-10-16
 - Estado: implementado y verificado LOCAL; siguiente revision independiente del padre. Sin subdelegacion, commit/push/deploy, SQL ni acceso remoto. Trabajo ajeno preservado mediante ediciones puntuales.
 - T11/T12 passed: helper puro, tres filas y tres columnas, ayuda y toast; pruebas 20/15/35, 29/11/29 con general 39, bloques multiples/TOTAL, vacio/null/strings, nuevos=total, entrada no mutada, invalidos y UI/CSV bloqueado sin descarga. No fallback a whatsapp.gestionados/total.
@@ -137,3 +194,11 @@ Estado: implementado y verificado localmente; pendiente revision independiente y
 - PostgreSQL read-only: extraccion de CTEs/JSON del `prosrc` verificado, reemplazando solo parametros por fecha `2026-10-16` y filtro UUID NULL, sin ejecutar guardia ni suplantar usuarios. Resultado agregado: 5 bloques, nuevos **17**, gestionados detalle **8**, total detalle **25**, canal puro **20**, combinado **5**, total canales **38**, total gestiones **38**. Invariantes por bloque detalle=nuevos+gestionados y canales total=gestionados: ambas true. La muestra actual no tiene seguimientos adicionales Instagram/otros; la ampliacion de esos casos esta cubierta por pruebas locales previas, no se insertaron fixtures remotas.
 - SELECT previo directo de clasificacion: 2026-10-15 total 167/nuevos 32/seguimientos previos 57/ampliados 57; 2026-10-16 total 38/nuevos 17/seguimientos previos 8/ampliados 8. Cambio limitado a predicado de seguimientos; nuevos, canales, JSON y permisos preservados por igualdad del cuerpo esperado.
 - Limites: sin smoke HTTP/RPC autenticado ni navegador: no hay sesion autorizada disponible sin gestionar secretos; no se leyeron credenciales ni .env, ni se simularon identidades. La prueba PostgreSQL verifica agregacion/JSON, no transporte HTTP ni recorrido autenticado completo. Etiquetas frontend ya locales en localhost:3002, sin desplegarlas. `git diff --check` limpio. Estado: aplicada y verificada dentro de estos limites.
+
+## Aplicacion remota 009 — 2026-10-16 (atribucion por actor de resultados)
+- Autorizacion explicita: aplicar SOLO `supabase/migrations/202610160009_appointment_results_actor.sql`.
+- Preflight read-only: 008 remota version `20261016200241`, cuerpo extraido por `pg_get_functiondef` conforme a 008 local (visits/resolved pattern previo sin drift).
+- Aplicada SOLO 009 con `apply_migration(name=202610160009_appointment_results_actor, query=contenido exacto)`: `success:true`. `list_migrations` confirma version `20261016201439`.
+- Postflight: funcion `daily_management_report(date,uuid)` contiene CTE `result_events` y atribucion `visits/absent/cancelled/rescheduled` por `action_user_id`/`action_name` de `lead_appointment_events`, filtrado a status nuevos `ASISTIO/NO_ASISTIO/CANCELADA/REPROGRAMADA` por fecha Miami. `booked/rebooked` siguen creados por `coalesce(created_by_user_id, advisor_user_id)`. ACL intacta: `authenticated`,`postgres`,`service_role`; sin `public`/`anon`.
+- Evidencia de datos: `lead_appointments` 46/46 y todos con eventos; `lead_appointment_events` 63; resultado events por Miami: Jessica (2026-10-16 cancelada 1, reprogramada 1; totales historicos movidos al actor; 2026-09-30 atribuido a actor Tecnologia cancelada 1/no-asistio 1). Consulta agregada de eventos confirma recuento por actor/fecha/status.
+- Sin DML, sin otras migraciones, sin commit/push/deploy/frontend. Prueba directa de RPC autenticada no disponible en este contexto; verificacion por SQL read-only y body exacto.

@@ -977,7 +977,7 @@ export function periodoCsvLines(summary, actividad, generado) {
 }
 
 /** Columnas numericas del CSV diario, alineadas con DIARIO_HEADERS. */
-const DIARIO_KEYS = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosDoral', 'agendadosDoralDura', 'agendadosWeston', 'agendadosWestonDura', 'agendadosTotal', 'reprogramadasHoy', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'agendadosGestionadosDia', 'agendadosGestionadosDura', 'whatsappNuevos', 'detalleGestionados', 'detalleTotal', 'canalInstagram', 'canalesOtros', 'canalesTotal'];
+const DIARIO_KEYS = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosDoral', 'agendadosDoralDura', 'agendadosWeston', 'agendadosWestonDura', 'agendadosTotal', 'reprogramadasHoy', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'agendadosGestionadosDia', 'agendadosGestionadosDura', 'whatsappNuevos', 'detalleGestionados', 'detalleTotal', 'llamadasNuevos', 'llamadasGestionados', 'llamadasDetalleTotal', 'canalInstagram', 'canalesOtros', 'canalesTotal'];
 
 /** 'Otros o sin canal': buckets retirados de pantalla, juntos. */
 const numCanalesOtros = c => (Number(c?.visita) || 0) + (Number(c?.sin_clasificar) || 0);
@@ -987,23 +987,26 @@ export const gestionadosHoy = canales => (Number(canales?.whatsapp) || 0)
   + (Number(canales?.llamada_whatsapp) || 0) + (Number(canales?.instagram) || 0)
   + numCanalesOtros(canales);
 
-/** Particion del detalle; ausentes/null son cero como en el reporte legado. */
-export function detalleGestionHoy(b) {
+/** Particion compartida UI/CSV; nuevos llega del SQL (evento de alta del dia).
+ * Ausentes/null son cero como en el reporte legado. Combinado solo en WhatsApp. */
+export function detalleGestionHoy(b, grupo = 'whatsapp') {
+  if (!['whatsapp', 'llamadas'].includes(grupo)) throw new Error('Detalle de gestión no disponible: grupo inválido.');
   const count = value => {
     const n = value == null ? 0 : (typeof value === 'number' || (typeof value === 'string' && /^\d+$/.test(value)) ? Number(value) : NaN);
     if (!Number.isSafeInteger(n) || n < 0) throw new Error('Detalle de gestión no disponible: conteos inválidos. Actualiza el reporte e informa al administrador si persiste.');
     return n;
   };
-  const total = count(['whatsapp', 'llamada_whatsapp', 'instagram', 'visita', 'sin_clasificar'].reduce((sum, key) => sum + count(b.canales?.[key]), 0));
-  const nuevos = count(b.whatsapp?.nuevos);
-  if (nuevos > total) throw new Error('Detalle de gestión no disponible: WhatsApp nuevos supera el total. Actualiza el reporte e informa al administrador si persiste.');
+  const keys = grupo === 'whatsapp' ? ['whatsapp', 'llamada_whatsapp', 'instagram', 'visita', 'sin_clasificar'] : ['llamada', 'data_dura'];
+  const total = count(keys.reduce((sum, key) => sum + count(b.canales?.[key]), 0));
+  const nuevos = count(b[grupo]?.nuevos);
+  if (nuevos > total) throw new Error(`Detalle de gestión no disponible: ${grupo === 'whatsapp' ? 'WhatsApp' : 'Llamadas'} nuevos supera el total. Actualiza el reporte e informa al administrador si persiste.`);
   return { nuevos, gestionados: total - nuevos, total };
 }
 
-/** Cabecera del CSV diario (33 columnas: ASESORA + 30 numericas + notas).
+/** Cabecera del CSV diario (36 columnas: ASESORA + 33 numericas + notas).
  * 'Otros o sin canal' agrega los buckets retirados de pantalla
  * (visita conservatorio + sin clasificar) para que el total cuadre. */
-const DIARIO_HEADERS = ['Asesora', 'Gestiones realizadas', 'WhatsApp', 'Facebook/Instagram', 'CogniTalking', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Citas nuevas hoy', 'Citas nuevas Data Dura', 'Citas nuevas Doral', 'Citas nuevas Data Dura Doral', 'Citas nuevas Weston', 'Citas nuevas Data Dura Weston', 'Total citas nuevas', 'Citas reprogramadas hoy', 'Visitas registradas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Pasados a Agendado hoy', 'Pasados a Agendado Data Dura hoy', 'WhatsApp nuevos hoy', 'WhatsApp gestionados hoy', 'Total detalle de gestión', 'Canal Instagram', 'Otros o sin canal', 'Total canales', 'Problemas', 'Observaciones'];
+const DIARIO_HEADERS = ['Asesora', 'Gestiones realizadas', 'WhatsApp', 'Facebook/Instagram', 'CogniTalking', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Citas nuevas hoy', 'Citas nuevas Data Dura', 'Citas nuevas Doral', 'Citas nuevas Data Dura Doral', 'Citas nuevas Weston', 'Citas nuevas Data Dura Weston', 'Total citas nuevas', 'Citas reprogramadas hoy', 'Visitas registradas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Pasados a Agendado hoy', 'Pasados a Agendado Data Dura hoy', 'WhatsApp nuevos hoy', 'WhatsApp gestionados hoy', 'Total WhatsApp', 'Llamadas nuevos hoy', 'Llamadas gestionados hoy', 'Total llamadas de gestión', 'Canal Instagram', 'Otros o sin canal', 'Total canales', 'Problemas', 'Observaciones'];
 
 /**
  * Resuelve la nota asociada a un bloque del reporte diario con la regla
@@ -1034,12 +1037,14 @@ export function diarioCsvLines(fecha, filtro, generado, bloques, notasResueltas)
   bloques.forEach((b, i) => {
     const p = b.procedencia || {}, l = b.llamadas || {}, c = b.citas || {};
     const detalle = detalleGestionHoy(b);
-    const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, l.total, c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.citas_reprogramadas_hoy, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, detalle.nuevos, detalle.gestionados, detalle.total, (b.canales || {}).instagram, numCanalesOtros(b.canales), totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
+    const llamadas = detalleGestionHoy(b, 'llamadas');
+    const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, l.total, c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.citas_reprogramadas_hoy, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, detalle.nuevos, detalle.gestionados, detalle.total, llamadas.nuevos, llamadas.gestionados, llamadas.total, (b.canales || {}).instagram, numCanalesOtros(b.canales), totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
     values.forEach((v, n) => { sumas[DIARIO_KEYS[n]] += v; });
     const nota = notasResueltas[i] || {};
     lineas.push([b.autor_name ?? b.advisor, ...values, nota.problemas ?? '', nota.observaciones ?? ''].map(csvReporteField).join(','));
   });
   detalleGestionHoy({ canales: { whatsapp: sumas.detalleTotal }, whatsapp: { nuevos: sumas.whatsappNuevos } });
+  detalleGestionHoy({ canales: { llamada: sumas.llamadasDetalleTotal }, llamadas: { nuevos: sumas.llamadasNuevos } }, 'llamadas');
   lineas.push(['TOTAL', ...DIARIO_KEYS.map(k => sumas[k]), '', ''].map(csvReporteField).join(','));
   return lineas;
 }
@@ -1072,7 +1077,8 @@ export function totalDiario(bloques) {
 }
 
 const celdaDiago = (label, value) => `<div class="daily-metric"><div class="text-xs text-slate-500">${label}</div><strong class="text-lg text-indigo-900">${value}</strong></div>`;
-const tablaDetalle = (title, rows) => `<div class="daily-detail-card"><h5 class="font-semibold text-indigo-900">${title}</h5><table class="text-sm"><tbody>${rows.map(([l, v]) => `<tr><td>${l}</td><td class="font-semibold">${v}</td></tr>`).join('')}</tbody></table></div>`;
+const filasDetalle = rows => `<table class="text-sm"><tbody>${rows.map(([l, v]) => `<tr><td>${l}</td><td class="font-semibold">${v}</td></tr>`).join('')}</tbody></table>`;
+const tablaDetalle = (title, rows, extra = '') => `<div class="daily-detail-card"><h5 class="font-semibold text-indigo-900">${title}</h5>${filasDetalle(rows)}${extra}</div>`;
 
 /** Las cuatro tablas de detalle de una asesora (pantalla coherencia fase 16). */
 export function detallesBloqueHtml(b) {
@@ -1080,7 +1086,9 @@ export function detallesBloqueHtml(b) {
   let detalle;
   try {
     const d = detalleGestionHoy(b);
-    detalle = tablaDetalle('Detalle de gestión', [['WhatsApp nuevos hoy', d.nuevos], ['WhatsApp gestionados hoy', d.gestionados], ['Total', d.total]]);
+    const l = detalleGestionHoy(b, 'llamadas');
+    detalle = tablaDetalle('Detalle de gestión', [['WhatsApp nuevos hoy', d.nuevos], ['WhatsApp gestionados hoy', d.gestionados], ['Total WhatsApp', d.total]],
+      '<h6 class="mt-3 font-semibold text-indigo-900">Llamadas</h6>' + filasDetalle([['Llamadas nuevas hoy', l.nuevos], ['Llamadas gestionadas hoy', l.gestionados], ['Total llamadas', l.total]]));
   } catch (error) {
     detalle = `<div class="daily-detail-card" role="alert"><h5 class="font-semibold text-indigo-900">Detalle de gestión</h5><p>${escapeHtml(error.message)}</p></div>`;
   }
@@ -1089,7 +1097,7 @@ export function detallesBloqueHtml(b) {
   return tablaDetalle('Procedencia', [['WhatsApp', num(p, 'WhatsApp')], ['Facebook/Instagram', num(p, 'Facebook/Instagram')], ['Directo o Referido', num(p, 'Directo o Referido')], ['Otras procedencias', num(p, 'CogniTalking') + num(p, 'Otros')], ['Total', pt]])
     + tablaDetalle('Canales', [['Llamada', num(b.canales, 'llamada')], ['Llamada Data Dura', num(b.canales, 'data_dura')], ['Llamada y WhatsApp', num(b.canales, 'llamada_whatsapp')], ['WhatsApp', num(b.canales, 'whatsapp')], ['Instagram', num(b.canales, 'instagram')], ['Otros o sin canal', num(b.canales, 'visita') + num(b.canales, 'sin_clasificar')], ['Total', totalCanalesVisibles(b.canales)]])
     + detalle
-    + tablaDetalle('Citas creadas y resultados registrados hoy', [['Leads pasados a Agendado', num(c, 'agendados_gestionados_dia')], ['Leads pasados a Agendado Data Dura', num(c, 'agendados_gestionados_data_dura')], ['Citas nuevas Doral', num(c, 'agendados_doral')], ['Citas nuevas Data Dura Doral', num(c, 'agendados_doral_data_dura')], ['Citas nuevas Weston', num(c, 'agendados_weston')], ['Citas nuevas Data Dura Weston', num(c, 'agendados_weston_data_dura')], ['Citas nuevas hoy', num(c, 'total_agendados')], ['Citas reprogramadas hoy', num(c, 'citas_reprogramadas_hoy')], ['Visitas registradas', num(c, 'visitas')], ['No asistieron', num(c, 'no_asistieron')], ['Canceladas', num(c, 'canceladas')], ['Reprogramadas', num(c, 'reprogramadas')]]);
+    + tablaDetalle('Citas creadas y resultados registrados hoy', [['Citas nuevas Doral', num(c, 'agendados_doral')], ['Citas nuevas Data Dura Doral', num(c, 'agendados_doral_data_dura')], ['Citas nuevas Weston', num(c, 'agendados_weston')], ['Citas nuevas Data Dura Weston', num(c, 'agendados_weston_data_dura')], ['Citas nuevas hoy', num(c, 'total_agendados')], ['Citas reprogramadas hoy', num(c, 'citas_reprogramadas_hoy')], ['Visitas registradas', num(c, 'visitas')], ['No asistieron', num(c, 'no_asistieron')], ['Canceladas', num(c, 'canceladas')], ['Reprogramadas', num(c, 'reprogramadas')]]);
 }
 
 /** Manual de problemas/observaciones: edicion o lectura (respaldo exacto). */
@@ -1101,7 +1109,7 @@ export function manualBloqueHtml(i, nota, editable) {
 /** Bloque de una asesora con su resumen de detail + manuales. */
 export function bloqueDiaHtml(b, i, manualHtml) {
   const num = (o, k) => Number(o?.[k]) || 0;
-  return `<details class="daily-advisor" ${i ? '' : 'open'}><summary class="cursor-pointer font-bold text-indigo-900">${escapeHtml(b.autor_name || b.advisor || 'Sin asesora')} — ${num(b, 'gestionados')} gestiones</summary><div class="daily-advisor-body"><div class="grid md:grid-cols-2 xl:grid-cols-4 gap-3">${detallesBloqueHtml(b)}</div><div class="mt-4 space-y-2"><h4 class="text-sm font-semibold text-slate-700">Problemas y observaciones</h4>${manualHtml}</div></div></details>`;
+  return `<details class="daily-advisor"><summary class="cursor-pointer font-bold text-indigo-900">${escapeHtml(b.autor_name || b.advisor || 'Sin asesora')} — ${num(b, 'gestionados')} gestiones</summary><div class="daily-advisor-body"><div class="grid md:grid-cols-2 xl:grid-cols-4 gap-3">${detallesBloqueHtml(b)}</div><div class="mt-4 space-y-2"><h4 class="text-sm font-semibold text-slate-700">Problemas y observaciones</h4>${manualHtml}</div></div></details>`;
 }
 
 /** Shell del panel diario con el aviso de notas y el Resumen general. */
@@ -1139,25 +1147,76 @@ export function asesorasDisponibles(bloques, catalogoNombres, previas) {
 /**
  * Universo de campanas: catalogo activo + rollup del CRM + filas manuales,
  * con el mapeo y fallbacks exactos del export original; orden alfabetico es.
+ * Con periodRows ademas incorpora el desglose por períodos de fechas:
+ * - vista mes (periodo null): el valor efectivo es la fila manual si existe y,
+ *   si no, la suma de los períodos del mes; los totales de períodos viajan en
+ *   periodos_*. Con periodosDisponibles=false y sin fila manual, el mes no es
+ *   calculable: Meta va en null (nunca un cero que parezca real).
+ * - vista período ({desde, hasta}): alcance/gasto/resultados de ESE período
+ *   exacto y metricas CRM en null (el rollup del CRM es mensual).
  * @param {string[]} catalogo Nombres del catalogo activo.
  * @param {object[]} rollupRows Filas del RPC campaign_monthly_rollup.
  * @param {object[]} statRows Filas de campaign_stats.
+ * @param {object[]} periodRows Filas de campaign_period_stats del mes.
+ * @param {{desde: string, hasta: string}|null} periodo Rango de la vista período (YYYY-MM-DD) o null para vista mensual.
+ * @param {boolean} periodosDisponibles false si la carga de períodos falló.
  * @returns {object[]}
  */
-export function campanasDeFuentes(catalogo, rollupRows, statRows) {
+export function campanasDeFuentes(catalogo, rollupRows, statRows, periodRows = [], periodo = null, periodosDisponibles = true) {
   const statsMap = new Map((statRows || []).map(s => [s.campaign_name, s]));
   const rollupMap = new Map((rollupRows || []).map(r => [r.campaign_name, r]));
-  const names = new Set([...(catalogo || []), ...(rollupRows || []).map(r => r.campaign_name), ...(statRows || []).map(s => s.campaign_name)].filter(v => String(v || '').trim() !== ''));
+  const totales = new Map();
+  for (const p of periodRows || []) {
+    if (!p?.campaign_name || String(p.campaign_name).trim() === '') continue;
+    const acc = totales.get(p.campaign_name) || { alcance: 0, gasto: 0, resultados: 0, count: 0 };
+    acc.alcance += Number(p.alcance) || 0;
+    acc.gasto += Number(p.gasto) || 0;
+    acc.resultados += Number(p.resultados) || 0;
+    acc.count += 1;
+    totales.set(p.campaign_name, acc);
+  }
+  const names = new Set([...(catalogo || []), ...(rollupRows || []).map(r => r.campaign_name), ...(statRows || []).map(s => s.campaign_name), ...(periodRows || []).map(p => p.campaign_name)].filter(v => String(v || '').trim() !== ''));
   return [...names].sort((a, b) => String(a).localeCompare(String(b))).map(name => {
     const r = rollupMap.get(name) || {};
     const s = statsMap.get(name);
+    const pk = totales.get(name) || { alcance: 0, gasto: 0, resultados: 0, count: 0 };
+    if (periodo && periodo.desde && periodo.hasta) {
+      const p = (periodRows || []).find(x => x?.campaign_name === name && String(x.desde).slice(0, 10) === String(periodo.desde).slice(0, 10) && String(x.hasta).slice(0, 10) === String(periodo.hasta).slice(0, 10));
+      const disp = periodosDisponibles;
+      return {
+        name: String(name),
+        stat_id: s?.id ?? null,
+        period_id: p?.id ?? null,
+        estado: s?.estado || 'activa',
+        alcance: disp ? (Number(p?.alcance) || 0) : null,
+        gasto: disp ? (Number(p?.gasto) || 0) : null,
+        resultados: disp ? (Number(p?.resultados) || 0) : null,
+        periodos_alcance: disp ? pk.alcance : null,
+        periodos_gasto: disp ? pk.gasto : null,
+        periodos_resultados: disp ? pk.resultados : null,
+        periodos_count: disp ? pk.count : 0,
+        leads_nuevos: null,
+        agendados: null,
+        asistieron: null,
+        inscritos: null,
+        agendados_previos: null,
+        pendientes: null,
+      };
+    }
+    const manual = s != null;
     return {
       name: String(name),
       stat_id: s?.id ?? null,
       estado: s?.estado || 'activa',
-      alcance: Number(s?.alcance) || 0,
-      gasto: Number(s?.gasto) || 0,
-      resultados: Number(s?.resultados) || 0,
+      // Valor efectivo del mes: fila manual si existe; si no, suma de períodos.
+      // Sin períodos disponibles y sin fila manual: no calculable (null = '—').
+      alcance: manual ? Number(s?.alcance) || 0 : (periodosDisponibles ? pk.alcance : null),
+      gasto: manual ? Number(s?.gasto) || 0 : (periodosDisponibles ? pk.gasto : null),
+      resultados: manual ? Number(s?.resultados) || 0 : (periodosDisponibles ? pk.resultados : null),
+      periodos_alcance: periodosDisponibles ? pk.alcance : null,
+      periodos_gasto: periodosDisponibles ? pk.gasto : null,
+      periodos_resultados: periodosDisponibles ? pk.resultados : null,
+      periodos_count: periodosDisponibles ? pk.count : 0,
       leads_nuevos: Number(r.leads_nuevos) || 0,
       agendados: Number(r.agendados) || 0,
       asistieron: Number(r.asistieron) || 0,
@@ -1168,15 +1227,25 @@ export function campanasDeFuentes(catalogo, rollupRows, statRows) {
   });
 }
 
-/** Resumen de 4 metricas (o vacio sin filas). */
-export function resumenCampanasHtml(rows, totals) {
+/** Resumen de 4 metricas (o vacio sin filas). En vista período el CRM no aplica.
+  * Con datosIncompletos (carga de períodos fallida) las metricas Meta muestran
+  * 'No disponible' en lugar de un cero que parezca real. */
+export function resumenCampanasHtml(rows, totals, esPeriodo = false, datosIncompletos = false) {
   if (!rows?.length) return '';
-  return [
-    ['Inversión Meta', `$${totals.gasto.toFixed(2)}`],
-    ['Resultados Meta', totals.resultados],
-    ['Leads nuevos', totals.leads_nuevos],
-    ['Inscritos', totals.inscritos],
-  ].map(([label, value]) => `<div><span class="text-[11px] text-slate-400">${label}</span><strong>${escapeHtml(String(value))}</strong></div>`).join('');
+  const tarjetas = esPeriodo
+    ? [
+        ['Inversión Meta', `$${totals.gasto.toFixed(2)}`, true],
+        ['Resultados Meta', totals.resultados, true],
+        ['Alcance', totals.alcance, true],
+        ['Coste/Resultado', campaignCosteResultado(totals.gasto, totals.resultados), true],
+      ]
+    : [
+        ['Inversión Meta', `$${totals.gasto.toFixed(2)}`, true],
+        ['Resultados Meta', totals.resultados, true],
+        ['Leads nuevos', totals.leads_nuevos, false],
+        ['Inscritos', totals.inscritos, false],
+      ];
+  return tarjetas.map(([label, value, esMeta]) => `<div><span class="text-[11px] text-slate-400">${label}</span><strong>${datosIncompletos && esMeta ? 'No disponible' : escapeHtml(String(value))}</strong></div>`).join('');
 }
 
 /** Estado vacio de la tabla (carga fallida o sin campanas del mes). */
@@ -1186,62 +1255,103 @@ export function estadoVacioCampanasHtml(loadFailed, mesLabel) {
     : `<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">Sin campañas para ${escapeHtml(mesLabel)}.</p><p class="mt-1 text-xs">Selecciona otro mes para consultar sus resultados.</p></td></tr>`;
 }
 
-/** Fila de campana: inputs y botones en modo editor, spans en lectura. */
-export function filaCampanaHtml(r, { esEditor, isAdmin, monthStr } = {}) {
+/** Fila de campana. Vista período: inputs siempre (es la via habitual de
+  * captura). Vista mes: LECTURA por defecto; "Ajustar mensual" habilita SOLO
+  * esa fila (editandoMensual = nombre), con Guardar ajuste/Cancelar. Sin
+  * períodos disponibles y sin fila manual, el mes no es calculable: '—'. */
+export function filaCampanaHtml(r, { esEditor, isAdmin, monthStr, periodo = null, editandoMensual = null, periodosDisponibles = true } = {}) {
+  const esPeriodo = Boolean(periodo && periodo.desde && periodo.hasta);
+  const periodoAttrs = esPeriodo ? ` data-desde="${escapeAttr(periodo.desde)}" data-hasta="${escapeAttr(periodo.hasta)}"` : '';
+  const editandoMes = !esPeriodo && esEditor && editandoMensual === r.name;
   const estadoOptions = sel => ['activa', 'finalizada', 'pausada'].map(e => `<option value="${e}"${e === sel ? ' selected' : ''}>${e.charAt(0).toUpperCase() + e.slice(1)}</option>`).join('');
-  const numCell = (field, val) => esEditor
-    ? `<input type="number" min="0" step="0.01" data-field="${field}" value="${val}" data-ev="input:recalcCampaignRow(this)" class="w-24 rounded border border-slate-600 bg-slate-800 px-2 py-1 text-right text-slate-100">`
-    : `<span class="font-mono">${val}</span>`;
-  const estadoCell = esEditor
-    ? `<select data-field="estado" class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-slate-100">${estadoOptions(r.estado)}</select>`
-    : escapeHtml(r.estado);
-  const btnSave = esEditor ? `<button type="button" data-ev="click:saveCampaignStatFromData('${encodeURIComponent(r.name)}','${escapeAttr(monthStr)}',${r.stat_id == null ? 'null' : Number(r.stat_id)})" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Guardar</button>` : '';
-  const btnDelete = isAdmin && r.stat_id ? `<button type="button" data-ev="click:deleteCampaignStat(${Number(r.stat_id)},'${escapeAttr(monthStr)}')" class="px-2 py-1 rounded border border-rose-700 text-rose-300 hover:bg-rose-950 font-semibold cursor-pointer">Eliminar</button>` : '';
-  return `<tr id="campaign_row_${escapeAttr(r.name)}" data-month="${escapeAttr(monthStr)}" data-stat-id="${r.stat_id == null ? '' : Number(r.stat_id)}" class="hover:bg-slate-800/50">
-          <td class="p-3 text-left text-slate-200">${escapeHtml(r.name)}</td>
+  const fmtNum = val => (val == null ? '—' : val);
+  const numCell = (field, val) => ((esEditor && esPeriodo) || editandoMes)
+    ? `<input type="number" min="0" step="0.01" data-field="${field}" value="${val == null ? 0 : val}" data-ev="input:recalcCampaignRow(this)" class="w-24 rounded border border-slate-600 bg-slate-800 px-2 py-1 text-right text-slate-100">`
+    : `<span class="font-mono">${fmtNum(val)}</span>`;
+  const estadoCell = (esPeriodo || !editandoMes)
+    ? escapeHtml(r.estado)
+    : `<select data-field="estado" class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-slate-100">${estadoOptions(r.estado)}</select>`;
+  const btnSave = esPeriodo
+    ? (esEditor
+      ? `<button type="button" data-ev="click:saveCampaignPeriodStatFromData('${encodeURIComponent(r.name)}','${escapeAttr(periodo.desde)}','${escapeAttr(periodo.hasta)}')" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Guardar</button>`
+      : '')
+    : (editandoMes
+      ? `<button type="button" data-ev="click:saveCampaignStatFromData('${encodeURIComponent(r.name)}','${escapeAttr(monthStr)}',${r.stat_id == null ? 'null' : Number(r.stat_id)})" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Guardar ajuste</button>`
+        + `<button type="button" data-ev="click:cancelarAjusteMensual()" class="px-2 py-1 rounded border border-slate-500 text-slate-200 hover:bg-slate-700 font-semibold cursor-pointer">Cancelar</button>`
+      : (esEditor && r.alcance != null
+        ? `<button type="button" data-ev="click:iniciarAjusteMensualFromData('${encodeURIComponent(r.name)}')" class="px-2 py-1 rounded border border-indigo-500 text-indigo-300 hover:bg-indigo-950 font-semibold cursor-pointer">Ajustar mensual</button>`
+        : ''));
+  const btnDelete = isAdmin && !editandoMes && (esPeriodo ? r.period_id != null : r.stat_id != null)
+    ? (esPeriodo
+      ? `<button type="button" data-ev="click:deleteCampaignPeriodStat(${Number(r.period_id)},'${escapeAttr(periodo.desde)}','${escapeAttr(periodo.hasta)}')" class="px-2 py-1 rounded border border-rose-700 text-rose-300 hover:bg-rose-950 font-semibold cursor-pointer">Eliminar</button>`
+      : `<button type="button" data-ev="click:deleteCampaignStat(${Number(r.stat_id)},'${escapeAttr(monthStr)}')" class="px-2 py-1 rounded border border-rose-700 text-rose-300 hover:bg-rose-950 font-semibold cursor-pointer">Eliminar</button>`)
+    : '';
+  // Volver al automático: solo en vista mes, con corrección manual y fuera del modo ajuste.
+  const btnAuto = esEditor && !esPeriodo && !editandoMes && r.stat_id != null
+    ? `<button type="button" data-ev="click:resetCampaignStatAutoFromData('${encodeURIComponent(r.name)}','${escapeAttr(monthStr)}')" class="px-2 py-1 rounded border border-slate-500 text-slate-200 hover:bg-slate-700 font-semibold cursor-pointer">Volver al automático</button>`
+    : '';
+  const crmCell = val => `<td class="p-3 text-right font-mono">${val == null ? '—' : val}</td>`;
+  // Pista del desglose por períodos en vista mes: suma registrada, para que la
+  // divergencia con el mes ajustado a mano quede a la vista.
+  const hintPeriodos = !esPeriodo && r.periodos_count > 0
+    ? `<span class="block text-[10px] font-normal text-slate-400">Períodos (${r.periodos_count}): ${r.periodos_alcance} · $${Number(r.periodos_gasto).toFixed(2)} · ${r.periodos_resultados} res.</span>`
+    : '';
+  // Aviso de que el mes fue corregido a mano (excepción al cálculo automático).
+  const chipAjustado = !esPeriodo && !editandoMes && r.stat_id != null
+    ? '<span class="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">Mensual ajustado</span>'
+    : '';
+  return `<tr id="campaign_row_${escapeAttr(r.name)}" data-month="${escapeAttr(monthStr)}"${periodoAttrs} data-stat-id="${r.stat_id == null ? '' : Number(r.stat_id)}" class="hover:bg-slate-800/50">
+          <td class="p-3 text-left text-slate-200">${escapeHtml(r.name)}${chipAjustado}${hintPeriodos}</td>
           <td class="p-3 text-left">${estadoCell}</td>
           <td class="p-3 text-right">${numCell('alcance', r.alcance)}</td>
           <td class="p-3 text-right">${numCell('gasto', r.gasto)}</td>
           <td class="p-3 text-right">${numCell('resultados', r.resultados)}</td>
           <td class="p-3 text-right font-mono" data-field="coste">${campaignCosteResultado(r.gasto, r.resultados)}</td>
-          <td class="p-3 text-right font-mono">${r.leads_nuevos}</td>
-          <td class="p-3 text-right font-mono">${r.agendados}</td>
-          <td class="p-3 text-right font-mono">${r.asistieron}</td>
-          <td class="p-3 text-right font-mono">${r.inscritos}</td>
-          <td class="p-3 text-right font-mono">${r.agendados_previos}</td>
-          <td class="p-3 text-right font-mono">${r.pendientes}</td>
-          <td class="p-3 text-right whitespace-nowrap space-x-1">${btnSave}${btnDelete}</td>
+          ${crmCell(r.leads_nuevos)}
+          ${crmCell(r.agendados)}
+          ${crmCell(r.asistieron)}
+          ${crmCell(r.inscritos)}
+          ${crmCell(r.agendados_previos)}
+          ${crmCell(r.pendientes)}
+          <td class="p-3 text-right whitespace-nowrap space-x-1">${btnSave}${btnAuto}${btnDelete}</td>
         </tr>`;
 }
 
-/** Fila TOTAL de la tabla de campanas. */
-export function totalCampanasHtml(totals, mesLabel) {
+/** Fila TOTAL de la tabla de campanas. En vista período el CRM no aplica.
+  * Con datosIncompletos las columnas Meta muestran guion (suma no fiable). */
+export function totalCampanasHtml(totals, mesLabel, esPeriodo = false, datosIncompletos = false) {
+  const crm = val => esPeriodo ? '—' : val;
+  const meta = val => datosIncompletos ? '—' : val;
   return `<tr class="campaigns-total-row font-semibold text-slate-100 border-t-2 border-indigo-600">
         <td class="p-3 text-left">TOTAL · ${escapeHtml(mesLabel)}</td>
         <td class="p-3"></td>
-        <td class="p-3 text-right font-mono">${totals.alcance}</td>
-        <td class="p-3 text-right font-mono">${totals.gasto.toFixed(2)}</td>
-        <td class="p-3 text-right font-mono">${totals.resultados}</td>
-        <td class="p-3 text-right font-mono">${campaignCosteResultado(totals.gasto, totals.resultados)}</td>
-        <td class="p-3 text-right font-mono">${totals.leads_nuevos}</td>
-        <td class="p-3 text-right font-mono">${totals.agendados}</td>
-        <td class="p-3 text-right font-mono">${totals.asistieron}</td>
-        <td class="p-3 text-right font-mono">${totals.inscritos}</td>
-        <td class="p-3 text-right font-mono">${totals.agendados_previos}</td>
-        <td class="p-3 text-right font-mono">${totals.pendientes}</td>
+        <td class="p-3 text-right font-mono">${meta(totals.alcance)}</td>
+        <td class="p-3 text-right font-mono">${meta(totals.gasto.toFixed(2))}</td>
+        <td class="p-3 text-right font-mono">${meta(totals.resultados)}</td>
+        <td class="p-3 text-right font-mono">${datosIncompletos ? '—' : campaignCosteResultado(totals.gasto, totals.resultados)}</td>
+        <td class="p-3 text-right font-mono">${crm(totals.leads_nuevos)}</td>
+        <td class="p-3 text-right font-mono">${crm(totals.agendados)}</td>
+        <td class="p-3 text-right font-mono">${crm(totals.asistieron)}</td>
+        <td class="p-3 text-right font-mono">${crm(totals.inscritos)}</td>
+        <td class="p-3 text-right font-mono">${crm(totals.agendados_previos)}</td>
+        <td class="p-3 text-right font-mono">${crm(totals.pendientes)}</td>
         <td class="p-3"></td>
       </tr>`;
 }
 
-/** Lineas del CSV de campanas (mismo orden y total que el export). */
-export function campanasCsvLines(rows, monthStr, generado) {
+/** Lineas del CSV de campanas (mismo orden y total que el export).
+  * Con periodoLabel (ej. "01/10 al 07/10") el CSV corresponde a ese período y
+  * las metricas CRM van vacias (el rollup del CRM es mensual). */
+export function campanasCsvLines(rows, monthStr, generado, periodoLabel = '') {
+  const esPeriodo = periodoLabel !== '';
+  const titulo = esPeriodo ? `Campañas · ${monthStr} · ${periodoLabel}` : `Campañas · ${monthStr}`;
   const headers = ['Campaña', 'Estado', 'Alcance', 'Gasto (USD)', 'Resultados Meta', 'Coste/Resultado', 'Leads Nuevos', 'Agendados', 'Asistieron', 'Inscritos', 'Agendados Meses Anteriores', 'Pendientes'];
-  const lineas = [`Campañas · ${monthStr}`, `Generado: ${generado} Miami`, '', headers.join(',')];
+  const lineas = [titulo, `Generado: ${generado} Miami`, '', headers.join(',')];
   for (const r of rows || []) {
     lineas.push([csvReporteField(r.name), csvReporteField(r.estado), csvReporteField(r.alcance), csvReporteField(r.gasto), csvReporteField(r.resultados), csvReporteField(campaignCosteResultado(r.gasto, r.resultados)), csvReporteField(r.leads_nuevos), csvReporteField(r.agendados), csvReporteField(r.asistieron), csvReporteField(r.inscritos), csvReporteField(r.agendados_previos), csvReporteField(r.pendientes)].join(','));
   }
-  const t = campaignTotals(rows || []);
-  lineas.push([csvReporteField('TOTAL'), csvReporteField(''), csvReporteField(t.alcance), csvReporteField(t.gasto.toFixed(2)), csvReporteField(t.resultados), csvReporteField(campaignCosteResultado(t.gasto, t.resultados)), csvReporteField(t.leads_nuevos), csvReporteField(t.agendados), csvReporteField(t.asistieron), csvReporteField(t.inscritos), csvReporteField(t.agendados_previos), csvReporteField(t.pendientes)].join(','));
+  const t = campaignTotals((rows || []).map(r => (esPeriodo ? { ...r, leads_nuevos: 0, agendados: 0, asistieron: 0, inscritos: 0, agendados_previos: 0, pendientes: 0 } : r)));
+  lineas.push([csvReporteField('TOTAL'), csvReporteField(''), csvReporteField(t.alcance), csvReporteField(t.gasto.toFixed(2)), csvReporteField(t.resultados), csvReporteField(campaignCosteResultado(t.gasto, t.resultados)), csvReporteField(esPeriodo ? '' : t.leads_nuevos), csvReporteField(esPeriodo ? '' : t.agendados), csvReporteField(esPeriodo ? '' : t.asistieron), csvReporteField(esPeriodo ? '' : t.inscritos), csvReporteField(esPeriodo ? '' : t.agendados_previos), csvReporteField(esPeriodo ? '' : t.pendientes)].join(','));
   return lineas;
 }
 

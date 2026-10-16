@@ -99,9 +99,56 @@ export function citasEventsFromRows(rows) {
  */
 export function validAppointmentId(value) { const id = Number(value); return Number.isFinite(id) && Number.isInteger(id) && id > 0 ? id : null; }
 
-/** Plantilla exacta de las citas de la ficha; sin lectura de estado ni DOM. */
-export function citasLeadHtml(citas, { isAdmin, userId }) {
-  return citas.length ? citas.map(a => { const id = validAppointmentId(a.id); if (!id) return ''; const scheduled = String(a.status) === 'PROGRAMADA'; const canEdit = isAdmin || a.advisor_user_id === userId; return `<div data-appointment-id="${id}" class="border-b border-slate-800 last:border-0 py-2 space-y-1"><div class="flex flex-wrap items-center gap-2 text-xs"><span class="text-slate-200 font-medium">Cita para: ${escapeHtml(appointmentLocal(a.scheduled_at))}</span>${appointmentBadge(a.status)}<span class="text-slate-400">Creada: ${escapeHtml(appointmentLocal(a.created_at))}</span><span class="text-slate-400">${escapeHtml(a.advisor_name || '-')}</span>${a.rescheduled_from_id ? `<span class="text-[11px] text-slate-500">reprogramada desde #${escapeHtml(String(validAppointmentId(a.rescheduled_from_id) || ''))}</span>` : ''}</div>${a.notes ? `<p class="text-[11px] text-slate-400 whitespace-pre-line">${escapeHtml(a.notes)}</p>` : ''}${a.student_name || a.contact_email || a.student_age != null ? `<p class="text-[11px] text-slate-300">Estudiante: ${escapeHtml(a.student_name || '-')} · Correo: ${escapeHtml(a.contact_email || '-')} · Edad: ${escapeHtml(a.student_age != null ? String(a.student_age) : '-')}</p>` : ''}<p class="text-[11px] text-slate-300">Sede: ${escapeHtml(a.campus || 'Sin sede')}</p>${canEdit ? `<button data-appointment-id="${id}" data-ev="click:editAppointmentDetails(${id})" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-[11px]">Editar datos</button><button data-appointment-id="${id}" data-ev="click:editAppointmentCampus(${id})" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-[11px]">Sede</button>` : ''}${scheduled && canEdit ? `<div class="flex flex-wrap gap-1.5"><button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'ASISTIO')" class="px-2 py-1 rounded bg-emerald-600 text-white text-[11px]">Asistió</button><button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'NO_ASISTIO')" class="px-2 py-1 rounded bg-amber-600 text-white text-[11px]">No asistió</button><button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'CANCELADA')" class="px-2 py-1 rounded bg-rose-600 text-white text-[11px]">Cancelada</button><input data-appointment-id="${id}" id="reschedule-${id}" type="datetime-local" class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-[11px]"><button data-appointment-id="${id}" data-ev="click:rescheduleLeadAppointment(${id})" class="px-2 py-1 rounded bg-indigo-600 text-white text-[11px]">Reprogramar</button></div>` : ''}${isAdmin ? `<button data-appointment-id="${id}" data-ev="click:deleteLeadAppointment(${id})" class="px-2 py-1 rounded bg-rose-700 hover:bg-rose-600 text-white text-[11px]">Eliminar cita</button>` : ''}</div>`; }).join('') : '<p class="text-[11px] text-slate-500">Sin citas registradas.</p>';
+/**
+ * Historial visible de una cita. Solo usa eventos ya cargados; no consulta red.
+ * @param {Array<object>} events
+ * @returns {string}
+ */
+export function citaHistorialHtml(events) {
+  const rows = (events || []).filter(e => validAppointmentId(e?.appointment_id));
+  if (!rows.length) return '';
+  return `<div class="mt-1 space-y-0.5">${rows.map(e => {
+    const actor = e.actor_name || 'Usuario';
+    const when = appointmentLocal(e.created_at);
+    const from = e.scheduled_at_anterior ? appointmentLocal(e.scheduled_at_anterior) : '';
+    const to = e.scheduled_at_nuevo ? appointmentLocal(e.scheduled_at_nuevo) : '';
+    const moved = from && to && from !== to;
+    const text = moved
+      ? `${actor} reprogramó el ${when}: de ${from} a ${to}`
+      : `${actor} · ${e.status_anterior ? `${e.status_anterior} → ` : ''}${e.status_nuevo || '-'} · ${when}`;
+    return `<p class="text-[11px] text-slate-500">${escapeHtml(text)}</p>`;
+  }).join('')}</div>`;
+}
+
+/** Plantilla de las citas de la ficha; sin lectura de estado ni DOM. */
+export function citasLeadHtml(citas, { isAdmin, userId, events } = {}) {
+  const byAppointment = new Map();
+  for (const event of events || []) {
+    const id = validAppointmentId(event?.appointment_id);
+    if (!id) continue;
+    if (!byAppointment.has(id)) byAppointment.set(id, []);
+    byAppointment.get(id).push(event);
+  }
+  const buttons = (id, canEdit, canResolve, canReschedule) => {
+    const edit = canEdit
+      ? `<button data-appointment-id="${id}" data-ev="click:editAppointmentDetails(${id})" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-[11px]">Editar datos</button><button data-appointment-id="${id}" data-ev="click:editAppointmentCampus(${id})" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-[11px]">Sede</button>`
+      : '';
+    const status = (canResolve || canReschedule)
+      ? `<button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'ASISTIO')" class="px-2 py-1 rounded bg-emerald-600 text-white text-[11px]">Asistió</button><button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'NO_ASISTIO')" class="px-2 py-1 rounded bg-amber-600 text-white text-[11px]">No asistió</button><button data-appointment-id="${id}" data-ev="click:setLeadAppointmentStatus(${id}, 'CANCELADA')" class="px-2 py-1 rounded bg-rose-600 text-white text-[11px]">Cancelar</button>`
+      : '';
+    const reschedule = canReschedule
+      ? `<input data-appointment-id="${id}" id="reschedule-${id}" type="datetime-local" class="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-white text-[11px]"><button data-appointment-id="${id}" data-ev="click:rescheduleLeadAppointment(${id})" class="px-2 py-1 rounded bg-indigo-600 text-white text-[11px]">Reprogramar</button>`
+      : '';
+    return `${edit}${status || reschedule ? `<div class="flex flex-wrap gap-1.5">${status}${reschedule}</div>` : ''}`;
+  };
+  return citas.length ? citas.map(a => {
+    const id = validAppointmentId(a.id);
+    if (!id) return '';
+    const scheduled = String(a.status) === 'PROGRAMADA';
+    const canEdit = isAdmin || a.advisor_user_id === userId;
+    const canReschedule = scheduled && (Boolean(userId) || isAdmin);
+    return `<div data-appointment-id="${id}" class="border-b border-slate-800 last:border-0 py-2 space-y-1"><div class="flex flex-wrap items-center gap-2 text-xs"><span class="text-slate-200 font-medium">Cita para: ${escapeHtml(appointmentLocal(a.scheduled_at))}</span>${appointmentBadge(a.status)}<span class="text-slate-400">Creada: ${escapeHtml(appointmentLocal(a.created_at))}</span><span class="text-slate-400">${escapeHtml(a.advisor_name || '-')}</span>${a.rescheduled_from_id ? `<span class="text-[11px] text-slate-500">reprogramada desde #${escapeHtml(String(validAppointmentId(a.rescheduled_from_id) || ''))}</span>` : ''}</div>${a.notes ? `<p class="text-[11px] text-slate-400 whitespace-pre-line">${escapeHtml(a.notes)}</p>` : ''}${a.student_name || a.contact_email || a.student_age != null ? `<p class="text-[11px] text-slate-300">Estudiante: ${escapeHtml(a.student_name || '-')} · Correo: ${escapeHtml(a.contact_email || '-')} · Edad: ${escapeHtml(a.student_age != null ? String(a.student_age) : '-')}</p>` : ''}<p class="text-[11px] text-slate-300">Sede: ${escapeHtml(a.campus || 'Sin sede')}</p>${citaHistorialHtml(byAppointment.get(id))}${buttons(id, canEdit, scheduled && canEdit, canReschedule)}${isAdmin ? `<button data-appointment-id="${id}" data-ev="click:deleteLeadAppointment(${id})" class="px-2 py-1 rounded bg-rose-700 hover:bg-rose-600 text-white text-[11px]">Eliminar cita</button>` : ''}</div>`;
+  }).join('') : '<p class="text-[11px] text-slate-500">Sin citas registradas.</p>';
 }
 
 /** Estados canonicos que la tabla de citas resalta por separado. */
@@ -230,6 +277,7 @@ if (typeof window !== 'undefined') {
   window.citasEventsFromRows = citasEventsFromRows;
   window.validAppointmentId = validAppointmentId;
   window.citasLeadHtml = citasLeadHtml;
+  window.citaHistorialHtml = citaHistorialHtml;
   window.filtrarCitas = filtrarCitas;
   window.conteoCitas = conteoCitas;
   window.filaCitaHtml = filaCitaHtml;

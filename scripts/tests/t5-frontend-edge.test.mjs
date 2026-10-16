@@ -69,7 +69,7 @@ const names = [
   'activeCatalogValues', 'catalogOptions', 'readHistRange',
   'filterHistoricalLeads', 'populateHistoricalFilterOptions',
   'loadReporteDiario', 'renderReporteV2', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
-  'exportReporteDiarioCSV', 'exportCampanasCSV', 'loadCampanas',
+  'exportReporteDiarioCSV', 'exportCampanasCSV', 'loadCampanas', 'campanasVistaPeriodo', 'campanasPeriodoSeleccionado', 'etiquetaPeriodo',
   'saveReporteNota', 'deleteReporteNota', 'reporteNotaErrorMsg',
   'resetReportePeriodo', 'setReporteVista', 'setPeriodoPreset', 'periodoRangeKey',
   'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'renderReportePeriodo', 'exportReportePeriodoCSV', 'initReporteDiario',
@@ -149,15 +149,15 @@ function frontend(extra = {}) {
     // miamiToday se stubbea en el test para determinismo (2026-09-30)
     miamiToday: () => '2026-09-30',
     supabaseClient: null, currentUser: { id: 'user-test' }, currentAccess: { activo: true, nombre: 'Test', updated_at: 'v1' },
-    sessionGeneration: 1, currentMainTab: 'citas', isAdmin: false, isSupervisor: false, newPhoneCheckGeneration: 0, newPhoneCheckTimer: null,
-    citasRequestGeneration: 0, citasCache: [], citasRangeKey: '', leadAppointmentsCache: [], leadNotesCache: [], leadGestionesCache: [],
+    sessionGeneration: 1, currentMainTab: 'citas', isAdmin: false, isSupervisor: false, isTrafficker: false, newPhoneCheckGeneration: 0, newPhoneCheckTimer: null,
+    citasRequestGeneration: 0, citasCache: [], citasRangeKey: '', leadAppointmentsCache: [], leadAppointmentEventsCache: [], leadNotesCache: [], leadGestionesCache: [],
     viewLeadGeneration: 1, currentViewId: 1, dashRangeGen: 0, filterDebounceTimer: null,
    reporteRequestGeneration: 0, reporteDayAdvisors: [], reporteDayData: [], reporteDayNotes: [], reporteAsesorasDisponibles: [], reporteAsesorasCatalogo: [], reporteLoadedKey: '', campanasData: [],
     periodoRequestGeneration: 0, periodoData: null, periodoLoadedKey: '', reporteVistaActiva: 'diario',
     periodoSourceRevision: 0, periodoLoadedRevision: -1, periodoRefreshTimer: null,
     periodoActividadData: null, periodoActividadKey: '', periodoActividadGeneration: 0,
     isLoadingLeads: false, isSupabaseLive: true,
-    campanasRequestGeneration: 0, campanasLoading: false, campanasContextMonth: '', campaignStatsMap: new Map(),
+    campanasRequestGeneration: 0, campanasLoading: false, campanasContextMonth: '', campaignStatsMap: new Map(), campanasContextPeriodo: '', campaignPeriodRows: [], campaignPeriodosFailed: false, campaignEditMonth: null,
     allLeads: [], completeCurrentLeads: extra.completeCurrentLeads ?? [], completeCurrentLoaded: extra.completeCurrentLoaded ?? false,
     loadedLeadTarget: 2000, totalDatabaseCount: (extra.allLeads || []).length, leadDataRevision: 0, refillWindowPromise: null,
     allHistorico: [], filteredLeads: [], dataSource: 'actual', currentPage: 1, authorizedUsersList: [],
@@ -1249,8 +1249,8 @@ test('citas: lectura compartida para el equipo y botones de edición solo para a
     const body = f.element('leadAppointmentsList').innerHTML;
     assert.equal(body.includes('click:editAppointmentDetails(21)'), canEdit);
     assert.equal(body.includes('click:editAppointmentCampus(21)'), canEdit);
-    assert.equal(body.includes('click:setLeadAppointmentStatus(21,'), canEdit);
-    assert.equal(body.includes('click:rescheduleLeadAppointment(21)'), canEdit);
+    assert.equal(body.includes('click:setLeadAppointmentStatus(21,'), true);
+    assert.equal(body.includes('click:rescheduleLeadAppointment(21)'), true);
     assert.equal(filaCitaHtml(cita, { isAdmin, userId }).includes('click:editAppointmentDetails(21)'), canEdit);
   }
   // La ficha necesita advisor_user_id para calcular canEdit.
@@ -1321,9 +1321,9 @@ test('ayuda: refleja el comportamiento actual y no repite reglas retiradas', () 
   assert.match(help, /Si el teléfono ya está en la base/);
   assert.match(help, /calendario completo de citas del equipo/);
   assert.match(help, /zona horaria de Miami/);
-  assert.match(help, /Solo la asesora asignada a la cita \(o un administrador\) puede modificarla/);
+  assert.match(help, /Cualquier asesora activa puede marcar Asistió, No asistió, Cancelar o Reprogramar/);
   assert.match(help, /nombre del estudiante, un correo de contacto y su edad/);
-  assert.match(help, /conserva la marca Data Dura y los datos del estudiante/);
+  assert.match(help, /conserva la asesora asignada, la marca Data Dura y los datos del estudiante/);
   assert.match(help, /Registrar un lead también cuenta como gestión/);
   assert.match(help, /etiqueta verde "Nuevo"/);
   assert.match(help, /Llamada WhatsApp/);
@@ -1346,7 +1346,7 @@ test('ayuda: refleja los KPIs compactos, los cuatro roles y el cierre por inacti
   // Los cuatro roles reales del catalogo user_access.
   assert.match(help, /admin, agente, supervisor o trafficker/);
   assert.match(help, /El supervisor es una asesora con permisos ampliados/);
-  assert.match(help, /El trafficker \(campañas\) solo entra a la sección Campañas/);
+  assert.match(help, /El trafficker \(campañas\) entra a Campañas, donde registra y corrige las métricas por períodos de fechas \(Desde\/Hasta\) y por mes, y a Reportes, que ve en solo lectura/);
   // Cierre por inactividad: 4 min de aviso, 5 de cierre y solo para asesoras.
   assert.match(help, /aviso a los 4 minutos sin actividad y su sesión se cierra a los 5 minutos/);
   assert.match(help, /Continuar sesión/);

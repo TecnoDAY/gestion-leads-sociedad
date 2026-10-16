@@ -1636,6 +1636,7 @@
        leadGestionesCache = [];
        editingNoteId = null;
         leadAppointmentsCache = [];
+        leadAppointmentEventsCache = [];
        pendingAppointmentMutations?.clear();
       leadAppointmentAdvisors = [];
       loadLeadsPromise = null;
@@ -2313,6 +2314,7 @@
     let leadNotesCache = [];
     let leadGestionesCache = [];
      let leadAppointmentsCache = [];
+     let leadAppointmentEventsCache = [];
      let leadAppointmentAdvisors = [];
       let pendingAppointmentMutations = new Map();
       let newLeadSubmitting = false;
@@ -4540,6 +4542,13 @@ async function loadLeadAppointments(leadId, lead) {
         if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return;
        if (error) { console.warn('No se pudieron cargar citas:', error); updateLeadAppointmentCreateState(lead || findLeadByOrigin('actual', leadId), 'error'); document.getElementById('leadAppointmentsSection')?.classList.add('hidden'); return; }
        leadAppointmentsCache = (data || []).sort((a, b) => String(b.scheduled_at).localeCompare(String(a.scheduled_at)) || Number(b.id) - Number(a.id));
+        const appointmentIds = leadAppointmentsCache.map(a => validAppointmentId(a.id)).filter(Boolean);
+        leadAppointmentEventsCache = [];
+        if (appointmentIds.length) {
+          const events = await fetchPagedResult(() => supabaseClient.from('lead_appointment_events').select('appointment_id, status_anterior, status_nuevo, actor_name, created_at, scheduled_at_anterior, scheduled_at_nuevo').in('appointment_id', appointmentIds).order('created_at'));
+          if (!appointmentSessionValid(generation, viewGeneration, leadId, userId, accessUpdatedAt)) return;
+          if (!events.error) leadAppointmentEventsCache = events.data || [];
+        }
        const section = document.getElementById('leadAppointmentsSection'); if (section && !isAgendadoGestion(getField((lead || findLeadByOrigin('actual', leadId)), 'GESTION')) && !leadAppointmentsCache.length) section.classList.add('hidden');
        if (section && leadAppointmentsCache.length) section.classList.remove('hidden');
       updateLeadAppointmentCreateState(lead || findLeadByOrigin('actual', leadId), 'ready');
@@ -4547,7 +4556,7 @@ async function loadLeadAppointments(leadId, lead) {
     }
     function renderLeadAppointments() {
       const list = document.getElementById('leadAppointmentsList'); if (!list) return;
-      list.innerHTML = citasLeadHtml(leadAppointmentsCache, { isAdmin, userId: currentUser?.id });
+      list.innerHTML = citasLeadHtml(leadAppointmentsCache, { isAdmin, userId: currentUser?.id, events: leadAppointmentEventsCache });
     }
     async function createLeadAppointment(event) {
       event.preventDefault(); const input = document.getElementById('leadAppointmentDate'); const scheduledAt = appointmentInputISO(input?.value); const note = (document.getElementById('leadAppointmentNote')?.value || '').trim(); const submit = document.getElementById('leadAppointmentSubmit');
@@ -4775,7 +4784,7 @@ async function deleteLeadAppointment(id) {
     }
 
     function closeViewLeadModal() {
-      viewLeadGeneration += 1; currentViewId = null; currentViewOrigin = null; leadAppointmentsCache = []; leadNotesCache = []; leadGestionesCache = []; editingNoteId = null;
+      viewLeadGeneration += 1; currentViewId = null; currentViewOrigin = null; leadAppointmentsCache = []; leadAppointmentEventsCache = []; leadNotesCache = []; leadGestionesCache = []; editingNoteId = null;
       const modal = document.getElementById('modalViewLead');
       if (modal) {
         modal.classList.add('hidden');

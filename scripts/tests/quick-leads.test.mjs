@@ -16,10 +16,10 @@ const listenerSource = html.slice(listenerStart, end);
 const nombres = marcado => [...marcado.matchAll(/class="font-semibold text-left[^>]*>(.*?)<\/button>/g)].map(m => m[1]);
 
 test('orden numerico descendente, limite cuatro y entrada congelada sin mutacion', () => {
-  const leads = Object.freeze(['2', '10', '0010', '9', '11', '1'].map(id => Object.freeze({ id, Nombre: id })));
-  assert.deepEqual(nombres(quickLeadsHtml(leads)), ['11', '10', '0010', '9']);
-  assert.deepEqual(leads.map(l => l.id), ['2', '10', '0010', '9', '11', '1']);
-  assert.equal((quickLeadsHtml(leads).match(/class="quick-lead-row text-xs"/g) || []).length, 4);
+  const leads = Object.freeze(['12', '11', '10', '0010', '9', '8', '7', '6', '2', '1'].map(id => Object.freeze({ id, Nombre: id })));
+  assert.deepEqual(nombres(quickLeadsHtml(leads)), ['12', '11', '10', '0010', '9', '8', '7', '6']);
+  assert.deepEqual(leads.map(l => l.id), ['12', '11', '10', '0010', '9', '8', '7', '6', '2', '1']);
+  assert.equal((quickLeadsHtml(leads).match(/class="quick-lead-row text-xs"/g) || []).length, 8);
 });
 
 test('ids no numericos conservan la semantica Number y la estabilidad original', () => {
@@ -73,6 +73,7 @@ test('wrapper real delega conjunto filtrado, actualiza DOM y tolera contenedor a
   const filteredLeads = Object.freeze([Object.freeze({ id: 2 }), Object.freeze({ id: 10 })]);
   const context = vm.createContext({ filteredLeads, quickLeadsHtml, document: { getElementById(id) { assert.equal(id, 'quickLeadsList'); return container; } } });
   vm.runInContext(wrapperSource, context);
+  context.dashboardVisibleLeads = null;
   context.renderQuickLeads();
   assert.equal(container.innerHTML, quickLeadsHtml(filteredLeads));
   context.filteredLeads = [];

@@ -69,7 +69,7 @@
       <button type="button" data-sidebar-tab="citas" data-crm-nav data-ev="click:switchTab('citas')" class="sidebar-nav-button"><i data-lucide="calendar-check"></i><span>Citas</span></button>
       <button type="button" data-sidebar-tab="campanas" data-ev="click:switchTab('campanas')" class="sidebar-nav-button"><i data-lucide="megaphone"></i><span>Campañas</span></button>
       <button type="button" data-sidebar-tab="historico" data-crm-nav data-ev="click:switchTab('historico')" class="sidebar-nav-button"><i data-lucide="chart-no-axes-combined"></i><span>Análisis histórico</span></button>
-      <button type="button" data-sidebar-tab="reporte" data-crm-nav data-ev="click:switchTab('reporte')" class="sidebar-nav-button"><i data-lucide="clipboard-list"></i><span>Reportes</span></button>
+      <button type="button" data-sidebar-tab="reporte" data-ev="click:switchTab('reporte')" class="sidebar-nav-button"><i data-lucide="clipboard-list"></i><span>Reportes</span></button>
     </nav>
     <div class="mt-auto pt-4 border-t border-slate-700/60 space-y-1">
       <button type="button" data-ev="click:openHelpModal()" class="sidebar-nav-button"><i data-lucide="circle-help"></i><span>Centro de ayuda</span></button>
@@ -249,19 +249,15 @@
     <!-- ================= VISTA 1: PANEL OPERATIVO ================= -->
     <div id="viewDashboard" class="space-y-6">
 
-    <!-- RESUMEN DE JORNADA -->
-    <section class="dashboard-intro glass-card rounded-2xl border border-slate-700/80 p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-      <div>
-        <span class="dashboard-eyebrow"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Centro de admisiones</span>
-        <h2 class="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Tu día, <span id="dashboardGreetingName">equipo</span></h2>
-        <p class="mt-1 text-sm text-slate-400">Revisa las prioridades, atiende tus leads y acompaña a tus próximos alumnos.</p>
+    <!-- RESUMEN DE JORNADA / CABECERA COMPACTA -->
+    <section class="dashboard-intro glass-card rounded-2xl border border-slate-700/80 p-2.5 sm:p-3 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div class="space-y-0.5">
+        <h2 class="text-lg sm:text-xl font-extrabold tracking-tight text-white m-0"><span id="dashboardGreetingName">equipo</span></h2>
+        <p class="text-xs text-slate-400 m-0">Centro de admisiones · Revisa prioridades, atiende tus leads y acompaña a tus próximos alumnos.</p>
       </div>
       <div class="flex flex-wrap items-center gap-2 shrink-0">
-        <button type="button" data-ev="click:switchTab('leads')" class="primary-action inline-flex items-center gap-2 px-4 py-2 border border-slate-600 bg-slate-800/70 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-colors">
+        <button type="button" data-ev="click:switchTab('leads')" class="primary-action inline-flex items-center gap-2 px-3 py-1.5 border border-slate-600 bg-slate-800/70 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-colors">
           <i data-lucide="list-filter" class="w-4 h-4"></i> Ver leads
-        </button>
-        <button type="button" data-ev="click:openNewLeadModal()" class="primary-action inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/25 cursor-pointer transition-all">
-          <i data-lucide="user-plus" class="w-4 h-4"></i> Nuevo lead
         </button>
       </div>
     </section>
@@ -269,16 +265,16 @@
     <!-- KPI CARDS -->
     <section class="dashboard-kpis grid grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Total Leads Filtrados -->
-      <div class="metric-card glass-card border border-slate-700/80 shadow-sm relative overflow-hidden">
+      <div class="metric-card glass-card border border-slate-700/80 shadow-sm relative overflow-hidden p-3">
         <div class="flex items-center justify-between text-slate-400">
-          <span class="text-xs font-semibold uppercase tracking-wider">Leads visibles</span>
+          <span class="text-[11px] font-semibold uppercase tracking-wider">Leads visibles</span>
           <div class="metric-icon bg-blue-500/10 text-blue-400">
             <i data-lucide="users" class="w-4 h-4"></i>
           </div>
         </div>
-        <div class="mt-2 flex items-baseline gap-2">
-          <span id="kpiTotalLeads" class="text-2xl sm:text-3xl font-bold font-mono text-white tabular-nums">0</span>
-          <span class="text-xs text-slate-400 font-medium" id="kpiTotalSubtitle">Últimos registros ingresados</span>
+        <div class="mt-1 flex items-baseline gap-2">
+          <span id="kpiTotalLeads" class="text-xl sm:text-2xl font-bold font-mono text-white tabular-nums">0</span>
+          <span class="text-[11px] text-slate-400 font-medium" id="kpiTotalSubtitle">Últimos registros ingresados</span>
         </div>
       </div>
 
@@ -290,9 +286,9 @@
             <i data-lucide="calendar-check" class="w-4 h-4"></i>
           </div>
         </div>
-        <div class="mt-2 flex items-baseline gap-2">
-          <span id="kpiAgendados" class="text-2xl sm:text-3xl font-bold font-mono text-amber-400 tabular-nums">0</span>
-          <span class="text-xs text-slate-400" id="kpiAgendadosPct">0%</span>
+        <div class="mt-1 flex items-baseline gap-2">
+          <span id="kpiAgendados" class="text-xl sm:text-2xl font-bold font-mono text-amber-400 tabular-nums">0</span>
+          <span class="text-[11px] text-slate-400" id="kpiAgendadosPct">0%</span>
         </div>
       </div>
 
@@ -304,9 +300,9 @@
             <i data-lucide="badge-check" class="w-4 h-4"></i>
           </div>
         </div>
-        <div class="mt-2 flex items-baseline gap-2">
-          <span id="kpiInscritos" class="text-2xl sm:text-3xl font-bold font-mono text-emerald-400 tabular-nums">0</span>
-          <span class="text-xs text-emerald-400/80 font-medium">matriculados</span>
+        <div class="mt-1 flex items-baseline gap-2">
+          <span id="kpiInscritos" class="text-xl sm:text-2xl font-bold font-mono text-emerald-400 tabular-nums">0</span>
+          <span class="text-[11px] text-emerald-400/80 font-medium">matriculados</span>
         </div>
       </div>
 
@@ -318,17 +314,39 @@
             <i data-lucide="trending-up" class="w-4 h-4"></i>
           </div>
         </div>
-        <div class="mt-2 flex items-baseline gap-2">
-          <span id="kpiConversionRate" class="text-2xl sm:text-3xl font-bold font-mono text-indigo-400 tabular-nums">0.0%</span>
-          <span class="text-xs text-slate-400">de cierre</span>
+        <div class="mt-1 flex items-baseline gap-2">
+          <span id="kpiConversionRate" class="text-xl sm:text-2xl font-bold font-mono text-indigo-400 tabular-nums">0.0%</span>
+          <span class="text-[11px] text-slate-400">de cierre</span>
         </div>
       </div>
     </section>
 
-    <!-- ACCESO RÁPIDO A LEADS (prioridades de la jornada) -->
-    <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden" aria-labelledby="quickLeadsTitle">
+    <!-- FILTROS RAPIDOS POR PRIORIDAD -->
+    <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden" aria-label="Prioridades rápidas">
+      <div class="px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <div><h2 class="dashboard-section-title text-sm sm:text-base font-bold text-white">Prioridades</h2><p class="text-xs text-slate-400 mt-0.5">Selecciona una gestión y se abrirá la lista actualizada.</p></div>
+      </div>
+      <div class="px-4 py-3 flex flex-wrap gap-2">
+        <button type="button" data-ev="click:setDashboardPriority('pendiente')" class="rounded-lg priority-btn rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-slate-700 cursor-pointer">Seguimientos pendientes</button>
+        <button type="button" data-ev="click:setDashboardPriority('agendado')" class="rounded-lg priority-btn rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/10 cursor-pointer">Agendados</button>
+        <button type="button" data-ev="click:setDashboardPriority('inscrito')" class="rounded-lg priority-btn rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/10 cursor-pointer">Inscritos</button>
+        <button type="button" data-ev="click:setDashboardPriority('todos')" class="rounded-lg priority-btn rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-indigo-300 hover:bg-indigo-500/10 cursor-pointer">Mostrar todo</button>
+      </div>
+    </section>
+
+    <!-- CITAS DE HOY Y PRÓXIMAS -->
+    <section id="dashboardAppointmentsSection" class="hidden glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden" aria-labelledby="dashboardAppointmentsTitle">
       <div class="quick-leads-header px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
-        <div><h2 id="quickLeadsTitle" class="dashboard-section-title text-sm sm:text-base font-bold text-white">Acceso rápido a leads</h2><p class="text-xs text-slate-400 mt-0.5">Cuatro resultados del filtro actual; consulta o actualiza la gestión.</p></div>
+        <div><h2 id="dashboardAppointmentsTitle" class="dashboard-section-title text-sm sm:text-base font-bold text-white">Citas de hoy y próximas</h2><p class="text-xs text-slate-400 mt-0.5">Citas programadas desde hoy en Miami. No incluye canceladas, atendidas ni no asistidas.</p></div>
+        <button type="button" data-ev="click:openDashboardAppointmentsDetail()" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 cursor-pointer">Ver más detalles →</button>
+      </div>
+      <div id="dashboardAppointmentsList" aria-live="polite"><p class="px-4 py-5 text-xs text-slate-400">Cargando citas…</p></div>
+    </section>
+
+    <!-- ACCESO RÁPIDO A LEADS (prioridades de la jornada) -->
+    <section id="dashboardQuickLeadsSection" class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden" aria-labelledby="quickLeadsTitle">
+      <div class="quick-leads-header px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <div><h2 id="quickLeadsTitle" class="dashboard-section-title text-sm sm:text-base font-bold text-white">En seguimiento</h2><p class="text-xs text-slate-400 mt-0.5">Los ocho registros más recientes del filtro actual, listos para gestionar.</p></div>
         <button type="button" data-ev="click:switchTab('leads')" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 cursor-pointer">Ver todos los leads →</button>
       </div>
       <div id="quickLeadsList" aria-live="polite"><p class="px-4 py-5 text-xs text-slate-400">Cargando leads…</p></div>
@@ -943,9 +961,15 @@
         <div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="megaphone" class="w-3.5 h-3.5"></i> Análisis de campañas</span><h2 class="mt-3 text-2xl font-bold text-white">Campañas</h2><p class="mt-1 text-sm text-slate-400">Compara la inversión de Meta con los resultados registrados en el CRM.</p></div>
       </div>
       <div class="campaigns-controls flex flex-wrap items-end justify-between gap-3">
-        <div><label for="campaignMesSel" class="block">Mes del informe</label><input id="campaignMesSel" type="month" data-ev="change:loadCampanas()" class="mt-1"></div>
+        <div class="flex flex-wrap items-end gap-3">
+          <div><label for="campaignMesSel" class="block">Mes del informe</label><input id="campaignMesSel" type="month" data-ev="change:loadCampanas()" class="mt-1"></div>
+          <div><label for="campaignVistaSel" class="block">Vista</label><select id="campaignVistaSel" data-ev="change:loadCampanas()" class="mt-1"><option value="mes">Mes</option><option value="periodo">Períodos</option></select></div>
+          <div id="campaignPeriodoCampoDesde" class="hidden"><label for="campaignPeriodoDesde" class="block">Desde</label><input id="campaignPeriodoDesde" type="date" data-ev="change:loadCampanas()" class="mt-1"></div>
+          <div id="campaignPeriodoCampoHasta" class="hidden"><label for="campaignPeriodoHasta" class="block">Hasta</label><input id="campaignPeriodoHasta" type="date" data-ev="change:loadCampanas()" class="mt-1"></div>
+        </div>
         <button type="button" data-ev="click:exportCampanasCSV()" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-700 text-white text-xs font-semibold hover:bg-indigo-600 cursor-pointer"><i data-lucide="download" class="w-4 h-4"></i> Descargar CSV</button>
       </div>
+      <p id="campanasPeriodosLista" class="hidden text-xs text-slate-300"></p>
       <p id="campanasAviso" class="text-sm text-amber-300"></p>
       <p id="campanasLoadingStatus" role="status" class="text-sm text-slate-500" aria-live="polite"></p>
       <div id="campanasSummary" class="campaigns-summary hidden grid grid-cols-2 lg:grid-cols-4 gap-3" aria-live="polite"></div>
@@ -1561,6 +1585,13 @@
      // T2: contexto visible. save/delete solo contra el mes renderizado.
      let campanasLoading = false;
      let campanasContextMonth = '';
+     // Desglose por períodos (campaign_period_stats) del mes seleccionado.
+     let campaignPeriodRows = [];
+     let campanasContextPeriodo = '';
+     // false si la carga de períodos falló: el mes sin fila manual no es calculable.
+     let campaignPeriodosFailed = false;
+     // Ajuste mensual por fila: campaña en edición (null = todo en lectura).
+     let campaignEditMonth = null;
 
     // Los enlaces de invitación, de recuperación y de cambio de correo llegan
     // como #access_token=...&type=invite|recovery|email_change. supabase-js los
@@ -1623,6 +1654,13 @@
       loadedLeadTarget = LEADS_BATCH_SIZE;
       leadDataRevision = 0;
       filteredLeads = [];
+      dashboardVisibleLeads = null;
+      dashboardPriority = 'pendiente';
+      if (typeof dashboardLeadCache !== 'undefined' && dashboardLeadCache) dashboardLeadCache.clear();
+      const dashboardAppointmentsList = document.getElementById('dashboardAppointmentsList');
+      if (dashboardAppointmentsList) dashboardAppointmentsList.innerHTML = '<p class="px-4 py-5 text-xs text-slate-400">Cargando citas…</p>';
+      document.getElementById('dashboardAppointmentsSection')?.classList.add('hidden');
+      document.getElementById('dashboardQuickLeadsSection')?.classList.remove('hidden');
       allHistorico = [];
       dataSource = 'actual';
       historicoLoaded = false;
@@ -1808,8 +1846,9 @@
       const helpButton = document.getElementById('btnHelp');
       if (helpButton) helpButton.classList.toggle('hidden', false);
       document.querySelectorAll('[data-admin-only]').forEach(el => el.classList.toggle('hidden', !isAdmin));
-      // Trafficker: solo ve la pestaña Campañas.
-      ['tabBtnDashboard', 'tabBtnLeads', 'tabBtnHistorico', 'tabBtnReporte', 'tabBtnCitas'].forEach(id => {
+      // Trafficker: ve Campañas (edición) y Reportes (solo lectura); el resto
+      // del CRM (leads, citas, dashboard, histórico) sigue oculto.
+      ['tabBtnDashboard', 'tabBtnLeads', 'tabBtnHistorico', 'tabBtnCitas'].forEach(id => {
         document.getElementById(id)?.classList.toggle('hidden', isTrafficker);
       });
       document.querySelectorAll('[data-crm-nav]').forEach(button => button.classList.toggle('hidden', isTrafficker));
@@ -2306,6 +2345,10 @@
     let leadDataRevision = 0;
     let totalDatabaseCount = 0; // Conteo exacto de leads en la base de datos
     let filteredLeads = [];     // Leads filtrados actualmente
+    let dashboardPriority = 'pendiente';  // Prioridad aislada para resumen del dashboard
+    let dashboardVisibleLeads = null;     // Lista del dashboard, aislada de la tabla y las métricas
+    let dashboardAppointmentsRequestGeneration = 0;
+    let dashboardLeadCache = (typeof Map !== 'undefined') ? new Map() : null;
     let allHistorico = [];      // Histórico 2025 (solo lectura, tabla leads_historico)
     let dataSource = 'actual';  // 'actual' | 'historico' | 'todos'
     let historicoLoaded = false;
@@ -2480,7 +2523,7 @@
         prepareHistoricalAnalytics();
       }
 
-      [btnDash, btnLeads, btnHist, btnReporte, btnCitas].forEach(button => button.classList.toggle('hidden', isTrafficker));
+      [btnDash, btnLeads, btnHist, btnCitas].forEach(button => button.classList.toggle('hidden', isTrafficker));
       if (window.matchMedia?.('(max-width: 639px)').matches) {
         const activeButton = { dashboard: btnDash, leads: btnLeads, historico: btnHist, reporte: btnReporte, citas: btnCitas, campanas: btnCamp }[tab];
         const tabsNav = activeButton?.parentElement;
@@ -2531,8 +2574,8 @@
     async function initCitasPanel() { const desde=document.getElementById('citasDesde'); if(!desde.value) { const [a,b]=citasDateDefaults(); desde.value=a; document.getElementById('citasHasta').value=b; } if(isAdmin || isSupervisor) document.getElementById('citasAsesorWrap').classList.remove('hidden'); ['citasDesde','citasHasta'].forEach(id=>document.getElementById(id).onchange=loadCitas); ['citasResultado','citasCampana','citasSede','citasMedio','citasAsesor'].forEach(id=>document.getElementById(id).onchange=renderCitas); await loadCitas(); await setCitasViewMode(citasViewMode); }
     async function loadCitas() {
       if (!supabaseClient || !currentUser || !currentAccess?.activo) return;
-      const desde = document.getElementById('citasDesde').value, hasta = document.getElementById('citasHasta').value;
-      if (!desde || !hasta || desde > hasta) { clearCitasResults(); showToast('Rango de fechas no válido', 'warning'); return; }
+      const desde = document.getElementById('citasDesde').value, hasta = document.getElementById('citasHasta').value || '';
+      if (!desde || (hasta && desde > hasta)) { clearCitasResults(); showToast('Rango de fechas no válido', 'warning'); return; }
       const key = desde + '|' + hasta, generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at, token = ++citasRequestGeneration;
       // Consultar de nuevo al entrar en Citas: otros usuarios pueden haber cambiado
       // la agenda aunque Realtime no esté habilitado para lead_appointments.
@@ -2543,10 +2586,12 @@
         if (tableBody) tableBody.innerHTML = '<tr><td colspan="11" class="appointments-error" role="alert"><p class="text-sm font-semibold">No se pudieron cargar las citas.</p><button type="button" data-ev="click:loadCitas()">Reintentar</button></td></tr>';
       };
       if (tableBody) { tableBody.setAttribute?.('aria-busy', 'true'); tableBody.innerHTML = '<tr><td colspan="11" class="appointments-loading" role="status">Cargando citas…</td></tr>'; }
-      const [startISO] = miamiDayBounds(desde), [, endISO] = miamiDayBounds(hasta);
-      if (!startISO || !endISO) return showLoadError('El rango de fechas de Miami no es válido.');
-      const valid = () => token === citasRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentMainTab === 'citas' && document.getElementById('citasDesde')?.value + '|' + document.getElementById('citasHasta')?.value === key;
-      const { data, error } = await fetchPagedResult(() => supabaseClient.from('lead_appointments').select('id,lead_id,scheduled_at,created_at,status,advisor_name,advisor_user_id,student_name,contact_email,student_age,campus,is_data_dura').gte('scheduled_at', startISO).lt('scheduled_at', endISO));
+      const [startISO] = miamiDayBounds(desde), [, endISO] = hasta ? miamiDayBounds(hasta) : [null, null];
+      if (!startISO || (hasta && !endISO)) return showLoadError('El rango de fechas de Miami no es válido.');
+      const valid = () => token === citasRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentMainTab === 'citas' && document.getElementById('citasDesde')?.value + '|' + (document.getElementById('citasHasta')?.value || '') === key;
+      let citasQuery = supabaseClient.from('lead_appointments').select('id,lead_id,scheduled_at,created_at,status,advisor_name,advisor_user_id,student_name,contact_email,student_age,campus,is_data_dura').gte('scheduled_at', startISO);
+      if (endISO) citasQuery = citasQuery.lt('scheduled_at', endISO);
+      const { data, error } = await fetchPagedResult(() => citasQuery);
       if (!valid()) return;
       if (error) return showLoadError('No se pudo cargar citas. Verifica que la migración esté aplicada.');
       // Orden y union cita-lead son puros (src/legacy/citas.js, fase 18).
@@ -3011,6 +3056,26 @@
       if (!supabaseClient || !currentUser || !currentAccess?.activo) return false;
       const generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at;
       const valid = () => generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo;
+      // El trafficker no puede leer la tabla leads (RLS): el reporte periodo
+      // usa el RPC reporte_periodo_leads, que devuelve solo las columnas sin
+      // PII que consume buildPeriodSummary (id, Fecha, Medio, Campaña,
+      // GESTION, archived_at).
+      if (isTrafficker) {
+        try {
+          const { data, error } = await supabaseClient.rpc('reporte_periodo_leads');
+          if (!valid()) return false;
+          if (error) throw error;
+          completeCurrentLeads = Array.isArray(data) ? data : [];
+          completeCurrentLoaded = true;
+          totalDatabaseCount = completeCurrentLeads.length;
+          return true;
+        } catch (error) {
+          if (!valid()) return false;
+          console.warn('No se pudo cargar la base del reporte de período:', error);
+          showToast('No se pudo cargar la base del reporte de período.', 'error');
+          return false;
+        }
+      }
       for (let attempt = 1; attempt <= 2; attempt++) {
         const revision = leadDataRevision;
         try {
@@ -3777,6 +3842,15 @@
         return true;
       });
 
+      // La prioridad del dashboard solo afecta su lista de resultados. No altera
+      // las métricas globales ni la tabla principal de Leads. La fuente base es
+      // únicamente la ventana actual de leads actuales, sin históricos ni filtros.
+      const activeDashboardPriority = (typeof dashboardPriority === 'undefined') ? '' : dashboardPriority;
+      const dashboardBaseLeads = Array.isArray(allLeads) ? allLeads.slice(0, 2000) : [];
+      dashboardVisibleLeads = activeDashboardPriority && activeDashboardPriority !== 'todos'
+        ? dashboardBaseLeads.filter(lead => gestionCategoriaDashboard(lead, activeDashboardPriority))
+        : dashboardBaseLeads;
+
       // Contar el rango Desde-Hasta como un solo filtro
       const rangeActive = dashDesde !== '' || dashHasta !== '';
       const activeCount = [mes, campana, medio, gestion, asesora, search, rangeActive].filter(Boolean).length;
@@ -3873,12 +3947,71 @@
       document.getElementById('matrixToggleLabel').textContent = expanded ? 'Ocultar matriz' : 'Mostrar matriz';
     }
 
+    function gestionCategoriaDashboard(lead, kind) {
+      const gestion = String(getField(lead, 'GESTION') || '').trim().toLowerCase();
+      const isAgendado = gestion.includes('agend');
+      const isInscrito = gestion.includes('inscrit');
+      const isSeguimiento = [
+        'información',
+        'interesado',
+        'llamar en otro momento',
+        'proximas inscripciones',
+        'en visto',
+      ].includes(gestion);
+      if (kind === 'pendiente') return isSeguimiento;
+      if (kind === 'agendado') return isAgendado;
+      if (kind === 'inscrito') return isInscrito;
+      return true;
+    }
+
     function renderQuickLeads() {
       const container = document.getElementById('quickLeadsList');
       if (!container) return;
-      // Se usa el mismo conjunto que alimenta filtros y tabla. No se consulta
-      // información adicional ni se inventa una prioridad comercial.
-      container.innerHTML = quickLeadsHtml(filteredLeads);
+      // La lista del dashboard es independiente de la tabla y de las métricas.
+      const source = (typeof dashboardVisibleLeads === 'undefined' || dashboardVisibleLeads === null)
+        ? filteredLeads
+        : dashboardVisibleLeads;
+      container.innerHTML = quickLeadsHtml(source);
+    }
+
+    function matchingGestionOption(kind) {
+      const select = document.getElementById('filterGestion');
+      if (!select) return '';
+      const opts = Array.from(select.options);
+      if (kind === 'todos') return '';
+      const text = opt => (opt.textContent || opt.value || '').toLowerCase();
+      const matchers = {
+        pendiente: ['contact', 'pend', 'seguim', 'gestion', 'information'],
+        agendado: ['agend'],
+        inscrito: ['inscrit'],
+      };
+      const found = opts.find(option => text(option).trim() && matchers[kind]?.some(term => text(option).includes(term)));
+      return found ? found.value : '';
+    }
+
+    function setDashboardPriority(kind) {
+      const select = document.getElementById('filterGestion');
+      const quickSection = document.getElementById('dashboardQuickLeadsSection');
+      const appointmentSection = document.getElementById('dashboardAppointmentsSection');
+      if (kind === 'todos' && select) select.value = '';
+      if (kind === 'pendiente' || kind === 'agendado' || kind === 'inscrito') dashboardPriority = kind;
+      if (kind === 'todos') dashboardPriority = '';
+      if (quickSection) quickSection.classList.toggle('hidden', kind === 'agendado');
+      if (appointmentSection) appointmentSection.classList.toggle('hidden', kind !== 'agendado');
+      if (kind === 'agendado') {
+        loadDashboardAppointments();
+      } else {
+        applyFilters();
+      }
+      const titles = {
+        pendiente: 'En seguimiento',
+        agendado: 'Citas programadas',
+        inscrito: 'Leads inscritos',
+        todos: 'Leads recientes',
+      };
+      const el = document.getElementById('quickLeadsTitle');
+      if (el) el.textContent = titles[kind] || 'Qué atender ahora';
+      showToast(`Filtro de prioridad: ${kind}`, 'info');
     }
 
     document.getElementById('quickLeadsList')?.addEventListener('click', event => {
@@ -3896,6 +4029,139 @@
       const td = event.target.closest?.('[data-matrix-gestion]');
       if (!td) return;
       filterFromMatrix(td.dataset.matrixGestion, td.dataset.matrixCampana);
+    });
+
+    function openDashboardAppointmentsDetail() {
+      const desde = document.getElementById('citasDesde');
+      const hasta = document.getElementById('citasHasta');
+      const resultado = document.getElementById('citasResultado');
+      const sede = document.getElementById('citasSede');
+      const campana = document.getElementById('citasCampana');
+      const medio = document.getElementById('citasMedio');
+      const asesor = document.getElementById('citasAsesor');
+      if (desde) desde.value = miamiToday();
+      if (hasta) hasta.value = '';
+      if (resultado) resultado.value = 'PROGRAMADA';
+      if (sede) sede.value = '';
+      if (campana) campana.value = '';
+      if (medio) medio.value = '';
+      if (asesor) asesor.value = '';
+      // Entrar en Lista evita que el calendario reemplace el rango abierto
+      // "desde hoy" por el rango de la semana visible.
+      citasViewMode = 'lista';
+      switchTab('citas');
+    }
+
+    function addDaysISO(iso, days) {
+      const [y, m, d] = String(iso || '').split('-').map(Number);
+      const date = new Date(y, (m || 1) - 1, (d || 1) + (Number(days) || 0));
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    async function openDashboardAppointmentLead(leadId, origin) {
+      const generation = sessionGeneration;
+      const userId = currentUser?.id;
+      const accessUpdatedAt = currentAccess?.updated_at;
+      const resolvedOrigin = origin === 'historico' ? 'historico' : 'actual';
+      if (dashboardLeadCache && dashboardLeadCache.has(String(leadId))) {
+        if (generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt || !currentAccess?.activo) return;
+        openViewLeadModal(leadId, origin);
+        return;
+      }
+      let lead = findLeadByOrigin(resolvedOrigin, leadId);
+      if (!lead && resolvedOrigin === 'actual' && supabaseClient && currentUser && currentAccess?.activo && leadId) {
+        try {
+          const { data, error } = await supabaseClient.from('leads').select('*').eq('id', Number(leadId)).maybeSingle();
+          if (generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt || !currentAccess?.activo) return;
+          if (!error && data) {
+            if (dashboardLeadCache) dashboardLeadCache.set(String(leadId), data);
+            lead = data;
+          }
+        } catch (_) { /* no abrir ficha si el lead no puede resolverse */ }
+      }
+      if (generation !== sessionGeneration || currentUser?.id !== userId || currentAccess?.updated_at !== accessUpdatedAt || !currentAccess?.activo) return;
+      if (!lead) return;
+      openViewLeadModal(leadId, origin);
+    }
+
+    async function loadDashboardAppointments() {
+      const container = document.getElementById('dashboardAppointmentsList');
+      if (!container || !supabaseClient || !currentUser || !currentAccess?.activo) return;
+      const generation = sessionGeneration;
+      const userId = currentUser.id;
+      const accessUpdatedAt = currentAccess.updated_at;
+      const token = ++dashboardAppointmentsRequestGeneration;
+      const valid = () => token === dashboardAppointmentsRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo;
+      container.innerHTML = '<p class="px-4 py-5 text-xs text-slate-400">Cargando citas…</p>';
+      try {
+        const startISO = miamiStartOfDayISO();
+        const { data, error } = await supabaseClient
+          .from('lead_appointments')
+          .select('id,lead_id,scheduled_at,advisor_name,campus,is_data_dura,status')
+          .eq('status', 'PROGRAMADA')
+          .gte('scheduled_at', startISO)
+          .order('scheduled_at', { ascending: true })
+          .limit(8);
+        if (!valid()) return;
+        if (error) throw error;
+        const appointments = data || [];
+        const leadIds = [...new Set(appointments.map(a => a.lead_id).filter(Boolean))];
+        const leadMap = new Map();
+        if (leadIds.length) {
+          const { data: leads, error: leadsError } = await supabaseClient
+            .from('leads')
+            .select('id,Nombre,Campaña')
+            .in('id', leadIds);
+          if (!valid()) return;
+          if (leadsError) throw leadsError;
+          for (const lead of leads || []) leadMap.set(String(lead.id), lead);
+        }
+        if (!valid()) return;
+        if (!appointments.length) {
+          container.innerHTML = '<p class="px-4 py-5 text-xs text-slate-400">No hay citas programadas desde hoy.</p>';
+          return;
+        }
+        container.innerHTML = appointments.map(a => {
+          const lead = leadMap.get(String(a.lead_id)) || {};
+          const when = new Date(a.scheduled_at).toLocaleString('es-ES', { timeZone: 'America/New_York', dateStyle: 'short', timeStyle: 'short' });
+          const name = escapeHtml(lead.Nombre || 'Lead sin nombre');
+          const campus = escapeHtml(a.campus || 'Sin sede');
+          const advisor = escapeHtml(a.advisor_name || '-');
+          const tipo = a.is_data_dura ? 'Data Dura' : 'Normal';
+          return `<div class="px-4 py-3 border-b border-slate-800 last:border-0 flex flex-col sm:grid sm:grid-cols-[minmax(150px,1.4fr)_minmax(120px,1fr)_minmax(90px,.8fr)_minmax(90px,.8fr)_minmax(80px,.7fr)_auto] sm:items-center gap-2 sm:gap-3 text-xs">
+            <div class="font-semibold text-white truncate">${name}</div>
+            <div class="text-slate-300 whitespace-nowrap">${escapeHtml(when)}</div>
+            <div class="text-slate-400">${campus}</div>
+            <div class="text-slate-400 truncate">${advisor}</div>
+            <div class="text-slate-400">${tipo}</div>
+            <button type="button" data-quick-action="view" data-lead-id="${escapeAttr(String(a.lead_id || ''))}" data-origin="actual" class="justify-self-start sm:justify-self-end rounded-lg border border-slate-600 px-3 py-1.5 font-semibold text-slate-300 hover:bg-slate-700 cursor-pointer">Ver ficha</button>
+          </div>`;
+        }).join('');
+      } catch (err) {
+        console.warn('No se pudieron cargar las citas del dashboard:', err);
+        if (!valid()) return;
+        container.innerHTML = '<p class="px-4 py-5 text-xs text-rose-400">No se pudieron cargar las citas. <button type="button" data-ev="click:loadDashboardAppointments()" class="underline hover:text-rose-200">Reintentar</button></p>';
+      }
+    }
+
+    function miamiStartOfDayISO() {
+      const dateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+      for (const offset of ['-04:00', '-05:00']) {
+        const candidate = new Date(`${dateStr}T00:00:00${offset}`);
+        const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(candidate);
+        const hour = parts.find(part => part.type === 'hour')?.value;
+        const minute = parts.find(part => part.type === 'minute')?.value;
+        if (hour === '00' && minute === '00') return candidate.toISOString();
+      }
+      return new Date(`${dateStr}T00:00:00-05:00`).toISOString();
+    }
+
+
+    document.getElementById('dashboardAppointmentsList')?.addEventListener('click', event => {
+      const button = event.target.closest?.('[data-quick-action]');
+      if (!button) return;
+      const { quickAction, leadId, origin } = button.dataset;
+      if (quickAction === 'view') openDashboardAppointmentLead(leadId, origin || 'actual');
     });
 
     // -------------------------------------------------------------
@@ -4466,7 +4732,9 @@
       // T4: la ficha abre origen+ID exactos, sin fallback cruzado (los ids
       // numericos colisionan entre 'actual' e 'historico').
       const resolvedOrigin = origin === 'historico' ? 'historico' : 'actual';
-      const lead = findLeadByOrigin(resolvedOrigin, leadId);
+      const lead = resolvedOrigin === 'actual' && typeof dashboardLeadCache !== 'undefined' && dashboardLeadCache?.has(String(leadId))
+        ? dashboardLeadCache.get(String(leadId))
+        : findLeadByOrigin(resolvedOrigin, leadId);
       const finalOrigin = resolvedOrigin;
       if (!lead) return;
       currentViewOrigin = finalOrigin;
@@ -5275,7 +5543,9 @@ async function deleteLeadAppointment(id) {
       const generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at, key = `${desde}|${hasta}`;
       const sourceRevision = periodoSourceRevision;
       const valid = () => token === periodoRequestGeneration && generation === sessionGeneration && sourceRevision === periodoSourceRevision && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'reporte' && reporteVistaActiva === 'periodo' && periodoRangeKey() === key;
-      if (isLoadingLeads || (!allLeads.length && isSupabaseLive !== true)) { aviso.textContent = 'Cargando leads recientes… se actualizará al finalizar.'; updatePeriodoCsvState(); return; }
+      // El trafficker no carga leads del CRM: su base del reporte periodo es
+      // el RPC reporte_periodo_leads (sin PII), resuelto en loadCompleteCurrentData.
+      if (!isTrafficker && (isLoadingLeads || (!allLeads.length && isSupabaseLive !== true))) { aviso.textContent = 'Cargando leads recientes… se actualizará al finalizar.'; updatePeriodoCsvState(); return; }
       body.innerHTML = '<div class="period-loading" role="status">Cargando resumen del período…</div>';
       try {
         const complete = await loadCompleteCurrentData();
@@ -5421,7 +5691,9 @@ async function deleteLeadAppointment(id) {
       const bloquesHtml = bloques.map((b, i) => {
         const nota = notaDeBloque(indice, b);
         const own = b.autor_user_id ? b.autor_user_id === currentUser?.id : b.autor_name === currentAccess?.nombre;
-        const editable = notasOk && ((isAdmin && Boolean(b.autor_user_id)) || (own && fechaHoy));
+        // El trafficker consulta el reporte pero nunca edita notas (el RPC
+        // tambien lo bloquea en servidor con crm_access_forbidden).
+        const editable = notasOk && !isTrafficker && ((isAdmin && Boolean(b.autor_user_id)) || (own && fechaHoy));
         return bloqueDiaHtml(b, i, manualBloqueHtml(i, nota, editable));
       }).join('');
       return cuerpoReporteDiario(notasOk, total, bloquesHtml);
@@ -5578,7 +5850,22 @@ async function deleteLeadAppointment(id) {
     // CAMPAÑAS: informe mensual de Meta por campaña (rollup CRM via RPC).
     // Coste/resultado NO se guarda: se calcula en UI (gasto/resultados).
     // -------------------------------------------------------------
+    // CAMPAÑAS: informe mensual de Meta por campaña (rollup CRM via RPC) y
+    // desglose por PERÍODOS de fechas (campaign_period_stats). Coste/resultado
+    // NO se guarda: se calcula en UI (gasto/resultados), nunca sumando promedios.
     // campaignCosteResultado y campaignTotals viven en src/legacy/reportes.js.
+    // -------------------------------------------------------------
+    function campanasVistaPeriodo() {
+      return document.getElementById('campaignVistaSel')?.value === 'periodo';
+    }
+
+    function campanasPeriodoSeleccionado() {
+      return {
+        desde: document.getElementById('campaignPeriodoDesde')?.value || '',
+        hasta: document.getElementById('campaignPeriodoHasta')?.value || '',
+      };
+    }
+
     function initCampanas() {
       const mesSel = document.getElementById('campaignMesSel');
       if (mesSel && !mesSel.value) mesSel.value = miamiToday().slice(0, 7);
@@ -5589,17 +5876,40 @@ async function deleteLeadAppointment(id) {
       if (!supabaseClient || !currentUser || !currentAccess?.activo) return;
       const monthStr = document.getElementById('campaignMesSel')?.value;
       if (!/^\d{4}-\d{2}$/.test(monthStr || '')) { showToast('Mes no válido', 'warning'); return; }
+      const esPeriodo = campanasVistaPeriodo();
+      const periodo = esPeriodo ? campanasPeriodoSeleccionado() : null;
       const [y, m] = monthStr.split('-').map(Number);
       const mesNombre = MONTH_CHRONO[m - 1];
       const generation = sessionGeneration, token = ++campanasRequestGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at;
-      campanasLoading = true; campanasContextMonth = monthStr;
+      campanasLoading = true;
+      campanasContextMonth = monthStr;
+      campanasContextPeriodo = periodo ? `${periodo.desde}|${periodo.hasta}` : '';
+      // Cada recarga vuelve a lectura: el ajuste mensual es puntual.
+      campaignEditMonth = null;
       const loadingStatus = document.getElementById('campanasLoadingStatus');
       if (loadingStatus) loadingStatus.textContent = 'Cargando campañas…';
-      const valid = () => token === campanasRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'campanas' && document.getElementById('campaignMesSel')?.value === monthStr;
-      const [rollupRes, statsRes] = await Promise.allSettled([
+      // Visibilidad de los campos Desde/Hasta y sus valores por defecto: el
+      // período arranca como el mes completo; el trafficker lo ajusta.
+      const campoDesde = document.getElementById('campaignPeriodoCampoDesde');
+      const campoHasta = document.getElementById('campaignPeriodoCampoHasta');
+      campoDesde?.classList.toggle('hidden', !esPeriodo);
+      campoHasta?.classList.toggle('hidden', !esPeriodo);
+      if (esPeriodo) {
+        const desdeInput = document.getElementById('campaignPeriodoDesde');
+        const hastaInput = document.getElementById('campaignPeriodoHasta');
+        const primero = `${monthStr}-01`;
+        const ultimo = `${monthStr}-${String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, '0')}`;
+        if (desdeInput && !desdeInput.value) desdeInput.value = primero;
+        if (hastaInput && !hastaInput.value) hastaInput.value = ultimo;
+      }
+      const valid = () => token === campanasRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'campanas' && document.getElementById('campaignMesSel')?.value === monthStr && (campanasVistaPeriodo() ? `${campanasPeriodoSeleccionado().desde}|${campanasPeriodoSeleccionado().hasta}` : '') === campanasContextPeriodo;
+      const [rollupRes, statsRes, periodosRes] = await Promise.allSettled([
         // RPC escalar JSONB: devuelve el agregado completo, no filas truncables.
         supabaseClient.rpc('campaign_monthly_rollup', { p_anio: y, p_mes: mesNombre }),
-        fetchPagedResult(() => supabaseClient.from('campaign_stats').select('*').eq('anio', y).eq('mes', mesNombre))
+        fetchPagedResult(() => supabaseClient.from('campaign_stats').select('*').eq('anio', y).eq('mes', mesNombre)),
+        // Los períodos siempre caen dentro del mes (validado en servidor), así
+        // que bastan desde >= primer día y hasta <= último día.
+        fetchPagedResult(() => supabaseClient.from('campaign_period_stats').select('*').gte('desde', `${monthStr}-01`).lte('hasta', `${monthStr}-${String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, '0')}`))
       ]);
       if (!valid()) return;
       if (loadingStatus) loadingStatus.textContent = '';
@@ -5611,35 +5921,123 @@ async function deleteLeadAppointment(id) {
         if (aviso) aviso.textContent = 'No se pudieron cargar las campañas. Verifica que la migración esté aplicada.';
         campanasData = [];
         campaignStatsMap = new Map();
+        campaignPeriodRows = [];
+        campaignPeriodosFailed = true;
         if (token === campanasRequestGeneration) campanasLoading = false;
         return renderCampanas(campanasData, campaignTotals([]), `${mesNombre} ${y}`, canEditCampaigns(), monthStr, true);
       }
       const rollupRows = rollupRes.value.data || [];
       const statRows = statsRes.value.data || [];
       campaignStatsMap = new Map(statRows.map(s => [s.campaign_name, s]));
-      // El universo de campanas es puro (src/legacy/reportes.js, fase 22).
-      campanasData = campanasDeFuentes(activeCatalogValues('campana'), rollupRows, statRows);
-      if (aviso) aviso.textContent = '';
+      const periodosFailed = periodosRes.status === 'rejected' || periodosRes.value?.error;
+      if (periodosFailed) console.warn('No se pudo cargar el desglose por períodos:', periodosRes.status === 'rejected' ? periodosRes.reason : periodosRes.value.error);
+      campaignPeriodRows = periodosFailed ? [] : (periodosRes.value.data || []);
+      campaignPeriodosFailed = periodosFailed;
+      // El universo de campanas es puro (src/legacy/reportes.js); con períodos
+      // incorpora el desglose y el valor efectivo del mes. Sin períodos
+      // disponibles, el mes sin fila manual no es calculable (no finge un cero).
+      campanasData = campanasDeFuentes(activeCatalogValues('campana'), rollupRows, statRows, campaignPeriodRows, esPeriodo ? campanasPeriodoSeleccionado() : null, !periodosFailed);
+      if (aviso) aviso.textContent = periodosFailed
+        ? 'No se pudo cargar el desglose por períodos; el informe mensual se muestra sin desglose.'
+        : (esPeriodo ? 'Vista por períodos: registra inversión de Meta (alcance, gasto y resultados) del rango elegido. Las métricas del CRM se consolidan en la vista mensual.' : '');
       if (token === campanasRequestGeneration) campanasLoading = false;
-      renderCampanas(campanasData, campaignTotals(campanasData), `${mesNombre} ${y}`, canEditCampaigns(), monthStr);
+      const periodoLabel = esPeriodo ? etiquetaPeriodo(campanasPeriodoSeleccionado()) : '';
+      const mesLabel = periodoLabel ? `${mesNombre} ${y} · ${periodoLabel}` : `${mesNombre} ${y}`;
+      renderCampanas(campanasData, campaignTotals(campanasData), mesLabel, canEditCampaigns(), monthStr, false, esPeriodo ? campanasPeriodoSeleccionado() : null);
     }
 
-    function renderCampanas(rows, totals, mesLabel, esEditor, monthStr, loadFailed = false) {
+    /** Etiqueta compacta 01/10 al 07/10 para el rango elegido. */
+    function etiquetaPeriodo(periodo) {
+      const fmt = iso => { const [a, m, d] = String(iso || '').split('-'); return d ? `${d}/${m}` : String(iso || ''); };
+      return `${fmt(periodo.desde)} al ${fmt(periodo.hasta)}`;
+    }
+
+    function renderCampanas(rows, totals, mesLabel, esEditor, monthStr, loadFailed = false, periodo = null) {
       // Las piezas de la tabla son puras (src/legacy/reportes.js, fase 22).
       const tbody = document.getElementById('campanasTableBody');
       if (!tbody) return;
+      const esPeriodo = Boolean(periodo && periodo.desde && periodo.hasta);
+      // Fila sin fila manual y sin períodos disponibles: Meta no calculable.
+      const datosIncompletos = rows.some(r => r.alcance == null);
       const summary = document.getElementById('campanasSummary');
       if (summary) {
         summary.classList.toggle('hidden', !rows.length);
-        summary.innerHTML = resumenCampanasHtml(rows, totals);
+        summary.innerHTML = resumenCampanasHtml(rows, totals, esPeriodo, datosIncompletos);
       }
+      renderPeriodosGuardados(esPeriodo);
       if (!rows.length) {
         tbody.innerHTML = estadoVacioCampanasHtml(loadFailed, mesLabel);
         return;
       }
       const mes = typeof monthStr === 'string' ? monthStr : (document.getElementById('campaignMesSel')?.value || '');
-      const rowsHtml = rows.map(r => filaCampanaHtml(r, { esEditor, isAdmin, monthStr: mes })).join('');
-      tbody.innerHTML = rowsHtml + totalCampanasHtml(totals, mesLabel);
+      const rowsHtml = rows.map(r => filaCampanaHtml(r, {
+        esEditor,
+        isAdmin,
+        monthStr: mes,
+        periodo,
+        editandoMensual: esPeriodo ? null : campaignEditMonth,
+        periodosDisponibles: !campaignPeriodosFailed,
+      })).join('');
+      tbody.innerHTML = rowsHtml + totalCampanasHtml(totals, mesLabel, esPeriodo, datosIncompletos);
+    }
+
+    /** Re-render sin recargar (entrar/salir del modo ajuste de una fila). */
+    function rerenderCampanas() {
+      const monthStr = document.getElementById('campaignMesSel')?.value || '';
+      if (!/^\d{4}-\d{2}$/.test(monthStr) || campanasLoading) return;
+      const [y, m] = monthStr.split('-').map(Number);
+      const mesNombre = MONTH_CHRONO[m - 1];
+      const esPeriodo = campanasVistaPeriodo();
+      const periodo = esPeriodo ? campanasPeriodoSeleccionado() : null;
+      const periodoLabel = esPeriodo ? etiquetaPeriodo(campanasPeriodoSeleccionado()) : '';
+      const mesLabel = periodoLabel ? `${mesNombre} ${y} · ${periodoLabel}` : `${mesNombre} ${y}`;
+      renderCampanas(campanasData, campaignTotals(campanasData), mesLabel, canEditCampaigns(), monthStr, false, periodo);
+    }
+
+    /** Habilita el ajuste del mensual SOLO en la fila elegida (lectura el resto). */
+    function iniciarAjusteMensual(campaignName) {
+      if (!canEditCampaigns()) return;
+      if (campanasLoading) { showToast('Espera a que terminen de cargar las campañas', 'warning'); return; }
+      if (campanasVistaPeriodo()) return;
+      campaignEditMonth = String(campaignName || '');
+      rerenderCampanas();
+    }
+
+    function cancelarAjusteMensual() {
+      campaignEditMonth = null;
+      rerenderCampanas();
+    }
+
+    /** Períodos guardados del mes como accesos directos (solo vista períodos). */
+    function renderPeriodosGuardados(esPeriodo) {
+      const box = document.getElementById('campanasPeriodosLista');
+      if (!box) return;
+      if (!esPeriodo || !campaignPeriodRows.length) {
+        box.classList.toggle('hidden', true);
+        box.innerHTML = '';
+        return;
+      }
+      const rangos = [...new Set(campaignPeriodRows.map(p => `${String(p.desde).slice(0, 10)}|${String(p.hasta).slice(0, 10)}`))]
+        .map(clave => {
+          const [desde, hasta] = clave.split('|');
+          const filas = campaignPeriodRows.filter(p => String(p.desde).slice(0, 10) === desde && String(p.hasta).slice(0, 10) === hasta);
+          const gasto = filas.reduce((t, p) => t + (Number(p.gasto) || 0), 0);
+          return { desde, hasta, gasto, activo: `${desde}|${hasta}` === campanasContextPeriodo };
+        })
+        .sort((a, b) => a.desde.localeCompare(b.desde));
+      box.classList.toggle('hidden', false);
+      box.innerHTML = 'Períodos guardados: ' + rangos.map(r =>
+        `<button type="button" data-ev="click:setCampanasPeriodo('${r.desde}','${r.hasta}')" class="px-2 py-1 mr-1 mb-1 rounded border text-[11px] font-semibold cursor-pointer ${r.activo ? 'border-indigo-500 bg-indigo-600 text-white' : 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'}">${escapeHtml(etiquetaPeriodo(r))} · $${r.gasto.toFixed(2)}</button>`
+      ).join('');
+    }
+
+    /** Selecciona un período guardado desde la lista y recarga. */
+    function setCampanasPeriodo(desde, hasta) {
+      const d = document.getElementById('campaignPeriodoDesde');
+      const h = document.getElementById('campaignPeriodoHasta');
+      if (d) d.value = String(desde || '').slice(0, 10);
+      if (h) h.value = String(hasta || '').slice(0, 10);
+      loadCampanas();
     }
 
     function recalcCampaignRow(input) {
@@ -5660,11 +6058,12 @@ async function deleteLeadAppointment(id) {
       const monthStr = document.getElementById('campaignMesSel')?.value;
       if (!/^\d{4}-\d{2}$/.test(monthStr || '')) { showToast('Mes no válido', 'warning'); return; }
       // Contexto de fila: el boton guarda el mes y el id renderizados. Si el
-      // mes cambio o llego una carga nueva, no se mezcla el id anterior con
-      // el mes nuevo: se avisa y se recarga.
+      // mes cambió o llego una carga nueva, no se mezcla el id anterior con
+      // el mes nuevo: se avisa y se recarga. Guardar ajuste solo aplica a la
+      // fila en modo ajuste y en vista mes.
       const currentId = campaignStatsMap.get(campaignName)?.id ?? null;
       const wantedId = expectedId == null ? null : Number(expectedId);
-      if ((expectedMonth && expectedMonth !== monthStr) || row.dataset.month !== monthStr || campanasContextMonth !== monthStr || currentId !== wantedId) {
+      if ((expectedMonth && expectedMonth !== monthStr) || row.dataset.month !== monthStr || row.dataset.desde || row.dataset.hasta || campanasContextMonth !== monthStr || campanasContextPeriodo !== '' || currentId !== wantedId || campaignEditMonth !== campaignName) {
         showToast('El mes cambió mientras editabas; recargando la fila', 'warning');
         await loadCampanas();
         return;
@@ -5694,7 +6093,9 @@ async function deleteLeadAppointment(id) {
           showToast(`No se pudo guardar: ${error.message}`, 'error');
           return;
         }
-        showToast('Campaña guardada', 'success');
+        showToast('Ajuste mensual guardado', 'success');
+        // Vuelve a lectura; loadCampanas también lo hace, esto es explícito.
+        campaignEditMonth = null;
         await loadCampanas();
       } catch (error) {
         console.warn('No se pudo guardar la campaña:', error);
@@ -5733,12 +6134,155 @@ async function deleteLeadAppointment(id) {
       }
     }
 
+    // -------------------------------------------------------------
+    // Períodos (campaign_period_stats): alcance/gasto/resultados por rango
+    // Desde/Hasta dentro de un mismo mes. Re-guardar el mismo período exacto
+    // actualiza cifras sin duplicar; el solape lo rechaza el servidor. Editar
+    // una fila de período NO toca la corrección mensual: el mes la muestra y
+    // la divergencia queda a la vista (pista "Períodos (N)").
+    // -------------------------------------------------------------
+    async function saveCampaignPeriodStat(campaignName, expectedDesde, expectedHasta) {
+      if (!canEditCampaigns()) return;
+      if (!supabaseClient || !currentUser || !currentAccess?.activo) return;
+      if (campanasLoading) { showToast('Espera a que terminen de cargar las campañas', 'warning'); return; }
+      // Sin desglose cargado no se guarda: evita escribir sobre datos que no
+      // se están viendo (p. ej. tabla de períodos aún no disponible).
+      if (campaignPeriodosFailed) { showToast('El desglose por períodos no está disponible; recarga la página e inténtalo de nuevo', 'warning'); return; }
+      const row = document.getElementById('campaign_row_' + campaignName);
+      if (!row) return;
+      const desde = document.getElementById('campaignPeriodoDesde')?.value || '';
+      const hasta = document.getElementById('campaignPeriodoHasta')?.value || '';
+      const monthStr = document.getElementById('campaignMesSel')?.value || '';
+      // Contexto de fila: el período y el mes renderizados. Si cambió la vista
+      // o llegó una carga nueva, no se mezclan datos: se avisa y se recarga.
+      if (!expectedDesde || !expectedHasta || row.dataset.desde !== expectedDesde || row.dataset.hasta !== expectedHasta || desde !== expectedDesde || hasta !== expectedHasta || campanasContextPeriodo !== `${expectedDesde}|${expectedHasta}`) {
+        showToast('El período cambió mientras editabas; recargando la fila', 'warning');
+        await loadCampanas();
+        return;
+      }
+      // Validaciones cliente (el servidor las revalida): rango válido y dentro
+      // del mes seleccionado; el solape solo puede detectarlo el servidor.
+      if (!/^\d{4}-\d{2}$/.test(monthStr)) { showToast('Mes no válido', 'warning'); return; }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(desde) || !/^\d{4}-\d{2}-\d{2}$/.test(hasta)) { showToast('Elige Desde y Hasta válidos', 'warning'); return; }
+      if (desde > hasta) { showToast('Desde debe ser anterior o igual a Hasta', 'warning'); return; }
+      if (desde.slice(0, 7) !== monthStr || hasta.slice(0, 7) !== monthStr) {
+        showToast('El período debe quedar dentro del mes seleccionado; regístralo en dos partes si cruza de mes', 'warning');
+        return;
+      }
+      const alcance = parseInt(row.querySelector('[data-field="alcance"]')?.value, 10) || 0;
+      const gasto = parseFloat(row.querySelector('[data-field="gasto"]')?.value) || 0;
+      const resultados = parseInt(row.querySelector('[data-field="resultados"]')?.value, 10) || 0;
+      if (alcance < 0 || gasto < 0 || resultados < 0) { showToast('Valores negativos no permitidos', 'warning'); return; }
+      const generation = sessionGeneration;
+      try {
+        const { error } = await supabaseClient.rpc('upsert_campaign_period_stat', {
+          p_campaign_name: campaignName,
+          p_desde: desde,
+          p_hasta: hasta,
+          p_alcance: alcance,
+          p_gasto: gasto,
+          p_resultados: resultados
+        });
+        if (generation !== sessionGeneration) return;
+        if (error) {
+          console.warn('No se pudo guardar el período:', error);
+          showToast(campañaErrorPeriodo(error.message, `No se pudo guardar: ${error.message}`), 'error');
+          return;
+        }
+        showToast(`Período ${etiquetaPeriodo({ desde, hasta })} guardado`, 'success');
+        await loadCampanas();
+      } catch (error) {
+        console.warn('No se pudo guardar el período:', error);
+        if (generation !== sessionGeneration) return;
+        showToast(`No se pudo guardar: ${error.message}`, 'error');
+      }
+    }
+
+    async function deleteCampaignPeriodStat(id, expectedDesde, expectedHasta) {
+      if (!isAdmin || !supabaseClient || !currentUser || !currentAccess?.activo) return;
+      if (campanasLoading) { showToast('Espera a que terminen de cargar las campañas', 'warning'); return; }
+      const statId = Number(id);
+      if (!Number.isInteger(statId) || statId <= 0) return;
+      const desde = document.getElementById('campaignPeriodoDesde')?.value || '';
+      const hasta = document.getElementById('campaignPeriodoHasta')?.value || '';
+      if (!expectedDesde || !expectedHasta || desde !== expectedDesde || hasta !== expectedHasta || campanasContextPeriodo !== `${expectedDesde}|${expectedHasta}`) {
+        showToast('El período cambió; recargando antes de eliminar', 'warning');
+        await loadCampanas();
+        return;
+      }
+      if (!confirm(`¿Eliminar el período ${etiquetaPeriodo({ desde: expectedDesde, hasta: expectedHasta })} de esta campaña?`)) return;
+      const generation = sessionGeneration;
+      try {
+        const { error } = await supabaseClient.rpc('delete_campaign_period_stat', { p_id: statId });
+        if (generation !== sessionGeneration) return;
+        if (error) {
+          console.warn('No se pudo eliminar el período:', error);
+          showToast(`No se pudo eliminar: ${error.message}`, 'error');
+          return;
+        }
+        showToast('Período eliminado', 'success');
+        await loadCampanas();
+      } catch (error) {
+        console.warn('No se pudo eliminar el período:', error);
+        if (generation !== sessionGeneration) return;
+        showToast(`No se pudo eliminar: ${error.message}`, 'error');
+      }
+    }
+
+    /** Mensaje claro para los errores de validación de períodos del servidor. */
+    function campañaErrorPeriodo(message, fallback) {
+      if (message === 'period_overlap' || /exclusion constraint|no_solape|23P01/i.test(String(message || ''))) return 'El rango se solapa con otro período guardado de esta campaña; ajusta Desde/Hasta o edita el período existente';
+      if (message === 'period_month_required') return 'El período debe quedar dentro de un mismo mes; regístralo en dos partes si cruza de mes';
+      if (message === 'period_range_invalid') return 'Desde debe ser anterior o igual a Hasta';
+      if (message === 'own_campaign_stat_required') return 'Solo un administrador puede editar este período (lo creó otra persona)';
+      return fallback;
+    }
+
+    /** Volver al automático: elimina la corrección mensual manual; el mes
+      * vuelve a ser la suma de períodos. No toca los períodos guardados. */
+    async function resetCampaignStatAuto(campaignName, expectedMonth) {
+      if (!canEditCampaigns()) return;
+      if (!supabaseClient || !currentUser || !currentAccess?.activo) return;
+      if (campanasLoading) { showToast('Espera a que terminen de cargar las campañas', 'warning'); return; }
+      const monthStr = document.getElementById('campaignMesSel')?.value || '';
+      if ((expectedMonth && expectedMonth !== monthStr) || campanasContextMonth !== monthStr || campanasContextPeriodo !== '') {
+        showToast('El mes cambió; recargando antes de reajustar', 'warning');
+        await loadCampanas();
+        return;
+      }
+      const conPeriodos = campaignPeriodRows.some(p => p.campaign_name === campaignName);
+      const detalle = conPeriodos
+        ? `El mes quedará con la suma de sus ${campaignPeriodRows.filter(p => p.campaign_name === campaignName).length} períodos guardados.`
+        : 'Atención: esta campaña no tiene períodos guardados, así que el mes quedará en cero hasta que registres períodos.';
+      if (!confirm(`¿Volver al cálculo automático de ${campaignName}? Se elimina la corrección mensual manual. ${detalle}`)) return;
+      const [y, m] = monthStr.split('-').map(Number);
+      const mesNombre = MONTH_CHRONO[m - 1];
+      const generation = sessionGeneration;
+      try {
+        const { data, error } = await supabaseClient.rpc('reset_campaign_stat_auto', { p_campaign_name: campaignName, p_anio: y, p_mes: mesNombre });
+        if (generation !== sessionGeneration) return;
+        if (error) {
+          console.warn('No se pudo volver al cálculo automático:', error);
+          showToast(error.message === 'own_campaign_stat_required' ? 'Solo un administrador puede reajustar esta fila (la creó otra persona)' : `No se pudo reajustar: ${error.message}`, 'error');
+          return;
+        }
+        showToast(data ? 'Mes vuelto al cálculo automático' : 'No había corrección manual que reajustar', data ? 'success' : 'warning');
+        await loadCampanas();
+      } catch (error) {
+        console.warn('No se pudo volver al cálculo automático:', error);
+        if (generation !== sessionGeneration) return;
+        showToast(`No se pudo reajustar: ${error.message}`, 'error');
+      }
+    }
+
     function exportCampanasCSV() {
       if (!campanasData.length) { showToast('No hay datos para exportar', 'warning'); return; }
       const monthStr = document.getElementById('campaignMesSel')?.value || miamiToday().slice(0, 7);
+      const periodoLabel = campanasVistaPeriodo() ? etiquetaPeriodo(campanasPeriodoSeleccionado()) : '';
       // Las lineas del CSV son puras (src/legacy/reportes.js, fase 22).
-      const lineas = campanasCsvLines(campanasData, monthStr, miamiToday());
-      downloadCSV(lineas.join('\n'), `campanas_${monthStr}.csv`);
+      const lineas = campanasCsvLines(campanasData, monthStr, miamiToday(), periodoLabel);
+      const sufijo = periodoLabel ? `_${periodoLabel.toLowerCase().replace(/[^a-z0-9]+/g, '')}` : '';
+      downloadCSV(lineas.join('\n'), `campanas_${monthStr}${sufijo}.csv`);
       showToast('Campañas exportadas a CSV', 'success');
     }
   
@@ -5766,6 +6310,21 @@ async function deleteLeadAppointment(id) {
       let nombre;
       try { nombre = decodeURIComponent(nombreCodificado); } catch { showToast('Nombre de campana invalido', 'warning'); return; }
       return saveCampaignStat(nombre, mes, id);
+    }
+    function saveCampaignPeriodStatFromData(nombreCodificado, desde, hasta) {
+      let nombre;
+      try { nombre = decodeURIComponent(nombreCodificado); } catch { showToast('Nombre de campana invalido', 'warning'); return; }
+      return saveCampaignPeriodStat(nombre, desde, hasta);
+    }
+    function resetCampaignStatAutoFromData(nombreCodificado, mes) {
+      let nombre;
+      try { nombre = decodeURIComponent(nombreCodificado); } catch { showToast('Nombre de campana invalido', 'warning'); return; }
+      return resetCampaignStatAuto(nombre, mes);
+    }
+    function iniciarAjusteMensualFromData(nombreCodificado) {
+      let nombre;
+      try { nombre = decodeURIComponent(nombreCodificado); } catch { showToast('Nombre de campana invalido', 'warning'); return; }
+      return iniciarAjusteMensual(nombre);
     }
 </script>
   <script type="module" src="/src/legacy/actions.js"></script>

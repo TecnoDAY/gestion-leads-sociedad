@@ -527,7 +527,7 @@ export function gestionesLeadHtml(gestiones) {
 
 /** Cuatro leads recientes del conjunto filtrado; mismo marcado y orden numerico. */
 export function quickLeadsHtml(leads) {
-  const rows = [...leads].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 4);
+  const rows = [...leads].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 8);
   if (!rows.length) {
     return '<div class="quick-leads-empty"><p class="text-sm font-semibold">No hay leads con los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otros criterios o limpia los filtros para ver los registros.</p><button type="button" data-ev="click:resetAllFilters()">Limpiar filtros</button></div>';
   }

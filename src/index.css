@@ -51,6 +51,19 @@
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
     .tabular-nums { font-variant-numeric: tabular-nums; }
     .glass-card { background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(8px); }
+    #viewDashboard .glass-card { background: rgba(30, 41, 59, 0.92); backdrop-filter: blur(6px); }
+    [data-theme="light"] #viewDashboard .glass-card { background: rgba(255, 255, 255, 0.97); }
+    #viewDashboard .dashboard-kpis .metric-card { border-top: 3px solid rgba(148, 163, 184, 0.35); }
+    #viewDashboard .dashboard-kpis .metric-card:nth-child(1) { border-top-color: #3b82f6; }
+    #viewDashboard .dashboard-kpis .metric-card:nth-child(2) { border-top-color: #f59e0b; }
+    #viewDashboard .dashboard-kpis .metric-card:nth-child(3) { border-top-color: #10b981; }
+    #viewDashboard .dashboard-kpis .metric-card:nth-child(4) { border-top-color: #6366f1; }
+    [data-theme="light"] #viewDashboard .priority-btn { color: #111827; font-weight: 600; border-width: 1px; }
+    [data-theme="light"] #viewDashboard .priority-btn:nth-child(1) { background: #e2e8f0; border-color: #94a3b8; }
+    [data-theme="light"] #viewDashboard .priority-btn:nth-child(2) { background: #fef3c7; border-color: #f59e0b; }
+    [data-theme="light"] #viewDashboard .priority-btn:nth-child(3) { background: #d1fae5; border-color: #10b981; }
+    [data-theme="light"] #viewDashboard .priority-btn:nth-child(4) { background: #e0e7ff; border-color: #6366f1; }
+    [data-theme="light"] #viewDashboard .priority-btn:hover { filter: brightness(0.94); }
     body:not(.session-ready) > header, body:not(.session-ready) > div.sticky, body:not(.session-ready) > main, body:not(.session-ready) > footer { display: none; }
     /* Anillo de foco visible al navegar con teclado. !important gana al
        focus:outline-none de Tailwind (foco de 46 controles sin indicador). */
@@ -368,7 +381,7 @@
     .campaigns-controls, .campaigns-table { border: 1px solid #e4e7ec; border-radius: 1rem; background: #fff; box-shadow: 0 8px 28px -24px rgba(15,23,42,.5); }
     .campaigns-controls { padding: 1.25rem; }
     .campaigns-controls label { color: #344054; font-size: .75rem; font-weight: 600; }
-    .campaigns-controls input { min-height: 2.6rem; border: 1px solid #98a2b3; border-radius: .6rem; padding: .55rem .7rem; background: #fff; color: #17203b; }
+    .campaigns-controls input, .campaigns-controls select { min-height: 2.6rem; border: 1px solid #98a2b3; border-radius: .6rem; padding: .55rem .7rem; background: #fff; color: #17203b; }
     .campaigns-summary > div { min-height: 5.5rem; border: 1px solid #e4e7ec; border-radius: .85rem; padding: 1rem; background: #fff; box-shadow: 0 8px 24px -20px rgba(15,23,42,.4); }
     .campaigns-summary > div:first-child { border-color: #c7d2fe; background: #eef2ff; }
     .campaigns-summary strong { display: block; margin-top: .4rem; color: #17203b; font-size: 1.25rem; font-variant-numeric: tabular-nums; }

@@ -3930,7 +3930,6 @@
        const kpiLeadsGestion = document.getElementById('kpiLeadsGestion');
        if (kpiLeadsGestion) kpiLeadsGestion.innerText = m.gestion.toLocaleString();
        document.getElementById('kpiAgendados').innerText = m.agendados.toLocaleString();
-      document.getElementById('kpiAgendadosPct').innerText = `${m.agendadosPct}%`;
        const kpiAgendadosInfo = document.getElementById('kpiAgendadosInfo');
        if (kpiAgendadosInfo) kpiAgendadosInfo.innerText = m.total > 0 ? `${m.agendadosPct}% de los leads` : 'Sin leads';
       document.getElementById('kpiInscritos').innerText = m.inscritos.toLocaleString();

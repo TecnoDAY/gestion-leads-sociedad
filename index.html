@@ -263,18 +263,35 @@
     </section>
 
     <!-- KPI CARDS -->
-    <section class="dashboard-kpis grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <section aria-labelledby="kpiFunnelTitle" class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-800">
+        <h2 id="kpiFunnelTitle" class="dashboard-section-title text-sm sm:text-base font-bold text-white">Resumen del embudo de conversión</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Cifras sobre los registros cargados. Sugerencias y prioridades usan los últimos 2.000.</p>
+      </div>
+      <div class="relative p-4 overflow-hidden">
+        <div class="dashboard-funnel-arrows hidden lg:block pointer-events-none" aria-hidden="true">
+          <span class="dashboard-funnel-arrow" style="left:24.2%;"></span>
+          <span class="dashboard-funnel-arrow" style="left:49.2%;"></span>
+          <span class="dashboard-funnel-arrow" style="left:74.2%;"></span>
+        </div>
+        <section class="dashboard-kpis grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 relative z-10">
       <!-- Total Leads Filtrados -->
       <div class="metric-card glass-card border border-slate-700/80 shadow-sm relative overflow-hidden p-3">
         <div class="flex items-center justify-between text-slate-400">
-          <span class="text-[11px] font-semibold uppercase tracking-wider">Leads visibles</span>
+          <span class="text-[11px] font-semibold uppercase tracking-wider">Total de leads</span>
           <div class="metric-icon bg-blue-500/10 text-blue-400">
             <i data-lucide="users" class="w-4 h-4"></i>
           </div>
         </div>
-        <div class="mt-1 flex items-baseline gap-2">
-          <span id="kpiTotalLeads" class="text-xl sm:text-2xl font-bold font-mono text-white tabular-nums">0</span>
-          <span class="text-[11px] text-slate-400 font-medium" id="kpiTotalSubtitle">Últimos registros ingresados</span>
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <span id="kpiTotalLeads" class="text-3xl sm:text-4xl font-bold font-mono text-white tabular-nums leading-none">0</span>
+            <p class="text-[11px] text-slate-400 mt-1" id="kpiTotalSubtitle">Últimos registros ingresados</p>
+          </div>
+          <div class="space-y-1 text-[11px]">
+            <div class="flex items-center justify-end gap-2"><span class="h-2 w-2 rounded-full bg-emerald-400"></span><span class="text-slate-300">Nuevos: <span id="kpiLeadsNuevos" class="font-semibold text-slate-100">0</span></span></div>
+            <div class="flex items-center justify-end gap-2"><span class="h-2 w-2 rounded-full bg-blue-400"></span><span class="text-slate-300">En gestión: <span id="kpiLeadsGestion" class="font-semibold text-slate-100">0</span></span></div>
+          </div>
         </div>
       </div>
 
@@ -287,9 +304,10 @@
           </div>
         </div>
         <div class="mt-1 flex items-baseline gap-2">
-          <span id="kpiAgendados" class="text-xl sm:text-2xl font-bold font-mono text-amber-400 tabular-nums">0</span>
-          <span class="text-[11px] text-slate-400" id="kpiAgendadosPct">0%</span>
+          <span id="kpiAgendados" class="text-3xl sm:text-4xl font-bold font-mono text-amber-400 tabular-nums leading-none">0</span>
+          <span class="text-[11px] text-slate-400" id="kpiAgendadosInfo">de los leads</span>
         </div>
+        <p class="text-[11px] text-slate-400 mt-1">Agendados sobre leads cargados</p>
       </div>
 
       <!-- Inscritos -->
@@ -301,23 +319,24 @@
           </div>
         </div>
         <div class="mt-1 flex items-baseline gap-2">
-          <span id="kpiInscritos" class="text-xl sm:text-2xl font-bold font-mono text-emerald-400 tabular-nums">0</span>
-          <span class="text-[11px] text-emerald-400/80 font-medium">matriculados</span>
+          <span id="kpiInscritos" class="text-3xl sm:text-4xl font-bold font-mono text-emerald-400 tabular-nums leading-none">0</span>
         </div>
+        <p class="text-[11px] text-slate-400 mt-1">Matriculados confirmados</p>
       </div>
 
       <!-- Tasa de Conversión -->
       <div class="metric-card glass-card border border-slate-700/80 shadow-sm relative overflow-hidden">
         <div class="flex items-center justify-between text-slate-400">
-          <span class="text-xs font-semibold uppercase tracking-wider">Conversión</span>
+          <span class="text-xs font-semibold uppercase tracking-wider">Efectividad global</span>
           <div class="metric-icon bg-indigo-500/10 text-indigo-400">
             <i data-lucide="trending-up" class="w-4 h-4"></i>
           </div>
         </div>
         <div class="mt-1 flex items-baseline gap-2">
-          <span id="kpiConversionRate" class="text-xl sm:text-2xl font-bold font-mono text-indigo-400 tabular-nums">0.0%</span>
-          <span class="text-[11px] text-slate-400">de cierre</span>
+          <span id="kpiConversionRate" class="text-3xl sm:text-4xl font-bold font-mono text-indigo-400 tabular-nums leading-none">0.0%</span>
         </div>
+        <p class="text-[11px] text-slate-400 mt-1">Inscritos sobre leads cargados</p>
+      </div>
       </div>
     </section>
 
@@ -640,7 +659,7 @@
         <!-- Agendados -->
         <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
           <div class="flex items-center justify-between text-slate-400">
-            <span class="text-xs font-semibold uppercase tracking-wider">Agendados</span>
+            <span class="text-xs font-semibold uppercase tracking-wider">Citas agendadas</span>
             <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
               <i data-lucide="calendar-check" class="w-4 h-4"></i>
             </div>
@@ -3906,8 +3925,14 @@
           batchSize: LEADS_BATCH_SIZE,
         });
       }
-      document.getElementById('kpiAgendados').innerText = m.agendados.toLocaleString();
+      const kpiLeadsNuevos = document.getElementById('kpiLeadsNuevos');
+       if (kpiLeadsNuevos) kpiLeadsNuevos.innerText = m.nuevos.toLocaleString();
+       const kpiLeadsGestion = document.getElementById('kpiLeadsGestion');
+       if (kpiLeadsGestion) kpiLeadsGestion.innerText = m.gestion.toLocaleString();
+       document.getElementById('kpiAgendados').innerText = m.agendados.toLocaleString();
       document.getElementById('kpiAgendadosPct').innerText = `${m.agendadosPct}%`;
+       const kpiAgendadosInfo = document.getElementById('kpiAgendadosInfo');
+       if (kpiAgendadosInfo) kpiAgendadosInfo.innerText = m.total > 0 ? `${m.agendadosPct}% de los leads` : 'Sin leads';
       document.getElementById('kpiInscritos').innerText = m.inscritos.toLocaleString();
       document.getElementById('kpiConversionRate').innerText = `${m.conversion}%`;
       document.getElementById('leadsTableCount').innerText = `(${m.total.toLocaleString()})`;

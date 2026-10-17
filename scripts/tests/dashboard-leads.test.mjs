@@ -18,7 +18,7 @@ test('metricasLeads: contadores, conversion y porcentaje con un decimal', () => 
   assert.equal(m.inscritos, 1);
   assert.equal(m.agendadosPct, '50.0');
   assert.equal(m.conversion, '25.0');
-  assert.deepEqual(metricasLeads([]), { total: 0, agendados: 0, inscritos: 0, conversion: '0.0', agendadosPct: '0.0' });
+  assert.deepEqual(metricasLeads([]), { total: 0, agendados: 0, inscritos: 0, nuevos: 0, gestion: 0, conversion: '0.0', agendadosPct: '0.0' });
 });
 
 test('subtituloKpiTotal: mismas ramas y textos', () => {

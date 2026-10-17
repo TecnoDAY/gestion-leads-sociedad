@@ -941,3 +941,40 @@
       [data-theme="light"] #leadsTableBody td::before { color: #475569; }
     }
 
+
+
+.dashboard-funnel-arrows {
+  position: absolute;
+  inset: 0 1rem;
+  z-index: 0;
+}
+
+.dashboard-funnel-arrow {
+  position: absolute;
+  top: 50%;
+  width: 1.5rem;
+  height: 1.5rem;
+  transform: translateY(-50%);
+  color: rgb(99 102 241 / 0.45);
+}
+
+.dashboard-funnel-arrow::before {
+  content: '';
+  position: absolute;
+  inset: 0.65rem 0 0.65rem 0;
+  background: currentColor;
+  border-radius: 9999px;
+}
+
+.dashboard-funnel-arrow::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-top: 0.4rem solid transparent;
+  border-bottom: 0.4rem solid transparent;
+  border-left: 0.55rem solid currentColor;
+  transform: translateY(-50%);
+}

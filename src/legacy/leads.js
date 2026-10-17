@@ -219,10 +219,17 @@ export function metricasLeads(leads) {
   const total = (leads || []).length;
   const agendados = (leads || []).filter(l => getField(l, 'GESTION').toLowerCase().includes('agendad')).length;
   const inscritos = (leads || []).filter(l => getField(l, 'GESTION').toLowerCase().includes('inscrit')).length;
+  const nuevos = (leads || []).filter(l => {
+    const estado = getField(l, 'GESTION').trim().toLowerCase();
+    return estado === '' || estado === 'nuevo' || estado === 'sin gestion' || estado === 'sin gestión';
+  }).length;
+  const gestion = total - nuevos;
   return {
     total,
     agendados,
     inscritos,
+    nuevos,
+    gestion,
     conversion: total > 0 ? ((inscritos / total) * 100).toFixed(1) : '0.0',
     agendadosPct: total > 0 ? ((agendados / total) * 100).toFixed(1) : '0.0',
   };

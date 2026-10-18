@@ -1,8 +1,9 @@
 // @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.1';
 
+const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || '*';
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': allowedOrigin,
   'Access-Control-Allow-Headers': 'content-type, x-hub-signature-256',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };

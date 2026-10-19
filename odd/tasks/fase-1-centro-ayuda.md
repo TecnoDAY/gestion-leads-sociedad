@@ -69,6 +69,8 @@ estatico, buscable y sin red: ideal para validar el ciclo completo
   qa-gate, git diff --check.
 - [x] T6: ZAP pasivo contra http://localhost:3001 (autorizado por el humano)
   y revision de las 3 alertas Medium con clasificacion dev/produccion.
+- [x] T7: Entrega y cierre de la fase 2: commits, push, prueba visual del
+  humano y gate final en verde.
 
 ## Criterios de aceptacion
 
@@ -152,10 +154,22 @@ Ninguna alerta fue introducida por la extraccion del Centro de ayuda.
 
 ## Progreso
 
-- Estado: completada y cerrada (pendiente commit bajo orden explicita)
-- Ultima tarea: T6 (revision ZAP) verificada; SQL embebido clasificado como
-  riesgo aceptado por el humano
-- Siguiente paso: commit de la fase 1 cuando el humano lo autorice; luego
-  Fase 2 (prueba en navegador con distintos tamanos + despliegue de prueba)
-  o siguiente modulo
+- Estado: completada y cerrada; fase 2 (verificacion y entrega) tambien
+  cerrada
+- Ultima tarea: T7 entregada
+- Siguiente paso: fase 3 (replicar el ciclo con otra zona de riesgo bajo-medio
+  segun el plan aprobado)
 - Bloqueos: ninguno
+
+### Entrega — fase 2 (T7)
+
+- Commits: 89f4a42 (doc fase 0) y 606bd77 (extraccion + tests + ODD), push a
+  origin/phase-0-baseline para despliegue de prueba (preview Vercel via
+  dashboard; CLI no disponible).
+- Prueba visual responsive: confirmada por el humano ("todo funciona bien
+  visualmente").
+- Gate final sobre el arbol commiteado: 408/408 node + 11 python OK, tsc +
+  check-app OK, build OK (dist autocontenido 809 kB), smoke localhost:3001
+  (raiz 200, /src/legacy/help.js 200), ZAP pasivo idle 0 pendientes.
+- Nota: aparece un fichero sin rastrear opencode.json.bak (backup ajeno a la
+  fase); no se incluye ni se toca.

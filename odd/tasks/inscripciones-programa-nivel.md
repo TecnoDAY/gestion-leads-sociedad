@@ -123,9 +123,9 @@ propio en `scripts/tests/inscripciones.test.mjs`). Runner: `npm test`.
 - Los reportes existentes no cambian sus totales.
 
 ## Verificacion
-- `npm test`: 714 Node (712 pasan; 2 fallos preexistentes y ajenos a esta
-  feature: `openDashboardAppointmentsDetail` y el aviso `aria-live` del
-  reporte) + 22 Python OK.
+- `npm test`: 714 Node (pasan todos) + 22 Python OK. Los dos fallos que
+  arrastraban (`openDashboardAppointmentsDetail` y el aviso `aria-live` del
+  reporte) quedaron corregidos aparte.
 - `npm run check:app` OK; `npm run build` OK.
 - Remoto: tabla, RPC, indice unico parcial, politica RLS y permisos verificados
   con consultas de solo lectura; la RPC falla cerrado sin sesion CRM.

@@ -213,6 +213,7 @@
            </div>
          </div>
        </header>
+      <p id="reporteAviso" role="status" aria-live="polite" class="text-xs text-slate-500"></p>
       <div id="reporteAuto" class="space-y-3"></div>
       </div>
       <section id="reportePeriodo" class="hidden space-y-4" aria-label="Reporte por período">
@@ -4186,12 +4187,14 @@
       const resultado = document.getElementById('citasResultado');
       const sede = document.getElementById('citasSede');
       const campana = document.getElementById('citasCampana');
+      const medio = document.getElementById('citasMedio');
       const asesor = document.getElementById('citasAsesor');
       if (desde) desde.value = miamiToday();
       if (hasta) hasta.value = '';
       if (resultado) resultado.value = 'PROGRAMADA';
       if (sede) sede.value = '';
       if (campana) campana.value = '';
+      if (medio) medio.value = '';
       if (asesor) asesor.value = '';
       // Entrar en Lista evita que el calendario reemplace el rango abierto
       // "desde hoy" por el rango de la semana visible.

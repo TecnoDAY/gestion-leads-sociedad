@@ -16,3 +16,4 @@ supabase/.temp/
 __pycache__/
 *.pyc
 deno.lock
+.vercel

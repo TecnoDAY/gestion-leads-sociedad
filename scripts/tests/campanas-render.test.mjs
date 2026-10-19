@@ -18,6 +18,7 @@ test('campanasDeFuentes: universo unico catalogo+rollup+stats con mapeo exacto',
   const kids = rows.find(r => r.name === 'Kids');
   assert.deepEqual(kids, {
     name: 'Kids', stat_id: 7, estado: 'pausada', alcance: 1000, gasto: 250.5, resultados: 5,
+    periodos_alcance: 0, periodos_gasto: 0, periodos_resultados: 0, periodos_count: 0,
     leads_nuevos: 10, agendados: 4, asistieron: 3, inscritos: 2, agendados_previos: 1, pendientes: 5,
   });
   const verano = rows.find(r => r.name === 'Verano');
@@ -32,21 +33,41 @@ test('campanasDeFuentes: universo unico catalogo+rollup+stats con mapeo exacto',
 
 const fila = { name: 'Kids & "Sala"', stat_id: 7, estado: 'pausada', alcance: 1000, gasto: 250.5, resultados: 5, leads_nuevos: 10, agendados: 4, asistieron: 3, inscritos: 2, agendados_previos: 1, pendientes: 5 };
 
-test('filaCampanaHtml: editor con inputs y botones, lectura con spans', () => {
-  const editor = filaCampanaHtml(fila, { esEditor: true, isAdmin: true, monthStr: '2026-10' });
-  assert.match(editor, /data-field="alcance" value="1000"/);
-  assert.match(editor, /data-ev="input:recalcCampaignRow\(this\)"/);
-  assert.match(editor, /data-ev="click:saveCampaignStatFromData\('Kids%20%26%20%22Sala%22','2026-10',7\)"/);
-  assert.match(editor, /data-ev="click:deleteCampaignStat\(7,'2026-10'\)"/);
-  assert.match(editor, /<option value="pausada" selected>/);
-  assert.match(editor, /data-field="coste">50.10</, 'coste = gasto/resultados');
-  const lector = filaCampanaHtml(fila, { esEditor: false, isAdmin: false, monthStr: '2026-10' });
-  assert.doesNotMatch(lector, /saveCampaignStatFromData|deleteCampaignStat|recalcCampaignRow/);
-  assert.match(lector, /<span class="font-mono">1000<\/span>/);
-  // sin stat no hay boton de borrar (ni en admin)
-  const sinStat = filaCampanaHtml({ ...fila, stat_id: null }, { esEditor: true, isAdmin: true, monthStr: '2026-10' });
-  assert.doesNotMatch(sinStat, /deleteCampaignStat/);
+test('filaCampanaHtml: mes en lectura por defecto; ajuste habilita solo esa fila', () => {
+  // Lectura por defecto en vista mes (esEditor=true): spans y botón Ajustar.
+  const lectura = filaCampanaHtml(fila, { esEditor: true, isAdmin: true, monthStr: '2026-10' });
+  assert.match(lectura, /<span class="font-mono">1000<\/span>/);
+  assert.match(lectura, /data-ev="click:iniciarAjusteMensualFromData\('Kids%20%26%20%22Sala%22'\)"/);
+  assert.match(lectura, /Mensual ajustado/, 'con fila manual muestra el chip');
+  assert.match(lectura, /data-ev="click:resetCampaignStatAutoFromData\('Kids%20%26%20%22Sala%22','2026-10'\)"/);
+  assert.match(lectura, /data-ev="click:deleteCampaignStat\(7,'2026-10'\)"/);
+  assert.doesNotMatch(lectura, /data-field="estado"|recalcCampaignRow|saveCampaignStatFromData/);
+  // Modo ajuste: SOLO esa fila tiene inputs, Guardar ajuste y Cancelar.
+  const ajuste = filaCampanaHtml(fila, { esEditor: true, isAdmin: true, monthStr: '2026-10', editandoMensual: 'Kids & "Sala"' });
+  assert.match(ajuste, /data-field="alcance" value="1000"/);
+  assert.match(ajuste, /data-ev="input:recalcCampaignRow\(this\)"/);
+  assert.match(ajuste, /data-ev="click:saveCampaignStatFromData\('Kids%20%26%20%22Sala%22','2026-10',7\)"/);
+  assert.match(ajuste, /Guardar ajuste/);
+  assert.match(ajuste, /data-ev="click:cancelarAjusteMensual\(\)"/);
+  assert.match(ajuste, /<option value="pausada" selected>/);
+  assert.doesNotMatch(ajuste, /iniciarAjusteMensualFromData|Mensual ajustado|deleteCampaignStat|resetCampaignStatAutoFromData/);
+  assert.match(ajuste, /data-field="coste">50\.10</, 'coste = gasto/resultados');
+  // Sin stat_id el guardado crea la fila manual (id null) y no hay chip ni reajuste.
+  const sinStat = filaCampanaHtml({ ...fila, stat_id: null }, { esEditor: true, isAdmin: true, monthStr: '2026-10', editandoMensual: 'Kids & "Sala"' });
   assert.match(sinStat, /saveCampaignStatFromData\('Kids%20%26%20%22Sala%22','2026-10',null\)/);
+  const sinStatLectura = filaCampanaHtml({ ...fila, stat_id: null }, { esEditor: true, isAdmin: true, monthStr: '2026-10' });
+  assert.doesNotMatch(sinStatLectura, /Mensual ajustado|resetCampaignStatAutoFromData|deleteCampaignStat/);
+  // Lector puro: sin ningún botón.
+  const lector = filaCampanaHtml(fila, { esEditor: false, isAdmin: false, monthStr: '2026-10' });
+  assert.doesNotMatch(lector, /iniciarAjusteMensual|saveCampaignStatFromData|deleteCampaignStat|resetCampaignStatAutoFromData|cancelarAjusteMensual/);
+  // Sin períodos disponibles y sin fila manual: Meta no calculable, sin botón de ajuste.
+  const incompleta = filaCampanaHtml({ ...fila, stat_id: null, alcance: null, gasto: null, resultados: null, periodos_count: 0 }, { esEditor: true, isAdmin: true, monthStr: '2026-10', periodosDisponibles: false });
+  assert.match(incompleta, /<span class="font-mono">—<\/span>/);
+  assert.doesNotMatch(incompleta, /iniciarAjusteMensualFromData/);
+  // Con fila manual y períodos caídos: valores manuales completos y ajuste permitido.
+  const manualOk = filaCampanaHtml(fila, { esEditor: true, isAdmin: true, monthStr: '2026-10', periodosDisponibles: false });
+  assert.match(manualOk, /iniciarAjusteMensualFromData/);
+  assert.doesNotMatch(manualOk, /Períodos \(/, 'sin datos de períodos no hay pista de suma');
 });
 
 test('resumen, total y estado vacio', () => {

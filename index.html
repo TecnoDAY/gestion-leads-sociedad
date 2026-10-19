@@ -5682,7 +5682,7 @@ async function deleteLeadAppointment(id) {
       const g = data.gestiones, q = data.canales, c = data.citas;
       const porEstadoOrdenado = [...g.por_estado].sort((a, b) => compareAlphaEs(a.label, b.label));
       const porEstado = porEstadoOrdenado.length ? `<section class="period-card"><div class="flex items-center gap-1.5 mb-1"><h3 class="font-bold text-indigo-900">Gestiones por estado${periodoTip('estadoTabla')}</h3></div><p class="text-xs text-slate-600 mb-2"><strong>Leads únicos</strong> cuenta personas distintas. <strong>Total de gestiones</strong> suma todos los intentos. Un mismo lead puede repetirse en varios estados, por eso la columna de leads únicos no se debe sumar.</p><div class="overflow-x-auto"><table class="period-table period-state-table"><thead><tr><th scope="col">Estado</th><th scope="col">Leads únicos${periodoTip('leadsUnicos')}</th><th scope="col">Total de gestiones${periodoTip('totalGestiones')}</th></tr></thead><tbody>${porEstadoOrdenado.map(r => `<tr><th scope="row">${escapeHtml(r.label)}</th><td>${r.leads}</td><td>${r.eventos}</td></tr>`).join('')}</tbody></table></div></section>` : '';
-      return `<div class="border-t-2 border-indigo-600 pt-3"><h2 class="text-lg font-bold text-indigo-900">Actividad realizada en el período${periodoTip('actividad')}</h2><p class="text-xs text-slate-500 mb-2">Gestiones por día trabajado y citas por fecha programada (Miami). Independiente de los cuadros de entrada.</p></div>`
+      return `<div class="border-t-2 border-indigo-600 pt-3"><div class="flex items-center justify-between gap-2 flex-wrap"><h2 class="text-lg font-bold text-indigo-900">Actividad realizada en el período${periodoTip('actividad')}</h2><button type="button" id="periodoBtnGestionesCsv" data-ev="click:exportPeriodoGestionesCSV()" class="rounded bg-slate-700 text-white px-3 py-1.5 text-xs">Descargar gestiones CSV</button></div><p class="text-xs text-slate-500 mb-2">Gestiones por día trabajado y citas por fecha programada (Miami). Independiente de los cuadros de entrada.</p></div>`
         + `<div class="grid md:grid-cols-3 gap-4">`
         + table('Gestiones', row('Leads únicos gestionados', g.leads_unicos) + row('Pasados a Agendado', g.agendados_normales) + row('Pasados a Agendado Data Dura', g.agendados_data_dura) + row('Pasados a Inscrito', g.inscritos_normales) + row('Pasados a Inscrito Data Dura', g.inscritos_data_dura) + row('Total de gestiones', g.total_eventos), 'gestiones')
         + table('Canales', row('Llamada y WhatsApp', q.llamada_whatsapp) + row('Llamadas', q.llamadas_normales) + row('Llamadas Data Dura', q.llamadas_data_dura) + row('Otros/sin canal', q.otros) + row('WhatsApp', q.whatsapp), 'canales')
@@ -5708,6 +5708,61 @@ async function deleteLeadAppointment(id) {
       const lines = periodoCsvLines(d, a, miamiToday());
       downloadCSV(lines.join('\n'), `Reporte_Periodo_${d.desde}_${d.hasta}.csv`);
       showToast('Reporte por período exportado a CSV', 'success');
+    }
+
+    async function exportPeriodoGestionesCSV() {
+      if (!currentUser || !currentAccess?.activo || reporteVistaActiva !== 'periodo' || currentMainTab !== 'reporte' || !periodoData || periodoLoadedKey !== periodoRangeKey()) { showToast('El reporte no está cargado o el rango cambió. Actualiza antes de exportar.', 'warning'); return; }
+      if (periodoLoadedRevision !== periodoSourceRevision) { showToast('Los datos cambiaron y el reporte se está actualizando. Espera un momento y vuelve a intentarlo.', 'warning'); updatePeriodoCsvState(); return; }
+      if (isTrafficker) { showToast('Tu usuario no tiene permiso para este detalle.', 'warning'); return; }
+      const btn = document.getElementById('periodoBtnGestionesCsv');
+      const prev = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = 'Descargando…'; }
+      const d = periodoData;
+      try {
+        const { data: gestiones, error } = await supabaseClient
+          .from('lead_gestiones')
+          .select('id, lead_id, fecha_gestion, gestion_anterior, gestion_nueva, canal, autor_name, autor_user_id, is_data_dura, created_at')
+          .gte('fecha_gestion', d.desde)
+          .lte('fecha_gestion', d.hasta)
+          .order('fecha_gestion', { ascending: true });
+        if (error) throw error;
+        if (!gestiones || gestiones.length === 0) { showToast('No hay gestiones en este período.', 'info'); return; }
+        const ids = [...new Set(gestiones.map(g => g.lead_id))];
+        const { data: leads, error: leadsError } = await supabaseClient
+          .from('leads')
+          .select('id, "Nombre", "Telefono", "AGENTE", "OBSERVACIONES "')
+          .in('id', ids);
+        if (leadsError) throw leadsError;
+        const leadMap = new Map((leads || []).map(l => [String(l.id), l]));
+        const rows = gestiones.map(g => {
+          const l = leadMap.get(String(g.lead_id)) || {};
+          let hora = '';
+          if (g.created_at) {
+            try { hora = new Date(g.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'America/New_York' }); } catch (e) { hora = ''; }
+          }
+          return {
+            fecha: g.fecha_gestion,
+            hora,
+            nombre: getField(l, 'Nombre'),
+            telefono: getField(l, 'Telefono'),
+            asesoraGestion: g.autor_name || '',
+            asesoraAsignada: getField(l, 'AGENTE'),
+            canal: g.canal || '',
+            dataDura: g.is_data_dura === true ? 'Sí' : (g.is_data_dura === false ? 'No' : ''),
+            gestionAnterior: g.gestion_anterior || '',
+            gestionNueva: g.gestion_nueva || '',
+            observaciones: getField(l, 'OBSERVACIONES '),
+          };
+        });
+        const detailLines = periodoGestionesCsvLines(rows, miamiToday());
+        downloadCSV(detailLines.join('\n'), `Gestiones_Periodo_${d.desde}_${d.hasta}.csv`);
+        showToast(`${rows.length} gestiones exportadas a CSV`, 'success');
+      } catch (e) {
+        console.warn('No se pudo exportar el detalle de gestiones:', e);
+        showToast('No se pudo exportar el detalle de gestiones.', 'warning');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = prev || 'Descargar gestiones CSV'; }
+      }
     }
 
     // Traduccion de errores tecnicos de las RPC de notas a mensajes comprensibles.

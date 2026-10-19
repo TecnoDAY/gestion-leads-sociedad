@@ -976,7 +976,29 @@ export function periodoCsvLines(summary, actividad, generado) {
   return lines;
 }
 
-/** Columnas numericas del CSV diario, alineadas con DIARIO_HEADERS. */
+/**
+ * Lineas CSV del detalle de gestiones del período: una fila por gestion con
+ * fecha, hora, nombre, telefono (como texto), asesora que gestiono, asesora
+ * asignada, canal, data dura, gestion anterior/nueva y observaciones.
+ * @param {Array<object>} rows Filas ya armadas (ver exportReportePeriodoCSV).
+ * @param {string} generado Fecha Miami del momento.
+ * @returns {string[]} Lineas de texto (unir con \\n para downloadCSV).
+ */
+export function periodoGestionesCsvLines(rows, generado) {
+  const lines = [], row = values => lines.push(values.map(csvReporteField).join(','));
+  row(['Detalle de gestiones del período']);
+  row(['Generado (Miami)', generado]);
+  row([]);
+  row(['Fecha', 'Hora', 'Nombre', 'Teléfono', 'Asesora gestión', 'Asesora asignada', 'Canal', 'Data Dura', 'Gestión anterior', 'Gestión nueva', 'Observaciones']);
+  (rows || []).forEach(r => row([
+    r.fecha, r.hora, r.nombre,
+    // Prefijo apóstrofe para que Excel conserve el teléfono como texto.
+    r.telefono ? "'" + r.telefono : '',
+    r.asesoraGestion, r.asesoraAsignada, r.canal, r.dataDura,
+    r.gestionAnterior, r.gestionNueva, r.observaciones
+  ]));
+  return lines;
+}
 const DIARIO_KEYS = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosDoral', 'agendadosDoralDura', 'agendadosWeston', 'agendadosWestonDura', 'agendadosTotal', 'reprogramadasHoy', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'agendadosGestionadosDia', 'agendadosGestionadosDura', 'whatsappNuevos', 'detalleGestionados', 'detalleTotal', 'llamadasNuevos', 'llamadasGestionados', 'llamadasDetalleTotal', 'canalInstagram', 'canalesOtros', 'canalesTotal'];
 
 /** 'Otros o sin canal': buckets retirados de pantalla, juntos. */
@@ -1415,5 +1437,5 @@ if (typeof window !== 'undefined') {
   window.totalCampanasHtml = totalCampanasHtml;
   window.campanasCsvLines = campanasCsvLines;
   window.historicalFilterOptions = historicalFilterOptions;
-  window.totalCanalesVisibles = totalCanalesVisibles;
+  window.periodoGestionesCsvLines = periodoGestionesCsvLines;
 }

@@ -197,22 +197,22 @@
       <div class="report-viewbar"><div><h2 class="text-sm font-bold text-slate-800">Reportes del equipo</h2><p class="text-xs text-slate-500">Consulta el trabajo diario o analiza un período.</p></div><label class="flex items-center gap-2">Vista del reporte
         <select id="reporteVista" data-ev="change:setReporteVista(this.value)"><option value="diario">Diario</option><option value="periodo">Por período</option></select>
       </label></div>
-      <div id="reporteDiarioVista" class="space-y-5">
+      <div id="reporteDiarioVista" class="space-y-3">
       <header class="report-intro">
-        <div class="relative z-10 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <span class="dashboard-eyebrow"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Actividad del equipo</span>
-            <div class="mt-2 flex items-center gap-2"><h1 class="text-2xl font-bold text-indigo-900">Reporte diario de trabajo</h1><button type="button" data-ev="click:openHelpModal('ayuda-reporte-diario')" title="Ayuda: reporte diario" aria-label="Ayuda sobre el reporte diario" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 hover:bg-indigo-600 text-[11px] font-bold text-slate-700 hover:text-white cursor-pointer shrink-0">?</button></div>
-            <p id="reporteFechaTexto" class="mt-1 text-sm text-slate-600"></p>
-          </div>
-          <div class="flex flex-wrap gap-3 items-end">
-            <label>Fecha <input id="reporteFecha" type="date" data-ev="change:loadReporteDiario()" class="block mt-1"></label>
-            <label>Asesora <select id="reporteAsesora" data-ev="change:loadReporteDiario()" class="block mt-1"><option value="">Todas las asesoras</option></select></label>
-            <button type="button" id="reporteBtnCsv" data-ev="click:exportReporteDiarioCSV()" class="inline-flex items-center gap-2 rounded-md px-3 py-1.5 bg-slate-700 text-white text-sm font-semibold hover:bg-indigo-600 cursor-pointer"><i data-lucide="download" class="w-4 h-4"></i> Descargar CSV</button>
-          </div>
-        </div>
-      </header>
-      <p id="reporteAviso" role="status" aria-live="polite" class="text-xs text-slate-500">Los cambios en Problemas y Observaciones se guardan por asesora y fecha (zona horaria de Miami).</p>
+         <div class="relative z-10 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+           <div class="flex flex-wrap items-center gap-2">
+             <span class="dashboard-eyebrow"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Actividad del equipo</span>
+             <h1 class="text-xl font-bold text-indigo-900">Reporte diario de trabajo</h1>
+             <button type="button" data-ev="click:openHelpModal('ayuda-reporte-diario')" title="Ayuda: reporte diario" aria-label="Ayuda sobre el reporte diario" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 hover:bg-indigo-600 text-[11px] font-bold text-slate-700 hover:text-white cursor-pointer shrink-0">?</button>
+             <p id="reporteFechaTexto" class="text-sm text-slate-600"></p>
+           </div>
+           <div class="flex flex-wrap gap-2 items-end">
+             <label class="text-xs">Fecha <input id="reporteFecha" type="date" data-ev="change:loadReporteDiario()" class="block mt-0.5"></label>
+             <label class="text-xs">Asesora <select id="reporteAsesora" data-ev="change:loadReporteDiario()" class="block mt-0.5"><option value="">Todas las asesoras</option></select></label>
+             <button type="button" id="reporteBtnCsv" data-ev="click:exportReporteDiarioCSV()" class="inline-flex items-center gap-2 rounded-md px-3 py-1.5 bg-slate-700 text-white text-sm font-semibold hover:bg-indigo-600 cursor-pointer"><i data-lucide="download" class="w-4 h-4"></i> Descargar CSV</button>
+           </div>
+         </div>
+       </header>
       <div id="reporteAuto" class="space-y-3"></div>
       </div>
       <section id="reportePeriodo" class="hidden space-y-4" aria-label="Reporte por período">

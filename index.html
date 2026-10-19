@@ -580,11 +580,11 @@
 
       <!-- Header & Filtros Históricos -->
       <div class="historical-intro">
-        <div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="chart-no-axes-combined" class="w-3.5 h-3.5"></i> Análisis histórico</span><h2 class="mt-3 text-2xl font-bold text-white">Resultados a lo largo del tiempo</h2><p class="mt-1 text-sm text-slate-400">Explora la captación, las inscripciones y el rendimiento de tus campañas.</p></div>
+        <div class="relative z-10 flex flex-wrap items-center gap-2"><span class="dashboard-eyebrow"><i data-lucide="chart-no-axes-combined" class="w-3.5 h-3.5"></i> Análisis histórico</span><h2 class="mt-1 text-xl font-bold text-white">Resultados a lo largo del tiempo</h2><p class="mt-0 text-xs text-slate-400">Explora la captación, las inscripciones y el rendimiento de tus campañas.</p></div>
       </div>
       <p id="historicalLoadingStatus" class="historical-loading-status" role="status" aria-live="polite"></p>
       <div class="historical-filters">
-        <div class="mb-3"><h3 class="text-sm font-bold text-white">Explorar resultados</h3><p class="text-xs text-slate-400">Selecciona campaña, asesor y período para actualizar los gráficos.</p></div>
+        <div class="mb-1.5"><h3 class="text-sm font-bold text-white">Explorar resultados</h3><p class="text-xs text-slate-400">Selecciona campaña, asesor y período para actualizar los gráficos.</p></div>
 
         <!-- Controles rápidos del histórico -->
         <div class="historical-filter-grid">
@@ -641,86 +641,86 @@
       </div>
 
       <!-- KPIS HISTÓRICOS ACUMULADOS -->
-      <section class="historical-kpis grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <section class="historical-kpis grid grid-cols-2 lg:grid-cols-3 gap-2.5">
         <!-- Total Histórico -->
-        <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+        <div class="glass-card rounded-xl p-2.5 border border-slate-700/80 shadow-sm relative overflow-hidden">
           <div class="flex items-center justify-between text-slate-400">
             <span class="text-xs font-semibold uppercase tracking-wider">Leads Históricos</span>
-            <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400">
-              <i data-lucide="database" class="w-4 h-4"></i>
+            <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+              <i data-lucide="database" class="w-3.5 h-3.5"></i>
             </div>
           </div>
-          <div class="mt-2 flex items-baseline gap-2">
-            <span id="histKpiTotalLeads" class="text-2xl sm:text-3xl font-bold font-mono text-white tabular-nums">0</span>
+          <div class="mt-1 flex items-baseline gap-2">
+            <span id="histKpiTotalLeads" class="text-xl sm:text-2xl font-bold font-mono text-white tabular-nums">0</span>
             <span class="text-xs text-slate-400">total filtrado</span>
           </div>
         </div>
 
         <!-- Agendados -->
-        <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+        <div class="glass-card rounded-xl p-2.5 border border-slate-700/80 shadow-sm relative overflow-hidden">
           <div class="flex items-center justify-between text-slate-400">
             <span class="text-xs font-semibold uppercase tracking-wider">Citas agendadas</span>
-            <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
-              <i data-lucide="calendar-check" class="w-4 h-4"></i>
+            <div class="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
+              <i data-lucide="calendar-check" class="w-3.5 h-3.5"></i>
             </div>
           </div>
-          <div class="mt-2 flex items-baseline gap-2">
-            <span id="histKpiAgendados" class="text-2xl sm:text-3xl font-bold font-mono text-amber-400 tabular-nums">0</span>
+          <div class="mt-1 flex items-baseline gap-2">
+            <span id="histKpiAgendados" class="text-xl sm:text-2xl font-bold font-mono text-amber-400 tabular-nums">0</span>
             <span class="text-xs text-amber-400/80 font-medium">citas</span>
           </div>
         </div>
 
         <!-- Inscripciones Totales -->
-        <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+        <div class="glass-card rounded-xl p-2.5 border border-slate-700/80 shadow-sm relative overflow-hidden">
           <div class="flex items-center justify-between text-slate-400">
             <span class="text-xs font-semibold uppercase tracking-wider">Total Inscritos</span>
-            <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
-              <i data-lucide="award" class="w-4 h-4"></i>
+            <div class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
+              <i data-lucide="award" class="w-3.5 h-3.5"></i>
             </div>
           </div>
-          <div class="mt-2 flex items-baseline gap-2">
-            <span id="histKpiInscritos" class="text-2xl sm:text-3xl font-bold font-mono text-emerald-400 tabular-nums">0</span>
+          <div class="mt-1 flex items-baseline gap-2">
+            <span id="histKpiInscritos" class="text-xl sm:text-2xl font-bold font-mono text-emerald-400 tabular-nums">0</span>
             <span class="text-xs text-emerald-400/80 font-medium">cerrados</span>
           </div>
         </div>
 
         <!-- No Contesta -->
-        <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+        <div class="glass-card rounded-xl p-2.5 border border-slate-700/80 shadow-sm relative overflow-hidden">
           <div class="flex items-center justify-between text-slate-400">
             <span class="text-xs font-semibold uppercase tracking-wider">No Contesta</span>
-            <div class="p-2 rounded-lg bg-rose-500/10 text-rose-400">
-              <i data-lucide="phone-off" class="w-4 h-4"></i>
+            <div class="p-1.5 rounded-lg bg-rose-500/10 text-rose-400">
+              <i data-lucide="phone-off" class="w-3.5 h-3.5"></i>
             </div>
           </div>
-          <div class="mt-2 flex items-baseline gap-2">
-            <span id="histKpiNoContesta" class="text-2xl sm:text-3xl font-bold font-mono text-rose-400 tabular-nums">0</span>
+          <div class="mt-1 flex items-baseline gap-2">
+            <span id="histKpiNoContesta" class="text-xl sm:text-2xl font-bold font-mono text-rose-400 tabular-nums">0</span>
             <span class="text-xs text-rose-400/80 font-medium">sin respuesta</span>
           </div>
         </div>
 
         <!-- Conversión Global -->
-        <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+        <div class="glass-card rounded-xl p-2.5 border border-slate-700/80 shadow-sm relative overflow-hidden">
           <div class="flex items-center justify-between text-slate-400">
             <span class="text-xs font-semibold uppercase tracking-wider">Tasa Conversión Global</span>
-            <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
-              <i data-lucide="percent" class="w-4 h-4"></i>
+            <div class="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+              <i data-lucide="percent" class="w-3.5 h-3.5"></i>
             </div>
           </div>
-          <div class="mt-2 flex items-baseline gap-2">
-            <span id="histKpiConversion" class="text-2xl sm:text-3xl font-bold font-mono text-indigo-400 tabular-nums">0.0%</span>
+          <div class="mt-1 flex items-baseline gap-2">
+            <span id="histKpiConversion" class="text-xl sm:text-2xl font-bold font-mono text-indigo-400 tabular-nums">0.0%</span>
             <span class="text-xs text-slate-400">promedio</span>
           </div>
         </div>
 
         <!-- Mes Récord -->
-        <div class="glass-card rounded-xl p-4 border border-slate-700/80 shadow-sm relative overflow-hidden">
+        <div class="glass-card rounded-xl p-2.5 border border-slate-700/80 shadow-sm relative overflow-hidden">
           <div class="flex items-center justify-between text-slate-400">
             <span class="text-xs font-semibold uppercase tracking-wider">Mes Récord</span>
-            <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
-              <i data-lucide="trophy" class="w-4 h-4"></i>
+            <div class="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
+              <i data-lucide="trophy" class="w-3.5 h-3.5"></i>
             </div>
           </div>
-          <div class="mt-2 flex items-baseline gap-2">
+          <div class="mt-1 flex items-baseline gap-2">
             <span id="histKpiRecordMonth" class="text-xl sm:text-2xl font-bold text-amber-400 truncate">-</span>
             <span class="text-xs text-slate-400" id="histKpiRecordCount">0 leads</span>
           </div>
@@ -728,11 +728,11 @@
       </section>
 
       <!-- GRÁFICO 1: EVOLUCIÓN MENSUAL HISTÓRICA (LEADS VS INSCRITOS) -->
-      <div class="historical-chart-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+      <div class="historical-chart-card rounded-2xl p-3 border border-slate-700/80 shadow-sm space-y-2">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-              <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-400"></i>
+              <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-indigo-400"></i>
               <span>Evolución Mensual de Captación y Cierres</span>
             </h3>
             <p class="text-xs text-slate-400">Comparativa mes a mes del total de leads recibidos frente a alumnos inscritos</p>
@@ -746,43 +746,43 @@
             </span>
           </div>
         </div>
-        <div class="historical-chart-scroll"><div class="relative w-full h-72 sm:h-80">
+        <div class="historical-chart-scroll"><div class="relative w-full h-60 sm:h-64">
           <canvas id="chartMonthlyEvolution"></canvas>
         </div>
         </div>
       </div>
 
       <!-- FILA DE 2 GRÁFICOS: TASA CONVERSIÓN & CAMPANAS -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- Gráfico 2: Tasa de Conversión Mensual (%) -->
-        <div class="historical-chart-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+        <div class="historical-chart-card rounded-2xl p-3 border border-slate-700/80 shadow-sm space-y-2">
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
+                <i data-lucide="trending-up" class="w-3.5 h-3.5 text-emerald-400"></i>
                 <span>Tendencia de Conversión Mensual (%)</span>
               </h3>
               <p class="text-xs text-slate-400">Porcentaje de leads convertidos en matrícula cada mes</p>
             </div>
           </div>
-          <div class="historical-chart-scroll"><div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-56">
             <canvas id="chartConversionTrend"></canvas>
           </div>
           </div>
         </div>
 
         <!-- Gráfico 3: Inscritos y Leads por Campaña -->
-        <div class="historical-chart-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+        <div class="historical-chart-card rounded-2xl p-3 border border-slate-700/80 shadow-sm space-y-2">
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <i data-lucide="pie-chart" class="w-4 h-4 text-amber-400"></i>
+                <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-amber-400"></i>
                 <span>Rendimiento por Campaña</span>
               </h3>
               <p class="text-xs text-slate-400">Volumen de leads e inscripciones por programa</p>
             </div>
           </div>
-          <div class="historical-chart-scroll"><div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-56">
             <canvas id="chartCampaignPerformance"></canvas>
           </div>
           </div>
@@ -790,35 +790,35 @@
       </div>
 
       <!-- FILA DE 2 GRÁFICOS: MEDIOS & AGENTES -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- Gráfico 4: Canales de Captación / Medios -->
-        <div class="historical-chart-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+        <div class="historical-chart-card rounded-2xl p-3 border border-slate-700/80 shadow-sm space-y-2">
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <i data-lucide="share-2" class="w-4 h-4 text-blue-400"></i>
+                <i data-lucide="share-2" class="w-3.5 h-3.5 text-blue-400"></i>
                 <span>Canales de Entrada (Medio)</span>
               </h3>
               <p class="text-xs text-slate-400">Distribución de leads según su canal de procedencia</p>
             </div>
           </div>
-          <div class="relative w-full h-64 flex items-center justify-center">
+          <div class="relative w-full h-56 flex items-center justify-center">
             <canvas id="chartMedioDistribution"></canvas>
           </div>
         </div>
 
         <!-- Gráfico 5: Cierres por Asesor / Agente -->
-        <div class="historical-chart-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+        <div class="historical-chart-card rounded-2xl p-3 border border-slate-700/80 shadow-sm space-y-2">
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <i data-lucide="user-round-check" class="w-4 h-4 text-purple-400"></i>
+                <i data-lucide="user-round-check" class="w-3.5 h-3.5 text-purple-400"></i>
                 <span>Cierres por Asesor / Agente</span>
               </h3>
               <p class="text-xs text-slate-400">Total de leads gestionados vs inscritos por asesor</p>
             </div>
           </div>
-          <div class="historical-chart-scroll"><div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-56">
             <canvas id="chartAgentPerformance"></canvas>
           </div>
           </div>
@@ -826,36 +826,36 @@
       </div>
 
       <!-- FILA DE 2 GRÁFICOS: ESTADOS & CAMPAÑAS POR MES -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- Gráfico 6: Estados por Mes -->
-        <div class="historical-chart-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+        <div class="historical-chart-card rounded-2xl p-3 border border-slate-700/80 shadow-sm space-y-2">
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <i data-lucide="list-checks" class="w-4 h-4 text-blue-400"></i>
+                <i data-lucide="list-checks" class="w-3.5 h-3.5 text-blue-400"></i>
                 <span>Estados por Mes</span>
               </h3>
               <p class="text-xs text-slate-400">Barras apiladas de los estados de GESTION de cada mes (top 6 estados + Otros)</p>
             </div>
           </div>
-          <div class="historical-chart-scroll"><div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-56">
             <canvas id="chartMonthlyStates"></canvas>
           </div>
           </div>
         </div>
 
         <!-- Gráfico 7: Campañas por Mes -->
-        <div class="historical-chart-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+        <div class="historical-chart-card rounded-2xl p-3 border border-slate-700/80 shadow-sm space-y-2">
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <i data-lucide="megaphone" class="w-4 h-4 text-amber-400"></i>
+                <i data-lucide="megaphone" class="w-3.5 h-3.5 text-amber-400"></i>
                 <span>Campañas por Mes</span>
               </h3>
               <p class="text-xs text-slate-400">Barras apiladas con las 5 campañas de mayor volumen de leads por mes (resto en Otras)</p>
             </div>
           </div>
-          <div class="historical-chart-scroll"><div class="relative w-full h-64">
+          <div class="historical-chart-scroll"><div class="relative w-full h-56">
             <canvas id="chartMonthlyCampaigns"></canvas>
           </div>
           </div>
@@ -863,27 +863,27 @@
       </div>
 
       <!-- GRÁFICO 8: EMBUDO DE CONVERSIÓN -->
-      <div class="historical-chart-card rounded-2xl p-5 border border-slate-700/80 shadow-sm space-y-3">
+      <div class="historical-chart-card rounded-2xl p-3 border border-slate-700/80 shadow-sm space-y-2">
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-sm font-bold text-white flex items-center gap-2">
-              <i data-lucide="filter" class="w-4 h-4 text-emerald-400"></i>
+              <i data-lucide="filter" class="w-3.5 h-3.5 text-emerald-400"></i>
               <span>Embudo de Conversión</span>
             </h3>
             <p class="text-xs text-slate-400">Recibidos → Gestionados → Agendados → Inscritos con los filtros de mes, campaña y asesor aplicados</p>
           </div>
         </div>
-        <div class="relative w-full h-64">
+        <div class="relative w-full h-56">
           <canvas id="chartFunnel"></canvas>
         </div>
       </div>
 
       <!-- TABLA RESUMEN CONSOLIDADA POR MES -->
       <div class="historical-chart-card rounded-2xl border border-slate-700/80 shadow-sm overflow-hidden space-y-0">
-        <div class="historical-summary-header p-4 border-b border-slate-700/80 flex items-center justify-between">
+        <div class="historical-summary-header p-2.5 border-b border-slate-700/80 flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
-              <i data-lucide="table-2" class="w-4 h-4"></i>
+            <div class="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+              <i data-lucide="table-2" class="w-3.5 h-3.5"></i>
             </div>
             <div>
               <h3 class="font-bold text-white text-sm">Resumen Consolidado Histórico por Mes</h3>

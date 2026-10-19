@@ -617,8 +617,10 @@
           </label>
 
           <!-- Rango de fechas (Desde/Hasta) en Histórico: tiene precedencia sobre el mes -->
-          <label>Desde<input type="date" id="histRangeFrom" data-ev="change:renderHistoricalAnalytics()" class="block mt-1 text-xs"></label>
-          <label>Hasta<input type="date" id="histRangeTo" data-ev="change:renderHistoricalAnalytics()" class="block mt-1 text-xs"></label>
+          <div class="hist-range-pair flex items-end gap-1.5">
+            <label class="flex-1">Desde<input type="date" id="histRangeFrom" data-ev="change:renderHistoricalAnalytics()" class="block mt-1 text-xs w-full"></label>
+            <label class="flex-1">Hasta<input type="date" id="histRangeTo" data-ev="change:renderHistoricalAnalytics()" class="block mt-1 text-xs w-full"></label>
+          </div>
         </div>
         <div class="historical-filter-actions">
 

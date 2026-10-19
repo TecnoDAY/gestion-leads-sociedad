@@ -733,8 +733,10 @@ export function fichaLeadHtml(lead, ctx) {
   const duplicateScopeHtml = ctx.alcanceCompleto ? '' : `
         <p class="text-[11px] text-slate-500">Las coincidencias telefónicas se revisan sobre los datos cargados. Selecciona el origen “Todos” para comprobar la base completa.</p>`;
   return `
-        <div class="lead-detail-hero flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div>
+        <div class="lead-detail-hero flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="lead-detail-avatar" aria-hidden="true">${escapeHtml(String(getField(lead, 'Nombre') || '?').trim().charAt(0))}</span>
+            <div class="min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
               <div class="lead-detail-name font-bold">${escapeHtml(getField(lead, 'Nombre'))}</div>
               ${finalOrigin === 'historico' ? '<span class="text-[11px] uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">Histórico 2025</span>' : ''}
@@ -744,13 +746,14 @@ export function fichaLeadHtml(lead, ctx) {
               <span>•</span>
               <span>Ingreso: ${escapeHtml(getField(lead, 'Fecha'))} (${escapeHtml(getField(lead, 'Mes'))})</span>
             </div>
+            </div>
           </div>
           <div>${badgeGestionHtml(getField(lead, 'GESTION'))}</div>
         </div>${firstEntryHtml}
 
-        <div class="lead-detail-grid grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-3 gap-3">
+        <div class="lead-detail-grid grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-3 gap-2">
           <div class="lead-detail-card">
-            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Teléfono / WhatsApp</span>
+            <span class="flex items-center gap-1.5 text-[11px] uppercase text-slate-500 font-semibold block"><i data-lucide="phone" class="w-3 h-3 shrink-0"></i>Teléfono / WhatsApp</span>
             <div class="flex items-center gap-1.5 mt-0.5">
               ${cleanPhone ? `<button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="text-slate-400 opacity-60 cursor-not-allowed"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></button>` : ''}
               <span class="lead-detail-value font-mono">${escapeHtml(telefonoFmt || 'S/N')}</span>
@@ -758,41 +761,41 @@ export function fichaLeadHtml(lead, ctx) {
           </div>
 
           <div class="lead-detail-card">
-            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Campaña</span>
+            <span class="flex items-center gap-1.5 text-[11px] uppercase text-slate-500 font-semibold block"><i data-lucide="megaphone" class="w-3 h-3 shrink-0"></i>Campaña</span>
             <span class="lead-detail-value font-medium mt-0.5 block truncate">${escapeHtml(getField(lead, 'Campaña') || '-')}</span>
           </div>
 
           <div class="lead-detail-card">
-            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Medio</span>
+            <span class="flex items-center gap-1.5 text-[11px] uppercase text-slate-500 font-semibold block"><i data-lucide="radio" class="w-3 h-3 shrink-0"></i>Medio</span>
             <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'Medio') || '-')}</span>
           </div>
 
           <div class="lead-detail-card">
-            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Asesor Principal</span>
+            <span class="flex items-center gap-1.5 text-[11px] uppercase text-slate-500 font-semibold block"><i data-lucide="user-round" class="w-3 h-3 shrink-0"></i>Asesor Principal</span>
             <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'Agente ') || '-')}</span>
           </div>
 
           <div class="lead-detail-card">
-            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Último Asesor</span>
+            <span class="flex items-center gap-1.5 text-[11px] uppercase text-slate-500 font-semibold block"><i data-lucide="user-check" class="w-3 h-3 shrink-0"></i>Último Asesor</span>
             <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'ULTIMO AGENTE ') || '-')}</span>
           </div>
 
           <div class="lead-detail-card">
-            <span class="text-[11px] uppercase text-slate-500 font-semibold block">Última Gestión</span>
+            <span class="flex items-center gap-1.5 text-[11px] uppercase text-slate-500 font-semibold block"><i data-lucide="calendar" class="w-3 h-3 shrink-0"></i>Última Gestión</span>
             <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'Fecha Última Gestión ') || '-')}</span>
           </div>
         </div>${duplicateScopeHtml}${repetidosHtml}
 
         <div class="lead-detail-section space-y-1">
-          <span class="text-[11px] uppercase text-slate-400 font-semibold block">Historial de Observaciones</span>
+          <span class="flex items-center gap-1.5 text-[11px] uppercase text-slate-400 font-semibold block"><i data-lucide="notebook-text" class="w-3 h-3 shrink-0"></i>Historial de Observaciones</span>
           <p class="text-slate-300 font-mono text-xs whitespace-pre-line leading-relaxed">${escapeHtml(getField(lead, 'OBSERVACIONES ') || 'Sin observaciones registradas.')}</p>
          </div>${finalOrigin === 'historico' ? '' : `
          <div id="leadGestionesSection" class="hidden lead-detail-section space-y-2">
-           <span class="text-[11px] uppercase text-slate-400 font-semibold block">Historial de gestiones</span>
+           <span class="flex items-center gap-1.5 text-[11px] uppercase text-slate-400 font-semibold block"><i data-lucide="messages-square" class="w-3 h-3 shrink-0"></i>Historial de gestiones</span>
            <div id="leadGestionesList"><p class="text-[11px] text-slate-500">Cargando historial…</p></div>
          </div>
          <div class="lead-detail-section space-y-2">
-          <span class="text-[11px] uppercase text-slate-400 font-semibold block">Notas del Equipo</span>
+          <span class="flex items-center gap-1.5 text-[11px] uppercase text-slate-400 font-semibold block"><i data-lucide="pen-line" class="w-3 h-3 shrink-0"></i>Notas del Equipo</span>
           <div id="leadNotesList" class="space-y-2"><p class="text-[11px] text-slate-500">Cargando notas…</p></div>
           <div class="lead-note-compose flex items-start gap-2 pt-1">
             <textarea id="leadNoteInput" rows="2" maxlength="2000" placeholder="Añadir una nota para el equipo" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 resize-y"></textarea>

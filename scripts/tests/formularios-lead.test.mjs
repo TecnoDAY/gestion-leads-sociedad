@@ -15,6 +15,10 @@ import {
   leadUpdateFields, formatSaveErrorLead,
 } from '../../src/legacy/leads.js';
 import { appointmentInputISO, appointmentLocal, validAppointmentId } from '../../src/legacy/citas.js';
+// Inscripciones por programa y nivel (src/legacy/inscripciones.js). El golden
+// es una caracterizacion del PAYLOAD del lead: las inscripciones van en su
+// propia RPC (save_lead_enrollments) y no alteran el payload del lead.
+import { PROGRAMAS_INSCRIPCION, esInscritoGestion, inscripcionPayload, inscripcionDesdeFilas } from '../../src/legacy/inscripciones.js';
 
 const fx = JSON.parse(readFileSync(new URL('fixtures/fase34-golden.json', import.meta.url), 'utf8'));
 const HOY = fx.meta.hoyMiami;
@@ -163,7 +167,9 @@ function extractFunction(name) {
 }
 const fuenteWrapper = ['handleCreateLead', 'handleUpdateLead', 'editLeadNeedsAppointment', 'editLeadStaysAgendado',
   'editSessionValid', 'editAppointmentSubmitBlocked', 'updateEditSubmitState', 'appointmentDetailsFrom',
-  'confirmAppointmentCreation', 'appointmentCampusFrom', 'formatSaveError'].map(extractFunction).join('\n');
+  'confirmAppointmentCreation', 'appointmentCampusFrom', 'formatSaveError',
+  'inscripcionErrorTexto', 'inscripcionCambioNecesario', 'guardarInscripciones',
+  'inscripcionFaltanNiveles', 'updateInscripcionAviso'].map(extractFunction).join('\n');
 
 function sandbox(sample) {
   const elements = new Map(), toasts = [], rpcCalls = [];
@@ -187,6 +193,12 @@ function sandbox(sample) {
     // los builders/puros del modulo, como window.* del navegador
     fechaLlegadaDisplay, leadCreatePayload, leadUpdateFields, formatSaveErrorLead,
     isAgendadoGestion, formatPhone, appointmentInputISO, appointmentLocal, validAppointmentId,
+    // Inscripciones: la seleccion del formulario la aporta el test; el
+    // golden sigue verificando el payload del lead.
+    PROGRAMAS_INSCRIPCION, esInscritoGestion, inscripcionPayload, inscripcionDesdeFilas,
+    inscripcionSeleccion: () => sample.inscripcion || [],
+    inscripcionErroresVisibles: { new: false, edit: false },
+    editInscripcionFilas: [],
     isAdmin: sample.isAdmin, currentUser: { id: 'user-1' },
     currentAccess: { activo: true, updated_at: 'v1', ...sample.acceso },
     sessionGeneration: 1,
@@ -223,14 +235,25 @@ test('wrapper del arbol: handleCreateLead/handleUpdateLead entregan el payload d
     assert.equal(toasts.at(-1)?.[1], 'success', `alta ${s.nombre}: toast`);
   }
   for (const s of fx.edicion) {
-    const { ctx, toasts, rpcCalls } = sandbox(s);
+    // Un lead que pasa a INSCRITO exige programa y nivel (nueva regla): el
+    // test aporta la seleccion; el golden sigue fijando el payload del lead.
+    const inscripcion = esInscritoGestion(s.inputs.editGestion || '')
+      ? [{ programa: 'TEATRO_MUSICAL', nivel: 'MT Teens', fecha_inscripcion: '2026-09-15' }]
+      : [];
+    const { ctx, toasts, rpcCalls } = sandbox({ ...s, inscripcion });
     await ctx.handleUpdateLead({ preventDefault() {} });
-    assert.equal(rpcCalls.length, 1, `edicion ${s.nombre}: no hubo RPC; toasts=${JSON.stringify(toasts)}`);
-    assert.equal(rpcCalls[0].name, s.rpcName, `edicion ${s.nombre}: rpc`);
-    const raw = rpcCalls[0].args.p_fields ?? rpcCalls[0].args.p_lead;
+    const llamadasLead = rpcCalls.filter(c => c.name !== 'save_lead_enrollments');
+    assert.equal(llamadasLead.length, 1, `edicion ${s.nombre}: no hubo RPC; toasts=${JSON.stringify(toasts)}`);
+    assert.equal(llamadasLead[0].name, s.rpcName, `edicion ${s.nombre}: rpc`);
+    const raw = llamadasLead[0].args.p_fields ?? llamadasLead[0].args.p_lead;
     assert.deepEqual(Object.keys(raw), s.payloadKeys, `edicion ${s.nombre}: orden de claves`);
     assert.deepEqual(JSON.parse(JSON.stringify(raw)), s.payload, `edicion ${s.nombre}: payload`);
     assert.equal(toasts.at(-1)?.[1], 'success', `edicion ${s.nombre}: toast`);
+    if (inscripcion.length) {
+      const llamadaInscripcion = rpcCalls.find(c => c.name === 'save_lead_enrollments');
+      assert.ok(llamadaInscripcion, `edicion ${s.nombre}: la inscripcion se guarda en su RPC`);
+      assert.deepEqual(llamadaInscripcion.args.p_enrollments, inscripcion, `edicion ${s.nombre}: payload de inscripcion`);
+    }
   }
 });
 

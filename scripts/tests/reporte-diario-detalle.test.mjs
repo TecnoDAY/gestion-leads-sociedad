@@ -18,7 +18,7 @@ test('detalle 18/11/29: particion con altas incluidas y total general 39 intacto
   assert.equal((detail.match(/<tr>/g) || []).length, 3);
   assert.match(detail, /WhatsApp nuevos hoy<\/td><td[^>]*>18<\/td>/);
   assert.match(detail, /WhatsApp gestionados hoy<\/td><td[^>]*>11<\/td>/);
-  assert.match(detail, /Total<\/td><td[^>]*>29<\/td>/);
+  assert.match(detail, /Total grupo WhatsApp<\/td><td[^>]*>29<\/td>/);
   assert.doesNotMatch(html, /Total detalle de gestión/);
   assert.equal(totalDiario([block]).g, 39);
   assert.match(bloqueDiaHtml(block, 0, ''), /Ana — 39 gestiones/);
@@ -58,11 +58,11 @@ test('CSV individual y TOTAL usan canales, sin sumar nuevos ni duplicar combinad
   const lines = diarioCsvLines('2026-10-16', '', '2026-10-16', [block, second, { autor_name: 'Vacia', canales: null, whatsapp: null }], []);
   const headers = fields(lines[4]);
   assert.equal(new Set(headers).size, headers.length);
-  assert.equal(headers.includes('Total detalle de gestión'), true);
+  assert.equal(headers.includes('Total WhatsApp'), true);
   const rows = lines.slice(5).map(fields);
   for (const row of rows) assert.equal(row.length, headers.length);
   for (const [label, expected] of [
-    ['Total detalle de gestión', [29, 6, 0, 35]],
+    ['Total WhatsApp', [29, 6, 0, 35]],
     ['WhatsApp nuevos hoy', [18, 1, 0, 19]],
     ['WhatsApp gestionados hoy', [11, 5, 0, 16]],
     ['Gestiones realizadas', [39, 7, 0, 46]],

@@ -245,6 +245,7 @@
          <p id="periodoAviso" role="status" aria-live="polite" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800"></p>
          <div id="periodoBody" class="space-y-4"></div>
          <div id="periodoActividad" class="space-y-4" aria-label="Actividad realizada en el período"></div>
+          <div id="periodoInscripciones" class="space-y-4" aria-label="Inscripciones por programa y nivel"></div>
       </section>
     </div>
 
@@ -1220,10 +1221,10 @@
     <div class="lead-form-shell overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150" role="dialog" aria-modal="true" aria-labelledby="newLeadTitle">
       <div class="lead-form-header">
         <div class="flex items-center gap-2">
-          <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
-            <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-300">
+            <i data-lucide="user-plus" class="w-5 h-5"></i>
           </div>
-          <div><h3 id="newLeadTitle" class="font-bold text-base">Registrar nuevo lead</h3><p class="text-xs">Datos de contacto y primera gestión</p></div>
+          <div><h3 id="newLeadTitle" class="font-bold text-base">Registrar nuevo lead</h3><p class="text-xs text-slate-400">Datos de contacto y primera gestión</p></div>
         </div>
         <button type="button" data-ev="click:closeNewLeadModal()" aria-label="Cerrar registro de lead" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -1231,10 +1232,10 @@
       </div>
 
       <form id="formNewLead" data-ev="submit:handleCreateLead(event)" class="flex flex-col min-h-0 flex-1 text-xs">
-        <div class="lead-form-scroll space-y-4">
+        <div class="lead-form-scroll space-y-3">
         <div class="lead-form-primary">
-          <h4>Información inicial</h4>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <h4 class="flex items-center gap-2"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-indigo-500/15 text-indigo-300"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i></span>Información inicial</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <!-- Nombre -->
           <div class="sm:col-span-2">
             <label class="block font-medium text-slate-300 mb-1">Nombre Completo *</label>
@@ -1296,6 +1297,19 @@
             <label class="text-[11px] text-slate-400">Edad (opcional)<input id="newAppointmentStudentAge" type="number" min="0" max="120" step="1" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
           </div>
 
+          <!-- Inscripcion por programa y nivel (solo si el lead nace inscrito) -->
+          <div id="newInscripcionFields" class="inscripcion-panel hidden sm:col-span-2 space-y-3">
+            <div class="flex items-start gap-3">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300"><i data-lucide="graduation-cap" class="w-4 h-4"></i></span>
+              <div class="min-w-0 flex-1">
+                <h4 class="text-sm font-bold text-slate-100">Inscripción</h4>
+                <p class="text-[11px] text-slate-400">Selecciona uno o ambos programas y completa su nivel. La fecha es opcional: si no la conoces, quedará pendiente de completar.</p>
+              </div>
+            </div>
+            <div id="newInscripcionProgramas"></div>
+            <p id="newInscripcionAviso" class="text-[11px] text-slate-400"></p>
+          </div>
+
           <!-- Medio -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Medio</label>
@@ -1322,8 +1336,7 @@
 
           <!-- Gestión (Estatus) -->
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Gestión Inicial</label>
-            <div class="flex items-center gap-1.5"><button type="button" data-ev="click:openHelpModal('ayuda-nuevo-lead')" title="Ayuda: gestión inicial" aria-label="Ayuda sobre la gestión inicial del lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button><span class="text-[11px] text-slate-400">Agendado o AGENDADO DATADURA exige cita.</span></div>
+            <label class="block font-medium text-slate-300 mb-1">Gestión Inicial<button type="button" data-ev="click:openHelpModal('ayuda-nuevo-lead')" title="Ayuda: gestión inicial" aria-label="Ayuda sobre la gestión inicial del lead" class="inline-flex items-center justify-center w-4 h-4 ml-1 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button></label>
             <select id="newGestion" data-ev="change:toggleNewAppointmentFields()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
               <option value="Agendado">Agendado</option>
               <option value="Información " selected>Información</option>
@@ -1335,6 +1348,7 @@
               <option value="Repetido ">Repetido</option>
               <option value="Vive Lejos">Vive Lejos</option>
             </select>
+            <p class="text-[11px] text-slate-400 mt-1">Agendado o AGENDADO DATADURA exige cita.</p>
           </div>
 
           <!-- Agente -->
@@ -1379,31 +1393,33 @@
   <div id="modalEditLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="lead-form-shell overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150" role="dialog" aria-modal="true" aria-labelledby="editLeadTitle">
       <div class="lead-form-header">
-        <div class="flex items-center gap-2">
-          <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
-            <i data-lucide="edit-3" class="w-4 h-4"></i>
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-300">
+            <i data-lucide="edit-3" class="w-5 h-5"></i>
           </div>
-          <div>
+          <div class="min-w-0">
             <h3 id="editLeadTitle" class="font-bold text-base">Actualizar seguimiento</h3>
-            <p id="editLeadLeadInfo" class="text-xs text-slate-400">ID: -</p>
+            <p id="editLeadLeadInfo" class="truncate text-xs text-slate-400">ID: -</p>
           </div>
         </div>
-        <button type="button" data-ev="click:closeEditLeadModal()" aria-label="Cerrar actualización de seguimiento" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <div class="flex items-center gap-2">
+          <span id="editLeadEstadoChip" class="hidden shrink-0 rounded-full bg-slate-900/60 px-2.5 py-1 text-[11px] font-semibold text-slate-300"></span>
+          <button type="button" data-ev="click:closeEditLeadModal()" aria-label="Cerrar actualización de seguimiento" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
       </div>
 
       <form id="formEditLead" data-ev="submit:handleUpdateLead(event)" class="flex flex-col min-h-0 flex-1 text-xs">
         <input type="hidden" id="editLeadId">
-        <div class="lead-form-scroll space-y-4">
+        <div class="lead-form-scroll space-y-3">
 
         <div class="lead-form-primary">
-        <h4>Gestión y datos de contacto</h4>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <h4 class="flex items-center gap-2"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-indigo-500/15 text-indigo-300"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i></span>Gestión y datos de contacto</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <!-- GESTION -->
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Estatus de Gestión *</label>
-            <div class="flex items-center gap-1.5"><button type="button" data-ev="click:openHelpModal('ayuda-gestionar-lead')" title="Ayuda: cambiar la gestión" aria-label="Ayuda sobre el cambio de gestión de un lead" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-amber-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button><span class="text-[11px] text-slate-400">Información → Agendado crea la cita en el mismo guardado.</span></div>
+            <label class="block font-medium text-slate-300 mb-1">Estatus de Gestión *<button type="button" data-ev="click:openHelpModal('ayuda-gestionar-lead')" title="Ayuda: cambiar la gestión" aria-label="Ayuda sobre el cambio de gestión de un lead" class="inline-flex items-center justify-center w-4 h-4 ml-1 rounded-full bg-slate-700 hover:bg-amber-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button></label>
             <select id="editGestion" data-ev="change:toggleEditAppointmentFields()" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 font-semibold focus:outline-none focus:border-amber-500">
               <option value="Agendado">Agendado (Cita / Visita)</option>
               <option value="Colgo">Colgo</option>
@@ -1420,6 +1436,7 @@
               <option value="Repetido ">Repetido</option>
               <option value="Vive Lejos">Vive Lejos</option>
             </select>
+            <p class="text-[11px] text-slate-400 mt-1">Cambiar a Agendado crea la cita al guardar.</p>
           </div>
 
           <!-- Agente -->
@@ -1430,9 +1447,8 @@
 
           <!-- Fecha Última Gestión -->
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Fecha Última Gestión</label>
+            <label class="block font-medium text-slate-300 mb-1">Fecha Última Gestión<span class="ml-1 rounded-full bg-slate-900/60 px-1.5 py-0.5 align-middle text-[10px] font-semibold text-slate-300">automático</span></label>
             <input type="text" id="editFechaUltima" readonly placeholder="Ej: 23/09/2026" class="w-full opacity-70 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
-            <p class="text-[11px] text-slate-400 mt-1">Se registra automáticamente al guardar.</p>
           </div>
 
           <!-- ULTIMA GESTION (Canal) -->
@@ -1450,9 +1466,8 @@
 
           <!-- ULTIMO AGENTE -->
           <div class="sm:col-span-2">
-            <label class="block font-medium text-slate-300 mb-1">Último Asesor que gestionó</label>
+            <label class="block font-medium text-slate-300 mb-1">Último Asesor que gestionó<span class="ml-1 rounded-full bg-slate-900/60 px-1.5 py-0.5 align-middle text-[10px] font-semibold text-slate-300">automático</span></label>
             <input type="text" id="editUltimoAgente" readonly list="agenteList" placeholder="Ej: Ana, Jessica, Loli" class="w-full opacity-70 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
-            <p class="text-[11px] text-slate-400 mt-1">Se registra automáticamente al guardar.</p>
           </div>
 
            <!-- OBSERVACIONES -->
@@ -1483,6 +1498,19 @@
           <label class="text-[11px] text-slate-400">Correo de contacto (opcional)<input id="editAppointmentContactEmail" type="email" maxlength="254" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100" placeholder="nombre@correo.com"></label>
           <label class="text-[11px] text-slate-400">Edad (opcional)<input id="editAppointmentStudentAge" type="number" min="0" max="120" step="1" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
           <p class="sm:col-span-3 text-[11px] text-slate-400">Al guardar, el lead pasa a Agendado y se crea su cita en la misma operación.</p>
+        </div>
+
+        <!-- Inscripcion por programa y nivel (solo si el lead queda inscrito) -->
+        <div id="editInscripcionFields" class="inscripcion-panel hidden sm:col-span-2 space-y-3">
+          <div class="flex items-start gap-3">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300"><i data-lucide="graduation-cap" class="w-4 h-4"></i></span>
+            <div class="min-w-0 flex-1">
+              <h4 class="text-sm font-bold text-slate-100">Inscripción</h4>
+              <p class="text-[11px] text-slate-400">Selecciona uno o ambos programas y completa su nivel. La fecha es opcional: si no la conoces, quedará pendiente de completar. Quitar un programa no lo borra: queda en el historial.</p>
+            </div>
+          </div>
+          <div id="editInscripcionProgramas"></div>
+          <p id="editInscripcionAviso" class="text-[11px] text-slate-400"></p>
         </div>
 
         <section id="adminLeadFields" class="hidden border-t border-slate-700/80 pt-4 space-y-3">
@@ -1518,17 +1546,17 @@
     <div class="lead-detail-shell overflow-hidden max-h-[90dvh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="viewLeadTitle">
       <div class="lead-detail-header flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2">
-          <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-300">
             <i data-lucide="file-text" class="w-4 h-4"></i>
           </div>
-          <div><h3 id="viewLeadTitle" class="font-bold text-base">Ficha del lead</h3><p class="text-xs">Información, seguimiento y próximas acciones</p></div>
+          <div><h3 id="viewLeadTitle" class="font-bold text-base">Ficha del lead</h3><p class="text-xs text-slate-400">Información, seguimiento y próximas acciones</p></div>
         </div>
         <button type="button" data-ev="click:closeViewLeadModal()" aria-label="Cerrar ficha del lead" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="lead-detail-content space-y-4 text-xs overflow-y-auto min-h-0" id="viewLeadContent">
+      <div class="lead-detail-content space-y-3 text-xs overflow-y-auto min-h-0" id="viewLeadContent">
         <!-- Injected by JS -->
       </div>
 
@@ -1616,6 +1644,10 @@
       let periodoActividadData = null;
       let periodoActividadKey = '';
       let periodoActividadGeneration = 0;
+      // Reporte de inscripciones por programa y nivel del periodo.
+      let periodoInscripcionesData = null;
+      let periodoInscripcionesKey = '';
+      let periodoInscripcionesGeneration = 0;
      let isTrafficker = false;
      let isSupervisor = false;
      // Fuente unica de "puede editar campanas": admin, trafficker o supervisor.
@@ -4287,6 +4319,7 @@
       setBlockControls(block, !visible);
       if(!visible){if(date)date.value=''; const n=document.getElementById('newAppointmentNote');if(n)n.value='';const a=document.getElementById('newAppointmentAdvisor');if(a)a.value='';['StudentName','ContactEmail','StudentAge'].forEach(suffix=>{const el=document.getElementById('newAppointment'+suffix);if(el)el.value='';});}
       const submit=document.getElementById('btnSubmitNewLead'); if(submit&&!newLeadSubmitting)submit.disabled=visible&&isAdmin&&(!leadAppointmentAdvisors.length||!document.getElementById('newAppointmentAdvisor')?.value);
+      applyNewInscripcionVisibility();
     }
     function renderAppointmentAdvisorSelect(select, preferredName) { if(!select)return; if(!leadAppointmentAdvisors.length){select.innerHTML='<option value="">No hay asesores activos</option>';select.disabled=true;return;} const chosen=leadAppointmentAdvisors.find(a=>a.nombre===preferredName)||leadAppointmentAdvisors.find(a=>a.user_id===currentUser?.id)||leadAppointmentAdvisors[0]; const ordered=[...leadAppointmentAdvisors].sort((a,b)=>compareAlphaEs(a.nombre||a.email||a.user_id,b.nombre||b.email||b.user_id)); select.innerHTML='<option value="">Seleccione asesor</option>'+ordered.map(a=>`<option value="${escapeAttr(a.user_id)}" ${chosen?.user_id===a.user_id?'selected':''}>${escapeHtml(a.nombre||a.email||a.user_id)}</option>`).join('');select.disabled=false; }
     async function loadNewLeadAppointmentAdvisors() { const select=document.getElementById('newAppointmentAdvisor'); if(!isAdmin||!select){toggleNewAppointmentFields();return;} const gen=sessionGeneration, token=++newLeadAdvisorGeneration, uid=currentUser?.id, access=currentAccess?.updated_at; if(leadAppointmentAdvisors.length){renderAppointmentAdvisorSelect(select,document.getElementById('newAgente')?.value.trim());toggleNewAppointmentFields();return;} select.disabled=true;const {data,error}=await supabaseClient.rpc('admin_manage_user_access',{p_action:'list'}); if(gen!==sessionGeneration||token!==newLeadAdvisorGeneration||currentUser?.id!==uid||currentAccess?.updated_at!==access||document.getElementById('modalNewLead')?.classList.contains('hidden'))return; if(error){select.innerHTML='<option value="">No se pudieron cargar asesores</option>';toggleNewAppointmentFields();return;} leadAppointmentAdvisors=(data||[]).filter(a=>a.activo===true);renderAppointmentAdvisorSelect(select,document.getElementById('newAgente')?.value.trim());toggleNewAppointmentFields(); }
@@ -4345,6 +4378,9 @@
         setTimeout(() => document.getElementById('newNombre')?.focus(), 50);
          if (window.lucide) lucide.createIcons();
          toggleNewAppointmentFields();
+         inscripcionErroresVisibles.new = false;
+         renderInscripcionProgramas('new', []);
+         applyNewInscripcionVisibility();
          loadNewLeadAppointmentAdvisors();
       }
     }
@@ -4413,6 +4449,18 @@
             const campus = agendado ? appointmentCampusFrom('newAppointment') : '';
             if (agendado && (!scheduledAt || note.length > 2000 || !campus || (isAdmin && !advisor))) { showToast(!campus ? 'Selecciona la sede de la cita' : 'Fecha y hora de Miami, asesor o nota de cita no válidos', 'warning'); return; }
             if (agendado && !confirmAppointmentCreation('newAppointment', scheduledAt)) return;
+            // Un lead que nace inscrito debe llevar programa y nivel.
+            const naceInscrito = esInscritoGestion(newLeadData.GESTION);
+            let inscripcionNueva = null;
+            if (naceInscrito) {
+              inscripcionErroresVisibles.new = true;
+              updateInscripcionAviso('new');
+              const faltanNiveles = inscripcionFaltanNiveles('new');
+              if (faltanNiveles.length) { showToast('Falta elegir el nivel de ' + faltanNiveles.join(' y '), 'warning'); return; }
+              const checkInscripcion = inscripcionPayload(inscripcionSeleccion('new'));
+              if (!checkInscripcion.ok || !checkInscripcion.payload.length) { showToast('Elige al menos un programa y su nivel para registrar la inscripción', 'warning'); return; }
+              inscripcionNueva = checkInscripcion.payload;
+            }
             newLeadSubmitting = true; if (btn) btn.disabled = true;
             const { data, error } = await supabaseClient.rpc(agendado ? 'create_lead_with_appointment' : 'create_lead', agendado ? { p_lead: newLeadData, p_scheduled_at: scheduledAt, p_notes: note, p_advisor_user_id: isAdmin ? advisor : null, p_details: appointmentDetailsFrom('newAppointment'), p_campus: campus } : { p_lead: newLeadData });
             if (!validRequest()) return;
@@ -4429,6 +4477,8 @@
                if (!validRequest()) return;
              }
              if (!validRequest()) return;
+              if (naceInscrito) await guardarInscripciones(data.id, inscripcionNueva);
+              if (!validRequest()) return;
               showToast(agendado ? "Lead y cita registrados con éxito" : "Lead registrado con éxito en Supabase", "success");
              closeNewLeadModal(true);
             populateFilterOptions();
@@ -4495,7 +4545,260 @@
     }
     function resetEditAppointmentValues() { const date = document.getElementById('editAppointmentDate'); if (date) { date.value = ''; date.required = false; } const note = document.getElementById('editAppointmentNote'); if (note) note.value = ''; const advisor = document.getElementById('editAppointmentAdvisor'); if (advisor) advisor.value = ''; document.querySelectorAll('input[name="editAppointmentCampus"]').forEach(r => { r.checked = false; }); ['StudentName','ContactEmail','StudentAge'].forEach(suffix => { const el = document.getElementById('editAppointment' + suffix); if (el) el.value = ''; }); }
     function hideEditAppointmentFields() { const block = document.getElementById('editAppointmentFields'); block?.classList.add('hidden'); setBlockControls(block, false); document.getElementById('editAppointmentAdvisorWrap')?.classList.add('hidden'); document.getElementById('editAppointmentAlreadyNotice')?.classList.add('hidden'); document.getElementById('editExistingCampusBlock')?.classList.add('hidden'); document.querySelectorAll('input[name="editExistingCampus"]').forEach(r => { r.checked = false; r.disabled = false; }); document.getElementById('editExistingCampusInfo') && (document.getElementById('editExistingCampusInfo').innerText = 'Cita programada: cargando…'); editExistingAppointment = null; setExistingCampusNotice(''); resetEditAppointmentValues(); const submit = document.getElementById('btnSubmitEditLead'); if (submit) submit.disabled = false; }
-    function toggleEditAppointmentFields() { applyEditAppointmentVisibility(); if (editLeadNeedsAppointment()) loadEditAppointmentAdvisors(); }
+    function toggleEditAppointmentFields() { applyEditAppointmentVisibility(); applyEditInscripcionVisibility(); updateEditEstadoChip(); if (editLeadNeedsAppointment()) loadEditAppointmentAdvisors(); }
+
+    // Chip del encabezado: refleja el estado elegido en el desplegable.
+    function updateEditEstadoChip() {
+      const chip = document.getElementById('editLeadEstadoChip');
+      if (!chip) return;
+      const estado = String(document.getElementById('editGestion')?.value || '').trim();
+      chip.textContent = estado || 'Sin estado';
+      chip.className = 'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ' + (esInscritoGestion(estado) ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-900/60 text-slate-300');
+    }
+
+    // -------------------------------------------------------------
+    // INSCRIPCION POR PROGRAMA Y NIVEL (solo para leads inscritos)
+    // Las reglas puras viven en src/legacy/inscripciones.js; aqui solo
+    // el DOM, la lectura de Supabase y el guardado via RPC.
+    // -------------------------------------------------------------
+    let editInscripcionFilas = [];
+    let editInscripcionGeneration = 0;
+    // Los errores de nivel se muestran junto al campo, y solo tras intentar
+    // guardar: marcar un programa no es un error.
+    const inscripcionErroresVisibles = { new: false, edit: false };
+
+    function inscripcionErrorTexto(error) {
+      return ({
+        programa_invalido: 'el programa no es válido',
+        programa_duplicado: 'solo un nivel por programa',
+        nivel_invalido: 'el nivel no corresponde al programa',
+        fecha_invalida: 'la fecha de inscripción no es válida',
+      })[error] || 'revisa los datos de inscripción';
+    }
+
+    // Programas ya guardados de este lead: sirven para avisar de la baja.
+    function inscripcionProgramasGuardados(prefix) {
+      if (prefix !== 'edit') return [];
+      return [...new Set(editInscripcionFilas.map(r => String(r.programa || '').trim().toUpperCase()).filter(Boolean))];
+    }
+
+    function inscripcionProgramasHtml(filas) {
+      const seleccion = inscripcionDesdeFilas(filas);
+      const tarjetas = PROGRAMAS_INSCRIPCION.map(p => {
+        const actual = seleccion.find(s => s.programa === p.id);
+        const opciones = p.niveles.map(n => `<option value="${escapeAttr(n)}"${actual && actual.nivel === n ? ' selected' : ''}>${escapeHtml(n)}</option>`).join('');
+        const fecha = actual?.fecha_inscripcion || '';
+        const abierto = Boolean(actual);
+        // Estilo por programa (las clases van literales para que las vea el
+        // generador de utilidades de Tailwind).
+        const estilo = p.id === 'ACTUACION'
+          ? { marca: 'AC', chip: 'bg-indigo-500/15 text-indigo-300', check: 'accent-indigo-500', activa: 'activa-indigo' }
+          : { marca: 'TM', chip: 'bg-emerald-500/15 text-emerald-300', check: 'accent-emerald-500', activa: 'activa-emerald' };
+        return `<div class="inscripcion-tarjeta${abierto ? ' ' + estilo.activa : ''}" data-inscripcion-card="${escapeAttr(p.id)}" data-inscripcion-activa="${estilo.activa}">`
+          + `<div class="flex items-center gap-2.5">`
+          + `<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${estilo.chip} text-[11px] font-bold">${escapeHtml(estilo.marca)}</span>`
+          + `<label class="flex min-w-0 flex-1 items-center gap-2 text-sm font-semibold text-slate-100"><input type="checkbox" data-inscripcion-programa="${escapeAttr(p.id)}" class="${estilo.check}"${actual ? ' checked' : ''}> ${escapeHtml(p.label)}</label>`
+          + `<span class="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-300" data-inscripcion-pendiente="${escapeAttr(p.id)}" hidden>Sin fecha</span>`
+          + `</div>`
+          + `<div class="mt-2.5 space-y-2" data-inscripcion-campos="${escapeAttr(p.id)}"${abierto ? '' : ' hidden'}>`
+          + `<label class="block text-[11px] font-medium text-slate-400">Nivel <span class="text-amber-400">*</span><select data-inscripcion-nivel="${escapeAttr(p.id)}" class="block mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"${actual ? '' : ' disabled'}><option value="">Selecciona un nivel</option>${opciones}</select></label>`
+          + `<label class="block text-[11px] font-medium text-slate-400">Fecha de inscripción <span class="font-normal text-slate-500">(opcional)</span><input type="date" data-inscripcion-fecha="${escapeAttr(p.id)}" value="${escapeAttr(fecha)}" class="block mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"${actual ? '' : ' disabled'}></label>`
+          + `<p class="text-[11px] text-amber-300" data-inscripcion-error="${escapeAttr(p.id)}" hidden>Falta elegir el nivel.</p>`
+          + `</div>`
+          // El aviso de baja va FUERA del bloque que se oculta: si no, al
+          // desmarcar un programa guardado no se veria.
+          + `<p class="mt-2 text-[11px] text-amber-300" data-inscripcion-nota="${escapeAttr(p.id)}" hidden></p>`
+          + `</div>`;
+      }).join('');
+      return `<div class="grid gap-3 sm:grid-cols-2">${tarjetas}</div>`;
+    }
+
+    function renderInscripcionProgramas(prefix, filas) {
+      const box = document.getElementById(prefix + 'InscripcionProgramas');
+      if (!box) return;
+      box.innerHTML = inscripcionProgramasHtml(filas);
+      box.querySelectorAll('[data-inscripcion-programa]').forEach(el => el.addEventListener('change', () => {
+        syncInscripcionFila(prefix, el.dataset.inscripcionPrograma);
+        updateInscripcionAviso(prefix);
+      }));
+      box.querySelectorAll('[data-inscripcion-nivel]').forEach(el => el.addEventListener('change', () => updateInscripcionAviso(prefix)));
+      box.querySelectorAll('[data-inscripcion-fecha]').forEach(el => el.addEventListener('change', () => {
+        updateInscripcionPendiente(prefix, el.dataset.inscripcionFecha);
+        updateInscripcionAviso(prefix);
+      }));
+      for (const p of PROGRAMAS_INSCRIPCION) updateInscripcionPendiente(prefix, p.id);
+    }
+
+    // Chip "Sin fecha": la asesora ve de un vistazo que falta la fecha.
+    function updateInscripcionPendiente(prefix, programa) {
+      const box = document.getElementById(prefix + 'InscripcionProgramas');
+      if (!box) return;
+      const chip = box.querySelector(`[data-inscripcion-pendiente="${programa}"]`);
+      if (!chip) return;
+      const marcado = box.querySelector(`[data-inscripcion-programa="${programa}"]`)?.checked;
+      const fecha = box.querySelector(`[data-inscripcion-fecha="${programa}"]`)?.value || '';
+      chip.hidden = !(marcado && !fecha);
+    }
+
+    function syncInscripcionFila(prefix, programa) {
+      const box = document.getElementById(prefix + 'InscripcionProgramas');
+      if (!box) return;
+      const check = box.querySelector(`[data-inscripcion-programa="${programa}"]`);
+      const activo = Boolean(check?.checked);
+      const campos = box.querySelector(`[data-inscripcion-campos="${programa}"]`);
+      const nivel = box.querySelector(`[data-inscripcion-nivel="${programa}"]`);
+      const fecha = box.querySelector(`[data-inscripcion-fecha="${programa}"]`);
+      // La tarjeta activa muestra el acento de su programa.
+      const card = box.querySelector(`[data-inscripcion-card="${programa}"]`);
+      if (card && card.dataset.inscripcionActiva) card.classList.toggle(card.dataset.inscripcionActiva, activo);
+      // La visibilidad se controla solo con el atributo hidden (nunca con una
+      // clase): mezclar ambos mecanismos fue lo que dejo los campos ocultos.
+      if (campos) campos.hidden = !activo;
+      // Los valores se conservan: si se vuelve a marcar, no hay que reescribir.
+      if (nivel) nivel.disabled = !activo;
+      if (fecha) fecha.disabled = !activo;
+      updateInscripcionPendiente(prefix, programa);
+      const nota = box.querySelector(`[data-inscripcion-nota="${programa}"]`);
+      if (nota) {
+        const guardado = inscripcionProgramasGuardados(prefix).includes(programa);
+        const texto = !activo && guardado ? 'Se registrará la baja al guardar. El historial se conserva.' : '';
+        nota.textContent = texto;
+        nota.hidden = !texto;
+      }
+    }
+
+    // Programas marcados sin nivel: el error va junto a su campo.
+    function inscripcionFaltanNiveles(prefix) {
+      const box = document.getElementById(prefix + 'InscripcionProgramas');
+      if (!box) return [];
+      const faltan = [];
+      for (const p of PROGRAMAS_INSCRIPCION) {
+        const marcado = box.querySelector(`[data-inscripcion-programa="${p.id}"]`)?.checked;
+        const nivel = box.querySelector(`[data-inscripcion-nivel="${p.id}"]`)?.value || '';
+        if (marcado && !nivel) faltan.push(p.label);
+      }
+      return faltan;
+    }
+
+    function inscripcionSeleccion(prefix) {
+      const box = document.getElementById(prefix + 'InscripcionProgramas');
+      if (!box) return [];
+      const seleccion = [];
+      for (const p of PROGRAMAS_INSCRIPCION) {
+        const check = box.querySelector(`[data-inscripcion-programa="${p.id}"]`);
+        if (!check?.checked) continue;
+        seleccion.push({
+          programa: p.id,
+          nivel: box.querySelector(`[data-inscripcion-nivel="${p.id}"]`)?.value || '',
+          fecha_inscripcion: box.querySelector(`[data-inscripcion-fecha="${p.id}"]`)?.value || '',
+        });
+      }
+      return seleccion;
+    }
+
+    // ¿Cambia algo respecto de lo ya guardado? Evita una RPC cuando la
+    // asesora abre y guarda la ficha sin tocar la inscripcion.
+    function inscripcionCambioNecesario(payload, filas) {
+      const clave = lista => lista.map(x => `${x.programa}|${x.nivel}|${x.fecha_inscripcion || ''}`).sort();
+      const actuales = clave(inscripcionDesdeFilas(filas));
+      const deseadas = clave(payload || []);
+      if (actuales.length !== deseadas.length) return true;
+      return actuales.some((valor, i) => valor !== deseadas[i]);
+    }
+
+    // Aviso general + errores junto a cada campo. Los errores por programa
+    // solo aparecen tras intentar guardar (marcar un programa no es un error).
+    function updateInscripcionAviso(prefix) {
+      const aviso = document.getElementById(prefix + 'InscripcionAviso');
+      const box = document.getElementById(prefix + 'InscripcionProgramas');
+      if (!aviso) return;
+      const gestion = document.getElementById(prefix === 'new' ? 'newGestion' : 'editGestion')?.value || '';
+      if (!esInscritoGestion(gestion)) { aviso.textContent = ''; return; }
+      const mostrarErrores = inscripcionErroresVisibles[prefix];
+      if (box) {
+        for (const p of PROGRAMAS_INSCRIPCION) {
+          const error = box.querySelector(`[data-inscripcion-error="${p.id}"]`);
+          const nivel = box.querySelector(`[data-inscripcion-nivel="${p.id}"]`);
+          const marcado = box.querySelector(`[data-inscripcion-programa="${p.id}"]`)?.checked;
+          const falta = Boolean(mostrarErrores && marcado && !nivel?.value);
+          if (error) { error.hidden = !falta; error.textContent = 'Falta elegir el nivel.'; }
+          if (nivel) {
+            // El tema claro y el oscuro fuerzan el borde de los inputs del
+            // formulario: la clase .inscripcion-campo-error lo revierte.
+            nivel.classList.toggle('inscripcion-campo-error', falta);
+            nivel.setAttribute('aria-invalid', falta ? 'true' : 'false');
+          }
+        }
+      }
+      const seleccion = inscripcionSeleccion(prefix);
+      if (!seleccion.length) {
+        aviso.textContent = prefix === 'new'
+          ? 'Elige al menos un programa y su nivel para registrar la inscripción.'
+          : 'Inscripción pendiente de completar: elige al menos un programa y su nivel.';
+        aviso.className = mostrarErrores ? 'text-[11px] text-amber-300' : 'text-[11px] text-slate-400';
+        return;
+      }
+      const check = inscripcionPayload(seleccion);
+      if (!check.ok) {
+        // Nivel sin elegir: lo explica el error junto a su campo, no el aviso.
+        const faltan = inscripcionFaltanNiveles(prefix);
+        if (check.error === 'nivel_invalido' && faltan.length) {
+          aviso.textContent = mostrarErrores ? `Falta elegir el nivel de ${faltan.join(' y ')}.` : '';
+          aviso.className = mostrarErrores ? 'text-[11px] text-amber-300' : 'text-[11px] text-slate-400';
+          return;
+        }
+        aviso.textContent = 'Revisa los datos: ' + inscripcionErrorTexto(check.error);
+        aviso.className = 'text-[11px] text-amber-300';
+        return;
+      }
+      // Las fechas que faltan las muestra cada tarjeta con su chip "Sin fecha".
+      aviso.textContent = '';
+      aviso.className = 'text-[11px] text-slate-400';
+    }
+
+    function applyNewInscripcionVisibility() {
+      const block = document.getElementById('newInscripcionFields');
+      if (!block) return;
+      block.classList.toggle('hidden', !esInscritoGestion(document.getElementById('newGestion')?.value));
+      updateInscripcionAviso('new');
+    }
+
+    function applyEditInscripcionVisibility() {
+      const block = document.getElementById('editInscripcionFields');
+      if (!block) return;
+      block.classList.toggle('hidden', !esInscritoGestion(document.getElementById('editGestion')?.value));
+      updateInscripcionAviso('edit');
+    }
+
+    async function loadEditEnrollments(leadId) {
+      const gen = ++editInscripcionGeneration, sess = sessionGeneration, uid = currentUser?.id, access = currentAccess?.updated_at;
+      editInscripcionFilas = [];
+      if (!supabaseClient || !leadId) return;
+      const { data, error } = await supabaseClient
+        .from('lead_program_enrollments')
+        .select('id, lead_id, programa, nivel, fecha_inscripcion, activa')
+        .eq('lead_id', Number(leadId))
+        .eq('activa', true);
+      if (gen !== editInscripcionGeneration || sess !== sessionGeneration || currentUser?.id !== uid || currentAccess?.updated_at !== access) return;
+      if (document.getElementById('modalEditLead')?.classList.contains('hidden')) return;
+      if (error) { console.warn('No se pudieron cargar las inscripciones:', error); return; }
+      editInscripcionFilas = data || [];
+      renderInscripcionProgramas('edit', editInscripcionFilas);
+      updateInscripcionAviso('edit');
+    }
+
+    // Guardado de las inscripciones. Si el lead deja de estar inscrito, la
+    // llamada con payload vacio cierra (no borra) lo que tuviera.
+    async function guardarInscripciones(leadId, payload) {
+      if (!supabaseClient || !leadId) return true;
+      const { error } = await supabaseClient.rpc('save_lead_enrollments', { p_lead_id: Number(leadId), p_enrollments: payload });
+      if (error) {
+        console.error('Error al guardar las inscripciones:', error);
+        showToast('El lead se guardó, pero las inscripciones no. Revisa la ficha del lead.', 'error');
+        return false;
+      }
+      return true;
+    }
     async function loadEditAppointmentAdvisors() {
       const select = document.getElementById('editAppointmentAdvisor');
       if (!select || !isAdmin) return;
@@ -4530,8 +4833,15 @@
       hideEditAppointmentFields();
 
       document.getElementById('editLeadId').value = leadId;
-      document.getElementById('editLeadLeadInfo').innerText = `ID: #${leadId} — ${getField(lead, 'Nombre')} (${getField(lead, 'Campaña')})`;
+      const leadNombre = String(getField(lead, 'Nombre') || '').trim() || 'Sin nombre';
+      const leadCampana = String(getField(lead, 'Campaña') || '').trim();
+      const infoLead = document.getElementById('editLeadLeadInfo');
+      if (infoLead) {
+        infoLead.innerHTML = `<span class="font-semibold text-slate-200">${escapeHtml(leadNombre)}</span><span class="text-slate-500"> · #${escapeHtml(String(leadId))}${leadCampana ? ' · ' + escapeHtml(leadCampana) : ''}</span>`;
+      }
       
+      // Chip con el estado actual: se lee de un vistazo sin abrir el desplegable.
+      const estadoChip = document.getElementById('editLeadEstadoChip');
       const gestionSelect = document.getElementById('editGestion');
       const currentGestion = getField(lead, 'GESTION').trim();
       if (gestionSelect) {
@@ -4551,6 +4861,7 @@
           gestionSelect.appendChild(customOpt);
         }
       }
+      updateEditEstadoChip();
 
       const editAgent = document.getElementById('editAgente');
       if (editAgent) {
@@ -4608,6 +4919,10 @@
         modal.classList.add('flex');
         if (window.lucide) lucide.createIcons();
         applyEditAppointmentVisibility();
+        inscripcionErroresVisibles.edit = false;
+        renderInscripcionProgramas('edit', []);
+        applyEditInscripcionVisibility();
+        loadEditEnrollments(leadId);
         if (editLeadNeedsAppointment()) loadEditAppointmentAdvisors();
         if (editLeadStaysAgendado()) loadEditExistingAppointment(leadId);
       }
@@ -4620,6 +4935,8 @@
       editAdvisorsLoading = false;
       editLeadSubmitting = false;
       editLeadPreviousGestion = '';
+      editInscripcionGeneration += 1;
+      editInscripcionFilas = [];
       const modal = document.getElementById('modalEditLead');
       if (modal) {
         modal.classList.add('hidden');
@@ -4656,6 +4973,23 @@
       const appointmentCampus = needsAppointment ? appointmentCampusFrom('editAppointment') : '';
       if (needsAppointment && !appointmentCampus) { showToast('Selecciona la sede de la cita', 'warning'); return; }
       if (needsAppointment && !confirmAppointmentCreation('editAppointment', scheduledAt)) return;
+
+      // Inscripcion: al pasar a inscrito hay que elegir programa y nivel. Un
+      // lead que ya estaba inscrito puede quedar pendiente de completar (no
+      // bloquea el resto de la ficha). Si deja de estar inscrito, la llamada
+      // con payload vacio cierra sus inscripciones (no las borra).
+      const gestionNueva = document.getElementById('editGestion')?.value || '';
+      const quedaInscrito = esInscritoGestion(gestionNueva);
+      const yaEraInscrito = esInscritoGestion(editLeadPreviousGestion);
+      if (quedaInscrito) { inscripcionErroresVisibles.edit = true; updateInscripcionAviso('edit'); }
+      const faltanNiveles = inscripcionFaltanNiveles('edit');
+      if (faltanNiveles.length) { showToast('Falta elegir el nivel de ' + faltanNiveles.join(' y '), 'warning'); return; }
+      const checkInscripcion = inscripcionPayload(inscripcionSeleccion('edit'));
+      if (!checkInscripcion.ok) { showToast('Revisa los datos de inscripción: ' + inscripcionErrorTexto(checkInscripcion.error), 'warning'); return; }
+      if (quedaInscrito && !yaEraInscrito && !checkInscripcion.payload.length) { showToast('Elige al menos un programa y su nivel para registrar la inscripción', 'warning'); return; }
+      const inscripcionGuardar = quedaInscrito
+        ? (inscripcionCambioNecesario(checkInscripcion.payload, editInscripcionFilas) ? checkInscripcion.payload : null)
+        : (editInscripcionFilas.length ? [] : null);
 
       const requestGeneration = ++editLeadRequestGeneration;
       const capturedSessionGeneration = sessionGeneration, capturedUserId = currentUser.id, capturedAccessUpdatedAt = currentAccess.updated_at;
@@ -4720,6 +5054,8 @@
             console.error("Error al actualizar en Supabase:", error);
             showToast(formatSaveError(error, needsAppointment), "error");
           } else {
+            if (inscripcionGuardar) await guardarInscripciones(leadId, inscripcionGuardar);
+            if (!validRequest()) return;
             showToast(needsAppointment ? "Lead #" + leadId + " agendado y cita registrada" : "Lead #" + leadId + " actualizado en Supabase", "success");
             if (isSupabaseLive) {
               upsertLeadInState(updated);
@@ -5485,7 +5821,7 @@ async function deleteLeadAppointment(id) {
       if (periodoRefreshTimer) { clearTimeout(periodoRefreshTimer); periodoRefreshTimer = null; }
       reporteVistaActiva = 'diario';
       ['periodoDesde', 'periodoHasta'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
-      ['periodoBody', 'periodoAviso', 'periodoActividad'].forEach(id => document.getElementById(id)?.replaceChildren());
+      ['periodoBody', 'periodoAviso', 'periodoActividad', 'periodoInscripciones'].forEach(id => document.getElementById(id)?.replaceChildren());
       const select = document.getElementById('reporteVista');
       if (select) select.value = 'diario';
       document.getElementById('reportePeriodo')?.classList.add('hidden');
@@ -5513,11 +5849,15 @@ async function deleteLeadAppointment(id) {
       periodoActividadData = null;
       periodoActividadKey = '';
       periodoActividadGeneration += 1;
+      periodoInscripcionesData = null;
+      periodoInscripcionesKey = '';
+      periodoInscripcionesGeneration += 1;
       updatePeriodoCsvState();
       if (currentMainTab !== 'reporte' || reporteVistaActiva !== 'periodo') return;
       const body = document.getElementById('periodoBody');
       if (body) body.replaceChildren();
       document.getElementById('periodoActividad')?.replaceChildren();
+      document.getElementById('periodoInscripciones')?.replaceChildren();
       const aviso = document.getElementById('periodoAviso');
       if (aviso) aviso.textContent = 'Datos actualizados. Recalculando…';
       if (periodoRefreshTimer) clearTimeout(periodoRefreshTimer);
@@ -5574,6 +5914,9 @@ async function deleteLeadAppointment(id) {
       periodoActividadData = null;
       periodoActividadKey = '';
       periodoActividadGeneration += 1;
+      periodoInscripcionesData = null;
+      periodoInscripcionesKey = '';
+      periodoInscripcionesGeneration += 1;
       const body = document.getElementById('periodoBody'), aviso = document.getElementById('periodoAviso');
       const actividadBox = document.getElementById('periodoActividad');
       if (actividadBox) actividadBox.replaceChildren();
@@ -5602,6 +5945,7 @@ async function deleteLeadAppointment(id) {
         aviso.textContent = `${desde} a ${hasta} (inclusive) · ${data.total} leads por fecha de entrada · ${data.fechas_invalidas} sin fecha válida (excluidos). Gestión actual, no histórica al cierre.`;
         updatePeriodoCsvState();
         loadPeriodoActividad(desde, hasta);
+        loadPeriodoInscripciones(desde, hasta);
       } catch (error) {
         if (!valid()) return;
         periodoData = null;
@@ -5616,6 +5960,71 @@ async function deleteLeadAppointment(id) {
     // periodoPct vive en src/legacy/reportes.js.
 
     // validatePeriodoActividad vive ahora en src/legacy/reportes.js.
+
+    // -------------------------------------------------------------
+    // REPORTE DE INSCRIPCIONES POR PROGRAMA Y NIVEL
+    // RPC lead_enrollments_report (conteos) y lead_enrollments_detail (CSV).
+    // El trafficker no tiene acceso a PII: la seccion no se le muestra.
+    // -------------------------------------------------------------
+    async function loadPeriodoInscripciones(desde, hasta) {
+      const token = ++periodoInscripcionesGeneration;
+      periodoInscripcionesData = null;
+      periodoInscripcionesKey = '';
+      const box = document.getElementById('periodoInscripciones');
+      if (isTrafficker) { if (box) box.replaceChildren(); return; }
+      if (box) box.innerHTML = '<div class="period-loading text-sm" role="status">Cargando inscripciones…</div>';
+      if (!supabaseClient || !currentUser || !currentAccess?.activo || currentMainTab !== 'reporte' || reporteVistaActiva !== 'periodo') { if (box) box.replaceChildren(); return; }
+      const generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at, key = `${desde}|${hasta}`;
+      const valid = () => token === periodoInscripcionesGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'reporte' && reporteVistaActiva === 'periodo' && periodoRangeKey() === key;
+      try {
+        const { data, error } = await supabaseClient.rpc('lead_enrollments_report', { p_desde: desde, p_hasta: hasta });
+        if (!valid()) return;
+        if (error) throw new Error(String(error.message || '').includes('crm_access_forbidden') ? 'Tu usuario no tiene permiso para este reporte.' : 'No se pudo cargar el reporte de inscripciones.');
+        validateInscripcionesReport(data, desde, hasta);
+        if (box) box.innerHTML = renderPeriodoInscripciones(data);
+        periodoInscripcionesData = data;
+        periodoInscripcionesKey = key;
+      } catch (error) {
+        if (!valid()) return;
+        periodoInscripcionesData = null;
+        periodoInscripcionesKey = '';
+        if (box) box.innerHTML = `<div class="rounded border border-rose-300 bg-rose-50 p-3 text-rose-700 text-sm">${escapeHtml(error?.message || 'No se pudo cargar el reporte de inscripciones.')}</div>`;
+      }
+    }
+
+    function renderPeriodoInscripciones(data) {
+      const metric = (label, value) => `<div><p class="text-xs text-slate-500">${escapeHtml(label)}</p><p class="text-lg font-bold text-indigo-900 tabular-nums">${value}</p></div>`;
+      const porNivel = (data.por_programa_nivel || []).map(r => `<tr><th scope="row" class="font-medium">${escapeHtml(programaEtiqueta(r.programa))}</th><td>${escapeHtml(r.nivel)}</td><td class="text-right tabular-nums">${r.personas}</td></tr>`).join('');
+      const porMes = (data.por_mes || []).map(m => `<tr><th scope="row" class="font-medium">${escapeHtml(m.mes)}</th><td class="text-right tabular-nums">${m.personas}</td><td class="text-right tabular-nums">${m.inscripciones}</td></tr>`).join('');
+      return `<section class="period-card"><div class="flex items-center justify-between gap-2 flex-wrap"><h3 class="font-bold text-indigo-900">Inscripciones por programa y nivel</h3><button type="button" id="periodoBtnInscripcionesCsv" data-ev="click:exportPeriodoInscripcionesCSV()" class="rounded bg-slate-700 text-white px-3 py-1.5 text-xs">Descargar inscripciones CSV</button></div>`
+        + `<p class="text-xs text-slate-500 mt-1">Personas inscritas (cada persona cuenta una vez, aunque esté en los dos programas) e inscripciones vigentes por programa y nivel. La fecha la declara la asesora: las que faltan quedan pendientes y no se atribuyen a ningún período.</p>`
+        + `<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">${metric('Personas inscritas', data.personas_inscritas)}${metric('Inscripciones vigentes', data.inscripciones)}${metric('Pendientes de fecha', data.pendientes_fecha)}${metric('Altas en el período', data.altas_periodo)}${metric('Bajas en el período', data.bajas_periodo)}${metric('Cambios de nivel', data.cambios_nivel_periodo)}</div>`
+        + `<div class="grid md:grid-cols-2 gap-4 mt-4"><div class="overflow-x-auto"><table class="period-table"><thead><tr><th scope="col">Programa</th><th scope="col">Nivel</th><th scope="col" class="text-right">Personas</th></tr></thead><tbody>${porNivel || '<tr><td colspan="3" class="text-xs text-slate-500">Sin inscripciones registradas.</td></tr>'}</tbody></table></div>`
+        + `<div class="overflow-x-auto"><table class="period-table"><thead><tr><th scope="col">Mes de inscripción</th><th scope="col" class="text-right">Personas</th><th scope="col" class="text-right">Inscripciones</th></tr></thead><tbody>${porMes || '<tr><td colspan="3" class="text-xs text-slate-500">Sin altas en el período.</td></tr>'}</tbody></table></div></div></section>`;
+    }
+
+    async function exportPeriodoInscripcionesCSV() {
+      if (!currentUser || !currentAccess?.activo || reporteVistaActiva !== 'periodo' || currentMainTab !== 'reporte' || !periodoData) { showToast('El reporte no está cargado. Actualiza antes de exportar.', 'warning'); return; }
+      if (isTrafficker) { showToast('Tu usuario no tiene permiso para este detalle.', 'warning'); return; }
+      const d = periodoData;
+      const btn = document.getElementById('periodoBtnInscripcionesCsv');
+      const prev = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = 'Descargando…'; }
+      try {
+        const { data, error } = await supabaseClient.rpc('lead_enrollments_detail', { p_desde: d.desde, p_hasta: d.hasta });
+        if (error) throw error;
+        const filas = Array.isArray(data) ? data : [];
+        if (!filas.length) { showToast('No hay inscripciones para este período.', 'info'); return; }
+        const lines = inscripcionesCsvLines(filas, miamiToday());
+        downloadCSV(lines.join('\n'), `Inscripciones_Periodo_${d.desde}_${d.hasta}.csv`);
+        showToast(`${filas.length} inscripciones exportadas a CSV`, 'success');
+      } catch (e) {
+        console.warn('No se pudieron exportar las inscripciones:', e);
+        showToast('No se pudo exportar el detalle de inscripciones.', 'warning');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = prev || 'Descargar inscripciones CSV'; }
+      }
+    }
 
     async function loadPeriodoActividad(desde, hasta) {
       const token = ++periodoActividadGeneration;
@@ -6428,6 +6837,7 @@ async function deleteLeadAppointment(id) {
   <script type="module" src="/src/legacy/helpers.js"></script>
   <script type="module" src="/src/legacy/citas.js"></script>
   <script type="module" src="/src/legacy/reportes.js"></script>
+  <script type="module" src="/src/legacy/inscripciones.js"></script>
   <script type="module" src="/src/legacy/leads.js"></script>
   <script type="module" src="/src/legacy/help.js"></script>
   <script type="module" src="/src/legacy/catalogos.js"></script>

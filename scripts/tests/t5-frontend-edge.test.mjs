@@ -34,6 +34,11 @@ const { normalizeHelpText, helpHighlight } = helpMod;
 const catalogosApi = await import('../../src/legacy/catalogos.js');
 // Panel de administracion extraido a src/legacy/admin.js (fase 33)
 const adminApi = await import('../../src/legacy/admin.js');
+// Inscripciones por programa y nivel extraidas a src/legacy/inscripciones.js
+const inscripcionesMod = await import('../../src/legacy/inscripciones.js');
+const { PROGRAMAS_INSCRIPCION, esInscritoGestion, nivelesDePrograma, normalizaFechaInscripcion,
+  inscripcionPayload, inscripcionDesdeFilas, inscripcionTienePendientes,
+  programaEtiqueta, validateInscripcionesReport, inscripcionesCsvLines } = inscripcionesMod;
 // validAppointmentId vive en src/legacy/citas.js
 const { validAppointmentId } = citasMod;
 // actionsMod se importa al final (tests parse-all fase 15).
@@ -82,9 +87,16 @@ const names = [
   'setAppointmentMutationPending', 'updateLeadAppointmentCreateState', 'deleteLeadAppointment',
   'toggleNewAppointmentFields', 'setBlockControls',
   'isNuevoEsteMes', 'checkNewPhoneDuplicate', 'setNewPhoneWarn',
-  'closeInvalidSession'
+  'closeInvalidSession',
+  // Inscripciones por programa y nivel
+  'inscripcionErrorTexto', 'inscripcionProgramasHtml', 'renderInscripcionProgramas', 'syncInscripcionFila',
+  'inscripcionSeleccion', 'inscripcionCambioNecesario', 'updateInscripcionAviso',
+  'inscripcionFaltanNiveles', 'inscripcionProgramasGuardados', 'updateInscripcionPendiente',
+  'applyNewInscripcionVisibility', 'applyEditInscripcionVisibility', 'loadEditEnrollments', 'guardarInscripciones',
+  'updateEditEstadoChip',
+  'loadPeriodoInscripciones', 'renderPeriodoInscripciones', 'exportPeriodoInscripcionesCSV'
 ];
-const frontendSource = ['let leadAppointmentCreateBlocked = true;', 'let gestionRangeLeads = [], gestionRangeKey = "";', 'let mesRangeLeads = [], mesRangeKey = "";', ...constants, ...names.map(extractFunction)].join('\n');
+const frontendSource = ['let leadAppointmentCreateBlocked = true;', 'let gestionRangeLeads = [], gestionRangeKey = "";', 'let mesRangeLeads = [], mesRangeKey = "";', 'let editInscripcionFilas = [];', 'let editInscripcionGeneration = 0;', 'let periodoInscripcionesData = null;', "let periodoInscripcionesKey = '';", 'let periodoInscripcionesGeneration = 0;', 'const inscripcionErroresVisibles = { new: false, edit: false };', ...constants, ...names.map(extractFunction)].join('\n');
 
 function frontend(extra = {}) {
   const elements = new Map(), downloads = [], timers = [], toasts = [];
@@ -146,6 +158,10 @@ function frontend(extra = {}) {
     normalizeHelpText, helpHighlight,
     catalogosApi,
     adminApi,
+    // Inscripciones por programa y nivel (src/legacy/inscripciones.js)
+    PROGRAMAS_INSCRIPCION, esInscritoGestion, nivelesDePrograma, normalizaFechaInscripcion,
+    inscripcionPayload, inscripcionDesdeFilas, inscripcionTienePendientes,
+    programaEtiqueta, validateInscripcionesReport, inscripcionesCsvLines,
     // miamiToday se stubbea en el test para determinismo (2026-09-30)
     miamiToday: () => '2026-09-30',
     supabaseClient: null, currentUser: { id: 'user-test' }, currentAccess: { activo: true, nombre: 'Test', updated_at: 'v1' },
@@ -333,7 +349,7 @@ test('período: cálculo local sin RPC; cuatro secciones, ceros, escape y aviso'
   await f.context.loadReportePeriodo();
   // La cohorte no toca la red; la actividad intenta UNA sola RPC agregada y su
   // fallo no borra los cuatro cuadros.
-  assert.ok(rpcCalls.every(([name]) => name === 'management_period_summary'));
+  assert.ok(rpcCalls.every(([name]) => name === 'management_period_summary' || name === 'lead_enrollments_report'));
   const body = f.element('periodoBody').innerHTML;
   assert.equal((body.match(/<section/g) || []).length, 4);
   assert.match(body, /Cero/); assert.match(body, /0\.00%/); assert.match(body, /50\.00%/); assert.match(body, /100\.00%/);
@@ -473,7 +489,7 @@ test('período: CSV usa rango cargado, cuatro secciones, ceros, totales, neutral
   assert.match(csv, /"Programadas Data Dura","2"/);
   assert.match(csv, /"AGENDADO","2","2"/);
   f.context.currentAccess.activo = false; f.context.exportReportePeriodoCSV(); assert.equal(f.downloads.length, 1);
-  assert.ok(rpcCalls.every(([name]) => name === 'management_period_summary'));
+  assert.ok(rpcCalls.every(([name]) => name === 'management_period_summary' || name === 'lead_enrollments_report'));
 });
 
 test('período: ayudas y encabezados explican leads únicos vs gestiones sin cambiar cifras', async () => {
@@ -2087,7 +2103,7 @@ function reportFixture(report, notes = []) {
   f.element('reporteFecha').value = '2026-03-05';
   return { ...f, db };
 }
-const advisor = (name, id, n = 1) => ({ autor_name: name, autor_user_id: id, gestionados: n, llamadas: { total: n + 1 }, citas: { total_agendados: n + 2, visitas: n + 3 }, inscritos: { total: n + 4 }, procedencia: { Whatsapp: n } });
+const advisor = (name, id, n = 1) => ({ autor_name: name, autor_user_id: id, gestionados: n, llamadas: { del_dia: n, data_dura: 1, total: n + 1 }, citas: { total_agendados: n + 2, visitas: n + 3 }, inscritos: { total: n + 4 }, procedencia: { Whatsapp: n } });
 
 test('reporte RPC usa la fecha y separa citas nuevas de reprogramadas', async () => {
   const f = reportFixture({ asesoras: [advisor('Ana', 'a', 2), advisor('Bea', 'b', 3)] }); await f.context.loadReporteDiario();
@@ -2125,13 +2141,19 @@ test('reporte RPC vacío, cargando y error muestran estado sin romper', async ()
 });
 
 test('CSV bloquea detalle inconsistente con aviso sin descargar ni anunciar exito', async () => {
-  const f = reportFixture({ asesoras: [{ ...advisor('Ana', 'a'), canales: { whatsapp: 1 }, whatsapp: { nuevos: 2 } }] });
-  await f.context.loadReporteDiario();
-  assert.match(f.element('reporteAuto').innerHTML, /Detalle de gestión no disponible/);
-  f.context.exportReporteDiarioCSV();
-  assert.equal(f.downloads.length, 0);
-  assert.match(f.toasts.at(-1)[0], /WhatsApp nuevos supera el total/);
-  assert.equal(f.toasts.at(-1)[1], 'error');
+  for (const [data, message] of [
+    [{ canales: { whatsapp: 1 }, whatsapp: { nuevos: 2 } }, /WhatsApp nuevos supera el total/],
+    [{ canales: { llamada: 1, llamada_whatsapp: 5 }, whatsapp: { nuevos: 0 }, llamadas: { nuevos: 2 } }, /Llamadas nuevos supera el total/],
+    [{ canales: { data_dura: -1 }, whatsapp: { nuevos: 0 } }, /conteos inválidos/],
+  ]) {
+    const f = reportFixture({ asesoras: [{ ...advisor('Ana', 'a'), ...data }] });
+    await f.context.loadReporteDiario();
+    assert.match(f.element('reporteAuto').innerHTML, /Detalle de gestión no disponible/);
+    f.context.exportReporteDiarioCSV();
+    assert.equal(f.downloads.length, 0);
+    assert.match(f.toasts.at(-1)[0], message);
+    assert.equal(f.toasts.at(-1)[1], 'error');
+  }
 });
 
 test('CSV reporte: separa citas nuevas y reprogramadas y suma las columnas visibles', async () => {
@@ -2141,12 +2163,13 @@ test('CSV reporte: separa citas nuevas y reprogramadas y suma las columnas visib
   const rows = decodeCSV(new TextDecoder().decode(await f.downloads[0].blob.arrayBuffer()).slice(1));
   const headers = rows[4], total = rows.at(-1), col = n => Number(total[headers.indexOf(n)]);
   // Detalle: nuevos y resto son una particion del total.
-  assert.equal(headers.length, 33); assert.equal(total.length, 33);
+  assert.equal(headers.length, 36); assert.equal(total.length, 36);
   assert.equal(col('Gestiones realizadas'), 2); assert.equal(col('Citas nuevas Doral'), 2); assert.equal(col('Citas nuevas Data Dura Weston'), 2);
   assert.equal(col('Total citas nuevas'), 4); assert.equal(col('Citas reprogramadas hoy'), 6); assert.equal(col('Reprogramadas'), 2);
   assert.equal(headers.includes('Inscritos del día'), false, 'inscripciones fuera del CSV diario');
   assert.equal(col('Pasados a Agendado hoy'), 4); assert.equal(col('Pasados a Agendado Data Dura hoy'), 2);
-  assert.equal(col('WhatsApp nuevos hoy'), 2); assert.equal(col('WhatsApp gestionados hoy'), 4); assert.equal(col('Total detalle de gestión'), 6);
+  assert.equal(col('WhatsApp nuevos hoy'), 2); assert.equal(col('WhatsApp gestionados hoy'), 4); assert.equal(col('Total WhatsApp'), 6);
+  assert.equal(col('Llamadas nuevos hoy'), 0); assert.equal(col('Llamadas gestionados hoy'), 4); assert.equal(col('Total llamadas de gestión'), 4);
   // Total canales = suma exclusiva de 5 categorias visibles; los buckets
   // retirados (visita 0, sin_clasificar 0) van juntos en 'Otros o sin canal'.
   assert.equal(col('Total canales'), 10);

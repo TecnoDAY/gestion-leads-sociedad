@@ -25,7 +25,7 @@ const treeHtml = readFileSync(new URL('../../index.html', import.meta.url), 'utf
 function extractOpenViewLeadModal(htmlSource, label) {
   const script = [...htmlSource.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
     .map(m => m[1]).find(s => s.includes('function openViewLeadModal'));
-  const match = /function\s+openViewLeadModal\s*\(/.exec(script);
+  const match = /(async\s+)?function\s+openViewLeadModal\s*\(/.exec(script);
   assert.ok(match, `openViewLeadModal ausente en ${label}`);
   for (let end = script.indexOf('}', match.index); end !== -1; end = script.indexOf('}', end + 1)) {
     const candidate = script.slice(match.index, end + 1);

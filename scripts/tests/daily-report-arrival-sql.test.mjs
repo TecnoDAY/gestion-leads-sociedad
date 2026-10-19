@@ -41,7 +41,7 @@ test('helper UI/CSV individual y TOTAL separa llamadas y combinado; valores seri
   assert.deepEqual(detalleGestionHoy(b), { nuevos: 3, gestionados: 5, total: 8 });
   assert.deepEqual(detalleGestionHoy(b, 'llamadas'), { nuevos: 1, gestionados: 3, total: 4 });
   const html = detallesBloqueHtml(b);
-  assert.match(html, /Total WhatsApp<\/td><td[^>]*>8<\/td>/);
+  assert.match(html, /Total grupo WhatsApp<\/td><td[^>]*>8<\/td>/);
   assert.match(html, /<h6[^>]*>Llamadas<\/h6>/);
   const calls = html.split(/<h6[^>]*>Llamadas<\/h6>/)[1].split('</div>')[0];
   assert.match(calls, /Llamadas nuevas hoy<\/td><td[^>]*>1<\/td>/);

@@ -223,21 +223,23 @@
     .password-submit:disabled { opacity: .55; cursor: wait; }
     #setPasswordStatus { min-height: 1.2rem; }
     #modalViewLead { background: rgba(10,20,42,.78); }
-    .lead-detail-shell { width: min(100%, 55rem); border: 1px solid rgba(148,163,184,.24); border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
-    .lead-detail-header { padding: 1.1rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: #fff; }
+    .lead-detail-shell { width: min(100%, 44rem); border: 1px solid rgba(148,163,184,.24); border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
+    .lead-detail-header { padding: .85rem 1.2rem; border-bottom: 1px solid #e4e7ec; background: #fff; }
     .lead-detail-header h3 { color: #17203b; }
     .lead-detail-header p { color: #667085; }
-    .lead-detail-content { padding: 1.5rem; background: #f7f8fc; color: #17203b; }
-    .lead-detail-hero { border: 1px solid #e3e7f1; border-radius: 1rem; padding: 1.2rem; background: #fff; }
-    .lead-detail-hero .lead-detail-name { color: #17203b; font-size: 1.2rem; line-height: 1.4; }
+    .lead-detail-content { padding: 1.15rem; background: #f7f8fc; color: #17203b; }
+    .lead-detail-hero { border: 1px solid #e3e7f1; border-radius: 1rem; padding: .95rem; background: #fff; }
+    .lead-detail-hero .lead-detail-name { color: #17203b; font-size: 1.05rem; line-height: 1.4; }
     .lead-detail-hero .lead-detail-meta { color: #475569; }
+    .lead-detail-avatar { display: inline-flex; height: 2.5rem; width: 2.5rem; flex: none; align-items: center; justify-content: center; border-radius: 9999px; background: rgba(99,102,241,.15); color: #4338ca; font-size: 1rem; font-weight: 700; line-height: 1; text-transform: uppercase; }
+    [data-theme="dark"] .lead-detail-avatar { color: #a5b4fc; }
     .lead-detail-card, .lead-detail-section { border: 1px solid #e4e7ec; border-radius: .85rem; background: #fff; }
-    .lead-detail-card { min-width: 0; padding: .9rem; }
+    .lead-detail-card { min-width: 0; padding: .7rem; }
     .lead-detail-card > span:first-child, .lead-detail-section > span:first-child { color: #526174; font-size: .67rem; letter-spacing: .04em; }
     .lead-detail-card .lead-detail-value { color: #17203b; overflow-wrap: anywhere; }
-    .lead-detail-section { padding: 1rem; }
+    .lead-detail-section { padding: .8rem; }
     .lead-detail-section p { overflow-wrap: anywhere; }
-    .lead-detail-footer { border-top: 1px solid #e4e7ec; padding: .9rem 1.5rem; background: #fff; }
+    .lead-detail-footer { border-top: 1px solid #e4e7ec; padding: .7rem 1.2rem; background: #fff; }
     .lead-detail-content textarea, .lead-detail-content input:not([type="radio"]), .lead-detail-content select { background: #fff !important; color: #17203b !important; }
     .lead-detail-content textarea::placeholder, .lead-detail-content input::placeholder { color: #667085; }
     [data-theme="dark"] .lead-detail-shell { background: #1e293b; }
@@ -252,20 +254,36 @@
     [data-theme="dark"] .lead-detail-card > span:first-child, [data-theme="dark"] .lead-detail-section > span:first-child { color: #94a3b8; }
     [data-theme="dark"] .lead-detail-content textarea, [data-theme="dark"] .lead-detail-content input:not([type="radio"]), [data-theme="dark"] .lead-detail-content select { background: #0f172a !important; color: #f8fafc !important; }
     :is(#modalEditLead, #modalNewLead) { background: rgba(10,20,42,.78); }
-    .lead-form-shell { width: min(100%, 47rem); border: 1px solid #e4e7ec; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
-    .lead-form-header { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: #fff; }
+    .lead-form-shell { width: min(100%, 37.5rem); border: 1px solid #e4e7ec; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
+    .lead-form-header { flex: none; display: flex; align-items: center; justify-content: space-between; padding: .85rem 1.2rem; border-bottom: 1px solid #e4e7ec; background: #fff; }
     .lead-form-header h3 { color: #17203b; }
     .lead-form-header p { color: #667085; }
-    .lead-form-scroll { min-height: 0; overflow-y: auto; padding: 1.5rem; background: #f7f8fc; }
-    .lead-form-primary, #editExistingCampusBlock:not(.hidden), #editAppointmentFields:not(.hidden), #newAppointmentFields:not(.hidden), #adminLeadFields:not(.hidden) { border: 1px solid #e4e7ec; border-radius: 1rem; padding: 1.2rem; background: #fff; }
-    .lead-form-primary h4 { margin-bottom: 1rem; color: #17203b; font-size: .86rem; font-weight: 700; }
+    .lead-form-scroll { min-height: 0; overflow-y: auto; padding: 1.15rem; background: #f7f8fc; }
+    .lead-form-primary, #editExistingCampusBlock:not(.hidden), #editAppointmentFields:not(.hidden), #newAppointmentFields:not(.hidden), #adminLeadFields:not(.hidden) { border: 1px solid #e4e7ec; border-radius: 1rem; padding: .95rem; background: #fff; }
+    .lead-form-primary h4 { margin-bottom: .8rem; color: #17203b; font-size: .86rem; font-weight: 700; }
     :is(#formEditLead, #formNewLead) label { color: #344054; }
-    :is(#formEditLead, #formNewLead) input:not([type="radio"]):not([type="hidden"]), :is(#formEditLead, #formNewLead) select, :is(#formEditLead, #formNewLead) textarea { min-height: 2.55rem; border: 1px solid #98a2b3; border-radius: .6rem; background: #fff; color: #17203b; }
+    :is(#formEditLead, #formNewLead) input:not([type="radio"]):not([type="hidden"]), :is(#formEditLead, #formNewLead) select, :is(#formEditLead, #formNewLead) textarea { min-height: 2.1rem; border: 1px solid #98a2b3; border-radius: .6rem; background: #fff; color: #17203b; }
     :is(#formEditLead, #formNewLead) input[readonly]:not([type="radio"]) { background: #f1f5f9; color: #475569; }
-    :is(#formEditLead, #formNewLead) textarea { min-height: 5rem; }
+    :is(#formEditLead, #formNewLead) textarea { min-height: 4rem; }
     :is(#formEditLead, #formNewLead) input::placeholder, :is(#formEditLead, #formNewLead) textarea::placeholder { color: #667085; }
     :is(#formEditLead, #formNewLead) input:focus, :is(#formEditLead, #formNewLead) select:focus, :is(#formEditLead, #formNewLead) textarea:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
-    .lead-form-footer { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .7rem; padding: .9rem 1.5rem; border-top: 1px solid #e4e7ec; background: #fff; }
+    /* Inscripcion: nivel sin elegir tras intentar guardar. Los formularios
+       fuerzan el borde de sus inputs en ambos temas (el tema claro con
+       !important), asi que esta regla necesita mas especificidad. */
+    :is(#formEditLead, #formNewLead) select.inscripcion-campo-error { border-color: #dc2626 !important; }
+    [data-theme="dark"] :is(#formEditLead, #formNewLead) select.inscripcion-campo-error { border-color: #dc2626 !important; }
+    /* Seccion de inscripcion (programa y nivel): panel y tarjetas. Cada
+       programa tiene su acento (emerald = Teatro Musical, indigo = Actuacion)
+       y la tarjeta activa lo muestra con borde y fondo propios. */
+    .inscripcion-panel { border: 1px solid rgba(148,163,184,.22); border-radius: 1rem; background: rgba(30,41,59,.45); padding: .9rem; }
+    [data-theme="light"] .inscripcion-panel { border-color: #dbe3ec; background: #f1f5f9; }
+    .inscripcion-tarjeta { border: 1px solid rgba(148,163,184,.20); border-radius: .85rem; background: rgba(2,6,23,.35); padding: .7rem; transition: border-color .15s ease, background-color .15s ease; }
+    [data-theme="light"] .inscripcion-tarjeta { border-color: #e2e8f0; background: #fff; }
+    .inscripcion-tarjeta.activa-emerald { border-color: rgba(16,185,129,.60); background: rgba(16,185,129,.10); }
+    [data-theme="light"] .inscripcion-tarjeta.activa-emerald { border-color: #34d399; background: #ecfdf5; }
+    .inscripcion-tarjeta.activa-indigo { border-color: rgba(99,102,241,.60); background: rgba(99,102,241,.10); }
+    [data-theme="light"] .inscripcion-tarjeta.activa-indigo { border-color: #818cf8; background: #eef2ff; }
+    .lead-form-footer { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .7rem; padding: .7rem 1.2rem; border-top: 1px solid #e4e7ec; background: #fff; }
     [data-theme="dark"] .lead-form-shell, [data-theme="dark"] .lead-form-header, [data-theme="dark"] .lead-form-footer { background: #1e293b; border-color: #334155; }
     [data-theme="dark"] .lead-form-header h3, [data-theme="dark"] .lead-form-primary h4 { color: #f8fafc; }
     [data-theme="dark"] .lead-form-header p { color: #94a3b8; }

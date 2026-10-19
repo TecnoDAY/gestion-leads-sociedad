@@ -202,3 +202,28 @@ Estado: implementado y verificado localmente; pendiente revision independiente y
 - Postflight: funcion `daily_management_report(date,uuid)` contiene CTE `result_events` y atribucion `visits/absent/cancelled/rescheduled` por `action_user_id`/`action_name` de `lead_appointment_events`, filtrado a status nuevos `ASISTIO/NO_ASISTIO/CANCELADA/REPROGRAMADA` por fecha Miami. `booked/rebooked` siguen creados por `coalesce(created_by_user_id, advisor_user_id)`. ACL intacta: `authenticated`,`postgres`,`service_role`; sin `public`/`anon`.
 - Evidencia de datos: `lead_appointments` 46/46 y todos con eventos; `lead_appointment_events` 63; resultado events por Miami: Jessica (2026-10-16 cancelada 1, reprogramada 1; totales historicos movidos al actor; 2026-09-30 atribuido a actor Tecnologia cancelada 1/no-asistio 1). Consulta agregada de eventos confirma recuento por actor/fecha/status.
 - Sin DML, sin otras migraciones, sin commit/push/deploy/frontend. Prueba directa de RPC autenticada no disponible en este contexto; verificacion por SQL read-only y body exacto.
+
+## Correccion de coherencia del resumen (2026-10-19)
+- Sintoma reportado por el equipo: "el reporte diario no suma". Diagnostico con
+  datos reales (2026-10-15, 167 gestiones): la capa de datos SI cuadra
+  (particion de canales = 167 = suma de asesorias = fila TOTAL del CSV), pero
+  la pantalla mostraba dos cifras distintas con la MISMA etiqueta "Total
+  llamadas": el KPI del resumen (84 = 36+40+8,includes la llamada combinada) y
+  el detalle por asesora (76 = 36+40, solo llamadas puras). La llamada
+  combinada pertenece al grupo de WhatsApp por decision vigente, asi que el
+  KPI era la unica cifra que cruzaba los dos grupos.
+- Fix (solo frontend, sin migracion ni cambio de RPC): el KPI y la columna CSV
+  "Total llamadas" usan ahora el grupo Llamadas (del_dia + data_dura), el
+  mismo que muestra el detalle. Invariante en pantalla: llamadas + grupo
+  WhatsApp = gestiones (76 + 91 = 167). Etiqueta del detalle renombrada a
+  "Total grupo WhatsApp" para distinguirla del canal "WhatsApp" de la tabla
+  Canales; la cabecera del CSV no cambia (contrato con el equipo).
+- Se conserva `llamadas.total` legado en la RPC (incluye combinado) para no
+  romper otros consumidores.
+- Verificacion: `npm test` 699 Node (697 pasan; 2 fallos preexistentes y
+  ajenos) + 22 Python OK; `check-app` y `build` OK; render en Chromium con los
+  datos reales de 2026-10-15: resumen, detalles y CSV cuadran.
+- Limitacion: el reporte cuenta GESTIONES (actos registrados), no personas:
+  2026-10-15 son 167 gestiones sobre 94 personas distintas. Si el equipo
+  necesita "personas gestionadas" es una metrica nueva y requiere RPC
+  (autorizacion de migracion remota) y no se ha anadido.

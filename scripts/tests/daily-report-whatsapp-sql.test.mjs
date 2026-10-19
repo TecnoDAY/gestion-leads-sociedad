@@ -40,7 +40,7 @@ test('pantalla y CSV admiten detalle WhatsApp mayor que canal WhatsApp sin infla
   const header = lines[4].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
   const row = lines.at(-2).split(',');
   const total = lines.at(-1).split(',');
-  for (const [label, expected] of [['WhatsApp nuevos hoy', 2], ['WhatsApp gestionados hoy', 4], ['Total detalle de gestión', 6], ['Total canales', 7], ['Gestiones realizadas', 7]]) {
+  for (const [label, expected] of [['WhatsApp nuevos hoy', 2], ['WhatsApp gestionados hoy', 4], ['Total WhatsApp', 6], ['Total canales', 7], ['Gestiones realizadas', 7]]) {
     const index = header.indexOf(csvReporteField(label));
     assert.ok(index >= 0, label);
     assert.equal(row[index], csvReporteField(String(expected)), label);
@@ -51,6 +51,6 @@ test('pantalla y CSV admiten detalle WhatsApp mayor que canal WhatsApp sin infla
   assert.match(html, /WhatsApp nuevos hoy<\/td><td[^>]*>2<\/td>/);
   assert.match(html, /WhatsApp gestionados hoy<\/td><td[^>]*>4<\/td>/);
   assert.doesNotMatch(html, /Total detalle de gestión/);
-  assert.doesNotMatch(html, /Detalle WhatsApp|Total WhatsApp/);
+  assert.doesNotMatch(html, /Detalle WhatsApp/);
   assert.equal(header.length, row.length);
 });

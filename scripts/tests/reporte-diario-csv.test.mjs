@@ -1,6 +1,6 @@
 // Caracterizacion del CSV del reporte diario (fase 16): diarioCsvLines y
 // resolverNotaBloque viven en src/legacy/reportes.js; el golden real es el
-// t5 (33 columnas, fila TOTAL); aqui se fija el armado puro y la coherencia
+// t5 (36 columnas, fila TOTAL); aqui se fija el armado puro y la coherencia
 // de totales (todo lo que se suma se ve; correccion del caso Jessica).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -20,7 +20,7 @@ const bloqueVacio = { autor_name: 'Marcos', autor_user_id: 'u2' };
 // Separar delimitadores externos a comillas (incluye la coma de "De ellos,").
 const campos = line => line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
 
-test('cabecera del CSV diario: titulo, fecha, generado, filtro opcional y 33 columnas', () => {
+test('cabecera del CSV diario: titulo, fecha, generado, filtro opcional y 36 columnas', () => {
   const con = diarioCsvLines('2026-10-13', 'Loli', '2026-10-14', [bloque], []);
   assert.equal(con[0], 'Reporte Diario de Trabajo');
   assert.equal(con[1], csvReporteField('Fecha: 2026-10-13'));
@@ -28,7 +28,7 @@ test('cabecera del CSV diario: titulo, fecha, generado, filtro opcional y 33 col
   assert.equal(con[3], csvReporteField('Filtro: Loli'));
   assert.equal(con[4], '');
   const headers = campos(con[5]);
-  assert.equal(headers.length, 33);
+  assert.equal(headers.length, 36);
   assert.equal(headers[0], csvReporteField('Asesora'));
   // la columna agregada va entre Canal Instagram y Total canales
   assert.equal(headers[headers.length - 5], csvReporteField('Canal Instagram'));
@@ -39,7 +39,7 @@ test('cabecera del CSV diario: titulo, fecha, generado, filtro opcional y 33 col
   // sin filtro no hay linea de filtro ni hueco desalineado
   const sin = diarioCsvLines('2026-10-13', '', '2026-10-14', [bloque], []);
   assert.equal(sin[3], '');
-  assert.equal(campos(sin[4]).length, 33);
+  assert.equal(campos(sin[4]).length, 36);
 });
 
 test('filas por bloque con values en el orden de keys y notas resueltas', () => {
@@ -53,7 +53,7 @@ test('filas por bloque con values en el orden de keys y notas resueltas', () => 
   // bloque sin datos: todos los numericos en 0
   const filaVacia = con.at(-2).split(',');
   assert.equal(filaVacia[0], csvReporteField('Marcos'));
-  assert.equal(filaVacia.slice(1, -2).filter(v => v === csvReporteField('0')).length, 30);
+  assert.equal(filaVacia.slice(1, -2).filter(v => v === csvReporteField('0')).length, 33);
 });
 
 test('fila TOTAL con sumas por key y dos columnas vacias al final', () => {
@@ -63,7 +63,7 @@ test('fila TOTAL con sumas por key y dos columnas vacias al final', () => {
   assert.equal(total[1], csvReporteField('5'));
   assert.equal(total.at(-1), csvReporteField(''));
   assert.equal(total.at(-2), csvReporteField(''));
-  assert.equal(total.length, 33);
+  assert.equal(total.length, 36);
 });
 
 test('resolverNotaBloque: uid primero, nombre sin uid, fallback b.nota', () => {
@@ -102,7 +102,7 @@ test('coherencia del caso Jessica: fila visible y total de canales cuadran con g
   assert.equal(fila[iInstagram], csvReporteField('0'));
   assert.equal(fila[iTotales], csvReporteField('130'));
    // Total detalle ya contiene combinado, Instagram y otros: no repetirlos.
-   const sumaCanalCsv = ['Llamadas del día', 'Llamadas Data Dura', 'Total detalle de gestión']
+   const sumaCanalCsv = ['Llamadas del día', 'Llamadas Data Dura', 'Total WhatsApp']
     .reduce((a, n) => a + Number(fila[el(n)].slice(1, -1)), 0);
   assert.equal(sumaCanalCsv, 130);
 });

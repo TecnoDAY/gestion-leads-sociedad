@@ -41,6 +41,7 @@ const names = ['clearSessionState', 'closeInvalidSession', 'validateCurrentSessi
   'markPeriodoReportDirty', 'updatePeriodoCsvState',
   'resetReportePeriodo', 'setReporteVista', 'setPeriodoPreset', 'periodoRangeKey',
   'loadPeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
+  'loadPeriodoInscripciones', 'renderPeriodoInscripciones',
   'stopIdleTracking', 'endAgentSessionLocally', 'startAgentActivityTracking'];
 const sessionCacheNames = ['loadHistoricoData', 'performLoadHistoricoData', 'loadLeadsData', 'performLoadLeadsData',
   'getExactLeadsCount', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor',
@@ -130,6 +131,7 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     periodoRequestGeneration: 0, periodoData: null, periodoLoadedKey: '', reporteVistaActiva: 'diario',
     periodoSourceRevision: 0, periodoLoadedRevision: -1, periodoRefreshTimer: null,
     periodoActividadData: null, periodoActividadKey: '', periodoActividadGeneration: 0,
+    periodoInscripcionesData: null, periodoInscripcionesKey: '', periodoInscripcionesGeneration: 0,
     agentSessionId: null, idleWarnTimer: null, idleTickTimer: null, idleListenersOn: false, idleLastTouchSent: 0,
     localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     campanasRequestGeneration: 0, campanasData: [], campaignStatsMap: new Map(), currentMainTab: 'dashboard',
@@ -336,7 +338,7 @@ for (const outcome of ['success', 'error', 'reject']) {
 }
 
 test('switchTab conserva ocultación CRM del trafficker y pestañas del agente', () => {
-  const f = frontend(), ids = ['tabBtnDashboard', 'tabBtnHistorico', 'tabBtnReporte', 'tabBtnCitas'];
+  const f = frontend(), ids = ['tabBtnDashboard', 'tabBtnHistorico', 'tabBtnCitas'];
   f.c.setAppAuthenticated(user('A'), access('A', 'trafficker'));
   for (const tab of ['campanas', 'dashboard', 'citas', 'reporte', 'historico', 'campanas']) {
     f.c.switchTab(tab);

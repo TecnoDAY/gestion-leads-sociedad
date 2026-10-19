@@ -1060,7 +1060,7 @@ export function diarioCsvLines(fecha, filtro, generado, bloques, notasResueltas)
     const p = b.procedencia || {}, l = b.llamadas || {}, c = b.citas || {};
     const detalle = detalleGestionHoy(b);
     const llamadas = detalleGestionHoy(b, 'llamadas');
-    const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, l.total, c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.citas_reprogramadas_hoy, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, detalle.nuevos, detalle.gestionados, detalle.total, llamadas.nuevos, llamadas.gestionados, llamadas.total, (b.canales || {}).instagram, numCanalesOtros(b.canales), totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
+    const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, (Number(l.del_dia) || 0) + (Number(l.data_dura) || 0), c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.citas_reprogramadas_hoy, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, detalle.nuevos, detalle.gestionados, detalle.total, llamadas.nuevos, llamadas.gestionados, llamadas.total, (b.canales || {}).instagram, numCanalesOtros(b.canales), totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
     values.forEach((v, n) => { sumas[DIARIO_KEYS[n]] += v; });
     const nota = notasResueltas[i] || {};
     lineas.push([b.autor_name ?? b.advisor, ...values, nota.problemas ?? '', nota.observaciones ?? ''].map(csvReporteField).join(','));
@@ -1090,7 +1090,10 @@ export function totalDiario(bloques) {
   const num = (o, k) => Number(o?.[k]) || 0;
   return (bloques || []).reduce((a, b) => {
     a.g += num(b, 'gestionados');
-    a.l += Number(b.llamadas?.total) || 0;
+    // "Total llamadas" = el grupo Llamadas (llamada + llamada Data Dura), el
+    // mismo que muestra el detalle por asesora. La llamada combinada vive en
+    // el grupo de WhatsApp, asi que el resumen cuadra con los detalles.
+    a.l += num(b.llamadas, 'del_dia') + num(b.llamadas, 'data_dura');
     a.c += Number(b.citas?.total_agendados) || 0;
     a.r += Number(b.citas?.citas_reprogramadas_hoy) || 0;
     a.v += Number(b.citas?.visitas) || 0;
@@ -1109,7 +1112,7 @@ export function detallesBloqueHtml(b) {
   try {
     const d = detalleGestionHoy(b);
     const l = detalleGestionHoy(b, 'llamadas');
-    detalle = tablaDetalle('Detalle de gestión', [['WhatsApp nuevos hoy', d.nuevos], ['WhatsApp gestionados hoy', d.gestionados], ['Total WhatsApp', d.total]],
+    detalle = tablaDetalle('Detalle de gestión', [['WhatsApp nuevos hoy', d.nuevos], ['WhatsApp gestionados hoy', d.gestionados], ['Total grupo WhatsApp', d.total]],
       '<h6 class="mt-3 font-semibold text-indigo-900">Llamadas</h6>' + filasDetalle([['Llamadas nuevas hoy', l.nuevos], ['Llamadas gestionadas hoy', l.gestionados], ['Total llamadas', l.total]]));
   } catch (error) {
     detalle = `<div class="daily-detail-card" role="alert"><h5 class="font-semibold text-indigo-900">Detalle de gestión</h5><p>${escapeHtml(error.message)}</p></div>`;

@@ -414,7 +414,7 @@
     .historical-filters select, .historical-filters input { min-height: 2.6rem; border: 1px solid #98a2b3; border-radius: .6rem; padding: .55rem .7rem; background: #fff; color: #17203b; }
     .historical-filters select { width: 100%; }
     .historical-filters label { color: #344054; font-size: .75rem; font-weight: 600; }
-    .historical-filter-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .75rem; }
+    .historical-filter-grid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: .75rem; }
     .historical-filter-actions { display: flex; flex-wrap: wrap; align-items: end; gap: .6rem; margin-top: 1rem; }
     .historical-filter-actions input { width: min(100%,10rem); }
     .historical-presets { display: flex; flex-wrap: wrap; gap: .35rem; }

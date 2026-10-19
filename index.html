@@ -583,8 +583,8 @@
         <div class="relative z-10 flex flex-wrap items-center gap-2"><span class="dashboard-eyebrow"><i data-lucide="chart-no-axes-combined" class="w-3.5 h-3.5"></i> Análisis histórico</span><h2 class="mt-1 text-xl font-bold text-white">Resultados a lo largo del tiempo</h2><p class="mt-0 text-xs text-slate-400">Explora la captación, las inscripciones y el rendimiento de tus campañas.</p></div>
       </div>
       <p id="historicalLoadingStatus" class="historical-loading-status" role="status" aria-live="polite"></p>
-      <div class="historical-filters">
-        <div class="mb-1.5"><h3 class="text-sm font-bold text-white">Explorar resultados</h3><p class="text-xs text-slate-400">Selecciona campaña, asesor y período para actualizar los gráficos.</p></div>
+       <div class="historical-filters">
+        <div class="mb-1.5 flex flex-wrap items-center justify-between gap-2"><h3 class="text-sm font-bold text-white">Explorar resultados</h3><p class="text-xs text-slate-400">Selecciona campaña, asesor y período para actualizar los gráficos.</p></div>
 
         <!-- Controles rápidos del histórico -->
         <div class="historical-filter-grid">
@@ -615,22 +615,22 @@
               <option value="">Todos los Años</option>
             </select>
           </label>
-        </div>
-        <div class="historical-filter-actions">
 
           <!-- Rango de fechas (Desde/Hasta) en Histórico: tiene precedencia sobre el mes -->
           <label>Desde<input type="date" id="histRangeFrom" data-ev="change:renderHistoricalAnalytics()" class="block mt-1 text-xs"></label>
           <label>Hasta<input type="date" id="histRangeTo" data-ev="change:renderHistoricalAnalytics()" class="block mt-1 text-xs"></label>
+        </div>
+        <div class="historical-filter-actions">
 
           <!-- Presets del rango -->
           <div class="historical-presets">
-            <button data-ev="click:setHistRangePreset('7d')" title="Últimos 7 días" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">7d</button>
-            <button data-ev="click:setHistRangePreset('30d')" title="Últimos 30 días" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">30d</button>
-            <button data-ev="click:setHistRangePreset('month')" title="Este mes" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">Mes</button>
-            <button data-ev="click:setHistRangePreset('clear')" title="Limpiar rango de fechas" class="px-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">Limpiar</button>
+            <button data-ev="click:setHistRangePreset('7d')" title="Últimos 7 días" class="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">7d</button>
+            <button data-ev="click:setHistRangePreset('30d')" title="Últimos 30 días" class="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">30d</button>
+            <button data-ev="click:setHistRangePreset('month')" title="Este mes" class="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">Mes</button>
+            <button data-ev="click:setHistRangePreset('clear')" title="Limpiar rango de fechas" class="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">Limpiar</button>
           </div>
 
-          <button data-ev="click:renderHistoricalAnalytics()" title="Recalcular gráficos" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0">
+          <button data-ev="click:renderHistoricalAnalytics()" title="Recalcular gráficos" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span>Actualizar</span>
           </button>

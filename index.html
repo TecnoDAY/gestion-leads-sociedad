@@ -1648,6 +1648,11 @@
       let periodoInscripcionesData = null;
       let periodoInscripcionesKey = '';
       let periodoInscripcionesGeneration = 0;
+      // Inscripciones (programa y nivel) de la lista rapida del dashboard.
+      let dashboardInscripciones = new Map();
+      let dashboardInscripcionesClave = '';
+      let dashboardInscripcionesEstado = 'idle';
+      let dashboardInscripcionesGeneration = 0;
      let isTrafficker = false;
      let isSupervisor = false;
      // Fuente unica de "puede editar campanas": admin, trafficker o supervisor.
@@ -1729,6 +1734,7 @@
       filteredLeads = [];
       dashboardVisibleLeads = null;
       dashboardPriority = 'pendiente';
+      resetDashboardInscripciones();
       if (typeof dashboardLeadCache !== 'undefined' && dashboardLeadCache) dashboardLeadCache.clear();
       const dashboardAppointmentsList = document.getElementById('dashboardAppointmentsList');
       if (dashboardAppointmentsList) dashboardAppointmentsList.innerHTML = '<p class="px-4 py-5 text-xs text-slate-400">Cargando citas…</p>';
@@ -4039,6 +4045,15 @@
       return true;
     }
 
+    // Descarta las etiquetas de la lista rapida y las respuestas en vuelo.
+    // Es defensivo: en el arranque puede ejecutarse sin estado todavia.
+    function resetDashboardInscripciones() {
+      if (typeof dashboardInscripciones !== 'undefined') dashboardInscripciones = new Map();
+      if (typeof dashboardInscripcionesClave !== 'undefined') dashboardInscripcionesClave = '';
+      if (typeof dashboardInscripcionesEstado !== 'undefined') dashboardInscripcionesEstado = 'idle';
+      if (typeof dashboardInscripcionesGeneration !== 'undefined') dashboardInscripcionesGeneration += 1;
+    }
+
     function renderQuickLeads() {
       const container = document.getElementById('quickLeadsList');
       if (!container) return;
@@ -4046,7 +4061,12 @@
       const source = (typeof dashboardVisibleLeads === 'undefined' || dashboardVisibleLeads === null)
         ? filteredLeads
         : dashboardVisibleLeads;
-      container.innerHTML = quickLeadsHtml(source);
+      container.innerHTML = quickLeadsHtml(source, {
+        prioridad: typeof dashboardPriority === 'undefined' ? '' : dashboardPriority,
+        inscripciones: typeof dashboardInscripciones === 'undefined' ? null : dashboardInscripciones,
+        estado: typeof dashboardInscripcionesEstado === 'undefined' ? 'listo' : dashboardInscripcionesEstado,
+      });
+      if (typeof loadDashboardInscripciones === 'function') loadDashboardInscripciones(source);
     }
 
     function matchingGestionOption(kind) {
@@ -4095,7 +4115,61 @@
       const { quickAction, leadId, origin } = button.dataset;
       if (quickAction === 'edit') openEditLeadModal(leadId, origin);
       if (quickAction === 'view') openViewLeadModal(leadId, origin);
+      if (quickAction === 'retry-inscripciones') {
+        // Reintento manual: solo entonces se vuelve a consultar.
+        resetDashboardInscripciones();
+        renderQuickLeads();
+      }
     });
+
+    // Carga las inscripciones vigentes de las personas visibles (solo en la vista
+    // de inscritos). Una consulta por conjunto: si el conjunto no cambia, no se
+    // repite y tras un error no reintenta solo (hay que pulsar "Reintentar").
+    // El token, la sesion y el usuario descartan respuestas antiguas.
+    async function loadDashboardInscripciones(leads) {
+      if (dashboardPriority !== 'inscrito') return;
+      // Misma seleccion que se pinta: solo se consulta a quien se ve.
+      const visibles = quickLeadsSelection(leads).filter(l => getLeadOrigin(l) === 'actual');
+      const ids = visibles.map(l => Number(l.id)).filter(Number.isFinite);
+      const clave = ids.join(',');
+      // Conjunto ya atendido (con datos o con error): no se vuelve a consultar.
+      if (clave === dashboardInscripcionesClave && dashboardInscripcionesEstado !== 'idle') return;
+      const token = ++dashboardInscripcionesGeneration;
+      const generation = sessionGeneration;
+      const userId = currentUser?.id;
+      dashboardInscripcionesClave = clave;
+      dashboardInscripcionesEstado = 'cargando';
+      // Al cambiar de conjunto se limpian los datos anteriores.
+      dashboardInscripciones = new Map();
+      renderQuickLeads();
+      if (!supabaseClient || !ids.length) {
+        if (token !== dashboardInscripcionesGeneration || generation !== sessionGeneration) return;
+        dashboardInscripcionesEstado = 'listo';
+        renderQuickLeads();
+        return;
+      }
+      const { data, error } = await supabaseClient
+        .from('lead_program_enrollments')
+        .select('lead_id, programa, nivel')
+        .in('lead_id', ids)
+        .eq('activa', true);
+      if (token !== dashboardInscripcionesGeneration || generation !== sessionGeneration || currentUser?.id !== userId) return;
+      if (error) {
+        console.warn('No se pudieron cargar las inscripciones del dashboard:', error);
+        dashboardInscripcionesEstado = 'error';
+        renderQuickLeads();
+        return;
+      }
+      const mapa = new Map();
+      (data || []).forEach(fila => {
+        const key = String(fila.lead_id);
+        if (!mapa.has(key)) mapa.set(key, []);
+        mapa.get(key).push(fila);
+      });
+      dashboardInscripciones = mapa;
+      dashboardInscripcionesEstado = 'listo';
+      renderQuickLeads();
+    }
 
     // Delegacion de clics de la matriz: los valores viajan en data-*, nunca
     // dentro de onclick inline (los atributos JS decodifican entidades antes
@@ -4589,11 +4663,9 @@
         const opciones = p.niveles.map(n => `<option value="${escapeAttr(n)}"${actual && actual.nivel === n ? ' selected' : ''}>${escapeHtml(n)}</option>`).join('');
         const fecha = actual?.fecha_inscripcion || '';
         const abierto = Boolean(actual);
-        // Estilo por programa (las clases van literales para que las vea el
-        // generador de utilidades de Tailwind).
-        const estilo = p.id === 'ACTUACION'
-          ? { marca: 'AC', chip: 'bg-indigo-500/15 text-indigo-300', check: 'accent-indigo-500', activa: 'activa-indigo' }
-          : { marca: 'TM', chip: 'bg-emerald-500/15 text-emerald-300', check: 'accent-emerald-500', activa: 'activa-emerald' };
+        // Estilo por programa (viene del catalogo: las clases van literales
+        // para que las vea el generador de utilidades de Tailwind).
+        const estilo = { marca: p.marca, chip: p.chip, check: p.check, activa: p.activa };
         return `<div class="inscripcion-tarjeta${abierto ? ' ' + estilo.activa : ''}" data-inscripcion-card="${escapeAttr(p.id)}" data-inscripcion-activa="${estilo.activa}">`
           + `<div class="flex items-center gap-2.5">`
           + `<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${estilo.chip} text-[11px] font-bold">${escapeHtml(estilo.marca)}</span>`
@@ -4797,6 +4869,9 @@
         showToast('El lead se guardó, pero las inscripciones no. Revisa la ficha del lead.', 'error');
         return false;
       }
+      // Las etiquetas del dashboard quedan obsoletas: se recargan al repintar
+      // la lista y se descartan las respuestas que estuvieran en vuelo.
+      resetDashboardInscripciones();
       return true;
     }
     async function loadEditAppointmentAdvisors() {

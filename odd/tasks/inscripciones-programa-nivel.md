@@ -99,6 +99,20 @@ propio en `scripts/tests/inscripciones.test.mjs`). Runner: `npm test`.
   pequena (ancho 880 -> 704 px, rellenos, tarjetas, secciones), cabecera con
   icono mayor, avatar con la inicial del lead, icono por dato (telefono,
   campana, medio, asesores, ultima gestion) y por seccion.
+- [x] T14 Vista rapida de inscritos en el dashboard: al pulsar "Inscritos", la
+  lista muestra una etiqueta por programa (TM verde / AC indigo) con su nivel, en
+  una sola linea y sin duplicar a la persona. Sin datos: "Inscripcion pendiente
+  de completar"; cargando y error se distinguen. Una sola consulta por conjunto
+  de leads visibles (el token descarta respuestas antiguas si cambia el filtro)
+  y recarga al guardar una inscripcion. En movil la columna ocupa el ancho
+  completo con su etiqueta. La campana sigue en las demas prioridades.
+- [x] T15 Endurecimiento de la vista rapida de inscritos: la consulta usa la
+  misma seleccion que se pinta (ocho personas, historico excluido), asi que solo
+  se consulta a quien se ve. Tras un error no hay reintentos automaticos (se
+  ofrece "Reintentar"). Las respuestas se descartan si cambia el filtro, se
+  cierra la sesion o cambia el usuario. Al guardar una inscripcion (alta o
+  edicion) se invalidan las etiquetas. La campana se conserva como dato
+  secundario en la vista de inscritos.
 
 ## Criterios de aceptacion
 - La seccion de inscripcion no aparece para estados distintos de inscrito.
@@ -109,7 +123,7 @@ propio en `scripts/tests/inscripciones.test.mjs`). Runner: `npm test`.
 - Los reportes existentes no cambian sus totales.
 
 ## Verificacion
-- `npm test`: 689 Node (687 pasan; 2 fallos preexistentes y ajenos a esta
+- `npm test`: 714 Node (712 pasan; 2 fallos preexistentes y ajenos a esta
   feature: `openDashboardAppointmentsDetail` y el aviso `aria-live` del
   reporte) + 22 Python OK.
 - `npm run check:app` OK; `npm run build` OK.

@@ -168,7 +168,7 @@ function extractFunction(name) {
 const fuenteWrapper = ['handleCreateLead', 'handleUpdateLead', 'editLeadNeedsAppointment', 'editLeadStaysAgendado',
   'editSessionValid', 'editAppointmentSubmitBlocked', 'updateEditSubmitState', 'appointmentDetailsFrom',
   'confirmAppointmentCreation', 'appointmentCampusFrom', 'formatSaveError',
-  'inscripcionErrorTexto', 'inscripcionCambioNecesario', 'guardarInscripciones',
+  'inscripcionErrorTexto', 'inscripcionCambioNecesario', 'resetDashboardInscripciones', 'guardarInscripciones',
   'inscripcionFaltanNiveles', 'updateInscripcionAviso'].map(extractFunction).join('\n');
 
 function sandbox(sample) {

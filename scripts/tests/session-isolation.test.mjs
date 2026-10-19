@@ -30,7 +30,7 @@ function extractFunction(name) {
   throw new Error(`No se pudo extraer ${name}`);
 }
 // Funciones que siguen en el script clásico (no extraídas a legacy)
-const names = ['clearSessionState', 'closeInvalidSession', 'validateCurrentSession', 'loadCurrentAccess',
+const names = ['clearSessionState', 'resetDashboardInscripciones', 'closeInvalidSession', 'validateCurrentSession', 'loadCurrentAccess',
   'setAppAuthenticated', 'enterAuthenticatedSession', 'handleSignOut', 'setDashboardTabState', 'switchTab', 'prepareHistoricalAnalytics',
   'ensureChartJs',
   'closeViewLeadModal', 'openViewLeadModal', 'findLeadByOrigin',

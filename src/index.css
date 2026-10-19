@@ -153,11 +153,12 @@
     .dashboard-kpis .metric-card > div:first-child > span { text-transform: none; letter-spacing: 0; font-size: .78rem; }
     .dashboard-kpis .metric-icon { width: 2.65rem; height: 2.65rem; display: grid; place-items: center; border-radius: 9999px; background: #fff; }
     .dashboard-section-title { letter-spacing: -.015em; }
-    .quick-lead-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, .9fr) auto; gap: 1rem; align-items: center; padding: .85rem 1rem; border-top: 1px solid rgba(148,163,184,.16); }
+    .quick-lead-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) minmax(0, .8fr) auto; gap: 1rem; align-items: center; padding: .85rem 1rem; border-top: 1px solid rgba(148,163,184,.16); }
     .quick-lead-row:first-child { border-top: 0; }
     .quick-lead-row:hover { background: rgba(99,102,241,.04); }
     .quick-lead-row .quick-lead-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .quick-lead-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .4rem; }
+    .quick-lead-row .quick-lead-programas { display: inline-flex; align-items: center; gap: .4rem; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
     .quick-leads-empty { padding: 1.5rem; text-align: center; color: #475569; }
     .quick-leads-empty button { min-height: 2.5rem; margin-top: .75rem; padding: .5rem .9rem; border: 1px solid #c7d2fe; border-radius: .6rem; color: #4338ca; font-weight: 700; cursor: pointer; }
     [data-theme="dark"] .quick-leads-empty { color: #cbd5e1; }
@@ -864,9 +865,11 @@
       .quick-lead-row, .quick-lead-row:first-child { grid-template-columns: minmax(0, 1fr) auto; gap: .65rem; padding: 1rem; border: 1px solid #475569; border-radius: .85rem; }
       .quick-lead-row .quick-lead-meta { overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: anywhere; }
       .quick-lead-row .quick-lead-meta button { font-size: .88rem; line-height: 1.3; }
-      .quick-lead-row .quick-lead-campaign, .quick-lead-row .quick-lead-status { grid-column: 1 / -1; }
+      .quick-lead-row .quick-lead-campaign, .quick-lead-row .quick-lead-status, .quick-lead-row .quick-lead-programas { grid-column: 1 / -1; }
       .quick-lead-row .quick-lead-campaign::before, .quick-lead-row .quick-lead-status::before { display: block; margin-bottom: .2rem; color: #94a3b8; font-size: .65rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
       .quick-lead-row .quick-lead-campaign::before { content: 'Campaña'; }
+      .quick-lead-row .quick-lead-programas { flex-wrap: wrap; overflow: visible; }
+      .quick-lead-row .quick-lead-programas::before { display: block; width: 100%; margin-bottom: .2rem; color: #94a3b8; font-size: .65rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; content: 'Inscripción'; }
       .quick-lead-row .quick-lead-status::before { content: 'Gestión actual'; }
       .quick-lead-actions { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; padding-top: .7rem; border-top: 1px solid rgba(148,163,184,.25); }
       .quick-lead-actions button { min-width: 0; min-height: 2.75rem; padding: .6rem .7rem; }
@@ -881,7 +884,7 @@
     }
     @media (max-width: 399px) { .dashboard-date-fields, .historical-filter-actions { grid-template-columns: 1fr; } }
     @media (min-width: 640px) and (max-width: 1350px) {
-      .quick-lead-row { grid-template-columns: minmax(0, 1fr) minmax(0, .8fr) auto; }
+      .quick-lead-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) auto; }
       .quick-lead-status { display: none; }
     }
     @media (max-width: 767px) {

@@ -10,9 +10,19 @@ import { csvReporteField } from './reportes.js';
 
 /** Programas y niveles validos. El id es el valor que viaja al servidor. */
 export const PROGRAMAS_INSCRIPCION = [
-  { id: 'TEATRO_MUSICAL', label: 'Teatro Musical', niveles: ['MT Piojitos', 'MT Teens', 'MT Advance'] },
-  { id: 'ACTUACION', label: 'Actuación', niveles: ['Acting Piojitos', 'Acting Teens', 'Acting 101 (Teens)', 'Acting Advance'] },
+  { id: 'TEATRO_MUSICAL', label: 'Teatro Musical', marca: 'TM', chip: 'bg-emerald-500/15 text-emerald-300', check: 'accent-emerald-500', activa: 'activa-emerald', tag: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300', niveles: ['MT Piojitos', 'MT Teens', 'MT Advance'] },
+  { id: 'ACTUACION', label: 'Actuación', marca: 'AC', chip: 'bg-indigo-500/15 text-indigo-300', check: 'accent-indigo-500', activa: 'activa-indigo', tag: 'border-indigo-500/40 bg-indigo-500/10 text-indigo-300', niveles: ['Acting Piojitos', 'Acting Teens', 'Acting 101 (Teens)', 'Acting Advance'] },
 ];
+
+/**
+ * Programa por id (para etiquetas y estilos).
+ * @param {string|null|undefined} programa
+ * @returns {object|null}
+ */
+export function programaPorId(programa) {
+  const id = String(programa || '').trim().toUpperCase();
+  return PROGRAMAS_INSCRIPCION.find(p => p.id === id) || null;
+}
 
 /**
  * Etiqueta legible de un programa.
@@ -167,6 +177,7 @@ export function inscripcionesCsvLines(filas, generado) {
 
 if (typeof window !== 'undefined') {
   window.PROGRAMAS_INSCRIPCION = PROGRAMAS_INSCRIPCION;
+  window.programaPorId = programaPorId;
   window.programaEtiqueta = programaEtiqueta;
   window.esInscritoGestion = esInscritoGestion;
   window.nivelesDePrograma = nivelesDePrograma;

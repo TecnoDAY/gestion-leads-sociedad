@@ -6,6 +6,7 @@
  */
 
 import { compareAlphaEs, compareLeadIdsDescending, consolidateLeadsById, escapeAttr, escapeHtml, getField, miamiToday, sortAlphaEs } from './helpers.js';
+import { programaPorId } from './inscripciones.js';
 import { MONTH_CHRONO, parseFechaLead } from './reportes.js';
 
 /**
@@ -532,12 +533,51 @@ export function gestionesLeadHtml(gestiones) {
   }).join('');
 }
 
-/** Cuatro leads recientes del conjunto filtrado; mismo marcado y orden numerico. */
-export function quickLeadsHtml(leads) {
-  const rows = [...leads].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 8);
+/**
+ * Seleccion de la lista rapida: hasta ocho leads ordenados por id descendente.
+ * La consulta de inscripciones usa la misma seleccion, de modo que solo se
+ * consulta a las personas que realmente se muestran.
+ * @param {Array<object>} leads
+ * @returns {Array<object>}
+ */
+export function quickLeadsSelection(leads) {
+  return [...(leads || [])].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 8);
+}
+
+/**
+ * Etiquetas de programa y nivel de una persona (inscripcion vigente).
+ * Una etiqueta por programa; el nivel va al lado de la marca.
+ * @param {Array<{programa?: string, nivel?: string}>} filas
+ * @returns {string} HTML (vacio si no hay inscripciones).
+ */
+export function quickInscripcionesHtml(filas, sinEnvolver = false) {
+  const lista = (filas || []).filter(f => f && f.programa);
+  if (!lista.length) return '';
+  const etiquetas = lista.map(f => {
+    const programa = programaPorId(f.programa);
+    const clase = programa?.tag || 'border-slate-600/60 bg-slate-900/40 text-slate-300';
+    const marca = programa?.marca || '?';
+    return `<span class="inline-flex items-center gap-1 rounded-full border ${clase} px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap"><span class="font-bold">${escapeHtml(marca)}</span>${escapeHtml(f.nivel || '')}</span>`;
+  }).join('');
+  return sinEnvolver ? etiquetas : `<span class="quick-lead-programas">${etiquetas}</span>`;
+}
+
+/**
+ * Cuatro leads recientes del conjunto filtrado; mismo marcado y orden numerico.
+ * Con `ctx.prioridad === 'inscrito'` la segunda columna pasa a mostrar el
+ * programa y nivel (una etiqueta por programa) en lugar de la campana.
+ * @param {Array<object>} leads
+ * @param {{prioridad?: string, inscripciones?: Map<string, Array<object>>, estado?: string}} [ctx]
+ * @returns {string}
+ */
+export function quickLeadsHtml(leads, ctx = {}) {
+  const rows = quickLeadsSelection(leads);
   if (!rows.length) {
     return '<div class="quick-leads-empty"><p class="text-sm font-semibold">No hay leads con los filtros seleccionados.</p><p class="mt-1 text-xs">Prueba con otros criterios o limpia los filtros para ver los registros.</p><button type="button" data-ev="click:resetAllFilters()">Limpiar filtros</button></div>';
   }
+  const prioridad = ctx.prioridad || '';
+  const inscripciones = ctx.inscripciones || null;
+  const estado = ctx.estado || 'listo';
   return rows.map(lead => {
     const id = String(lead.id);
     const origin = getLeadOrigin(lead);
@@ -545,9 +585,27 @@ export function quickLeadsHtml(leads) {
     const campana = getField(lead, 'Campaña') || 'Sin campaña';
     const fecha = getField(lead, 'Fecha') || 'Sin fecha';
     const gestion = getField(lead, 'GESTION') || 'Sin estado';
+    // Las inscripciones solo existen para los leads actuales: el historico
+    // comparte ids numericos con el actual y no debe mostrar sus programas.
+    const filas = prioridad === 'inscrito' && origin === 'actual'
+      ? (inscripciones?.get?.(id) || [])
+      : [];
+    let columna;
+    if (prioridad !== 'inscrito') {
+      columna = `<span class="quick-lead-campaign quick-lead-meta text-slate-300">${escapeHtml(campana)}</span>`;
+    } else {
+      // La columna de inscripcion es siempre la misma: etiquetas, aviso de
+      // pendiente, cargando o error, para que la vista no cambie de forma.
+      let contenido;
+      if (filas.length) contenido = quickInscripcionesHtml(filas, true);
+      else if (estado === 'error') contenido = '<span class="text-[11px] text-rose-300">No se pudieron cargar las inscripciones</span> <button type="button" data-quick-action="retry-inscripciones" class="rounded-lg border border-slate-600 px-2 py-1 font-semibold text-slate-300 hover:bg-slate-700 cursor-pointer">Reintentar</button>';
+      else if (estado === 'cargando') contenido = '<span class="text-[11px] text-slate-400">Cargando…</span>';
+      else contenido = '<span class="text-[11px] text-amber-300">Inscripción pendiente de completar</span>';
+      columna = `<span class="quick-lead-programas">${contenido}</span>`;
+    }
     return `<div class="quick-lead-row text-xs">
-          <div class="quick-lead-meta"><button type="button" data-quick-action="view" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="font-semibold text-left text-white hover:text-indigo-400 cursor-pointer">${escapeHtml(nombre)}</button><p class="mt-1 text-slate-400">${escapeHtml(fecha)}${origin === 'historico' ? ' · Histórico 2025' : ''}</p></div>
-          <span class="quick-lead-campaign quick-lead-meta text-slate-300">${escapeHtml(campana)}</span>
+          <div class="quick-lead-meta"><button type="button" data-quick-action="view" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="font-semibold text-left text-white hover:text-indigo-400 cursor-pointer">${escapeHtml(nombre)}</button><p class="mt-1 text-slate-400">${escapeHtml(fecha)}${origin === 'historico' ? ' · Histórico 2025' : ''}${prioridad === 'inscrito' ? ` · ${escapeHtml(campana)}` : ''}</p></div>
+          ${columna}
           <span class="quick-lead-status">${badgeGestionHtml(gestion)}</span>
           <div class="quick-lead-actions">
             <button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="rounded-lg border border-slate-600 px-3 py-1.5 font-semibold text-slate-400 opacity-60 cursor-not-allowed">WhatsApp · Próximamente</button>
@@ -966,6 +1024,8 @@ if (typeof window !== 'undefined') {
   window.notasLeadHtml = notasLeadHtml;
   window.gestionesLeadHtml = gestionesLeadHtml;
   window.quickLeadsHtml = quickLeadsHtml;
+  window.quickLeadsSelection = quickLeadsSelection;
+  window.quickInscripcionesHtml = quickInscripcionesHtml;
   window.relacionadosPorTelefono = relacionadosPorTelefono;
   window.primeraEntradaLead = primeraEntradaLead;
   window.ordenRepetidos = ordenRepetidos;

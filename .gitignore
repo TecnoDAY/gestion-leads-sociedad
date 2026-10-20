@@ -8,6 +8,10 @@ coverage/
 
 # Config local de OpenCode (servidor MCP de Supabase)
 opencode.json
+*.bak
+
+# Reportes de seguridad grandes: se conservan en local, no en el repositorio
+docs/security/*.html
 
 # Artefactos locales de la CLI de Supabase
 supabase/.temp/

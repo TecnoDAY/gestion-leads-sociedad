@@ -6,11 +6,50 @@
 //   - literales admitidos: string con escapes \\' y \\\\, numero, true,
 //     false, null, y los tokens this/event;
 //   - NO hay eval ni Function: un tokenizer propio y rechazo explicito;
+//   - el handler debe estar en la allowlist HANDLERS: no se resuelve cualquier
+//     funcion de window (si el HTML se inyectara, no podria llamar a un global
+//     arbitrario como fetch).
 // lo no soportado se convirtio a wrappers del bloque principal.
 // Las funciones se resuelven en window en cada evento (tardio), igual que
 // los handlers inline actuales.
 
 export const EVENTOS = new Set(['click', 'change', 'input', 'submit', 'focus', 'blur', 'pointerenter']);
+
+/**
+ * Allowlist de handlers que `data-ev` puede invocar. El dispatcher NO resuelve
+ * cualquier funcion de `window`: sin esta lista, un HTML inyectado podria
+ * llamar a cualquier global (por ejemplo `fetch(...)`). Anyadir un handler
+ * nuevo obliga a declararlo aqui (y el test de guarda lo verifica).
+ */
+export const HANDLERS = new Set([
+  'addCatalogValue', 'addLeadNote', 'applyFilters', 'archiveLead', 'cancelLeadNoteEdit',
+  'cancelarAjusteMensual', 'changePageSize', 'citasCalendarNav', 'clearDashRange',
+  'clearHelpSearch', 'closeCatalogsModal', 'closeChangeEmail', 'closeEditLeadModal',
+  'closeHelpModal', 'closeNewLeadModal', 'closeRlsModal', 'closeViewLeadModal',
+  'continueAgentSession', 'createLeadAppointment', 'cycleTheme', 'deleteCampaignPeriodStat',
+  'deleteCampaignStat', 'deleteLeadAppointment', 'deleteLeadNote', 'deleteReporteNota',
+  'editAppointmentCampus', 'editAppointmentDetails', 'editLeadNote', 'exportCampanasCSV',
+  'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV', 'exportPeriodoGestionesCSV',
+  'exportPeriodoInscripcionesCSV', 'exportReporteDiarioCSV', 'exportReportePeriodoCSV',
+  'focusHelpSection', 'focusPeriodoTip', 'formatPhoneField', 'formatPhoneFieldAndCheck',
+  'goToPage', 'handleAuthorizeUser', 'handleChangeEmail', 'handleCreateLead', 'handleLogin',
+  'handlePasswordReset', 'handleSetPassword', 'handleSignOut', 'handleUpdateLead',
+  'iniciarAjusteMensualFromData', 'loadAgentSessionsReport', 'loadAuthorizedUsers',
+  'loadCampanas', 'loadCitas', 'loadDashboardAppointments', 'loadLeadNotes', 'loadOlderLeads',
+  'loadReporteDiario', 'loadReportePeriodo', 'openCatalogsModal', 'openChangeEmail',
+  'openDashboardAppointmentsDetail', 'openEditLeadFromView', 'openEditLeadModal', 'openHelpModal',
+  'openLeadFromView', 'openNewLeadModal', 'openRlsModal', 'openViewLeadModal', 'queueNewPhoneCheck',
+  'recalcCampaignRow', 'refreshLeadsData', 'renameCatalogValue', 'renderAuthorizedUsers',
+  'renderCatalogList', 'renderHelpContent', 'renderHistoricalAnalytics', 'rescheduleLeadAppointment',
+  'resetAllFilters', 'resetCampaignStatAutoFromData', 'resetCitasFilters', 'returnToRecentLeads',
+  'saveCampaignPeriodStatFromData', 'saveCampaignStatFromData', 'saveLeadNoteInline',
+  'saveReporteNota', 'scheduleApplyFilters', 'scrollHelpToTop', 'setCampanasPeriodo',
+  'setCitasViewMode', 'setDashboardPriority', 'setDataSource', 'setHistRangePreset',
+  'setIdleTimeout', 'setLeadAppointmentStatus', 'setPeriodoPreset', 'setReporteVista',
+  'setUserActive', 'stopPropagationEvent', 'switchTab', 'syncNewLeadMes', 'syncNewUltimaGestion',
+  'toggleAdminUsers', 'toggleCatalogValue', 'toggleEditAppointmentFields', 'toggleLoginPassword',
+  'toggleMatrixPanel', 'toggleNewAppointmentFields', 'updateEditSubmitState',
+]);
 
 /**
  * Valida un atributo data-ev: `tipo[,tipo2]:cuerpo`.
@@ -64,11 +103,14 @@ function leerLiteral(cuerpo, idx) {
  * Parsea el cuerpo "fn(arg, ...)" de data-ev. Resuelve this/event con el
  * contexto del dispatcher. Rechaza cualquier cosa que no sea una llamada.
  * Devuelve el valor de retorno de la llamada.
+ * @param {string} cuerpo Cuerpo de la accion.
+ * @param {object} ctx Contexto: elemento, evento, buscarGlobal y permitidos.
  * @returns {unknown}
  */
-export function llamarAccion(cuerpo, { elemento, evento, buscarGlobal }) {
+export function llamarAccion(cuerpo, { elemento, evento, buscarGlobal, permitidos = HANDLERS }) {
   const m = /^([\w$]+)\s*\(/.exec(cuerpo);
   if (!m) throw new Error(`cuerpo de data-ev no es una llamada: ${cuerpo.slice(0, 40)}`);
+  if (!permitidos.has(m[1])) throw new Error(`handler no permitido: ${m[1]}`);
   const fn = buscarGlobal(m[1]);
   if (typeof fn !== 'function') throw new Error(`funcion global ausente: ${m[1]}`);
   let i = m[0].length;

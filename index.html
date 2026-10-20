@@ -2481,7 +2481,12 @@
         if (!ensureChartJs.promise) {
           ensureChartJs.promise = new Promise((resolver) => {
             const script = document.createElement('script');
+            // SRI: el hash pins el fichero exacto del CDN (mismo patron que
+            // supabase-js y lucide). Sin el, un CDN comprometido ejecutaria
+            // codigo arbitrario en la app (y con el, la sesion JWT).
             script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.5.1';
+            script.integrity = 'sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ';
+            script.crossOrigin = 'anonymous';
             script.onload = () => resolver(true);
             script.onerror = () => { ensureChartJs.promise = null; resolver(false); };
             document.head.appendChild(script);
@@ -3308,7 +3313,6 @@
             }
             isSupabaseLive = true;
             loadedSuccessfully = true;
-            console.log("Datos cargados correctamente desde Supabase:", allLeads.length);
             break;
           }
         } catch (err) {
@@ -3394,7 +3398,6 @@
           realtimeChannel = supabaseClient
             .channel('public:leads:realtime')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, payload => {
-              console.log("Cambio en tiempo real recibido de Supabase:", payload);
               handleRealtimeEvent(payload);
             })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_appointments' }, () => {
@@ -3402,7 +3405,6 @@
               if (currentMainTab === 'citas') loadCitas();
             })
             .subscribe(status => {
-              console.log("Estado de suscripción Realtime:", status);
               if (status === 'SUBSCRIBED') {
                 finish(true);
               } else if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)) {
@@ -4187,14 +4189,12 @@
       const resultado = document.getElementById('citasResultado');
       const sede = document.getElementById('citasSede');
       const campana = document.getElementById('citasCampana');
-      const medio = document.getElementById('citasMedio');
       const asesor = document.getElementById('citasAsesor');
       if (desde) desde.value = miamiToday();
       if (hasta) hasta.value = '';
       if (resultado) resultado.value = 'PROGRAMADA';
       if (sede) sede.value = '';
       if (campana) campana.value = '';
-      if (medio) medio.value = '';
       if (asesor) asesor.value = '';
       // Entrar en Lista evita que el calendario reemplace el rango abierto
       // "desde hoy" por el rango de la semana visible.
@@ -4347,10 +4347,6 @@
       tbody.innerHTML = html;
       updatePaginationUI(startIndex + 1, endIndex, totalItems, totalPages);
       if (window.lucide) lucide.createIcons();
-    }
-
-    function renderGestionBadge(gestion) {
-      return badgeGestionHtml(gestion);
     }
 
     function updatePaginationUI(start, end, total, totalPages) {

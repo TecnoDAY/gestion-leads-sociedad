@@ -32,7 +32,7 @@ const extracted = [
 
 test('openDashboardAppointmentsDetail prepara Lista sin fecha final', () => {
   const elements = new Map();
-  for (const id of ['citasDesde', 'citasHasta', 'citasResultado', 'citasSede', 'citasCampana', 'citasMedio', 'citasAsesor']) {
+  for (const id of ['citasDesde', 'citasHasta', 'citasResultado', 'citasSede', 'citasCampana', 'citasAsesor']) {
     elements.set(id, { value: '2026-10-10' });
   }
   let switchedTo = '';
@@ -48,14 +48,13 @@ test('openDashboardAppointmentsDetail prepara Lista sin fecha final', () => {
   assert.equal(elements.get('citasResultado').value, 'PROGRAMADA');
   assert.equal(elements.get('citasSede').value, '');
   assert.equal(elements.get('citasCampana').value, '');
-  assert.equal(elements.get('citasMedio').value, '');
   assert.equal(elements.get('citasAsesor').value, '');
   assert.equal(switchedTo, 'citas');
 });
 
 test('loadCitas admite hasta vacío y consulta Programadas desde hoy', async () => {
   const elements = new Map();
-  for (const id of ['citasDesde', 'citasHasta', 'citasResultado', 'citasSede', 'citasCampana', 'citasMedio', 'citasAsesor', 'citasAviso', 'citasTableBody']) {
+  for (const id of ['citasDesde', 'citasHasta', 'citasResultado', 'citasSede', 'citasCampana', 'citasAsesor', 'citasAviso', 'citasTableBody']) {
     elements.set(id, { value: id === 'citasDesde' ? '2026-10-16' : '', innerHTML: '', textContent: '', setAttribute() {}, removeAttribute() {}, replaceChildren() {} });
   }
   const calls = [];

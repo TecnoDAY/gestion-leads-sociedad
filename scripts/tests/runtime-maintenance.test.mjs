@@ -55,6 +55,37 @@ test('Chart.js conserva la version fijada y se carga de forma diferida', () => {
   assert.ok(!html.includes('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>'));
 });
 
+test('los scripts de CDN van con SRI (el hash pins el fichero exacto)', () => {
+  // Sin integrity, un CDN comprometido ejecuta codigo en la app y, con la
+  // sesion JWT en localStorage, eso acaba en robo de sesion.
+  for (const [url, hash] of [
+    ['https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2', 'sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF'],
+    ['https://unpkg.com/lucide@1.49.0/dist/umd/lucide.min.js', 'sha384-7mWwAGEOOlxvEBR+Mpy0eVhGL+9abGHkZtVoTs+dvrWkI5g00lyMaAxRIK+rqXGt'],
+  ]) {
+    const etiqueta = html.slice(html.indexOf(url) - 200, html.indexOf(url) + 300);
+    assert.ok(etiqueta.includes(`integrity="${hash}"`), `SRI ausente en ${url}`);
+    assert.ok(etiqueta.includes('crossorigin="anonymous"'), `crossorigin ausente en ${url}`);
+  }
+  // Chart.js se inyecta por codigo: mismo requisito.
+  const chart = html.slice(html.indexOf("script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.5.1'"));
+  assert.ok(chart.includes("script.integrity = 'sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ'"));
+  assert.ok(chart.includes("script.crossOrigin = 'anonymous'"));
+});
+
+test('las edge functions no responden con CORS abierto', () => {
+  for (const name of ['authorize-user', 'change-user-email', 'meta-whatsapp-webhook']) {
+    const source = readFileSync(new URL(`supabase/functions/${name}/index.ts`, root), 'utf8');
+    assert.ok(!source.includes("Deno.env.get('ALLOWED_ORIGIN') || '*'"), `${name}: CORS abierto por defecto`);
+    assert.ok(source.includes('origenPermitido('), `${name}: sin allowlist de origenes`);
+    assert.ok(source.includes("cors['Access-Control-Allow-Origin'] = permitido === '*' ? '*' : permitido"),
+      `${name}: origen sin validar`);
+    assert.ok(source.includes("cors['Access-Control-Allow-Headers']"), `${name}: sin Allow-Headers en el preflight`);
+    assert.ok(source.includes("cors['Access-Control-Allow-Methods']"), `${name}: sin Allow-Methods en el preflight`);
+    // '*' solo si se configura de forma explicita (opt-in consciente).
+    assert.ok(source.includes("if (configurado === '*') return '*'"), `${name}: sin opt-in explicito`);
+  }
+});
+
 for (const name of ['authorize-user', 'change-user-email', 'meta-whatsapp-webhook']) {
   test(`${name} conserva createClient ESM en Supabase 2.117.1`, () => {
     const source = readFileSync(new URL(`supabase/functions/${name}/index.ts`, root), 'utf8');

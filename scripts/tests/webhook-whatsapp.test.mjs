@@ -254,6 +254,49 @@ test('respuestas y logs no incluyen telefonos, nombres, texto ni mensajes de DB'
   }
 });
 
+test('la respuesta no expone identificadores internos del lead', async () => {
+  const h = harness();
+  const creada = await h.post(payload([message('sin-ids')]));
+  assert.equal(creada.status, 200);
+  assert.equal(creada.body.results[0].lead_id, undefined);
+  assert.equal(creada.body.results[0].created, true);
+  const duplicada = await h.post(payload([message('sin-ids')]));
+  assert.equal(duplicada.body.results[0].lead_id, undefined);
+  assert.equal(duplicada.body.results[0].duplicate, true);
+  assert.ok(!JSON.stringify(creada.body).includes('lead_id'));
+});
+
+test('la ruta de verificacion GET tiene limite de peticiones por IP', async () => {
+  const h = harness();
+  const url = 'https://synthetic.invalid/?hub.mode=subscribe&hub.verify_token=synthetic-verify&hub.challenge=ok';
+  let limite = 0;
+  for (let i = 0; i < 40; i += 1) {
+    const res = await h.request(url, { headers: { 'x-forwarded-for': '203.0.113.9' } });
+    if (res.status === 429) { limite = i; break; }
+  }
+  assert.ok(limite > 0, 'el limite nunca se disparo');
+  assert.ok(limite < 40, 'el limite no se respeta');
+  // Otra IP no comparte el contador.
+  const otra = await h.request(url, { headers: { 'x-forwarded-for': '203.0.113.10' } });
+  assert.notEqual(otra.status, 429);
+});
+
+test('CORS fail-closed: solo los origenes permitidos reciben la cabecera', async () => {
+  const h = harness();
+  const conOrigen = await h.request('https://synthetic.invalid/', {
+    method: 'OPTIONS',
+    headers: { origin: 'https://gestion-leads-sociedad.vercel.app' },
+  });
+  assert.equal(conOrigen.headers.get('access-control-allow-origin'), 'https://gestion-leads-sociedad.vercel.app');
+  const conOrigenAjeno = await h.request('https://synthetic.invalid/', {
+    method: 'OPTIONS',
+    headers: { origin: 'https://evil.example' },
+  });
+  assert.equal(conOrigenAjeno.headers.get('access-control-allow-origin'), null);
+  const sinOrigen = await h.request('https://synthetic.invalid/', { method: 'OPTIONS' });
+  assert.equal(sinOrigen.headers.get('access-control-allow-origin'), null);
+});
+
 test('migracion aborta duplicados sin borrar datos y protege message.id con indice unico', async () => {
   const sql = await readFile(new URL('../../supabase/migrations/202609300003_webhook_whatsapp_message_id.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(sql, /\b(delete|truncate)\b/i);

@@ -1,24 +1,54 @@
 // @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.1';
 
-const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || '*';
-const corsHeaders = {
-  'Access-Control-Allow-Origin': allowedOrigin,
-  'Access-Control-Allow-Headers': 'content-type, x-hub-signature-256',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+// CORS fail-closed: nunca se responde con '*'. Solo los origenes de la lista
+// (ALLOWED_ORIGIN, con los de la app y del desarrollo local por defecto)
+// reciben Access-Control-Allow-Origin; el resto se atiende sin cabecera de
+// CORS, asi que el navegador no le da acceso.
+const ORIGENES_POR_DEFECTO =
+  'https://gestion-leads-sociedad.vercel.app,http://localhost:3000,http://localhost:3002';
+
+/**
+ * Origen que se puede echoing en Access-Control-Allow-Origin.
+ * - '*' solo si ALLOWED_ORIGIN lo declara de forma explicita (opt-in).
+ * - si no, la allowlist de ORIGENES_POR_DEFECTO (app + desarrollo local).
+ * - null si el origen no esta permitido: la respuesta va sin cabecera CORS.
+ */
+const origenPermitido = (origen: string): string | null => {
+  const configurado = (Deno.env.get('ALLOWED_ORIGIN') || '').trim();
+  if (configurado === '*') return '*';
+  const permitidos = new Set(
+    (configurado || ORIGENES_POR_DEFECTO)
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean),
+  );
+  return permitidos.has(origen) ? origen : null;
 };
 
-const json = (status: number, body: Record<string, unknown>) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+/** Limitador por IP y ventana fija. Es por instancia (best effort): frena el
+ *  envio masivo a la ruta de verificacion, que es la mas barata de abusar. */
+const VentanaLimite = { ventanaMs: 60000, maximo: 30 };
+const golpes = new Map<string, { count: number; hasta: number }>();
 
-const textPlain = (status: number, body: string) =>
-  new Response(body, {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'text/plain' },
-  });
+function excedeLimite(ip: string): boolean {
+  const ahora = Date.now();
+  const previo = golpes.get(ip);
+  if (!previo || previo.hasta <= ahora) {
+    golpes.set(ip, { count: 1, hasta: ahora + VentanaLimite.ventanaMs });
+    if (golpes.size > 5000) {
+      for (const [clave, valor] of golpes) if (valor.hasta <= ahora) golpes.delete(clave);
+    }
+    return false;
+  }
+  previo.count += 1;
+  return previo.count > VentanaLimite.maximo;
+}
+
+const ipDe = (request: Request): string =>
+  request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  || request.headers.get('cf-connecting-ip')
+  || 'desconocida';
 
 function getServiceRoleKey(): string | null {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -145,7 +175,19 @@ function resolveCampaignName(value: unknown, activeCatalogNames: unknown[]): str
 }
 
 Deno.serve(async (request) => {
-  if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const permitido = origenPermitido(request.headers.get('origin') ?? '');
+  const cors: Record<string, string> = { Vary: 'Origin' };
+  if (permitido === '*' || permitido) {
+    cors['Access-Control-Allow-Origin'] = permitido === '*' ? '*' : permitido;
+    cors['Access-Control-Allow-Headers'] = 'content-type, x-hub-signature-256';
+    cors['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
+  }
+  const json = (status: number, body: Record<string, unknown>) =>
+    new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
+  const textPlain = (status: number, body: string) =>
+    new Response(body, { status, headers: { ...cors, 'Content-Type': 'text/plain' } });
+
+  if (request.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceKey = getServiceRoleKey();
@@ -156,6 +198,9 @@ Deno.serve(async (request) => {
 
   // GET: Webhook verification from Meta
   if (request.method === 'GET') {
+    if (excedeLimite(ipDe(request))) {
+      return json(429, { error: 'too_many_requests' });
+    }
     const url = new URL(request.url);
     const mode = url.searchParams.get('hub.mode');
     const token = url.searchParams.get('hub.verify_token');
@@ -296,7 +341,7 @@ Deno.serve(async (request) => {
         if (error) throw error;
         if (existingLead) {
           if (existingLead.id == null) throw new Error('duplicate_not_confirmed');
-          results.push({ duplicate: true, lead_id: existingLead.id });
+          results.push({ duplicate: true });
           continue;
         }
       } catch {
@@ -335,7 +380,7 @@ Deno.serve(async (request) => {
         .select('id');
       if (createError) throw createError;
       if (created?.[0]?.id == null) throw new Error('creation_not_confirmed');
-      results.push({ lead_id: created[0].id });
+      results.push({ created: true });
     } catch (err: any) {
       if (isUniqueViolation(err)) {
         // 23505 puede proceder de otra restriccion: solo confirmar si existe
@@ -348,7 +393,7 @@ Deno.serve(async (request) => {
             .limit(1)
             .maybeSingle();
           if (!error && dup?.id != null) {
-            results.push({ duplicate: true, lead_id: dup.id });
+            results.push({ duplicate: true });
             continue;
           }
         } catch {

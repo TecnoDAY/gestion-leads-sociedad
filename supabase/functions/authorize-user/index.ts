@@ -1,18 +1,30 @@
 // @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.1';
 
-const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || '*';
-const corsHeaders = {
-  'Access-Control-Allow-Origin': allowedOrigin,
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-bootstrap-token',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// CORS fail-closed: nunca se responde con '*'. Solo los origenes de la lista
+// (ALLOWED_ORIGIN, con los de la app y del desarrollo local por defecto)
+// reciben Access-Control-Allow-Origin; el resto se atiende sin cabecera de
+// CORS, asi que el navegador no le da acceso.
+const ORIGENES_POR_DEFECTO =
+  'https://gestion-leads-sociedad.vercel.app,http://localhost:3000,http://localhost:3002';
 
-const json = (status: number, body: Record<string, unknown>) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+/**
+ * Origen que se puede echoing en Access-Control-Allow-Origin.
+ * - '*' solo si ALLOWED_ORIGIN lo declara de forma explicita (opt-in).
+ * - si no, la allowlist de ORIGENES_POR_DEFECTO (app + desarrollo local).
+ * - null si el origen no esta permitido: la respuesta va sin cabecera CORS.
+ */
+const origenPermitido = (origen: string): string | null => {
+  const configurado = (Deno.env.get('ALLOWED_ORIGIN') || '').trim();
+  if (configurado === '*') return '*';
+  const permitidos = new Set(
+    (configurado || ORIGENES_POR_DEFECTO)
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean),
+  );
+  return permitidos.has(origen) ? origen : null;
+};
 
 const normalizeEmail = (value: unknown): string | null => {
   if (typeof value !== 'string') return null;
@@ -32,7 +44,17 @@ const normalizeRole = (value: unknown): Role | null =>
   typeof value === 'string' && (ROLES as readonly string[]).includes(value) ? (value as Role) : null;
 
 Deno.serve(async (request) => {
-  if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const permitido = origenPermitido(request.headers.get('origin') ?? '');
+  const cors: Record<string, string> = { Vary: 'Origin' };
+  if (permitido === '*' || permitido) {
+    cors['Access-Control-Allow-Origin'] = permitido === '*' ? '*' : permitido;
+    cors['Access-Control-Allow-Headers'] = 'authorization, x-client-info, apikey, content-type, x-bootstrap-token';
+    cors['Access-Control-Allow-Methods'] = 'POST, OPTIONS';
+  }
+  const json = (status: number, body: Record<string, unknown>) =>
+    new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
+
+  if (request.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' });
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');

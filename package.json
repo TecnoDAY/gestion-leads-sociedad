@@ -1,5 +1,5 @@
 {
-  "name": "react-example",
+  "name": "gestion-leads-sociedad",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,7 +7,7 @@
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build && node scripts/inline-dist.mjs",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
+    "clean": "rm -rf dist",
     "check:app": "node scripts/check-app.mjs",
     "lint": "tsc --noEmit && node scripts/check-app.mjs",
     "test": "node --test scripts/tests/*.test.mjs && python3 -m unittest scripts/tests/test_reconcile_leads.py"
@@ -21,10 +21,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
-    "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
     "tailwindcss": "^4.3.3",
-    "tsx": "^4.21.0",
     "typescript": "^7.0.2"
   }
 }

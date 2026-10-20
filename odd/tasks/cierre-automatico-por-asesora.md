@@ -120,7 +120,8 @@ Runner: `npm test` (node --test scripts/tests/*.test.mjs) + lint + build
   - ACL: `proacl = {postgres=X, authenticated=X, service_role=X}` — anon SIN
     execute (hallazgo 0028 del linter resuelto para este RPC; re-verificado con
     `get_advisors`: 0 hallazgos sobre admin_manage_user_access).
-- Recuperacion de acceso: `keni97655@gmail.com` (admin) reactivada con
+- Recuperacion de acceso: la cuenta de administracion (correo en el panel, PII
+  retirada del repositorio) reactivada con
   `update ... set activo = true` (estaba `activo=false` por desactivacion
   accidental); verificado `activo=true`.
 - Prueba funcional real: a los segundos de aplicar la migracion, la interfaz

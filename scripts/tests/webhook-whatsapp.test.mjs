@@ -27,8 +27,22 @@ function harness(options = {}) {
     META_APP_SECRET: secret, META_WEBHOOK_VERIFY_TOKEN: 'synthetic-verify', WHATSAPP_DEDUP_DAYS: '0',
     ...options.env,
   };
+  // Contador global del webhook: en produccion vive en la base de datos
+  // (el contador en memoria se repartia entre instancias y no bloqueaba).
+  const hits = new Map();
+  const limitCalls = [];
   const client = {
     async rpc(name, args) {
+      if (name === 'webhook_rate_limit_hit') {
+        limitCalls.push(args);
+        const ip = String(args.p_ip || '');
+        const maximo = Number(args.p_maximo) || 30;
+        const previo = hits.get(ip) || 0;
+        const total = previo + 1;
+        hits.set(ip, total);
+        if (options.limitError) return { data: null, error: dbError };
+        return { data: total, error: null, maximo };
+      }
       assert.equal(name, 'lead_contact_id_for');
       rpcPhones.push(args.p_phone);
       if (options.rpcError) return { data: null, error: dbError };
@@ -97,7 +111,7 @@ function harness(options = {}) {
     console: { error: (...args) => logs.push(args.join(' ')), log: (...args) => logs.push(args.join(' ')), warn: (...args) => logs.push(args.join(' ')) },
   });
   return {
-    rows, contacts, rpcPhones, windowQueries, logs, get insertAttempts() { return insertAttempts; },
+    rows, contacts, rpcPhones, windowQueries, logs, limitCalls, get insertAttempts() { return insertAttempts; },
     async post(body, signature) {
       const raw = typeof body === 'string' ? body : JSON.stringify(body);
       const sig = signature ?? `sha256=${createHmac('sha256', secret).update(raw).digest('hex')}`;
@@ -266,19 +280,34 @@ test('la respuesta no expone identificadores internos del lead', async () => {
   assert.ok(!JSON.stringify(creada.body).includes('lead_id'));
 });
 
-test('la ruta de verificacion GET tiene limite de peticiones por IP', async () => {
+test('la verificacion GET usa el limitador global y la IP de confianza', async () => {
   const h = harness();
   const url = 'https://synthetic.invalid/?hub.mode=subscribe&hub.verify_token=synthetic-verify&hub.challenge=ok';
+  // El contador es global (base de datos): la IP decide el cubo.
   let limite = 0;
   for (let i = 0; i < 40; i += 1) {
-    const res = await h.request(url, { headers: { 'x-forwarded-for': '203.0.113.9' } });
+    const res = await h.request(url, { headers: { 'cf-connecting-ip': '203.0.113.9' } });
     if (res.status === 429) { limite = i; break; }
   }
   assert.ok(limite > 0, 'el limite nunca se disparo');
-  assert.ok(limite < 40, 'el limite no se respeta');
+  assert.ok(limite <= 30, 'el limite no se respeta');
   // Otra IP no comparte el contador.
-  const otra = await h.request(url, { headers: { 'x-forwarded-for': '203.0.113.10' } });
+  const otra = await h.request(url, { headers: { 'cf-connecting-ip': '203.0.113.10' } });
   assert.notEqual(otra.status, 429);
+  // La clave es la IP de Cloudflare, no la primera de x-forwarded-for (esa la
+  // puede manipular el cliente).
+  const llamadas = h.limitCalls.map(c => c.p_ip);
+  assert.ok(llamadas.includes('203.0.113.9'));
+  assert.ok(!llamadas.includes('1.1.1.1'));
+});
+
+test('si el limitador falla, la verificacion de Meta sigue respondiendo', async () => {
+  const h = harness({ limitError: true });
+  const res = await h.request('https://synthetic.invalid/?hub.mode=subscribe&hub.verify_token=synthetic-verify&hub.challenge=ok', {
+    headers: { 'cf-connecting-ip': '203.0.113.20' },
+  });
+  assert.equal(res.status, 200);
+  assert.equal(await res.text(), 'ok');
 });
 
 test('CORS fail-closed: solo los origenes permitidos reciben la cabecera', async () => {

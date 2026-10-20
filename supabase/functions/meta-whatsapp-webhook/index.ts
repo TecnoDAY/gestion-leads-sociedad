@@ -5,8 +5,15 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.1';
 // (ALLOWED_ORIGIN, con los de la app y del desarrollo local por defecto)
 // reciben Access-Control-Allow-Origin; el resto se atiende sin cabecera de
 // CORS, asi que el navegador no le da acceso.
-const ORIGENES_POR_DEFECTO =
-  'https://gestion-leads-sociedad.vercel.app,http://localhost:3000,http://localhost:3002';
+const ORIGENES_POR_DEFECTO = [
+  'https://gestion-leads-sociedad.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:3002',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3002',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
+].join(',');
 
 /**
  * Origen que se puede echoing en Access-Control-Allow-Origin.
@@ -26,29 +33,29 @@ const origenPermitido = (origen: string): string | null => {
   return permitidos.has(origen) ? origen : null;
 };
 
-/** Limitador por IP y ventana fija. Es por instancia (best effort): frena el
- *  envio masivo a la ruta de verificacion, que es la mas barata de abusar. */
-const VentanaLimite = { ventanaMs: 60000, maximo: 30 };
-const golpes = new Map<string, { count: number; hasta: number }>();
+// Ventana de 5 minutos: con 60 s el contador se reiniciaba antes de llegar al
+// limite (una rafaga lenta nunca lo alcanzaba) y el bloqueo no se cumplia.
+const VentanaLimite = { ventanaMs: 300000, maximo: 30 };
 
-function excedeLimite(ip: string): boolean {
-  const ahora = Date.now();
-  const previo = golpes.get(ip);
-  if (!previo || previo.hasta <= ahora) {
-    golpes.set(ip, { count: 1, hasta: ahora + VentanaLimite.ventanaMs });
-    if (golpes.size > 5000) {
-      for (const [clave, valor] of golpes) if (valor.hasta <= ahora) golpes.delete(clave);
-    }
-    return false;
+/**
+ * IP del cliente. El contador vive en la base de datos (global), asi que la
+ * clave tiene que ser fiable: se prioriza la IP que pone Cloudflare
+ * (cf-connecting-ip), luego x-real-ip y, como ultimo recurso, la ULTIMA
+ * entrada de x-forwarded-for (la anade el proxy mas cercano; la primera la
+ * puede manipular el cliente).
+ */
+const ipDe = (request: Request): string => {
+  const cloudflare = request.headers.get('cf-connecting-ip')?.trim();
+  if (cloudflare) return cloudflare;
+  const real = request.headers.get('x-real-ip')?.trim();
+  if (real) return real;
+  const forwarded = request.headers.get('x-forwarded-for')?.split(',') ?? [];
+  for (let i = forwarded.length - 1; i >= 0; i -= 1) {
+    const valor = forwarded[i]?.trim();
+    if (valor) return valor;
   }
-  previo.count += 1;
-  return previo.count > VentanaLimite.maximo;
-}
-
-const ipDe = (request: Request): string =>
-  request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-  || request.headers.get('cf-connecting-ip')
-  || 'desconocida';
+  return 'desconocida';
+};
 
 function getServiceRoleKey(): string | null {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -196,10 +203,29 @@ Deno.serve(async (request) => {
     return json(503, { error: 'service_unavailable' });
   }
 
+  const service = createClient(supabaseUrl, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
   // GET: Webhook verification from Meta
   if (request.method === 'GET') {
-    if (excedeLimite(ipDe(request))) {
-      return json(429, { error: 'too_many_requests' });
+    // Limitador global (tabla en la base de datos): el contador en memoria
+    // se reparte entre instancias y no bloqueaba nada.
+    try {
+      const { data: hits, error: limitError } = await service.rpc('webhook_rate_limit_hit', {
+        p_ip: ipDe(request),
+        p_maximo: VentanaLimite.maximo,
+        p_ventana_segundos: Math.round(VentanaLimite.ventanaMs / 1000),
+      });
+      if (limitError) {
+        console.warn('Webhook rate limit error:', limitError.message);
+      } else if (typeof hits === 'number' && hits > VentanaLimite.maximo) {
+        return json(429, { error: 'too_many_requests' });
+      }
+    } catch (error) {
+      // Si el limitador falla, se sigue admitiendo la peticion: no se cae la
+      // verificacion de Meta por un problema del contador.
+      console.warn('Webhook rate limit unavailable:', error instanceof Error ? error.message : 'unknown');
     }
     const url = new URL(request.url);
     const mode = url.searchParams.get('hub.mode');
@@ -251,10 +277,6 @@ Deno.serve(async (request) => {
   }
 
   const dedupDays = parseDedupDays(Deno.env.get('WHATSAPP_DEDUP_DAYS'));
-
-  const service = createClient(supabaseUrl, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
 
   const defaultAgent = Deno.env.get('WHATSAPP_DEFAULT_AGENTE') ?? 'Agente';
   let campana = 'Sin definir';

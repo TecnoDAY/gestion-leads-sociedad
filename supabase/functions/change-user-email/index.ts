@@ -5,8 +5,15 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.1';
 // (ALLOWED_ORIGIN, con los de la app y del desarrollo local por defecto)
 // reciben Access-Control-Allow-Origin; el resto se atiende sin cabecera de
 // CORS, asi que el navegador no le da acceso.
-const ORIGENES_POR_DEFECTO =
-  'https://gestion-leads-sociedad.vercel.app,http://localhost:3000,http://localhost:3002';
+const ORIGENES_POR_DEFECTO = [
+  'https://gestion-leads-sociedad.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:3002',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3002',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
+].join(',');
 
 /**
  * Origen que se puede echoing en Access-Control-Allow-Origin.

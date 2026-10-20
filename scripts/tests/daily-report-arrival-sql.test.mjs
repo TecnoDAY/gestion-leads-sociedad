@@ -45,13 +45,15 @@ test('helper UI/CSV individual y TOTAL separa llamadas y combinado; valores seri
   assert.match(html, /Total grupo WhatsApp<\/td><td[^>]*>5<\/td>/);
   assert.match(html, /<h6[^>]*>Llamadas<\/h6>/);
   const calls = html.split(/<h6[^>]*>Llamadas<\/h6>/)[1].split('</div>')[0];
-  assert.match(calls, /Llamadas nuevas hoy<\/td><td[^>]*>1<\/td>/);
-  assert.match(calls, /Llamadas gestionadas hoy<\/td><td[^>]*>6<\/td>/);
+  // Solo las tres categorias y el total: sin desglose nuevo/gestionado.
+  assert.doesNotMatch(html, /Llamadas nuevas hoy|Llamadas gestionadas hoy/);
   assert.match(calls, /Llamadas del día<\/td><td[^>]*>3<\/td>/);
   assert.match(calls, /Llamadas Data Dura<\/td><td[^>]*>1<\/td>/);
   assert.match(calls, /Llamada WhatsApp<\/td><td[^>]*>3<\/td>/);
   assert.match(calls, /Total llamadas<\/td><td[^>]*>7<\/td>/);
-  assert.equal((calls.match(/<tr/g) || []).length, 6);
+  assert.equal((calls.match(/<tr>/g) || []).length, 4);
+  // Orden exacto de las cuatro filas que quedan.
+  assert.deepEqual([...calls.matchAll(/<tr><td>([^<]+)<\/td>/g)].map(m => m[1]), ['Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas']);
   assert.doesNotMatch(calls, /Llamadas normales|Total llamadas de gestión/);
   assert.match(html, /Llamada<\/td><td[^>]*>3<\/td>/);
   assert.match(html, /Llamada Data Dura<\/td><td[^>]*>1<\/td>/);

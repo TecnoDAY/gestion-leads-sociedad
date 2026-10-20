@@ -1117,7 +1117,7 @@ export function detallesBloqueHtml(b) {
     const d = detalleGestionHoy(b);
     const l = detalleGestionHoy(b, 'llamadas');
     detalle = tablaDetalle('Detalle de gestión', [['WhatsApp nuevos hoy', d.nuevos], ['WhatsApp gestionados hoy', d.gestionados], ['Total grupo WhatsApp', d.total]],
-      '<h6 class="mt-3 font-semibold text-indigo-900">Llamadas</h6>' + filasDetalle([['Llamadas nuevas hoy', l.nuevos], ['Llamadas gestionadas hoy', l.gestionados], ['Llamadas del día', num(b.canales, 'llamada')], ['Llamadas Data Dura', num(b.canales, 'data_dura')], ['Llamada WhatsApp', num(b.canales, 'llamada_whatsapp')], ['Total llamadas', l.total]]));
+      '<h6 class="mt-3 font-semibold text-indigo-900">Llamadas</h6>' + filasDetalle([['Llamadas del día', num(b.canales, 'llamada')], ['Llamadas Data Dura', num(b.canales, 'data_dura')], ['Llamada WhatsApp', num(b.canales, 'llamada_whatsapp')], ['Total llamadas', l.total]]));
   } catch (error) {
     detalle = `<div class="daily-detail-card" role="alert"><h5 class="font-semibold text-indigo-900">Detalle de gestión</h5><p>${escapeHtml(error.message)}</p></div>`;
   }

@@ -6,6 +6,7 @@ import vm from 'node:vm';
 import { test } from 'node:test';
 import { transformSync } from 'esbuild';
 import path from 'node:path';
+import { csvFields } from './csv-fields.mjs';
 
 // Importar funciones puras desde el módulo legacy (extraídas del monolito)
 const legacyMod = await import('../../src/legacy/helpers.js');
@@ -22,7 +23,7 @@ const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, 
   computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
   tablaVaciaHistoricoHtml, tablaHistoricoHtml, histChartMonthly, histChartConversion, histChartCampaign, histChartMedio, histChartAgent, histChartMonthlyStates, histChartMonthlyCampaigns, histChartFunnel,
   buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
-  indiceNotas, notaDeBloque, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles , campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines } = reportesMod;
+  indiceNotas, notaDeBloque, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles , campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines, periodoGestionesCsvLines } = reportesMod;
 // Helpers puros del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
 const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, withOrigin, getLeadOrigin,
@@ -80,6 +81,7 @@ const names = [
   'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'renderReportePeriodo', 'exportReportePeriodoCSV', 'initReporteDiario',
   'markPeriodoReportDirty', 'updatePeriodoCsvState', 'upsertLeadInState', 'removeLeadFromState',
   'loadPeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
+  'exportPeriodoGestionesCSV',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
   'resetDashboardInscripciones', 'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'confirmAppointmentCreation', 'syncNewLeadMes', 'syncNewUltimaGestion',
   'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentCampusFrom',
@@ -146,7 +148,7 @@ function frontend(extra = {}) {
     tablaVaciaHistoricoHtml, tablaHistoricoHtml, histChartMonthly, histChartConversion, histChartCampaign, histChartMedio, histChartAgent, histChartMonthlyStates, histChartMonthlyCampaigns, histChartFunnel,
     buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
     indiceNotas, notaDeBloque, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles,
-    campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines,
+    campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines, periodoGestionesCsvLines,
     // Helpers del area Leads extraidos a src/legacy/leads.js
     sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin, aplicarUpsertLead, aplicarRemoveLead,
     metricasLeads, subtituloKpiTotal, matrizLeadsHtml,
@@ -229,7 +231,7 @@ function database(tables, { fail, hook, maxRows = 1000 } = {}) {
             });
             const [from, to] = query.range || [0, 999];
             rows = rows.slice(from, Math.min(to + 1, from + maxRows));
-            if (query.columns !== '*') rows = rows.map(r => Object.fromEntries(query.columns.split(',').map(c => c.trim()).map(c => [c, r[c]])));
+            if (query.columns !== '*') rows = rows.map(r => Object.fromEntries(query.columns.split(',').map(c => c.trim().replace(/^"(.*)"$/, '$1')).map(c => [c, r[c]])));
             return { data: rows.map(r => ({ ...r })), error: null };
           }).then(resolve, reject);
         },
@@ -532,6 +534,46 @@ test('período: ayudas y encabezados explican leads únicos vs gestiones sin cam
   assert.match(panelCss, /periodo-tip-panel\s*\{/);
   assert.match(panelCss, /\.periodo-tip:focus-within \.periodo-tip-panel/);
   assert.match(html, /Leads por fecha de entrada:/);
+});
+
+test('período: el detalle de gestiones descarga la campaña del lead sin desalinear columnas', async () => {
+  const db = database({
+    lead_gestiones: [
+      { id: 1, lead_id: 1, fecha_gestion: '2026-10-03', gestion_anterior: 'NO CONTESTA', gestion_nueva: 'EN VISTO', canal: 'WhatsApp', autor_name: 'Ana', is_data_dura: false, created_at: '2026-10-03T13:30:00Z' },
+      { id: 2, lead_id: 2, fecha_gestion: '2026-10-04', gestion_anterior: '', gestion_nueva: 'INFORMACIÓN', canal: 'Llamada', autor_name: 'Berta', is_data_dura: true, created_at: '2026-10-04T15:00:00Z' },
+    ],
+    leads: [
+      { id: 1, 'Nombre': 'Luis Pérez', 'Telefono': '3051234567', 'AGENTE': 'Ana', 'OBSERVACIONES ': 'Quiere el plan, "top"', 'Campaña': 'Verano 2026' },
+      { id: 2, 'Nombre': 'Ana Gómez', 'Telefono': '3057654321', 'AGENTE': 'Berta', 'OBSERVACIONES ': '', 'Campaña': '' },
+    ],
+  });
+  const supabaseClient = {
+    rpc: async (name, args) => {
+      if (name === 'management_period_summary') return { data: periodoActividadFixture(args.p_desde, args.p_hasta), error: null };
+      throw new Error('rpc inesperada: ' + name);
+    },
+    from: table => db.from(table),
+  };
+  const f = periodFrontend({ supabaseClient, allLeads: periodLeads(), catalogRows: periodCatalogs() });
+  await f.context.loadReportePeriodo(); await settle();
+  await f.context.exportPeriodoGestionesCSV();
+  assert.equal(f.downloads.length, 1);
+  const csv = await f.downloads[0].blob.text();
+  const lineas = csv.split('\n');
+  const header = csvFields(lineas[3]);
+  assert.equal(header.at(-1), 'Campaña');
+  assert.equal(header.length, 12);
+  const filas = lineas.slice(4).filter(l => l.trim());
+  assert.equal(filas.length, 2);
+  // Cada fila mantiene las 12 columnas: la campaña no desplaza ninguna.
+  for (const fila of filas) assert.equal(csvFields(fila).length, 12);
+  const primera = csvFields(filas[0]);
+  assert.equal(primera[2], 'Luis Pérez');
+  assert.equal(primera.at(-1), 'Verano 2026');
+  // Lead sin campaña: celda vacia al final, sin perder columnas.
+  const segunda = csvFields(filas[1]);
+  assert.equal(segunda[2], 'Ana Gómez');
+  assert.equal(segunda.at(-1), '');
 });
 
 test('período: presets calendario Miami incluyen hoy, semana lunes-domingo y cambio de año', async () => {

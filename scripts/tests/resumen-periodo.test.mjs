@@ -5,10 +5,12 @@ import {
   buildPeriodSummary,
   csvReporteField,
   periodoCsvLines,
+  periodoGestionesCsvLines,
   periodoPct,
   validatePeriodoActividad,
   validatePeriodoSummary,
 } from '../../src/legacy/reportes.js';
+import { csvFields } from './csv-fields.mjs';
 
 // --- consolidateLeadsById (helpers) ---
 test('consolida por id mas reciente primero y hace merge de campos', () => {
@@ -143,4 +145,43 @@ test('csv del periodo usa siempre campos envueltos por csvReporteField', () => {
   // Las lineas separadoras son vacias; el resto empieza y termina entre
   // comillas (los textos con comas internas romperian un split naive).
   assert.ok(lines.every(l => l === '' || (l.startsWith('"') && l.endsWith('"'))));
+});
+
+// --- periodoGestionesCsvLines (detalle de gestiones del período) ---
+const gestionRow = (extra = {}) => ({
+  fecha: '2026-10-03', hora: '09:30', nombre: 'Luis Pérez', telefono: '3051234567',
+  asesoraGestion: 'Ana', asesoraAsignada: 'Ana', canal: 'WhatsApp', dataDura: 'No',
+  gestionAnterior: 'NO CONTESTA', gestionNueva: 'EN VISTO', observaciones: 'Cliente', ...extra,
+});
+
+test('csv de gestiones: la campaña es la última columna y no mueve las anteriores', () => {
+  const lines = periodoGestionesCsvLines([gestionRow({ campana: 'Verano 2026' })], '2026-10-13');
+  const header = csvFields(lines[3]);
+  assert.deepEqual(header, ['Fecha', 'Hora', 'Nombre', 'Teléfono', 'Asesora gestión', 'Asesora asignada',
+    'Canal', 'Data Dura', 'Gestión anterior', 'Gestión nueva', 'Observaciones', 'Campaña']);
+  const row = csvFields(lines[4]);
+  assert.equal(row.length, header.length);
+  assert.equal(row.at(-1), 'Verano 2026');
+  // El resto de columnas conserva su valor y su posición.
+  assert.equal(row[0], '2026-10-03');
+  assert.equal(row[2], 'Luis Pérez');
+  assert.equal(row[3], "'3051234567");
+});
+
+test('csv de gestiones: campaña vacía deja la celda vacía sin desplazar columnas', () => {
+  const lines = periodoGestionesCsvLines([gestionRow({ campana: '' }), gestionRow({ campana: undefined })], '2026-10-13');
+  const header = csvFields(lines[3]);
+  for (const linea of lines.slice(4)) {
+    const row = csvFields(linea);
+    assert.equal(row.length, header.length);
+    assert.equal(row.at(-1), '');
+  }
+});
+
+test('csv de gestiones: campaña con comas y comillas no rompe las columnas', () => {
+  const lines = periodoGestionesCsvLines([gestionRow({ campana: 'Verano, "Otoño" 2026' })], '2026-10-13');
+  const header = csvFields(lines[3]);
+  const row = csvFields(lines[4]);
+  assert.equal(row.length, header.length);
+  assert.equal(row.at(-1), 'Verano, "Otoño" 2026');
 });

@@ -979,8 +979,10 @@ export function periodoCsvLines(summary, actividad, generado) {
 /**
  * Lineas CSV del detalle de gestiones del período: una fila por gestion con
  * fecha, hora, nombre, telefono (como texto), asesora que gestiono, asesora
- * asignada, canal, data dura, gestion anterior/nueva y observaciones.
- * @param {Array<object>} rows Filas ya armadas (ver exportReportePeriodoCSV).
+ * asignada, canal, data dura, gestion anterior/nueva, observaciones y la
+ * campana del lead. La campana va al final para no mover las columnas que ya
+ * consume el archivo.
+ * @param {Array<object>} rows Filas ya armadas (ver exportPeriodoGestionesCSV).
  * @param {string} generado Fecha Miami del momento.
  * @returns {string[]} Lineas de texto (unir con \\n para downloadCSV).
  */
@@ -989,13 +991,14 @@ export function periodoGestionesCsvLines(rows, generado) {
   row(['Detalle de gestiones del período']);
   row(['Generado (Miami)', generado]);
   row([]);
-  row(['Fecha', 'Hora', 'Nombre', 'Teléfono', 'Asesora gestión', 'Asesora asignada', 'Canal', 'Data Dura', 'Gestión anterior', 'Gestión nueva', 'Observaciones']);
+  row(['Fecha', 'Hora', 'Nombre', 'Teléfono', 'Asesora gestión', 'Asesora asignada', 'Canal', 'Data Dura', 'Gestión anterior', 'Gestión nueva', 'Observaciones', 'Campaña']);
   (rows || []).forEach(r => row([
     r.fecha, r.hora, r.nombre,
     // Prefijo apóstrofe para que Excel conserve el teléfono como texto.
     r.telefono ? "'" + r.telefono : '',
     r.asesoraGestion, r.asesoraAsignada, r.canal, r.dataDura,
-    r.gestionAnterior, r.gestionNueva, r.observaciones
+    r.gestionAnterior, r.gestionNueva, r.observaciones,
+    r.campana || ''
   ]));
   return lines;
 }

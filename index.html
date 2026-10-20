@@ -6213,7 +6213,7 @@ async function deleteLeadAppointment(id) {
         const ids = [...new Set(gestiones.map(g => g.lead_id))];
         const { data: leads, error: leadsError } = await supabaseClient
           .from('leads')
-          .select('id, "Nombre", "Telefono", "AGENTE", "OBSERVACIONES "')
+          .select('id, "Nombre", "Telefono", "AGENTE", "OBSERVACIONES ", "Campaña"')
           .in('id', ids);
         if (leadsError) throw leadsError;
         const leadMap = new Map((leads || []).map(l => [String(l.id), l]));
@@ -6235,6 +6235,7 @@ async function deleteLeadAppointment(id) {
             gestionAnterior: g.gestion_anterior || '',
             gestionNueva: g.gestion_nueva || '',
             observaciones: getField(l, 'OBSERVACIONES '),
+            campana: getField(l, 'Campaña'),
           };
         });
         const detailLines = periodoGestionesCsvLines(rows, miamiToday());

@@ -1004,13 +1004,16 @@ const DIARIO_KEYS = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'dir
 /** 'Otros o sin canal': buckets retirados de pantalla, juntos. */
 const numCanalesOtros = c => (Number(c?.visita) || 0) + (Number(c?.sin_clasificar) || 0);
 
-/** Altas y seguimientos de los canales visibles; nuevos es un subconjunto. */
-export const gestionadosHoy = canales => (Number(canales?.whatsapp) || 0)
-  + (Number(canales?.llamada_whatsapp) || 0) + (Number(canales?.instagram) || 0)
+/** Total del grupo WhatsApp (canales visibles del grupo); los nuevos son un
+ * subconjunto. La llamada combinada (llamada_whatsapp) pertenece al grupo de
+ * llamadas, no suma aqui. */
+export const totalGrupoWhatsapp = canales => (Number(canales?.whatsapp) || 0)
+  + (Number(canales?.instagram) || 0)
   + numCanalesOtros(canales);
 
 /** Particion compartida UI/CSV; nuevos llega del SQL (evento de alta del dia).
- * Ausentes/null son cero como en el reporte legado. Combinado solo en WhatsApp. */
+ * Ausentes/null son cero como en el reporte legado. Grupos disjuntos: WhatsApp
+ * (puro, Instagram y otros) y llamadas (normal, Data Dura y llamada WhatsApp). */
 export function detalleGestionHoy(b, grupo = 'whatsapp') {
   if (!['whatsapp', 'llamadas'].includes(grupo)) throw new Error('Detalle de gestión no disponible: grupo inválido.');
   const count = value => {
@@ -1018,7 +1021,7 @@ export function detalleGestionHoy(b, grupo = 'whatsapp') {
     if (!Number.isSafeInteger(n) || n < 0) throw new Error('Detalle de gestión no disponible: conteos inválidos. Actualiza el reporte e informa al administrador si persiste.');
     return n;
   };
-  const keys = grupo === 'whatsapp' ? ['whatsapp', 'llamada_whatsapp', 'instagram', 'visita', 'sin_clasificar'] : ['llamada', 'data_dura'];
+  const keys = grupo === 'whatsapp' ? ['whatsapp', 'instagram', 'visita', 'sin_clasificar'] : ['llamada', 'data_dura', 'llamada_whatsapp'];
   const total = count(keys.reduce((sum, key) => sum + count(b.canales?.[key]), 0));
   const nuevos = count(b[grupo]?.nuevos);
   if (nuevos > total) throw new Error(`Detalle de gestión no disponible: ${grupo === 'whatsapp' ? 'WhatsApp' : 'Llamadas'} nuevos supera el total. Actualiza el reporte e informa al administrador si persiste.`);
@@ -1060,7 +1063,7 @@ export function diarioCsvLines(fecha, filtro, generado, bloques, notasResueltas)
     const p = b.procedencia || {}, l = b.llamadas || {}, c = b.citas || {};
     const detalle = detalleGestionHoy(b);
     const llamadas = detalleGestionHoy(b, 'llamadas');
-    const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, (Number(l.del_dia) || 0) + (Number(l.data_dura) || 0), c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.citas_reprogramadas_hoy, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, detalle.nuevos, detalle.gestionados, detalle.total, llamadas.nuevos, llamadas.gestionados, llamadas.total, (b.canales || {}).instagram, numCanalesOtros(b.canales), totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
+    const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, (Number(l.del_dia) || 0) + (Number(l.data_dura) || 0) + (Number(l.llamada_whatsapp) || 0), c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.citas_reprogramadas_hoy, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, detalle.nuevos, detalle.gestionados, detalle.total, llamadas.nuevos, llamadas.gestionados, llamadas.total, (b.canales || {}).instagram, numCanalesOtros(b.canales), totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
     values.forEach((v, n) => { sumas[DIARIO_KEYS[n]] += v; });
     const nota = notasResueltas[i] || {};
     lineas.push([b.autor_name ?? b.advisor, ...values, nota.problemas ?? '', nota.observaciones ?? ''].map(csvReporteField).join(','));
@@ -1090,10 +1093,11 @@ export function totalDiario(bloques) {
   const num = (o, k) => Number(o?.[k]) || 0;
   return (bloques || []).reduce((a, b) => {
     a.g += num(b, 'gestionados');
-    // "Total llamadas" = el grupo Llamadas (llamada + llamada Data Dura), el
-    // mismo que muestra el detalle por asesora. La llamada combinada vive en
-    // el grupo de WhatsApp, asi que el resumen cuadra con los detalles.
-    a.l += num(b.llamadas, 'del_dia') + num(b.llamadas, 'data_dura');
+    // "Total llamadas" = el grupo Llamadas (llamada + llamada Data Dura +
+    // llamada WhatsApp), el mismo que muestra el detalle por asesora y la
+    // columna del CSV. El grupo de WhatsApp lleva lo demas, asi que el
+    // resumen cuadra con los detalles.
+    a.l += num(b.llamadas, 'del_dia') + num(b.llamadas, 'data_dura') + num(b.llamadas, 'llamada_whatsapp');
     a.c += Number(b.citas?.total_agendados) || 0;
     a.r += Number(b.citas?.citas_reprogramadas_hoy) || 0;
     a.v += Number(b.citas?.visitas) || 0;
@@ -1113,7 +1117,7 @@ export function detallesBloqueHtml(b) {
     const d = detalleGestionHoy(b);
     const l = detalleGestionHoy(b, 'llamadas');
     detalle = tablaDetalle('Detalle de gestión', [['WhatsApp nuevos hoy', d.nuevos], ['WhatsApp gestionados hoy', d.gestionados], ['Total grupo WhatsApp', d.total]],
-      '<h6 class="mt-3 font-semibold text-indigo-900">Llamadas</h6>' + filasDetalle([['Llamadas nuevas hoy', l.nuevos], ['Llamadas gestionadas hoy', l.gestionados], ['Total llamadas', l.total]]));
+      '<h6 class="mt-3 font-semibold text-indigo-900">Llamadas</h6>' + filasDetalle([['Llamadas nuevas hoy', l.nuevos], ['Llamadas gestionadas hoy', l.gestionados], ['Llamadas del día', num(b.canales, 'llamada')], ['Llamadas Data Dura', num(b.canales, 'data_dura')], ['Llamada WhatsApp', num(b.canales, 'llamada_whatsapp')], ['Total llamadas', l.total]]));
   } catch (error) {
     detalle = `<div class="daily-detail-card" role="alert"><h5 class="font-semibold text-indigo-900">Detalle de gestión</h5><p>${escapeHtml(error.message)}</p></div>`;
   }

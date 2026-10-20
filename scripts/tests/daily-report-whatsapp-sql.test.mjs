@@ -29,18 +29,18 @@ test('migracion siguiente conserva cuerpo aplicado salvo criterio de seguimiento
   assert.match(migration, /grant execute on function public\.daily_management_report\(date, uuid\) to authenticated/);
 });
 
-test('pantalla y CSV admiten detalle WhatsApp mayor que canal WhatsApp sin inflar total canales', () => {
+test('pantalla y CSV: la llamada combinada suma en llamadas y el total de canales no se infla', () => {
   const block = {
     autor_name: 'Ana', autor_user_id: 'a', gestionados: 7,
-    whatsapp: { nuevos: 2, gestionados: 4, total: 6 },
+    whatsapp: { nuevos: 2, gestionados: 2, total: 4 },
     canales: { llamada: 1, data_dura: 0, llamada_whatsapp: 2, whatsapp: 2, instagram: 1, visita: 0, sin_clasificar: 1, total: 7 },
-    llamadas: { del_dia: 1, data_dura: 0, llamada_whatsapp: 2, total: 3 },
+    llamadas: { del_dia: 1, data_dura: 0, llamada_whatsapp: 2, total: 3, nuevos: 1 },
   };
   const lines = diarioCsvLines('2026-10-16', '', '2026-10-16', [block], []);
   const header = lines[4].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
   const row = lines.at(-2).split(',');
   const total = lines.at(-1).split(',');
-  for (const [label, expected] of [['WhatsApp nuevos hoy', 2], ['WhatsApp gestionados hoy', 4], ['Total WhatsApp', 6], ['Total canales', 7], ['Gestiones realizadas', 7]]) {
+  for (const [label, expected] of [['WhatsApp nuevos hoy', 2], ['WhatsApp gestionados hoy', 2], ['Total WhatsApp', 4], ['Llamada WhatsApp', 2], ['Total llamadas', 3], ['Total llamadas de gestión', 3], ['Total canales', 7], ['Gestiones realizadas', 7]]) {
     const index = header.indexOf(csvReporteField(label));
     assert.ok(index >= 0, label);
     assert.equal(row[index], csvReporteField(String(expected)), label);
@@ -49,7 +49,10 @@ test('pantalla y CSV admiten detalle WhatsApp mayor que canal WhatsApp sin infla
   const html = detallesBloqueHtml(block);
   assert.match(html, /Detalle de gestión/);
   assert.match(html, /WhatsApp nuevos hoy<\/td><td[^>]*>2<\/td>/);
-  assert.match(html, /WhatsApp gestionados hoy<\/td><td[^>]*>4<\/td>/);
+  assert.match(html, /WhatsApp gestionados hoy<\/td><td[^>]*>2<\/td>/);
+  assert.match(html, /Total grupo WhatsApp<\/td><td[^>]*>4<\/td>/);
+  assert.match(html, /Llamada WhatsApp<\/td><td[^>]*>2<\/td>/);
+  assert.match(html, /Total llamadas<\/td><td[^>]*>3<\/td>/);
   assert.doesNotMatch(html, /Total detalle de gestión/);
   assert.doesNotMatch(html, /Detalle WhatsApp/);
   assert.equal(header.length, row.length);

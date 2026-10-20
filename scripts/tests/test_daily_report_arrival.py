@@ -5,7 +5,7 @@ from scripts.tests.test_daily_report_whatsapp import DailyReportHarness, ROOT
 
 
 class ArrivalPartitionsTest(DailyReportHarness):
-    migration = ROOT / 'supabase/migrations/202610160009_appointment_results_actor.sql'
+    migration = ROOT / 'supabase/migrations/202610200003_daily_report_llamada_whatsapp_grupo.sql'
 
     def event(self, channel, previous=None, arrival='16/10/2026', **kwargs):
         self.add(channel, previous, **kwargs)
@@ -15,7 +15,7 @@ class ArrivalPartitionsTest(DailyReportHarness):
         wa, calls, channels = block['whatsapp'], block['llamadas'], block['canales']
         self.assertEqual(wa['nuevos'] + wa['gestionados'], wa['total'])
         self.assertEqual(calls['nuevos'] + calls['gestionados'], calls['total_gestion'])
-        self.assertEqual(calls['total_gestion'], channels['llamada'] + channels['data_dura'])
+        self.assertEqual(calls['total_gestion'], channels['llamada'] + channels['data_dura'] + channels['llamada_whatsapp'])
         self.assertEqual(wa['total'] + calls['total_gestion'], block['gestionados'])
         self.assertEqual(sum(v for k, v in channels.items() if k != 'total'), block['gestionados'])
         self.assertEqual(channels['total'], block['gestionados'])
@@ -29,12 +29,29 @@ class ArrivalPartitionsTest(DailyReportHarness):
         self.event('llamada', 'CONTACTADO', data_dura=True)
         self.event('llamada', data_dura=None)
         b, = self.report()
-        self.assertEqual(b['whatsapp'], {'nuevos': 16, 'gestionados': 16, 'total': 32})
-        self.assertEqual(b['llamadas']['nuevos'], 6)
-        self.assertEqual(b['llamadas']['gestionados'], 5)
+        # La llamada combinada (4 eventos) ya no suma en WhatsApp: suma en llamadas.
+        self.assertEqual(b['whatsapp'], {'nuevos': 14, 'gestionados': 14, 'total': 28})
+        self.assertEqual(b['llamadas']['nuevos'], 8)
+        self.assertEqual(b['llamadas']['gestionados'], 7)
+        self.assertEqual(b['llamadas']['total_gestion'], 15)
         self.assertEqual(b['canales']['llamada_whatsapp'], 4)
         self.assertEqual(b['canales']['llamada'], 5)
         self.assertEqual(b['canales']['data_dura'], 6)
+        self.invariants(b)
+
+    def test_combined_channel_belongs_to_calls_and_not_to_whatsapp(self):
+        # Alta, seguimiento y previo vacio de la llamada combinada.
+        self.event('llamada y whatsapp', None)
+        self.event('llamada y whatsapp', 'CONTACTADO')
+        self.event('llamada y whatsapp', '')
+        self.event('whatsapp', None)
+        self.event('instagram', 'CONTACTADO')
+        b, = self.report()
+        self.assertEqual(b['canales']['llamada_whatsapp'], 3)
+        self.assertEqual(b['whatsapp'], {'nuevos': 1, 'gestionados': 1, 'total': 2})
+        self.assertEqual(b['llamadas']['total_gestion'], 3)
+        self.assertEqual(b['llamadas']['nuevos'], 1)
+        self.assertEqual(b['llamadas']['gestionados'], 2)
         self.invariants(b)
 
     def test_existing_lead_second_management_today_is_not_new(self):

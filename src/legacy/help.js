@@ -51,7 +51,7 @@ const HELP_SECTIONS = [
       'De Agendado a AGENDADO DATADURA: elige esa gestión y guarda; el lead pasa a Data Dura y conserva su Mes de origen.',
       'De Agendado a Información: al guardar, la cita se conserva y sigue apareciendo en el historial del lead.',
       'El campo Teléfono / WhatsApp es editable: si lo corriges, el número se revalida (7 a 15 dígitos) y la coincidencia con otros leads se recalcula.',
-      'En "Tipo de Última Gestión" eliges cómo se gestionó el contacto: Llamada, Llamada Data Dura, WhatsApp, Llamada WhatsApp, Instagram o Visita Conservatorio. Esa elección decide cómo suma en el Reporte Diario.'
+      'En "Tipo de Última Gestión" eliges cómo se gestionó el contacto: Llamada, Llamada Data Dura, WhatsApp, Llamada WhatsApp, Instagram o Visita Conservatorio. Esa elección decide cómo suma en el Reporte Diario: Llamada WhatsApp suma en el bloque de llamadas, no en el de WhatsApp.'
     ],
     notes: [
       'Si el lead ya estaba agendado, el modal avisa y las citas adicionales se gestionan desde la ficha, no desde el formulario de edición.',
@@ -109,7 +109,7 @@ const HELP_SECTIONS = [
       'El agendamiento se atribuye a quien creó la cita; la asesora asignada para atenderla aparece en el calendario.',
       'Citas reprogramadas hoy cuenta las nuevas fechas registradas hoy; Reprogramadas indica cuándo se marcó la cita anterior con ese resultado. Visitas, No asistieron y Canceladas cuentan el día en que se registró el resultado.',
       'Llamada WhatsApp cuenta una sola vez, dentro del total de llamadas, y es una categoría distinta de Llamada.',
-       'Detalle de gestión: el día del reporte lo decide la fecha de gestión (Miami) y se atribuye a quien registró el evento. Nuevo es solo un alta sin gestión anterior. Un alta atrasada registrada hoy cuenta como nueva hoy; la Fecha de llegada (ausente, inválida o futura) y la fecha automática de creación no cambian esta regla. Cualquier seguimiento, incluso del mismo día, es gestionado. WhatsApp suma WhatsApp, Llamada y WhatsApp, Instagram y Otros o sin canal (Visita Conservatorio y sin clasificar). Debajo, Llamadas muestra nuevos, gestionados y total de llamadas normales y Data Dura; el combinado pertenece solo a WhatsApp. En ambos grupos gestionados = total menos nuevos. Cada gestión cuenta una sola vez. Conteos inválidos o nuevos mayor que total muestran aviso y bloquean el CSV. Procedencia, Canales y total general conservan todas las gestiones.',
+       'Detalle de gestión: el día del reporte lo decide la fecha de gestión (Miami) y se atribuye a quien registró el evento. Nuevo es solo un alta sin gestión anterior. Un alta atrasada registrada hoy cuenta como nueva hoy; la Fecha de llegada (ausente, inválida o futura) y la fecha automática de creación no cambian esta regla. Cualquier seguimiento, incluso del mismo día, es gestionado. WhatsApp suma WhatsApp, Instagram y Otros o sin canal (Visita Conservatorio y sin clasificar). Debajo, Llamadas muestra nuevos, gestionados, sus tres categorías (Llamadas del día, Llamadas Data Dura y Llamada WhatsApp) y el total de llamadas. En ambos grupos gestionados = total menos nuevos. Cada gestión cuenta una sola vez. Conteos inválidos o nuevos mayor que total muestran aviso y bloquean el CSV. Procedencia, Canales y total general conservan todas las gestiones.',
       'Los Inscritos Data Dura son los leads inscritos cuyo Mes de origen es distinto del mes actual.',
       'Al guardar en un bloque ajeno, administración escribe en nombre de la asesora y el bloque sigue siendo de ella.'
     ]

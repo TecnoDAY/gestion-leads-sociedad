@@ -101,8 +101,11 @@ test('coherencia del caso Jessica: fila visible y total de canales cuadran con g
   assert.ok(iInstagram > -1 && iTotales > -1, 'columnas de canal presentes');
   assert.equal(fila[iInstagram], csvReporteField('0'));
   assert.equal(fila[iTotales], csvReporteField('130'));
-   // Total detalle ya contiene combinado, Instagram y otros: no repetirlos.
-   const sumaCanalCsv = ['Llamadas del día', 'Llamadas Data Dura', 'Total WhatsApp']
+   // Llamadas = llamada + data dura + llamada whatsapp; WhatsApp = el resto.
+   // Sumar ambos grupos devuelve todas las gestiones, sin repetir la combinada.
+   const sumaCanalCsv = ['Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total WhatsApp']
     .reduce((a, n) => a + Number(fila[el(n)].slice(1, -1)), 0);
   assert.equal(sumaCanalCsv, 130);
+  assert.equal(Number(fila[el('Total llamadas')].slice(1, -1)), 72);
+  assert.equal(Number(fila[el('Total WhatsApp')].slice(1, -1)), 58);
 });

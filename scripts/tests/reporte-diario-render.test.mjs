@@ -31,11 +31,11 @@ test('indice y notaDeBloque: uid primero, nombre legado como respaldo', () => {
 });
 
 test('totalDiario: cinco llaves con lo mismo que muestra el panel', () => {
-  const bloques = [bloque, { autor_name: 'B', gestionados: 2, llamadas: { del_dia: 1, data_dura: 0, total: 1 }, citas: { total_agendados: 1, citas_reprogramadas_hoy: 2, visitas: 3 } }];
+  const bloques = [bloque, { autor_name: 'B', gestionados: 2, llamadas: { del_dia: 1, data_dura: 0, llamada_whatsapp: 0, total: 1 }, citas: { total_agendados: 1, citas_reprogramadas_hoy: 2, visitas: 3 } }];
   const total = totalDiario(bloques);
-  // "Total llamadas" = grupo Llamadas (del_dia + data_dura), no el total legacy
-  // que incluye la llamada combinada (vive en el grupo de WhatsApp).
-  assert.deepEqual(total, { g: 7, l: 5, c: 4, r: 2, v: 4 });
+  // "Total llamadas" = grupo Llamadas (del_dia + data_dura + llamada WhatsApp),
+  // el mismo que muestra el detalle por asesora y la columna del CSV.
+  assert.deepEqual(total, { g: 7, l: 6, c: 4, r: 2, v: 4 });
   assert.deepEqual(totalDiario([]), { g: 0, l: 0, c: 0, r: 0, v: 0 });
 });
 

@@ -1,5 +1,10 @@
 """Execute the migration's reporting CTEs with stdlib SQLite, not a JS reimplementation.
 
+Suite historica: fija el cuerpo de la migracion 006 (ya aplicada), donde la
+llamada combinada sumaba en el grupo de WhatsApp. El agrupamiento vigente
+(la combinada en el grupo de llamadas) se prueba en
+scripts/tests/test_daily_report_arrival.py contra 202610200003.
+
 Only PostgreSQL syntax/functions are adapted. This checks aggregation semantics,
 not PL/pgSQL deployment, permissions or appointment time-zone conversion.
 """

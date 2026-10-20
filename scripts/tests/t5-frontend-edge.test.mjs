@@ -2143,7 +2143,7 @@ test('reporte RPC vacío, cargando y error muestran estado sin romper', async ()
 test('CSV bloquea detalle inconsistente con aviso sin descargar ni anunciar exito', async () => {
   for (const [data, message] of [
     [{ canales: { whatsapp: 1 }, whatsapp: { nuevos: 2 } }, /WhatsApp nuevos supera el total/],
-    [{ canales: { llamada: 1, llamada_whatsapp: 5 }, whatsapp: { nuevos: 0 }, llamadas: { nuevos: 2 } }, /Llamadas nuevos supera el total/],
+    [{ canales: { llamada: 1, data_dura: 1 }, whatsapp: { nuevos: 0 }, llamadas: { nuevos: 3 } }, /Llamadas nuevos supera el total/],
     [{ canales: { data_dura: -1 }, whatsapp: { nuevos: 0 } }, /conteos inválidos/],
   ]) {
     const f = reportFixture({ asesoras: [{ ...advisor('Ana', 'a'), ...data }] });
@@ -2168,8 +2168,9 @@ test('CSV reporte: separa citas nuevas y reprogramadas y suma las columnas visib
   assert.equal(col('Total citas nuevas'), 4); assert.equal(col('Citas reprogramadas hoy'), 6); assert.equal(col('Reprogramadas'), 2);
   assert.equal(headers.includes('Inscritos del día'), false, 'inscripciones fuera del CSV diario');
   assert.equal(col('Pasados a Agendado hoy'), 4); assert.equal(col('Pasados a Agendado Data Dura hoy'), 2);
-  assert.equal(col('WhatsApp nuevos hoy'), 2); assert.equal(col('WhatsApp gestionados hoy'), 4); assert.equal(col('Total WhatsApp'), 6);
-  assert.equal(col('Llamadas nuevos hoy'), 0); assert.equal(col('Llamadas gestionados hoy'), 4); assert.equal(col('Total llamadas de gestión'), 4);
+  assert.equal(col('WhatsApp nuevos hoy'), 2); assert.equal(col('WhatsApp gestionados hoy'), 2); assert.equal(col('Total WhatsApp'), 4);
+  assert.equal(col('Llamadas nuevos hoy'), 0); assert.equal(col('Llamadas gestionados hoy'), 6); assert.equal(col('Total llamadas de gestión'), 6);
+  assert.equal(col('Llamada WhatsApp'), 2); assert.equal(col('Total llamadas'), 6);
   // Total canales = suma exclusiva de 5 categorias visibles; los buckets
   // retirados (visita 0, sin_clasificar 0) van juntos en 'Otros o sin canal'.
   assert.equal(col('Total canales'), 10);

@@ -70,7 +70,10 @@ export function nuevoBadge(lead) {
 export function interesadoBadge(lead) {
   const programa = getField(lead, 'INTERESADO EN').trim();
   if (!programa) return '';
-  return `<span class="inline-flex items-center gap-1 rounded-full border border-indigo-500/40 bg-indigo-500/15 px-2 py-0.5 text-[11px] font-medium text-indigo-300 shrink-0" title="Interesado en">Interés: ${escapeHtml(programa)}</span>`;
+  // inline-block + truncate: la etiqueta se ajusta al texto y, si el programa
+  // es largo, se recorta con puntos suspensivos (el texto completo esta en
+  // el title).
+  return `<span class="inline-block max-w-[170px] truncate rounded-full border border-indigo-500/40 bg-indigo-500/15 px-2 py-0.5 text-[11px] font-medium text-indigo-300 shrink-0" title="Interesado en: ${escapeAttr(programa)}">Interés: ${escapeHtml(programa)}</span>`;
 }
 
 /**
@@ -408,12 +411,14 @@ export function filaLeadHtml(lead, { leadId, origin, isAdmin }) {
             <div class="text-[11px] text-slate-500">${escapeHtml(mes || '')}</div>
           </td>
           <td class="px-3.5 py-3">
-            <div class="flex flex-col gap-1.5">
-              <button data-ev="click:openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" class="font-semibold text-white hover:text-indigo-400 transition-colors cursor-pointer truncate max-w-[190px] block">
+            <div class="flex flex-col gap-1">
+              <button data-ev="click:openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" class="font-semibold text-white hover:text-indigo-400 transition-colors cursor-pointer truncate max-w-[190px] block text-left">
                 ${escapeHtml(nombre)}
               </button>
-              ${nuevoBadge(lead)}
-              ${interesadoBadge(lead)}
+              <div class="flex flex-wrap items-center gap-1.5">
+                ${nuevoBadge(lead)}
+                ${interesadoBadge(lead)}
+              </div>
             </div>
           </td>
           <td class="px-3.5 py-3 text-slate-300">

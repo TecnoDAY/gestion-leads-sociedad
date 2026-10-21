@@ -39,7 +39,8 @@ const adminApi = await import('../../src/legacy/admin.js');
 const inscripcionesMod = await import('../../src/legacy/inscripciones.js');
 const { PROGRAMAS_INSCRIPCION, esInscritoGestion, nivelesDePrograma, normalizaFechaInscripcion,
   inscripcionPayload, inscripcionDesdeFilas, inscripcionTienePendientes,
-  programaEtiqueta, validateInscripcionesReport, inscripcionesCsvLines } = inscripcionesMod;
+  programaEtiqueta, validateInscripcionesReport, inscripcionesCsvLines,
+  programaRequiereDetalle, programasInscripcionDisponibles } = inscripcionesMod;
 // validAppointmentId vive en src/legacy/citas.js
 const { validAppointmentId } = citasMod;
 // actionsMod se importa al final (tests parse-all fase 15).
@@ -94,11 +95,13 @@ const names = [
   'inscripcionErrorTexto', 'inscripcionProgramasHtml', 'renderInscripcionProgramas', 'syncInscripcionFila',
   'inscripcionSeleccion', 'inscripcionCambioNecesario', 'updateInscripcionAviso',
   'inscripcionFaltanNiveles', 'inscripcionProgramasGuardados', 'updateInscripcionPendiente',
+  'applyInscripcionDetalleVisibility', 'onProgramaInscripcionChange', 'fillProgramaInscripcionSelect',
+  'setProgramaInscripcionValue', 'programaInscripcionValue', 'guardarProgramaInscripcion',
   'applyNewInscripcionVisibility', 'applyEditInscripcionVisibility', 'loadEditEnrollments', 'guardarInscripciones',
   'updateEditEstadoChip',
   'loadPeriodoInscripciones', 'renderPeriodoInscripciones', 'exportPeriodoInscripcionesCSV'
 ];
-const frontendSource = ['let leadAppointmentCreateBlocked = true;', 'let gestionRangeLeads = [], gestionRangeKey = "";', 'let mesRangeLeads = [], mesRangeKey = "";', 'let editInscripcionFilas = [];', 'let editInscripcionGeneration = 0;', 'let periodoInscripcionesData = null;', "let periodoInscripcionesKey = '';", 'let periodoInscripcionesGeneration = 0;', 'const inscripcionErroresVisibles = { new: false, edit: false };', ...constants, ...names.map(extractFunction)].join('\n');
+const frontendSource = ['let leadAppointmentCreateBlocked = true;', 'let gestionRangeLeads = [], gestionRangeKey = "";', 'let mesRangeLeads = [], mesRangeKey = "";', 'let editInscripcionFilas = [];', 'let editInscripcionGeneration = 0;', "let editProgramaInscripcionPrevio = '';", 'let periodoInscripcionesData = null;', "let periodoInscripcionesKey = '';", 'let periodoInscripcionesGeneration = 0;', 'const inscripcionErroresVisibles = { new: false, edit: false };', ...constants, ...names.map(extractFunction)].join('\n');
 
 function frontend(extra = {}) {
   const elements = new Map(), downloads = [], timers = [], toasts = [];
@@ -164,6 +167,7 @@ function frontend(extra = {}) {
     PROGRAMAS_INSCRIPCION, esInscritoGestion, nivelesDePrograma, normalizaFechaInscripcion,
     inscripcionPayload, inscripcionDesdeFilas, inscripcionTienePendientes,
     programaEtiqueta, validateInscripcionesReport, inscripcionesCsvLines,
+    programaRequiereDetalle, programasInscripcionDisponibles,
     // miamiToday se stubbea en el test para determinismo (2026-09-30)
     miamiToday: () => '2026-09-30',
     supabaseClient: null, currentUser: { id: 'user-test' }, currentAccess: { activo: true, nombre: 'Test', updated_at: 'v1' },
@@ -574,6 +578,24 @@ test('período: el detalle de gestiones descarga la campaña del lead sin desali
   const segunda = csvFields(filas[1]);
   assert.equal(segunda[2], 'Ana Gómez');
   assert.equal(segunda.at(-1), '');
+});
+
+test('inscripcion: el detalle de nivel se oculta para los programas de adultos', () => {
+  const f = frontend();
+  const select = f.element('editProgramaInscripcion');
+  const detalle = f.element('editInscripcionDetalle');
+  select.value = 'Taller camara';
+  f.context.applyInscripcionDetalleVisibility('edit');
+  assert.equal(detalle.hidden, true, 'Taller camara no lleva niveles');
+  select.value = 'Actuacion adultos';
+  f.context.applyInscripcionDetalleVisibility('edit');
+  assert.equal(detalle.hidden, true, 'Actuacion adultos no lleva niveles');
+  select.value = 'Actuacion kids';
+  f.context.applyInscripcionDetalleVisibility('edit');
+  assert.equal(detalle.hidden, false, 'los demas programas mantienen el detalle');
+  select.value = '';
+  f.context.applyInscripcionDetalleVisibility('edit');
+  assert.equal(detalle.hidden, false, 'sin programa se mantiene el detalle');
 });
 
 test('período: presets calendario Miami incluyen hoy, semana lunes-domingo y cambio de año', async () => {

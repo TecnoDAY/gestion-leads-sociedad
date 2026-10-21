@@ -7,12 +7,52 @@
  * asesora y puede quedar vacia (pendiente de completar).
  */
 import { csvReporteField } from './reportes.js';
+import { compareAlphaEs } from './helpers.js';
 
 /** Programas y niveles validos. El id es el valor que viaja al servidor. */
 export const PROGRAMAS_INSCRIPCION = [
   { id: 'TEATRO_MUSICAL', label: 'Teatro Musical', marca: 'TM', chip: 'bg-emerald-500/15 text-emerald-300', check: 'accent-emerald-500', activa: 'activa-emerald', tag: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300', niveles: ['MT Piojitos', 'MT Teens', 'MT Advance'] },
   { id: 'ACTUACION', label: 'Actuación', marca: 'AC', chip: 'bg-indigo-500/15 text-indigo-300', check: 'accent-indigo-500', activa: 'activa-indigo', tag: 'border-indigo-500/40 bg-indigo-500/10 text-indigo-300', niveles: ['Acting Piojitos', 'Acting Teens', 'Acting 101 (Teens)', 'Acting Advance'] },
 ];
+
+/**
+ * Programas (campañas del catálogo) donde el detalle de nivel NO aplica:
+ * son de adultos y no tienen niveles que elegir.
+ */
+export const PROGRAMAS_SIN_DETALLE = ['actuacion adultos', 'taller camara'];
+
+/** Clave de comparación: minúsculas, sin tildes y sin espacios extra. */
+const clavePrograma = value => String(value ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+/**
+ * ¿El programa de inscripción lleva el detalle de nivel (Teatro Musical /
+ * Actuación)? Actuación Adultos y Taller de cámara no lo llevan; sin
+ * programa elegido se muestra el detalle (como antes).
+ * @param {string|null|undefined} programa
+ * @returns {boolean}
+ */
+export function programaRequiereDetalle(programa) {
+  const clave = clavePrograma(programa);
+  if (!clave) return true;
+  return !PROGRAMAS_SIN_DETALLE.includes(clave);
+}
+
+/**
+ * Programas de inscripción disponibles: campañas ACTIVAS del catálogo.
+ * 'Sin definir' no es un programa: queda fuera. Sin duplicados y en orden
+ * alfabético español.
+ * @param {{campana?: Array<{value?: string, active?: boolean}>}|null|undefined} catalogRows
+ * @returns {string[]}
+ */
+export function programasInscripcionDisponibles(catalogRows) {
+  const campanas = catalogRows?.campana || [];
+  const valores = campanas
+    .filter(row => row && row.active)
+    .map(row => String(row.value ?? '').trim())
+    .filter(Boolean)
+    .filter(value => clavePrograma(value) !== 'sin definir');
+  return [...new Set(valores)].sort(compareAlphaEs);
+}
 
 /**
  * Programa por id (para etiquetas y estilos).
@@ -187,4 +227,7 @@ if (typeof window !== 'undefined') {
   window.inscripcionTienePendientes = inscripcionTienePendientes;
   window.validateInscripcionesReport = validateInscripcionesReport;
   window.inscripcionesCsvLines = inscripcionesCsvLines;
+  window.PROGRAMAS_SIN_DETALLE = PROGRAMAS_SIN_DETALLE;
+  window.programaRequiereDetalle = programaRequiereDetalle;
+  window.programasInscripcionDisponibles = programasInscripcionDisponibles;
 }

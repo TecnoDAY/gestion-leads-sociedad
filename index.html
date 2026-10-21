@@ -1304,11 +1304,20 @@
               <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300"><i data-lucide="graduation-cap" class="w-4 h-4"></i></span>
               <div class="min-w-0 flex-1">
                 <h4 class="text-sm font-bold text-slate-100">Inscripción</h4>
-                <p class="text-[11px] text-slate-400">Selecciona uno o ambos programas y completa su nivel. La fecha es opcional: si no la conoces, quedará pendiente de completar.</p>
+                <p class="text-[11px] text-slate-400">Opcional: puedes registrar el programa y su nivel ahora o completarlo más adelante. Si eliges un programa, su nivel es obligatorio. La fecha también es opcional.</p>
               </div>
             </div>
-            <div id="newInscripcionProgramas"></div>
-            <p id="newInscripcionAviso" class="text-[11px] text-slate-400"></p>
+            <div>
+              <label class="block text-[11px] text-slate-400" for="newProgramaInscripcion">Programa de inscripción (opcional)</label>
+              <select id="newProgramaInscripcion" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 focus:border-indigo-500 focus:outline-none">
+                <option value="">Sin programa</option>
+              </select>
+              <p class="mt-1 text-[11px] text-slate-400">Se elige del catálogo de campañas activas. No es obligatorio: el lead se guarda igual sin él.</p>
+            </div>
+            <div id="newInscripcionDetalle">
+              <div id="newInscripcionProgramas"></div>
+              <p id="newInscripcionAviso" class="text-[11px] text-slate-400"></p>
+            </div>
           </div>
 
           <!-- Medio -->
@@ -1507,11 +1516,20 @@
             <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300"><i data-lucide="graduation-cap" class="w-4 h-4"></i></span>
             <div class="min-w-0 flex-1">
               <h4 class="text-sm font-bold text-slate-100">Inscripción</h4>
-              <p class="text-[11px] text-slate-400">Selecciona uno o ambos programas y completa su nivel. La fecha es opcional: si no la conoces, quedará pendiente de completar. Quitar un programa no lo borra: queda en el historial.</p>
+              <p class="text-[11px] text-slate-400">Opcional: puedes registrar el programa y su nivel ahora o completarlo más adelante. Si eliges un programa, su nivel es obligatorio. La fecha también es opcional. Quitar un programa no lo borra: queda en el historial.</p>
             </div>
           </div>
-          <div id="editInscripcionProgramas"></div>
-          <p id="editInscripcionAviso" class="text-[11px] text-slate-400"></p>
+          <div>
+            <label class="block text-[11px] text-slate-400" for="editProgramaInscripcion">Programa de inscripción (opcional)</label>
+            <select id="editProgramaInscripcion" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 focus:border-indigo-500 focus:outline-none">
+              <option value="">Sin programa</option>
+            </select>
+            <p class="mt-1 text-[11px] text-slate-400">Se elige del catálogo de campañas activas. No es obligatorio: el lead se guarda igual sin él.</p>
+          </div>
+          <div id="editInscripcionDetalle">
+            <div id="editInscripcionProgramas"></div>
+            <p id="editInscripcionAviso" class="text-[11px] text-slate-400"></p>
+          </div>
         </div>
 
         <section id="adminLeadFields" class="hidden border-t border-slate-700/80 pt-4 space-y-3">
@@ -1709,6 +1727,7 @@
       editLeadAdvisorGeneration += 1;
       editLeadSubmitting = false;
       editLeadPreviousGestion = '';
+      editProgramaInscripcionPrevio = '';
       editAdvisorsLoading = false;
       citasRequestGeneration = (citasRequestGeneration || 0) + 1;
       newLeadAdvisorGeneration = (newLeadAdvisorGeneration || 0) + 1;
@@ -3650,6 +3669,10 @@
       fillSelectFromCatalog('newGestion', gestion);
       // Formulario Editar
       fillSelectFromCatalog('editGestion', gestion);
+      // Programa de inscripcion: campañas activas del catálogo (opcional).
+      const programasInscripcion = programasInscripcionDisponibles(catalogRows);
+      fillProgramaInscripcionSelect('newProgramaInscripcion', programasInscripcion);
+      fillProgramaInscripcionSelect('editProgramaInscripcion', programasInscripcion);
       fillDatalistFromCatalog('mesList', mes);
       fillDatalistFromCatalog('campanaEditList', campana);
       fillDatalistFromCatalog('medioList', medio);
@@ -4453,6 +4476,10 @@
          toggleNewAppointmentFields();
          inscripcionErroresVisibles.new = false;
          renderInscripcionProgramas('new', []);
+         // El programa de inscripcion empieza vacio: se elige al crear.
+         setProgramaInscripcionValue('new', '');
+         const selectProgramaNuevo = document.getElementById('newProgramaInscripcion');
+         if (selectProgramaNuevo) selectProgramaNuevo.onchange = () => onProgramaInscripcionChange('new');
          applyNewInscripcionVisibility();
          loadNewLeadAppointmentAdvisors();
       }
@@ -4522,7 +4549,8 @@
             const campus = agendado ? appointmentCampusFrom('newAppointment') : '';
             if (agendado && (!scheduledAt || note.length > 2000 || !campus || (isAdmin && !advisor))) { showToast(!campus ? 'Selecciona la sede de la cita' : 'Fecha y hora de Miami, asesor o nota de cita no válidos', 'warning'); return; }
             if (agendado && !confirmAppointmentCreation('newAppointment', scheduledAt)) return;
-            // Un lead que nace inscrito debe llevar programa y nivel.
+            // La inscripcion es opcional: un lead puede nacer inscrito sin
+            // programa. Si se marca un programa, su nivel es obligatorio.
             const naceInscrito = esInscritoGestion(newLeadData.GESTION);
             let inscripcionNueva = null;
             if (naceInscrito) {
@@ -4531,7 +4559,7 @@
               const faltanNiveles = inscripcionFaltanNiveles('new');
               if (faltanNiveles.length) { showToast('Falta elegir el nivel de ' + faltanNiveles.join(' y '), 'warning'); return; }
               const checkInscripcion = inscripcionPayload(inscripcionSeleccion('new'));
-              if (!checkInscripcion.ok || !checkInscripcion.payload.length) { showToast('Elige al menos un programa y su nivel para registrar la inscripción', 'warning'); return; }
+              if (!checkInscripcion.ok) { showToast('Revisa los datos de inscripción: ' + inscripcionErrorTexto(checkInscripcion.error), 'warning'); return; }
               inscripcionNueva = checkInscripcion.payload;
             }
             newLeadSubmitting = true; if (btn) btn.disabled = true;
@@ -4550,7 +4578,12 @@
                if (!validRequest()) return;
              }
              if (!validRequest()) return;
-              if (naceInscrito) await guardarInscripciones(data.id, inscripcionNueva);
+              if (naceInscrito && inscripcionNueva.length) await guardarInscripciones(data.id, inscripcionNueva);
+              // Programa de inscripcion (opcional): va aparte de la campaña de origen.
+              if (naceInscrito) {
+                const programaNuevo = programaInscripcionValue('new');
+                if (programaNuevo) await guardarProgramaInscripcion(data.id, programaNuevo);
+              }
               if (!validRequest()) return;
               showToast(agendado ? "Lead y cita registrados con éxito" : "Lead registrado con éxito en Supabase", "success");
              closeNewLeadModal(true);
@@ -4636,6 +4669,9 @@
     // -------------------------------------------------------------
     let editInscripcionFilas = [];
     let editInscripcionGeneration = 0;
+    // Programa de inscripcion guardado (campaña del catálogo): sirve para
+    // saber si cambió y solo entonces llamar a la RPC.
+    let editProgramaInscripcionPrevio = '';
     // Los errores de nivel se muestran junto al campo, y solo tras intentar
     // guardar: marcar un programa no es un error.
     const inscripcionErroresVisibles = { new: false, edit: false };
@@ -4803,10 +4839,12 @@
       }
       const seleccion = inscripcionSeleccion(prefix);
       if (!seleccion.length) {
+        // Sin seleccion no hay error: la inscripcion es opcional y el aviso
+        // solo informa de que se puede completar mas adelante.
         aviso.textContent = prefix === 'new'
-          ? 'Elige al menos un programa y su nivel para registrar la inscripción.'
-          : 'Inscripción pendiente de completar: elige al menos un programa y su nivel.';
-        aviso.className = mostrarErrores ? 'text-[11px] text-amber-300' : 'text-[11px] text-slate-400';
+          ? 'Opcional: elige un programa y su nivel si quieres registrar la inscripción.'
+          : 'Opcional: la inscripción queda pendiente. Puedes completarla más adelante.';
+        aviso.className = 'text-[11px] text-slate-400';
         return;
       }
       const check = inscripcionPayload(seleccion);
@@ -4831,6 +4869,7 @@
       const block = document.getElementById('newInscripcionFields');
       if (!block) return;
       block.classList.toggle('hidden', !esInscritoGestion(document.getElementById('newGestion')?.value));
+      applyInscripcionDetalleVisibility('new');
       updateInscripcionAviso('new');
     }
 
@@ -4838,7 +4877,66 @@
       const block = document.getElementById('editInscripcionFields');
       if (!block) return;
       block.classList.toggle('hidden', !esInscritoGestion(document.getElementById('editGestion')?.value));
+      applyInscripcionDetalleVisibility('edit');
       updateInscripcionAviso('edit');
+    }
+
+    // El detalle de nivel (Teatro Musical / Actuacion) no aplica a los
+    // programas de adultos: para esos se oculta y solo queda el programa.
+    function applyInscripcionDetalleVisibility(prefix) {
+      const detalle = document.getElementById(prefix + 'InscripcionDetalle');
+      if (!detalle) return;
+      const programa = document.getElementById(prefix + 'ProgramaInscripcion')?.value || '';
+      detalle.hidden = !programaRequiereDetalle(programa);
+    }
+
+    // Cambio de programa: actualiza el detalle (niveles) que corresponde.
+    function onProgramaInscripcionChange(prefix) {
+      applyInscripcionDetalleVisibility(prefix);
+      updateInscripcionAviso(prefix);
+    }
+
+    // Opciones del programa de inscripcion: campañas activas del catálogo +
+    // la opción vacía (sin programa). Un programa ya guardado que se haya
+    // desactivado se conserva visible para no perder el dato.
+    function fillProgramaInscripcionSelect(id, values) {
+      const select = document.getElementById(id);
+      if (!select) return;
+      const actual = String(select.value || '').trim();
+      const lista = [...new Set((values || []).map(v => String(v || '').trim()).filter(Boolean))];
+      if (actual && !lista.includes(actual)) lista.push(actual);
+      select.innerHTML = '';
+      const vacio = document.createElement('option');
+      vacio.value = '';
+      vacio.textContent = 'Sin programa';
+      select.appendChild(vacio);
+      lista.forEach(value => {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = value;
+        select.appendChild(opt);
+      });
+      select.value = actual;
+    }
+
+    // Valor del programa de inscripcion: si no está entre las opciones (se
+    // desactivó en el catálogo), se añade para no perder el dato guardado.
+    function setProgramaInscripcionValue(prefix, value) {
+      const select = document.getElementById(prefix + 'ProgramaInscripcion');
+      if (!select) return;
+      const valor = String(value || '').trim();
+      const existe = Array.from(select.options || []).some(o => o.value === valor);
+      if (valor && !existe) {
+        const opt = document.createElement('option');
+        opt.value = valor;
+        opt.textContent = valor;
+        select.appendChild(opt);
+      }
+      select.value = valor;
+    }
+
+    function programaInscripcionValue(prefix) {
+      return String(document.getElementById(prefix + 'ProgramaInscripcion')?.value || '').trim();
     }
 
     async function loadEditEnrollments(leadId) {
@@ -4871,6 +4969,20 @@
       // Las etiquetas del dashboard quedan obsoletas: se recargan al repintar
       // la lista y se descartan las respuestas que estuvieran en vuelo.
       resetDashboardInscripciones();
+      return true;
+    }
+
+    // Programa de inscripción (campaña del catálogo donde se inscribe). Es
+    // opcional y va aparte de la campaña de origen. Si falla, el lead ya
+    // guardado no se pierde: se avisa y la ficha queda pendiente de revisar.
+    async function guardarProgramaInscripcion(leadId, programa) {
+      if (!supabaseClient || !leadId) return false;
+      const { error } = await supabaseClient.rpc('set_lead_inscripcion_programa', { p_lead_id: Number(leadId), p_programa: programa || null });
+      if (error) {
+        console.error('Error al guardar el programa de inscripción:', error);
+        showToast('El lead se guardó, pero el programa de inscripción no. Revisa la ficha del lead.', 'error');
+        return false;
+      }
       return true;
     }
     async function loadEditAppointmentAdvisors() {
@@ -4995,6 +5107,13 @@
         applyEditAppointmentVisibility();
         inscripcionErroresVisibles.edit = false;
         renderInscripcionProgramas('edit', []);
+        // Programa de inscripcion: el que tiene guardado el lead (vacio si no
+        // lo tiene). La campaña de origen NO se toca.
+        const programaGuardado = String(getField(lead, 'PROGRAMA INSCRIPCION') || '').trim();
+        setProgramaInscripcionValue('edit', programaGuardado);
+        editProgramaInscripcionPrevio = programaGuardado;
+        const selectPrograma = document.getElementById('editProgramaInscripcion');
+        if (selectPrograma) selectPrograma.onchange = () => onProgramaInscripcionChange('edit');
         applyEditInscripcionVisibility();
         loadEditEnrollments(leadId);
         if (editLeadNeedsAppointment()) loadEditAppointmentAdvisors();
@@ -5009,6 +5128,7 @@
       editAdvisorsLoading = false;
       editLeadSubmitting = false;
       editLeadPreviousGestion = '';
+      editProgramaInscripcionPrevio = '';
       editInscripcionGeneration += 1;
       editInscripcionFilas = [];
       const modal = document.getElementById('modalEditLead');
@@ -5048,19 +5168,18 @@
       if (needsAppointment && !appointmentCampus) { showToast('Selecciona la sede de la cita', 'warning'); return; }
       if (needsAppointment && !confirmAppointmentCreation('editAppointment', scheduledAt)) return;
 
-      // Inscripcion: al pasar a inscrito hay que elegir programa y nivel. Un
-      // lead que ya estaba inscrito puede quedar pendiente de completar (no
-      // bloquea el resto de la ficha). Si deja de estar inscrito, la llamada
-      // con payload vacio cierra sus inscripciones (no las borra).
+      // Inscripcion: es opcional. Un lead puede quedar inscrito sin programa
+      // (solo es obligatorio el nivel si se marca un programa). Si deja de
+      // estar inscrito, la llamada con payload vacio cierra sus inscripciones
+      // (no las borra). Si la seccion no se toca, no se llama a la RPC y las
+      // inscripciones ya guardadas se conservan.
       const gestionNueva = document.getElementById('editGestion')?.value || '';
       const quedaInscrito = esInscritoGestion(gestionNueva);
-      const yaEraInscrito = esInscritoGestion(editLeadPreviousGestion);
       if (quedaInscrito) { inscripcionErroresVisibles.edit = true; updateInscripcionAviso('edit'); }
       const faltanNiveles = inscripcionFaltanNiveles('edit');
       if (faltanNiveles.length) { showToast('Falta elegir el nivel de ' + faltanNiveles.join(' y '), 'warning'); return; }
       const checkInscripcion = inscripcionPayload(inscripcionSeleccion('edit'));
       if (!checkInscripcion.ok) { showToast('Revisa los datos de inscripción: ' + inscripcionErrorTexto(checkInscripcion.error), 'warning'); return; }
-      if (quedaInscrito && !yaEraInscrito && !checkInscripcion.payload.length) { showToast('Elige al menos un programa y su nivel para registrar la inscripción', 'warning'); return; }
       const inscripcionGuardar = quedaInscrito
         ? (inscripcionCambioNecesario(checkInscripcion.payload, editInscripcionFilas) ? checkInscripcion.payload : null)
         : (editInscripcionFilas.length ? [] : null);
@@ -5130,6 +5249,17 @@
           } else {
             if (inscripcionGuardar) await guardarInscripciones(leadId, inscripcionGuardar);
             if (!validRequest()) return;
+            // Programa de inscripcion (opcional): solo se guarda si cambio.
+            const programaElegido = programaInscripcionValue('edit');
+            if (programaElegido !== editProgramaInscripcionPrevio) {
+              const programaOk = await guardarProgramaInscripcion(leadId, programaElegido);
+              if (programaOk) {
+                editProgramaInscripcionPrevio = programaElegido;
+                // El estado local queda al dia: si se vuelve a abrir la
+                // ficha, el programa elegido es el que se ve.
+                if (updated) updated['PROGRAMA INSCRIPCION'] = programaElegido;
+              }
+            }
             showToast(needsAppointment ? "Lead #" + leadId + " agendado y cita registrada" : "Lead #" + leadId + " actualizado en Supabase", "success");
             if (isSupabaseLive) {
               upsertLeadInState(updated);

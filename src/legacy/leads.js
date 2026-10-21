@@ -56,7 +56,7 @@ export function isNuevoEsteMes(fechaTexto, today = miamiToday()) {
  */
 export function nuevoBadge(lead) {
   return isNuevoEsteMes(getField(lead, 'Fecha'))
-    ? '<span class="text-[11px] uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold shrink-0">Nuevo</span>'
+    ? '<span class="w-fit text-[11px] uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold shrink-0">Nuevo</span>'
     : '';
 }
 
@@ -431,11 +431,9 @@ export function filaLeadHtml(lead, { leadId, origin, isAdmin }) {
           <td class="px-3.5 py-3 text-slate-300 truncate max-w-[150px]">${escapeHtml(campana || '-')}</td>
           <td class="px-3.5 py-3 text-slate-400 text-[11px] truncate max-w-[110px]">${escapeHtml(medio || '-')}</td>
           <td class="px-3.5 py-3">
-            <div class="flex flex-col items-start gap-1">
-              <div class="flex flex-wrap items-center gap-1.5">
-                ${badgeHtml}
-                ${originBadge}
-              </div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              ${badgeHtml}
+              ${originBadge}
               ${interesadoBadge(lead)}
             </div>
           </td>

@@ -18,7 +18,8 @@ import { appointmentInputISO, appointmentLocal, validAppointmentId } from '../..
 // Inscripciones por programa y nivel (src/legacy/inscripciones.js). El golden
 // es una caracterizacion del PAYLOAD del lead: las inscripciones van en su
 // propia RPC (save_lead_enrollments) y no alteran el payload del lead.
-import { PROGRAMAS_INSCRIPCION, esInscritoGestion, inscripcionPayload, inscripcionDesdeFilas, programaRequiereDetalle, programasInscripcionDisponibles } from '../../src/legacy/inscripciones.js';
+import { PROGRAMAS_INSCRIPCION, esInscritoGestion, inscripcionPayload, inscripcionDesdeFilas, programaRequiereDetalle } from '../../src/legacy/inscripciones.js';
+import { programasDisponibles } from '../../src/legacy/catalogos.js';
 
 const fx = JSON.parse(readFileSync(new URL('fixtures/fase34-golden.json', import.meta.url), 'utf8'));
 const HOY = fx.meta.hoyMiami;
@@ -169,7 +170,8 @@ const fuenteWrapper = ['handleCreateLead', 'handleUpdateLead', 'editLeadNeedsApp
   'editSessionValid', 'editAppointmentSubmitBlocked', 'updateEditSubmitState', 'appointmentDetailsFrom',
   'confirmAppointmentCreation', 'appointmentCampusFrom', 'formatSaveError',
   'inscripcionErrorTexto', 'inscripcionCambioNecesario', 'resetDashboardInscripciones', 'guardarInscripciones',
-  'inscripcionFaltanNiveles', 'updateInscripcionAviso', 'guardarProgramaInscripcion', 'programaInscripcionValue'].map(extractFunction).join('\n');
+  'inscripcionFaltanNiveles', 'updateInscripcionAviso', 'guardarProgramaInscripcion', 'programaInscripcionValue',
+  'interesadoEnValue'].map(extractFunction).join('\n');
 
 function sandbox(sample) {
   const elements = new Map(), toasts = [], rpcCalls = [];
@@ -196,11 +198,12 @@ function sandbox(sample) {
     // Inscripciones: la seleccion del formulario la aporta el test; el
     // golden sigue verificando el payload del lead.
     PROGRAMAS_INSCRIPCION, esInscritoGestion, inscripcionPayload, inscripcionDesdeFilas,
-    programaRequiereDetalle, programasInscripcionDisponibles,
+    programaRequiereDetalle, programasDisponibles,
     inscripcionSeleccion: () => sample.inscripcion || [],
     inscripcionErroresVisibles: { new: false, edit: false },
     editInscripcionFilas: sample.inscripcionFilas || [],
     editProgramaInscripcionPrevio: sample.programaPrevio ?? '',
+    editInteresadoEnPrevio: sample.interesadoPrevio ?? '',
     isAdmin: sample.isAdmin, currentUser: { id: 'user-1' },
     currentAccess: { activo: true, updated_at: 'v1', ...sample.acceso },
     sessionGeneration: 1,
@@ -212,7 +215,7 @@ function sandbox(sample) {
     upsertLeadInState() {}, updateConnectionStatus() {}, loadLeadsData: async () => {},
     closeNewLeadModal() {}, closeEditLeadModal() {}, populateFilterOptions() {}, applyFilters() {},
     toggleNewAppointmentFields() {}, invalidateCitasCache() {},
-    supabaseClient: { rpc: async (name, args) => { rpcCalls.push({ name, args }); return { data: { id: 4590 }, error: null }; } },
+    supabaseClient: { rpc: async (name, args) => { rpcCalls.push({ name, args }); const fallo = sample.rpcErrors?.[name]; return fallo ? { data: null, error: { message: fallo } } : { data: { id: 4590 }, error: null }; } },
   });
   for (const [id, value] of Object.entries(sample.inputs)) {
     if (id === 'editTelefonoOriginal') { element('editTelefono').dataset = { original: value }; continue; }
@@ -384,6 +387,73 @@ test('programa de inscripcion: en el alta se guarda tras crear el lead', async (
   assert.ok(llamada, 'el programa se guarda tras el alta');
   assert.equal(llamada.args.p_programa, 'Actuacion adultos');
   assert.equal(toasts.at(-1)?.[1], 'success');
+});
+
+// El interes viaja en el payload del lead (misma operacion): no hay RPC
+// propia, asi que no puede quedar guardado a medias.
+test('interesado en: en el alta viaja en el payload del lead', async () => {
+  const base = fx.alta.find(s => s.nombre === 'alta-admin-vacios');
+  const inputs = { ...base.inputs, newInteresadoEn: 'Actuacion adultos' };
+  const { ctx, toasts, rpcCalls } = sandbox({ ...base, inputs, inscripcion: [] });
+  await ctx.handleCreateLead({ preventDefault() {} });
+  assert.equal(rpcCalls.length, 1, 'una sola llamada: el lead y su interes');
+  assert.equal(rpcCalls[0].name, 'create_lead');
+  assert.equal(rpcCalls[0].args.p_lead['INTERESADO EN'], 'Actuacion adultos');
+  assert.equal(toasts.at(-1)?.[1], 'success');
+});
+
+test('interesado en: en el alta sin interes no viaja la clave', async () => {
+  const base = fx.alta.find(s => s.nombre === 'alta-admin-vacios');
+  const { ctx, toasts, rpcCalls } = sandbox({ ...base, inputs: { ...base.inputs, newInteresadoEn: '' }, inscripcion: [] });
+  await ctx.handleCreateLead({ preventDefault() {} });
+  assert.equal(rpcCalls.length, 1);
+  assert.equal('INTERESADO EN' in rpcCalls[0].args.p_lead, false, 'sin interes no viaja la clave');
+  assert.equal(toasts.at(-1)?.[1], 'success');
+});
+
+test('interesado en: en la edicion viaja en el payload del lead', async () => {
+  const base = fx.edicion.find(s => s.nombre === 'edicion-asesora-tel-igual');
+  const inputs = { ...base.inputs, editInteresadoEn: 'Actuacion kids' };
+  const { ctx, toasts, rpcCalls } = sandbox({ ...base, inputs, inscripcion: [] });
+  await ctx.handleUpdateLead({ preventDefault() {} });
+  assert.equal(rpcCalls.filter(c => c.name !== 'save_lead_enrollments').length, 1, 'una sola llamada');
+  assert.equal(rpcCalls[0].args.p_fields['INTERESADO EN'], 'Actuacion kids');
+  assert.equal(toasts.at(-1)?.[1], 'success');
+});
+
+test('interesado en: si no cambia no viaja (el lead conserva lo suyo)', async () => {
+  const base = fx.edicion.find(s => s.nombre === 'edicion-asesora-tel-igual');
+  const inputs = { ...base.inputs, editInteresadoEn: 'Taller camara' };
+  const { ctx, rpcCalls } = sandbox({ ...base, inputs, inscripcion: [], interesadoPrevio: 'Taller camara' });
+  await ctx.handleUpdateLead({ preventDefault() {} });
+  const campos = rpcCalls.find(c => c.name === 'update_lead_followup').args.p_fields;
+  assert.equal('INTERESADO EN' in campos, false, 'sin cambio no viaja la clave');
+});
+
+test('interesado en: quitarlo viaja como cadena vacia', async () => {
+  const base = fx.edicion.find(s => s.nombre === 'edicion-asesora-tel-igual');
+  const inputs = { ...base.inputs, editInteresadoEn: '' };
+  const { ctx, rpcCalls } = sandbox({ ...base, inputs, inscripcion: [], interesadoPrevio: 'Taller camara' });
+  await ctx.handleUpdateLead({ preventDefault() {} });
+  const campos = rpcCalls.find(c => c.name === 'update_lead_followup').args.p_fields;
+  assert.equal(campos['INTERESADO EN'], '', 'una cadena vacia lo quita en la base de datos');
+});
+
+test('interesado en: no hay RPC propia del interes', async () => {
+  const base = fx.edicion.find(s => s.nombre === 'edicion-asesora-tel-igual');
+  const inputs = { ...base.inputs, editInteresadoEn: 'Actuacion kids' };
+  const { ctx, rpcCalls } = sandbox({ ...base, inputs, inscripcion: [] });
+  await ctx.handleUpdateLead({ preventDefault() {} });
+  assert.equal(rpcCalls.filter(c => c.name.includes('interesado')).length, 0, 'el interes viaja con el lead');
+});
+
+test('programa de inscripcion: si falla, el aviso no canta un exito falso', async () => {
+  const base = fx.edicion.find(s => s.nombre === 'edicion-asesora-tel-igual');
+  const inputs = { ...base.inputs, editGestion: 'Inscrito', editProgramaInscripcion: 'Actuacion kids' };
+  const { ctx, toasts } = sandbox({ ...base, inputs, inscripcion: [], rpcErrors: { set_lead_inscripcion_programa: 'boom' } });
+  await ctx.handleUpdateLead({ preventDefault() {} });
+  assert.notEqual(toasts.at(-1)?.[1], 'success');
+  assert.match(toasts.at(-1)?.[0] || '', /no se guardó el programa de inscripción/, `toast=${toasts.at(-1)?.[0]}`);
 });
 
 test('leads.js: las piezas nuevas son puras y quedan registradas en window', () => {

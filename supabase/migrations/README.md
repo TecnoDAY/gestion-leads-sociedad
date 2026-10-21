@@ -27,6 +27,7 @@ proyecto remoto. Reglas para no volver a pisar la base de datos por accidente.
 
 Verificado el 2026-10-19 comparando el cuerpo de cada copia local con el
 `prosrc` real del remoto (md5 normalizado: sin comentarios ni espacios).
+Revisado el 2026-10-21 tras `202610210002_lead_interesado_en.sql`.
 
 | Funcion | Copias en el repo | Vigente |
 | --- | --- | --- |
@@ -37,6 +38,7 @@ Verificado el 2026-10-19 comparando el cuerpo de cada copia local con el
 | `create_lead_appointment` | 6 | `202610020007_appointment_campus.sql` |
 | `create_lead_catalog` | 2 | `202609240010_agent_catalog_kind.sql` |
 | `create_lead_note` | 2 | `202609290001_campaign_stats.sql` |
+| `create_lead_record` | 2 | `202610210002_lead_interesado_en.sql` |
 | `create_lead_with_appointment` | 4 | `202610050001_fix_atomic_appointment_creation.sql` |
 | `daily_management_report` | 15 | `202610200003_daily_report_llamada_whatsapp_grupo.sql` |
 | `delete_daily_report_note` | 2 | `202609290001_campaign_stats.sql` |
@@ -52,9 +54,9 @@ Verificado el 2026-10-19 comparando el cuerpo de cada copia local con el
 | `set_lead_catalog_active` | 2 | `202609240010_agent_catalog_kind.sql` |
 | `sync_user_access_email` | 2 | `202609300005_backend_integrity.sql` |
 | `touch_agent_session` | 2 | `202610200006_sesiones_usuario_activo.sql` |
-| `update_lead_followup` | 7 | `202610020001_canal_datadura_manual_telefono.sql` |
-| `update_lead_full` | 6 | `202610010002_campania_nombre_mes.sql` |
-| `update_lead_with_appointment` | 5 | `202610020007_appointment_campus.sql` |
+| `update_lead_followup` | 8 | `202610210002_lead_interesado_en.sql` |
+| `update_lead_full` | 7 | `202610210002_lead_interesado_en.sql` |
+| `update_lead_with_appointment` | 6 | `202610210002_lead_interesado_en.sql` |
 | `upsert_campaign_stat` | 2 | `202609290002_supervisor_role.sql` |
 | `upsert_daily_report_note` | 3 | `202609300005_backend_integrity.sql` |
 

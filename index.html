@@ -1287,6 +1287,14 @@
             <datalist id="campanaEditList"></datalist>
           </div>
 
+          <!-- INTERESADO EN (solo informativo) -->
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Interesado en<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>
+            <div id="newInteresadoEnChips" class="flex flex-wrap gap-1.5"></div>
+            <p class="text-[11px] text-slate-400 mt-1">Solo informativo: no cambia la campaña del lead. Toca un programa para elegirlo y tócalo otra vez para quitarlo.</p>
+            <input type="hidden" id="newInteresadoEn" value="">
+          </div>
+
           <div id="newAppointmentFields" class="hidden sm:col-span-2 grid sm:grid-cols-[auto_1fr_auto] gap-2 items-end border border-indigo-500/30 rounded-lg p-3">
             <div class="sm:col-span-3 flex items-center gap-1.5 text-[11px] text-indigo-300 font-semibold">Cita obligatoria al agendar<button type="button" data-ev="click:openHelpModal('ayuda-nuevo-lead')" title="Ayuda: cita obligatoria" aria-label="Ayuda sobre la cita obligatoria al agendar" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button></div>
             <label class="text-[11px] text-slate-400">Fecha y hora<input id="newAppointmentDate" type="datetime-local" class="block mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100"></label>
@@ -1483,6 +1491,12 @@
            <!-- OBSERVACIONES -->
            <div><label class="block font-medium text-slate-300 mb-1">Nombre</label><input id="editNombre" type="text" autocomplete="name" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"></div>
            <div><label class="block font-medium text-slate-300 mb-1">Teléfono / WhatsApp</label><input id="editTelefono" type="text" inputmode="tel" autocomplete="tel" data-ev="blur:formatPhoneField(this)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500" placeholder="Ej: 1 (786) 555-1234"></div>
+           <div class="sm:col-span-2">
+            <label class="block font-medium text-slate-300 mb-1">Interesado en<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>
+            <div id="editInteresadoEnChips" class="flex flex-wrap gap-1.5"></div>
+            <p class="text-[11px] text-slate-400 mt-1">Solo informativo: no cambia la campaña del lead. Toca un programa para elegirlo y tócalo otra vez para quitarlo.</p>
+            <input type="hidden" id="editInteresadoEn" value="">
+          </div>
            <div class="sm:col-span-2">
             <label class="block font-medium text-slate-300 mb-1">Historial de Observaciones & Notas</label>
             <textarea id="editObservaciones" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono text-xs"></textarea>
@@ -1728,6 +1742,7 @@
       editLeadSubmitting = false;
       editLeadPreviousGestion = '';
       editProgramaInscripcionPrevio = '';
+      editInteresadoEnPrevio = '';
       editAdvisorsLoading = false;
       citasRequestGeneration = (citasRequestGeneration || 0) + 1;
       newLeadAdvisorGeneration = (newLeadAdvisorGeneration || 0) + 1;
@@ -3670,9 +3685,13 @@
       // Formulario Editar
       fillSelectFromCatalog('editGestion', gestion);
       // Programa de inscripcion: campañas activas del catálogo (opcional).
-      const programasInscripcion = programasInscripcionDisponibles(catalogRows);
+      const programasInscripcion = catalogosApi.programasDisponibles(catalogRows);
       fillProgramaInscripcionSelect('newProgramaInscripcion', programasInscripcion);
       fillProgramaInscripcionSelect('editProgramaInscripcion', programasInscripcion);
+      // Interesado en: las mismas campañas activas, en forma de etiquetas.
+      programasInteresadoEn = catalogosApi.programasDisponibles(catalogRows);
+      renderInteresadoEnChips('new');
+      renderInteresadoEnChips('edit');
       fillDatalistFromCatalog('mesList', mes);
       fillDatalistFromCatalog('campanaEditList', campana);
       fillDatalistFromCatalog('medioList', medio);
@@ -4478,6 +4497,8 @@
          renderInscripcionProgramas('new', []);
          // El programa de inscripcion empieza vacio: se elige al crear.
          setProgramaInscripcionValue('new', '');
+         // El interes tambien empieza vacio: es opcional.
+         setInteresadoEn('new', '');
          const selectProgramaNuevo = document.getElementById('newProgramaInscripcion');
          if (selectProgramaNuevo) selectProgramaNuevo.onchange = () => onProgramaInscripcionChange('new');
          applyNewInscripcionVisibility();
@@ -4535,6 +4556,7 @@
         agente: document.getElementById('newAgente')?.value || '',
         ciudad: document.getElementById('newCiudad')?.value || '',
         observaciones: document.getElementById('newObservaciones')?.value || '',
+        interesadoEn: interesadoEnValue('new'),
       }, { isAdmin, nombreAcceso: currentAccess?.nombre });
 
       const requestGeneration = ++newLeadRequestGeneration;
@@ -4578,14 +4600,24 @@
                if (!validRequest()) return;
              }
              if (!validRequest()) return;
-              if (naceInscrito && inscripcionNueva.length) await guardarInscripciones(data.id, inscripcionNueva);
+              // Lo que se guarda aparte del lead. Si algo falla, el lead ya
+              // esta guardado: el toast final lo dice (un error tapado por
+              // un exito engaña).
+              const fallos = [];
+              if (naceInscrito && inscripcionNueva.length) {
+                if (!await guardarInscripciones(data.id, inscripcionNueva)) fallos.push('las inscripciones');
+              }
               // Programa de inscripcion (opcional): va aparte de la campaña de origen.
               if (naceInscrito) {
                 const programaNuevo = programaInscripcionValue('new');
-                if (programaNuevo) await guardarProgramaInscripcion(data.id, programaNuevo);
+                if (programaNuevo && !await guardarProgramaInscripcion(data.id, programaNuevo)) fallos.push('el programa de inscripción');
               }
               if (!validRequest()) return;
-              showToast(agendado ? "Lead y cita registrados con éxito" : "Lead registrado con éxito en Supabase", "success");
+              showToast(
+                fallos.length
+                  ? `Lead registrado, pero no se guardó ${fallos.join(' ni ')}. Revisa la ficha del lead.`
+                  : (agendado ? "Lead y cita registrados con éxito" : "Lead registrado con éxito en Supabase"),
+                fallos.length ? 'warning' : 'success');
              closeNewLeadModal(true);
             populateFilterOptions();
             applyFilters();
@@ -4660,6 +4692,58 @@
       const estado = String(document.getElementById('editGestion')?.value || '').trim();
       chip.textContent = estado || 'Sin estado';
       chip.className = 'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ' + (esInscritoGestion(estado) ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-900/60 text-slate-300');
+    }
+
+    // -------------------------------------------------------------
+    // INTERESADO EN (dato informativo, opcional)
+    // Un solo programa del catálogo. NO toca la campaña de origen, ni el
+    // estado de gestión, ni el programa de inscripción: es solo para
+    // verlo de un vistazo en la tabla.
+    // -------------------------------------------------------------
+    let programasInteresadoEn = [];
+    // Interes guardado en el lead: sirve para saber si cambió y solo
+    // entonces llamar a la RPC.
+    let editInteresadoEnPrevio = '';
+
+    // Etiquetas con los programas del catálogo. La elegida queda marcada;
+    // un programa ya guardado que se desactivó se conserva visible.
+    function renderInteresadoEnChips(prefix) {
+      const box = document.getElementById(prefix + 'InteresadoEnChips');
+      if (!box) return;
+      const actual = String(document.getElementById(prefix + 'InteresadoEn')?.value || '').trim();
+      const lista = [...programasInteresadoEn];
+      if (actual && !lista.includes(actual)) lista.push(actual);
+      if (!lista.length) {
+        box.innerHTML = '<span class="text-[11px] text-slate-500">No hay programas disponibles en el catálogo.</span>';
+        return;
+      }
+      box.innerHTML = lista.map(programa => {
+        const activo = programa === actual;
+        const clases = activo
+          ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-300'
+          : 'border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-700';
+        return `<button type="button" data-interesado="${escapeAttr(programa)}" aria-pressed="${activo ? 'true' : 'false'}" class="rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${clases}">${escapeHtml(programa)}</button>`;
+      }).join('');
+      box.querySelectorAll('[data-interesado]').forEach(el => el.addEventListener('click', () => {
+        alternarInteresadoEn(prefix, el.dataset.interesado);
+      }));
+    }
+
+    // Alterna el programa de interes: si ya estaba elegido, se quita.
+    function alternarInteresadoEn(prefix, programa) {
+      const actual = interesadoEnValue(prefix);
+      setInteresadoEn(prefix, actual === programa ? '' : programa);
+    }
+
+    // Elige (o quita) el programa de interés y repinta las etiquetas.
+    function setInteresadoEn(prefix, valor) {
+      const input = document.getElementById(prefix + 'InteresadoEn');
+      if (input) input.value = String(valor || '').trim();
+      renderInteresadoEnChips(prefix);
+    }
+
+    function interesadoEnValue(prefix) {
+      return String(document.getElementById(prefix + 'InteresadoEn')?.value || '').trim();
     }
 
     // -------------------------------------------------------------
@@ -4958,12 +5042,13 @@
 
     // Guardado de las inscripciones. Si el lead deja de estar inscrito, la
     // llamada con payload vacio cierra (no borra) lo que tuviera.
+    // Devuelve false si falla: el toast lo compone quien guarda (asi el
+    // aviso de error no lo tapa el de exito).
     async function guardarInscripciones(leadId, payload) {
       if (!supabaseClient || !leadId) return true;
       const { error } = await supabaseClient.rpc('save_lead_enrollments', { p_lead_id: Number(leadId), p_enrollments: payload });
       if (error) {
         console.error('Error al guardar las inscripciones:', error);
-        showToast('El lead se guardó, pero las inscripciones no. Revisa la ficha del lead.', 'error');
         return false;
       }
       // Las etiquetas del dashboard quedan obsoletas: se recargan al repintar
@@ -4974,13 +5059,12 @@
 
     // Programa de inscripción (campaña del catálogo donde se inscribe). Es
     // opcional y va aparte de la campaña de origen. Si falla, el lead ya
-    // guardado no se pierde: se avisa y la ficha queda pendiente de revisar.
+    // guardado no se pierde: lo avisa el toast final.
     async function guardarProgramaInscripcion(leadId, programa) {
       if (!supabaseClient || !leadId) return false;
       const { error } = await supabaseClient.rpc('set_lead_inscripcion_programa', { p_lead_id: Number(leadId), p_programa: programa || null });
       if (error) {
         console.error('Error al guardar el programa de inscripción:', error);
-        showToast('El lead se guardó, pero el programa de inscripción no. Revisa la ficha del lead.', 'error');
         return false;
       }
       return true;
@@ -5112,6 +5196,10 @@
         const programaGuardado = String(getField(lead, 'PROGRAMA INSCRIPCION') || '').trim();
         setProgramaInscripcionValue('edit', programaGuardado);
         editProgramaInscripcionPrevio = programaGuardado;
+        // Interesado en: el que tiene guardado el lead (dato informativo).
+        const interesadoGuardado = String(getField(lead, 'INTERESADO EN') || '').trim();
+        setInteresadoEn('edit', interesadoGuardado);
+        editInteresadoEnPrevio = interesadoGuardado;
         const selectPrograma = document.getElementById('editProgramaInscripcion');
         if (selectPrograma) selectPrograma.onchange = () => onProgramaInscripcionChange('edit');
         applyEditInscripcionVisibility();
@@ -5129,6 +5217,7 @@
       editLeadSubmitting = false;
       editLeadPreviousGestion = '';
       editProgramaInscripcionPrevio = '';
+      editInteresadoEnPrevio = '';
       editInscripcionGeneration += 1;
       editInscripcionFilas = [];
       const modal = document.getElementById('modalEditLead');
@@ -5211,6 +5300,11 @@
         odoo: document.getElementById('editOdoo')?.value || '',
         fechaAtencion: document.getElementById('editFechaAtencion')?.value || '',
         landing: document.getElementById('editLanding')?.value || '',
+        // El interes viaja en la MISMA operacion que el lead: si no cambia,
+        // no se envia (asi el lead conserva lo que tenia).
+        interesadoEn: interesadoEnValue('edit') !== editInteresadoEnPrevio
+          ? interesadoEnValue('edit')
+          : undefined,
       }, { isAdmin, nombreAcceso: currentAccess?.nombre });
 
       try {
@@ -5247,7 +5341,10 @@
             console.error("Error al actualizar en Supabase:", error);
             showToast(formatSaveError(error, needsAppointment), "error");
           } else {
-            if (inscripcionGuardar) await guardarInscripciones(leadId, inscripcionGuardar);
+            // Lo que se guarda aparte del lead: si algo falla, el lead ya
+            // esta guardado y el toast final lo dice.
+            const fallos = [];
+            if (inscripcionGuardar && !await guardarInscripciones(leadId, inscripcionGuardar)) fallos.push('las inscripciones');
             if (!validRequest()) return;
             // Programa de inscripcion (opcional): solo se guarda si cambio.
             const programaElegido = programaInscripcionValue('edit');
@@ -5258,9 +5355,16 @@
                 // El estado local queda al dia: si se vuelve a abrir la
                 // ficha, el programa elegido es el que se ve.
                 if (updated) updated['PROGRAMA INSCRIPCION'] = programaElegido;
-              }
+              } else fallos.push('el programa de inscripción');
             }
-            showToast(needsAppointment ? "Lead #" + leadId + " agendado y cita registrada" : "Lead #" + leadId + " actualizado en Supabase", "success");
+            // "Interesado en" viaja en el payload del lead (misma operacion),
+            // asi que no hay nada mas que guardar aqui.
+            editInteresadoEnPrevio = interesadoEnValue('edit');
+            showToast(
+              fallos.length
+                ? `Lead #${leadId} actualizado, pero no se guardó ${fallos.join(' ni ')}. Revisa la ficha del lead.`
+                : (needsAppointment ? "Lead #" + leadId + " agendado y cita registrada" : "Lead #" + leadId + " actualizado en Supabase"),
+              fallos.length ? 'warning' : 'success');
             if (isSupabaseLive) {
               upsertLeadInState(updated);
               updateConnectionStatus("online");

@@ -40,7 +40,7 @@ const inscripcionesMod = await import('../../src/legacy/inscripciones.js');
 const { PROGRAMAS_INSCRIPCION, esInscritoGestion, nivelesDePrograma, normalizaFechaInscripcion,
   inscripcionPayload, inscripcionDesdeFilas, inscripcionTienePendientes,
   programaEtiqueta, validateInscripcionesReport, inscripcionesCsvLines,
-  programaRequiereDetalle, programasInscripcionDisponibles } = inscripcionesMod;
+  programaRequiereDetalle } = inscripcionesMod;
 // validAppointmentId vive en src/legacy/citas.js
 const { validAppointmentId } = citasMod;
 // actionsMod se importa al final (tests parse-all fase 15).
@@ -97,11 +97,14 @@ const names = [
   'inscripcionFaltanNiveles', 'inscripcionProgramasGuardados', 'updateInscripcionPendiente',
   'applyInscripcionDetalleVisibility', 'onProgramaInscripcionChange', 'fillProgramaInscripcionSelect',
   'setProgramaInscripcionValue', 'programaInscripcionValue', 'guardarProgramaInscripcion',
+  'renderInteresadoEnChips', 'setInteresadoEn', 'interesadoEnValue', 'alternarInteresadoEn',
   'applyNewInscripcionVisibility', 'applyEditInscripcionVisibility', 'loadEditEnrollments', 'guardarInscripciones',
   'updateEditEstadoChip',
   'loadPeriodoInscripciones', 'renderPeriodoInscripciones', 'exportPeriodoInscripcionesCSV'
 ];
-const frontendSource = ['let leadAppointmentCreateBlocked = true;', 'let gestionRangeLeads = [], gestionRangeKey = "";', 'let mesRangeLeads = [], mesRangeKey = "";', 'let editInscripcionFilas = [];', 'let editInscripcionGeneration = 0;', "let editProgramaInscripcionPrevio = '';", 'let periodoInscripcionesData = null;', "let periodoInscripcionesKey = '';", 'let periodoInscripcionesGeneration = 0;', 'const inscripcionErroresVisibles = { new: false, edit: false };', ...constants, ...names.map(extractFunction)].join('\n');
+// `var` (no `let`) en programasInteresadoEn: asi el test puede inyectar el
+// catalogo como el hace la app al cargar las campañas activas.
+const frontendSource = ['let leadAppointmentCreateBlocked = true;', 'let gestionRangeLeads = [], gestionRangeKey = "";', 'let mesRangeLeads = [], mesRangeKey = "";', 'let editInscripcionFilas = [];', 'let editInscripcionGeneration = 0;', "let editProgramaInscripcionPrevio = '';", "let editInteresadoEnPrevio = '';", 'var programasInteresadoEn = [];', 'let periodoInscripcionesData = null;', "let periodoInscripcionesKey = '';", 'let periodoInscripcionesGeneration = 0;', 'const inscripcionErroresVisibles = { new: false, edit: false };', ...constants, ...names.map(extractFunction)].join('\n');
 
 function frontend(extra = {}) {
   const elements = new Map(), downloads = [], timers = [], toasts = [];
@@ -167,7 +170,7 @@ function frontend(extra = {}) {
     PROGRAMAS_INSCRIPCION, esInscritoGestion, nivelesDePrograma, normalizaFechaInscripcion,
     inscripcionPayload, inscripcionDesdeFilas, inscripcionTienePendientes,
     programaEtiqueta, validateInscripcionesReport, inscripcionesCsvLines,
-    programaRequiereDetalle, programasInscripcionDisponibles,
+    programaRequiereDetalle,
     // miamiToday se stubbea en el test para determinismo (2026-09-30)
     miamiToday: () => '2026-09-30',
     supabaseClient: null, currentUser: { id: 'user-test' }, currentAccess: { activo: true, nombre: 'Test', updated_at: 'v1' },
@@ -596,6 +599,34 @@ test('inscripcion: el detalle de nivel se oculta para los programas de adultos',
   select.value = '';
   f.context.applyInscripcionDetalleVisibility('edit');
   assert.equal(detalle.hidden, false, 'sin programa se mantiene el detalle');
+});
+
+test('interesado en: las etiquetas muestran los programas del catálogo y el elegido queda marcado', () => {
+  const f = frontend();
+  f.context.programasInteresadoEn = ['Actuacion kids', 'Taller camara', 'Weston'];
+  f.context.renderInteresadoEnChips('edit');
+  const chips = f.element('editInteresadoEnChips');
+  assert.match(chips.innerHTML, /data-interesado="Actuacion kids"/);
+  assert.match(chips.innerHTML, /data-interesado="Taller camara"/);
+  assert.match(chips.innerHTML, /data-interesado="Weston"/);
+  assert.doesNotMatch(chips.innerHTML, /aria-pressed="true"/, 'sin elegir no hay ninguna marcada');
+  // elegir uno lo marca y guarda el valor
+  f.context.alternarInteresadoEn('edit', 'Taller camara');
+  assert.equal(f.element('editInteresadoEn').value, 'Taller camara');
+  assert.match(chips.innerHTML, /aria-pressed="true"[^>]*>Taller camara/, 'el elegido queda marcado');
+  // tocarlo otra vez lo quita
+  f.context.alternarInteresadoEn('edit', 'Taller camara');
+  assert.equal(f.element('editInteresadoEn').value, '');
+  assert.doesNotMatch(chips.innerHTML, /aria-pressed="true"/);
+});
+
+test('interesado en: sin programas en el catálogo se avisa y no se elige nada', () => {
+  const f = frontend();
+  f.context.programasInteresadoEn = [];
+  f.context.renderInteresadoEnChips('edit');
+  const chips = f.element('editInteresadoEnChips');
+  assert.match(chips.innerHTML, /No hay programas disponibles en el catálogo/);
+  assert.equal(f.element('editInteresadoEn').value, '');
 });
 
 test('período: presets calendario Miami incluyen hoy, semana lunes-domingo y cambio de año', async () => {

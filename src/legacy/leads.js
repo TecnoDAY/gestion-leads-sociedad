@@ -61,6 +61,19 @@ export function nuevoBadge(lead) {
 }
 
 /**
+ * Etiqueta con el programa del catalogo en el que el lead esta interesado.
+ * Dato informativo: no dice de donde viene el lead ni donde se inscribe.
+ * Cadena vacia si el lead no tiene interes guardado.
+ * @param {object} lead
+ * @returns {string}
+ */
+export function interesadoBadge(lead) {
+  const programa = getField(lead, 'INTERESADO EN').trim();
+  if (!programa) return '';
+  return `<span class="inline-flex items-center gap-1 rounded-full border border-indigo-500/40 bg-indigo-500/15 px-2 py-0.5 text-[11px] font-medium text-indigo-300 shrink-0" title="Interesado en">Interés: ${escapeHtml(programa)}</span>`;
+}
+
+/**
  * Formatea solo telefonos de EE. UU. (10 digitos o 11 con prefijo 1);
  * internacionales o atipicos se conservan tal cual.
  * @param {*} value
@@ -400,6 +413,7 @@ export function filaLeadHtml(lead, { leadId, origin, isAdmin }) {
                 ${escapeHtml(nombre)}
               </button>
               ${nuevoBadge(lead)}
+              ${interesadoBadge(lead)}
             </div>
           </td>
           <td class="px-3.5 py-3 text-slate-300">
@@ -913,12 +927,14 @@ export function fechaLlegadaDisplay(fechaSel, hoyMiami) {
  * inline (golden en scripts/tests/fixtures/fase34-golden.json, fase 34).
  * ctx.nombreAcceso es currentAccess?.nombre: para la asesora AGENTE toma ese
  * valor tal cual (puede ser undefined/null, como en HEAD).
+ * v.interesadoEn es opcional: si viene con texto, se anade la clave
+ * "INTERESADO EN" (dato informativo que se guarda en la MISMA operacion).
  * @param {object} v - Valores crudos leidos por el wrapper (siempre string).
  * @param {{isAdmin: boolean, nombreAcceso: *}} ctx
  * @returns {object}
  */
 export function leadCreatePayload(v, ctx) {
-  return {
+  const payload = {
     "Nombre": v.nombre.trim() || 'Sin Nombre',
     "Telefono": formatPhone(v.telefono.trim() || ''),
     "Mes": v.mes || '',
@@ -931,6 +947,11 @@ export function leadCreatePayload(v, ctx) {
     "Ciudad": v.ciudad.trim() || '',
     "OBSERVACIONES": v.observaciones.trim() || 'Nuevo lead registrado desde el panel.'
   };
+  // "INTERESADO EN" (dato informativo, opcional): solo viaja si hay algo
+  // elegido; si no, la columna queda vacia.
+  const interesado = String(v.interesadoEn ?? '').trim();
+  if (interesado) payload["INTERESADO EN"] = interesado;
+  return payload;
 }
 
 /**
@@ -943,6 +964,8 @@ export function leadCreatePayload(v, ctx) {
  * @param {object} v - Valores crudos: nombre, gestion, fechaUltima,
  *   ultimaGestion, observaciones, telefono, telOriginal, mes, fecha, campana,
  *   medio, ciudad, agenteAdmin, odoo, fechaAtencion, landing (todos string).
+ *   interesadoEn es opcional: si viene (undefined = no tocar), se anade la
+ *   clave "INTERESADO EN" para que viaje en la misma operacion.
  * @param {{isAdmin: boolean, nombreAcceso: *}} ctx
  * @returns {object}
  */
@@ -971,6 +994,9 @@ export function leadUpdateFields(v, ctx) {
       "LANDING": v.landing.trim() || ''
     });
   }
+  // "INTERESADO EN" (dato informativo, opcional): solo viaja si CAMBIO, para
+  // no pisar lo que ya tenia el lead. Una cadena vacia lo quita.
+  if (v.interesadoEn !== undefined) updatedFields["INTERESADO EN"] = String(v.interesadoEn).trim();
   return updatedFields;
 }
 
@@ -1005,6 +1031,7 @@ if (typeof window !== 'undefined') {
   window.normalizePhone = normalizePhone;
   window.isNuevoEsteMes = isNuevoEsteMes;
   window.nuevoBadge = nuevoBadge;
+  window.interesadoBadge = interesadoBadge;
   window.formatPhone = formatPhone;
   window.withOrigin = withOrigin;
   window.getLeadOrigin = getLeadOrigin;

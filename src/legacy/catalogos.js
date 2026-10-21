@@ -15,6 +15,24 @@ export function catalogOptions(rows, kind, dataValues) {
 }
 
 /**
+ * Programas que se pueden elegir (interesado en, programa de inscripcion):
+ * campanas ACTIVAS del catalogo. 'Sin definir' es el marcador de la campana de
+ * origen, no un programa: queda fuera de las opciones.
+ * @param {{campana?: Array<{value?: string, active?: boolean}>}|null|undefined} rows
+ * @returns {string[]}
+ */
+export function programasDisponibles(rows) {
+  const clave = value => String(value ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const campanas = (rows && rows.campana) || [];
+  const valores = campanas
+    .filter(row => row && row.active)
+    .map(row => String(row.value ?? '').trim())
+    .filter(Boolean)
+    .filter(value => clave(value) !== 'sin definir');
+  return [...new Set(valores)].sort(sortAlphaEs);
+}
+
+/**
  * Valores unicos de un campo en los leads (era el closure getUniqueValues de
  * populateFilterOptions): recorta, descarta vacios y 'SN' exactos, deduplica
  * y ordena con Array.from(set).sort() del monolito. El golden de HEAD muestra
@@ -79,4 +97,4 @@ export function opcionesCatalogoData(values, currentValue) {
   return all.map(v => ({ value: v, label: catalogLabel(v), selected: v === selectedValue }));
 }
 
-if (typeof window !== 'undefined') window.catalogosApi = { activeCatalogValues, catalogOptions, uniqueFieldValues, FILTROS_CATALOGO, opcionesSelectData, opcionesCatalogoData };
+if (typeof window !== 'undefined') window.catalogosApi = { activeCatalogValues, catalogOptions, uniqueFieldValues, FILTROS_CATALOGO, opcionesSelectData, opcionesCatalogoData, programasDisponibles };

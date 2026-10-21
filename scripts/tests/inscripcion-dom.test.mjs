@@ -142,7 +142,7 @@ function extractFunction(name) {
 
 const inscripcionesMod = await import('../../src/legacy/inscripciones.js');
 const { PROGRAMAS_INSCRIPCION, esInscritoGestion, inscripcionPayload, inscripcionDesdeFilas, programaEtiqueta,
-  programaRequiereDetalle, programasInscripcionDisponibles } = inscripcionesMod;
+  programaRequiereDetalle } = inscripcionesMod;
 
 /** Monta el DOM de la seccion de inscripcion y ejecuta el codigo real del arbol. */
 function montar({ prefix = 'edit', filas = [], guardados = [] } = {}) {
@@ -309,31 +309,6 @@ describe('inscripcion - la seccion vacia no es un error', () => {
 });
 
 describe('inscripcion - programa de inscripcion (campañas activas del catálogo)', () => {
-  const catalogos = {
-    campana: [
-      { value: 'Actuacion adultos', active: true },
-      { value: 'Actuacion kids', active: true },
-      { value: 'Kids doral inglés', active: true },
-      { value: 'Sin definir', active: true },
-      { value: 'Taller camara', active: true },
-      { value: 'Weston', active: true },
-      { value: 'Casting bootcamp', active: false },
-      { value: 'Summer camp', active: false },
-    ],
-  };
-
-  test('solo se ofrecen las campañas activas y sin "Sin definir"', () => {
-    assert.deepEqual(programasInscripcionDisponibles(catalogos), [
-      'Actuacion adultos', 'Actuacion kids', 'Kids doral inglés', 'Taller camara', 'Weston',
-    ]);
-  });
-
-  test('sin catálogo o sin campañas activas no hay opciones', () => {
-    assert.deepEqual(programasInscripcionDisponibles(null), []);
-    assert.deepEqual(programasInscripcionDisponibles({ campana: [] }), []);
-    assert.deepEqual(programasInscripcionDisponibles({ campana: [{ value: 'X', active: false }] }), []);
-  });
-
   test('Actuación Adultos y Taller de cámara no llevan el detalle de nivel', () => {
     assert.equal(programaRequiereDetalle('Actuacion adultos'), false);
     assert.equal(programaRequiereDetalle('Taller camara'), false);

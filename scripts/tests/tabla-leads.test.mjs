@@ -40,6 +40,18 @@ test('filaLeadHtml: data-ev, telefono limpio y permisos', () => {
   assert.match(sinNombre, /Sin Nombre/);
 });
 
+test('filaLeadHtml: etiqueta de interesado en (solo si lo tiene)', () => {
+  const sinInteres = filaLeadHtml(lead(), { leadId: 11, origin: 'actual', isAdmin: false });
+  assert.doesNotMatch(sinInteres, /Interés:/, 'sin interés no hay etiqueta');
+  const conInteres = filaLeadHtml(lead({ 'INTERESADO EN': 'Actuacion kids' }), { leadId: 11, origin: 'actual', isAdmin: false });
+  assert.match(conInteres, /Interés: Actuacion kids/);
+  assert.match(conInteres, /text-indigo-300/, 'la etiqueta es una etiqueta, no texto suelto');
+  // el texto sale escapado
+  const escapado = filaLeadHtml(lead({ 'INTERESADO EN': '<b>x</b>' }), { leadId: 11, origin: 'actual', isAdmin: false });
+  assert.match(escapado, /Interés: &lt;b&gt;x&lt;\/b&gt;/);
+  assert.doesNotMatch(escapado, /<b>x<\/b>/);
+});
+
 test('tablaVaciaLeadsHtml: mensaje y limpiar filtros', () => {
   const html = tablaVaciaLeadsHtml();
   assert.match(html, /No se encontraron leads con los filtros actuales/);

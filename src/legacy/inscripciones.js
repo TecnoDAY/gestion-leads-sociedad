@@ -7,7 +7,6 @@
  * asesora y puede quedar vacia (pendiente de completar).
  */
 import { csvReporteField } from './reportes.js';
-import { compareAlphaEs } from './helpers.js';
 
 /** Programas y niveles validos. El id es el valor que viaja al servidor. */
 export const PROGRAMAS_INSCRIPCION = [
@@ -35,23 +34,6 @@ export function programaRequiereDetalle(programa) {
   const clave = clavePrograma(programa);
   if (!clave) return true;
   return !PROGRAMAS_SIN_DETALLE.includes(clave);
-}
-
-/**
- * Programas de inscripción disponibles: campañas ACTIVAS del catálogo.
- * 'Sin definir' no es un programa: queda fuera. Sin duplicados y en orden
- * alfabético español.
- * @param {{campana?: Array<{value?: string, active?: boolean}>}|null|undefined} catalogRows
- * @returns {string[]}
- */
-export function programasInscripcionDisponibles(catalogRows) {
-  const campanas = catalogRows?.campana || [];
-  const valores = campanas
-    .filter(row => row && row.active)
-    .map(row => String(row.value ?? '').trim())
-    .filter(Boolean)
-    .filter(value => clavePrograma(value) !== 'sin definir');
-  return [...new Set(valores)].sort(compareAlphaEs);
 }
 
 /**
@@ -229,5 +211,4 @@ if (typeof window !== 'undefined') {
   window.inscripcionesCsvLines = inscripcionesCsvLines;
   window.PROGRAMAS_SIN_DETALLE = PROGRAMAS_SIN_DETALLE;
   window.programaRequiereDetalle = programaRequiereDetalle;
-  window.programasInscripcionDisponibles = programasInscripcionDisponibles;
 }

@@ -1435,6 +1435,33 @@
         <div class="lead-form-primary">
         <h4 class="flex items-center gap-2"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-indigo-500/15 text-indigo-300"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i></span>Gestión y datos de contacto</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Datos automaticos: solo informacion, en una sola franja (3 columnas).
+               Va primero: al abrir el modal se ve en que estado esta el lead y
+               despues los controles para cambiarlo. -->
+          <div class="sm:col-span-2 rounded-lg border border-slate-700/60 bg-slate-900/50 px-3 py-2.5">
+            <div class="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <span class="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-slate-500"></span>Datos automáticos
+            </div>
+            <div class="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-3">
+              <div class="min-w-0">
+                <div class="text-[11px] text-slate-400">Agente asignado</div>
+                <div id="editAgenteResumen" class="truncate text-slate-100">-</div>
+              </div>
+              <div class="min-w-0">
+                <div class="text-[11px] text-slate-400">Fecha última gestión</div>
+                <div id="editFechaUltimaResumen" class="truncate text-slate-100">-</div>
+              </div>
+              <div class="min-w-0">
+                <div class="text-[11px] text-slate-400">Último asesor que gestionó</div>
+                <div id="editUltimoAgenteResumen" class="truncate text-slate-100">-</div>
+              </div>
+            </div>
+            <!-- Los campos reales se conservan (ocultos) para no tocar el guardado -->
+            <input type="hidden" id="editAgente">
+            <input type="hidden" id="editFechaUltima">
+            <input type="hidden" id="editUltimoAgente">
+          </div>
+
           <!-- GESTION -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Estatus de Gestión *<button type="button" data-ev="click:openHelpModal('ayuda-gestionar-lead')" title="Ayuda: cambiar la gestión" aria-label="Ayuda sobre el cambio de gestión de un lead" class="inline-flex items-center justify-center w-4 h-4 ml-1 rounded-full bg-slate-700 hover:bg-amber-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button></label>
@@ -1457,18 +1484,6 @@
             <p class="text-[11px] text-slate-400 mt-1">Cambiar a Agendado crea la cita al guardar.</p>
           </div>
 
-          <!-- Agente -->
-          <div>
-            <label class="block font-medium text-slate-300 mb-1">Agente Asignado</label>
-            <input type="text" id="editAgente" list="agenteList" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
-          </div>
-
-          <!-- Fecha Última Gestión -->
-          <div>
-            <label class="block font-medium text-slate-300 mb-1">Fecha Última Gestión<span class="ml-1 rounded-full bg-slate-900/60 px-1.5 py-0.5 align-middle text-[10px] font-semibold text-slate-300">automático</span></label>
-            <input type="text" id="editFechaUltima" readonly placeholder="Ej: 23/09/2026" class="w-full opacity-70 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
-          </div>
-
           <!-- ULTIMA GESTION (Canal) -->
           <div>
             <label class="block font-medium text-slate-300 mb-1">Tipo de Última Gestión</label>
@@ -1480,12 +1495,6 @@
               <option value="Visita Conservatorio">Visita Conservatorio</option>
               <option value="WhatsApp">WhatsApp</option>
             </select>
-          </div>
-
-          <!-- ULTIMO AGENTE -->
-          <div class="sm:col-span-2">
-            <label class="block font-medium text-slate-300 mb-1">Último Asesor que gestionó<span class="ml-1 rounded-full bg-slate-900/60 px-1.5 py-0.5 align-middle text-[10px] font-semibold text-slate-300">automático</span></label>
-            <input type="text" id="editUltimoAgente" readonly list="agenteList" placeholder="Ej: Ana, Jessica, Loli" class="w-full opacity-70 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
           </div>
 
            <!-- OBSERVACIONES -->
@@ -5086,6 +5095,22 @@
       renderAppointmentAdvisorSelect(select, preferred);
       applyEditAppointmentVisibility();
     }
+    // La franja "Datos automáticos" es solo lectura: refleja los valores que
+    // se guardan (agente, fecha de la gestion de hoy y ultimo asesor). Los
+    // campos reales siguen existiendo (ocultos) para no tocar el guardado.
+    function actualizarResumenDatosAutomaticos() {
+      const pares = [
+        ['editAgenteResumen', 'editAgente'],
+        ['editFechaUltimaResumen', 'editFechaUltima'],
+        ['editUltimoAgenteResumen', 'editUltimoAgente'],
+      ];
+      for (const [idResumen, idCampo] of pares) {
+        const destino = document.getElementById(idResumen);
+        if (!destino) continue;
+        const valor = String(document.getElementById(idCampo)?.value || '').trim();
+        destino.textContent = valor || '-';
+      }
+    }
     function openEditLeadModal(leadId, origin) {
       const resolvedOrigin = origin === 'historico' ? 'historico' : 'actual';
       if (resolvedOrigin === 'historico') {
@@ -5135,9 +5160,10 @@
 
       const editAgent = document.getElementById('editAgente');
       if (editAgent) {
+        // Solo informativo (la franja "Datos automaticos"): el agente se
+        // edita en el bloque de admin.
         editAgent.value = isAdmin ? (getField(lead, 'Agente ') || getField(lead, 'Agente')) : currentAccess.nombre;
-        editAgent.readOnly = !isAdmin;
-        editAgent.classList.toggle('opacity-70', !isAdmin);
+        editAgent.readOnly = true;
       }
       
       const now = new Date();
@@ -5164,6 +5190,7 @@
       }
 
       document.getElementById('editUltimoAgente').value = getField(lead, 'ULTIMO AGENTE ') || getField(lead, 'Agente ') || 'Asesor';
+      actualizarResumenDatosAutomaticos();
       document.getElementById('editObservaciones').value = getField(lead, 'OBSERVACIONES ');
       const adminFields = document.getElementById('adminLeadFields');
       adminFields?.classList.toggle('hidden', !isAdmin);

@@ -84,7 +84,7 @@ const names = [
   'loadPeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
   'exportPeriodoGestionesCSV',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
-  'resetDashboardInscripciones', 'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'appointmentDetailsFrom', 'confirmAppointmentCreation', 'syncNewLeadMes', 'syncNewUltimaGestion',
+  'resetDashboardInscripciones', 'openNewLeadModal', 'handleCreateLead', 'handleUpdateLead', 'openEditLeadModal', 'actualizarResumenDatosAutomaticos', 'appointmentDetailsFrom', 'confirmAppointmentCreation', 'syncNewLeadMes', 'syncNewUltimaGestion',
   'editLeadStaysAgendado', 'setExistingCampusNotice', 'loadEditExistingAppointment', 'appointmentCampusFrom',
   'createLeadAppointment', 'editAppointmentDetails', 'editAppointmentCampus', 'setLeadAppointmentStatus', 'rescheduleLeadAppointment',
   'setAppointmentMutationPending', 'updateLeadAppointmentCreateState', 'deleteLeadAppointment',
@@ -1230,6 +1230,9 @@ test('modal de edición usa siempre la fecha Miami de hoy', () => {
   const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/New_York', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(new Date());
   const today = `${parts.find(p => p.type === 'day').value}/${parts.find(p => p.type === 'month').value}/${parts.find(p => p.type === 'year').value}`;
   assert.equal(f.element('editFechaUltima').value, today);
+  // La franja "Datos automaticos" muestra los mismos valores.
+  assert.equal(f.element('editFechaUltimaResumen').textContent, today);
+  assert.equal(f.element('editAgenteResumen').textContent, f.element('editAgente').value);
 });
 
 test('seguimiento: Teléfono visible fuera del bloque admin y selector incluye Llamada Data Dura', () => {
@@ -1980,8 +1983,19 @@ test('filtros y campos automáticos conservan el orden y readonly en HTML', () =
   const advisorIndex = source.indexOf('id="filterAsesora"');
   assert.ok(sourceIndex < dateIndex && dateIndex < advisorIndex);
   assert.match(source.slice(sourceIndex - 500, sourceIndex), /grid/);
-  assert.match(source, /id="editFechaUltima"[^>]*readonly[^>]*opacity-70/);
-  assert.match(source, /id="editUltimoAgente"[^>]*readonly[^>]*opacity-70/);
+  // Los datos automaticos ya no son campos editables: viven en la franja de
+  // solo lectura y los campos reales quedan ocultos (no se pueden escribir).
+  assert.match(source, /type="hidden"[^>]*id="editFechaUltima"/);
+  assert.match(source, /type="hidden"[^>]*id="editUltimoAgente"/);
+  assert.match(source, /type="hidden"[^>]*id="editAgente"/);
+  assert.match(source, /id="editAgenteResumen"/);
+  assert.match(source, /id="editFechaUltimaResumen"/);
+  assert.match(source, /id="editUltimoAgenteResumen"/);
+  assert.doesNotMatch(source, /id="editFechaUltima"[^>]*readonly/);
+  // La franja va primero: al abrir el modal se ve el estado y despues los
+  // controles para cambiarlo.
+  assert.ok(source.indexOf('id="editAgenteResumen"') < source.indexOf('id="editGestion"'),
+    'los datos automaticos van antes de los controles editables');
 });
 
 test('rango incompleto no finge filtrar ni consulta, error y sesión obsoleta no pintan parcial', async () => {

@@ -73,7 +73,7 @@ export function interesadoBadge(lead) {
   // inline-block + truncate: la etiqueta se ajusta al texto y, si el programa
   // es largo, se recorta con puntos suspensivos (el texto completo esta en
   // el title).
-  return `<span class="inline-block max-w-[170px] truncate rounded-full border border-indigo-500/40 bg-indigo-500/15 px-2 py-0.5 text-[11px] font-medium text-indigo-300 shrink-0" title="Interesado en: ${escapeAttr(programa)}">Interés: ${escapeHtml(programa)}</span>`;
+  return `<span class="inline-block max-w-[170px] truncate rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-[11px] font-medium text-indigo-300 shrink-0" title="Interesado en: ${escapeAttr(programa)}">Interés: ${escapeHtml(programa)}</span>`;
 }
 
 /**
@@ -415,10 +415,7 @@ export function filaLeadHtml(lead, { leadId, origin, isAdmin }) {
               <button data-ev="click:openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" class="font-semibold text-white hover:text-indigo-400 transition-colors cursor-pointer truncate max-w-[190px] block text-left">
                 ${escapeHtml(nombre)}
               </button>
-              <div class="flex flex-wrap items-center gap-1.5">
-                ${nuevoBadge(lead)}
-                ${interesadoBadge(lead)}
-              </div>
+              ${nuevoBadge(lead)}
             </div>
           </td>
           <td class="px-3.5 py-3 text-slate-300">
@@ -434,8 +431,13 @@ export function filaLeadHtml(lead, { leadId, origin, isAdmin }) {
           <td class="px-3.5 py-3 text-slate-300 truncate max-w-[150px]">${escapeHtml(campana || '-')}</td>
           <td class="px-3.5 py-3 text-slate-400 text-[11px] truncate max-w-[110px]">${escapeHtml(medio || '-')}</td>
           <td class="px-3.5 py-3">
-            ${badgeHtml}
-            ${originBadge}
+            <div class="flex flex-col items-start gap-1">
+              <div class="flex flex-wrap items-center gap-1.5">
+                ${badgeHtml}
+                ${originBadge}
+              </div>
+              ${interesadoBadge(lead)}
+            </div>
           </td>
           <td class="px-3.5 py-3 text-slate-300 text-[11px]">${escapeHtml(agente)}</td>
           <td class="px-3.5 py-3 text-right">

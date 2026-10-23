@@ -45,7 +45,7 @@ Revisado el 2026-10-21 tras `202610210002_lead_interesado_en.sql`.
 | `end_agent_session` | 2 | `202610200006_sesiones_usuario_activo.sql` |
 | `is_campaign_editor` | 2 | `202609290002_supervisor_role.sql` |
 | `is_crm_user` | 2 | `202609290002_supervisor_role.sql` |
-| `management_period_summary` | 2 | `202610140001_campaign_period_stats.sql` |
+| `management_period_summary` | 3 | `202610230001_canales_instagram.sql` |
 | `record_lead_appointment_event` | 2 | `202610160005_reschedule_any_advisor.sql` |
 | `record_lead_gestion` | 4 | `202610020001_canal_datadura_manual_telefono.sql` |
 | `rename_lead_catalog` | 2 | `202609240010_agent_catalog_kind.sql` |

@@ -49,7 +49,8 @@ try {
       (14,6,'2026-09-20','Informacion','Inscrito','2026-11-04',null,null),
       (15,7,'2026-10-01','Informacion','Inscrito','2026-11-05',null,null),
       (16,7,'2026-11-01','Informacion','Inscrito','2026-11-05',null,null),
-      (17,1,'2026-10-25','Inscrito','Inscrito Data','2026-10-25','whatsapp',null);
+      (17,1,'2026-10-25','Inscrito','Inscrito Data','2026-10-25','whatsapp',null),
+      (18,4,'2026-10-07','Informacion','Informacion','2026-10-07','instagram',null);
     alter table public.leads add column "Nombre" text default 'Prueba', add column "Telefono" text default '',
       add column "PROGRAMA INSCRIPCION" text default 'Taller camara', add column "Campaña" text default 'Kids',
       add column "Mes" text default 'Septiembre', add column "Fecha" text default '01/09/2026';
@@ -73,6 +74,9 @@ try {
   await db.exec(readFileSync(new URL('../../supabase/migrations/202610220002_inscritos_historial.sql', import.meta.url), 'utf8'));
   await db.exec(readFileSync(new URL('../../supabase/migrations/202610220003_inscritos_resumen_campana.sql', import.meta.url), 'utf8'));
   await db.exec(readFileSync(new URL('../../supabase/migrations/202610220004_inscritos_clase_ingreso.sql', import.meta.url), 'utf8'));
+  // Antes de separar Instagram, la gestion 18 suma en "otros".
+  const canalesPre = (await db.query("select public.management_period_summary('2026-10-01','2026-10-31') as data")).rows[0].data.canales;
+  await db.exec(readFileSync(new URL('../../supabase/migrations/202610230001_canales_instagram.sql', import.meta.url), 'utf8'));
   const rows = async (from, to, actual) => (await db.query('select id, gestion_id, fecha_inscripcion::text, estado_inscripcion, clase from public.crm_inscripciones_historial($1,$2,$3) order by id', [from, to, actual])).rows;
   const octubre = await rows('2026-10-01', '2026-10-31', false);
   assert.deepEqual(octubre.map(r => Number(r.id)), [1, 2, 3, 5, 6, 7]);
@@ -122,12 +126,15 @@ try {
   assert.equal(a.inscripciones_realizadas_data_dura, 2, 'altas Data Dura: leads 1 y 2 (ingreso en septiembre)');
   assert.equal(a.inscritos_normales, 5);
   assert.equal(a.inscritos_data_dura, 3, 'seguimiento 17 (Inscrito->Inscrito Data) y la variante 3 suman sin ser altas');
-  assert.equal(a.total_eventos, 13);
+  assert.equal(a.total_eventos, 14);
   // La llamada de octubre del lead de septiembre es Data Dura por su propia fecha,
   // igual con el rango empezando en septiembre o en octubre (estable).
   const actividadSepOct = (await db.query("select public.management_period_summary('2026-09-01','2026-10-31') as data")).rows[0].data;
   assert.equal(actividadSepOct.canales.llamadas_data_dura, 2);
   assert.equal(actividadOct.canales.llamadas_data_dura, 2, 'la clasificacion no depende del inicio del rango');
+  // Instagram deja de contarse en "otros" y aparece en su propio canal.
+  assert.equal(actividadOct.canales.instagram, 1, 'canal Instagram separado');
+  assert.equal(actividadOct.canales.otros, canalesPre.otros - 1, 'Instagram sale de otros');
   // Citas: sin_sede cuenta solo PROGRAMADA sin sede (la ASISTIO sin sede queda fuera).
   assert.equal(actividadOct.citas.sin_sede, 1);
   assert.equal(actividadOct.citas.doral_normal, 1);

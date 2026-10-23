@@ -290,7 +290,7 @@ const periodoSinRed = () => { const rpcCalls = []; return { rpcCalls, supabaseCl
 const periodoActividadFixture = (desde = '2026-10-01', hasta = '2026-10-07') => ({
   desde, hasta,
   gestiones: { total_eventos: 9, leads_unicos: 4, agendados_normales: 2, agendados_data_dura: 1, inscripciones_realizadas_normales: 1, inscripciones_realizadas_data_dura: 1, inscritos_normales: 3, inscritos_data_dura: 1, por_estado: [{ label: 'AGENDADO', eventos: 2, leads: 2 }] },
-  canales: { llamadas_normales: 5, llamadas_data_dura: 2, llamada_whatsapp: 1, whatsapp: 1, otros: 0 },
+  canales: { llamadas_normales: 5, llamadas_data_dura: 2, llamada_whatsapp: 1, whatsapp: 1, instagram: 3, otros: 0 },
   citas: { programadas_normales: 3, programadas_data_dura: 2, asistieron: 4, no_asistieron: 1, canceladas: 0, reprogramadas: 0, doral_normal: 1, doral_data_dura: 1, weston_normal: 2, weston_data_dura: 0, sin_sede: 1 },
 });
 const periodoHistorialFixture = (desde = '2026-10-01', hasta = '2026-10-07') => ({desde, hasta, personas_inscritas: 0, normales: 0, data_dura: 0, revision: 0, pendientes_fecha: 0, por_campana: []});
@@ -764,6 +764,7 @@ test('período: ayudas y encabezados explican leads únicos vs gestiones sin cam
   assert.match(htmlActividad, /Estado<\/th><th[^>]*>Leads únicos/);
   assert.match(htmlActividad, /Total de gestiones/); assert.match(htmlActividad, /no se debe sumar/);
   assert.match(htmlActividad, /AGENDADO<\/th><td[^>]*>2<\/td><td[^>]*>2<\/td>/);
+  assert.match(htmlActividad, /Instagram<\/th><td[^>]*>3<\/td>/);
   for (const id of ['pt-gestiones', 'pt-canales', 'pt-citas', 'pt-estadoTabla', 'pt-leadsUnicos', 'pt-totalGestiones', 'pt-dd', 'pt-actividad']) assert.match(htmlActividad, new RegExp(id));
 
   const htmlCohorte = f.context.renderReportePeriodo(f.context.buildPeriodSummary(periodLeads(), periodCatalogs(), '2026-10-01', '2026-10-07'));
@@ -778,7 +779,7 @@ test('período: ayudas y encabezados explican leads únicos vs gestiones sin cam
   const csv = await csvFrontend.downloads[0].blob.text();
   assert.match(csv, /"Estado","Leads únicos","Total de gestiones"/);
   assert.doesNotMatch(csv, /"Estado","Leads únicos","Eventos"/);
-  assert.match(csv, /"AGENDADO","2","2"/); assert.match(csv, /"Otros o sin canal","0"/);
+  assert.match(csv, /"AGENDADO","2","2"/); assert.match(csv, /"Instagram","3"/); assert.match(csv, /"Otros o sin canal","0"/);
   assert.match(csv, /"Doral: programadas normales","1"/); assert.match(csv, /"Doral: programadas Data Dura","1"/);
   // Las dos sedes deben exportar cifra, nunca celda vacía (placeholder = undefined = "").
   assert.match(csv, /"Weston: programadas normales","2"/); assert.match(csv, /"Weston: programadas Data Dura","0"/);
@@ -1663,7 +1664,7 @@ test('badge Nuevo: fecha de llegada del mes/año Miami actual, no de otros meses
 test('canal Llamada WhatsApp: etiqueta visible nueva, valor y conteo canónicos intactos', () => {
   assert.match(html, /<option value="Llamada y WhatsApp">Llamada WhatsApp<\/option>/);
   // Las tablas de detalle viven en src/legacy/reportes.js (fase 21).
-  assert.match(readFileSync('src/legacy/reportes.js', 'utf8'), /\['Llamada y WhatsApp', num\(b\.canales, 'llamada_whatsapp'\)\]/);
+  assert.match(readFileSync('src/legacy/reportes.js', 'utf8'), /\['Llamada WhatsApp', num\(b\.canales, 'llamada_whatsapp'\)\]/);
   // La cabecera del CSV diario vive en src/legacy/reportes.js (fase 16).
   assert.match(readFileSync('src/legacy/reportes.js', 'utf8'), /'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas'/);
   // El historial traduce el canal almacenado a la nueva etiqueta.

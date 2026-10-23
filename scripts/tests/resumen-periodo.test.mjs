@@ -108,7 +108,7 @@ const actividad = {
       { label: 'AGENDADO C', eventos: 3, leads: 2 },
     ],
   },
-  canales: { llamadas_normales: 2, llamadas_data_dura: 1, llamada_whatsapp: 1, whatsapp: 0, otros: 0 },
+  canales: { llamadas_normales: 2, llamadas_data_dura: 1, llamada_whatsapp: 1, whatsapp: 0, instagram: 1, otros: 0 },
   citas: {
     programadas_normales: 1, programadas_data_dura: 0, asistieron: 1, no_asistieron: 0,
     canceladas: 0, reprogramadas: 0, doral_normal: 0, doral_data_dura: 0,
@@ -120,9 +120,20 @@ test('validatePeriodoActividad aprueba una respuesta coherente y falla alterada'
   assert.equal(validatePeriodoActividad(actividad, '2026-02-01', '2026-02-28'), actividad);
   const alterada = { ...actividad, gestiones: { ...actividad.gestiones, total_eventos: -1 } };
   assert.throws(() => validatePeriodoActividad(alterada, '2026-02-01', '2026-02-28'), /actividad del período/);
+  const canalInvalido = { ...actividad, canales: { ...actividad.canales, instagram: -1 } };
+  assert.throws(() => validatePeriodoActividad(canalInvalido, '2026-02-01', '2026-02-28'), /actividad del período/);
   assert.throws(() => validatePeriodoActividad(actividad, '2026-03-01', '2026-02-28'), /actividad del período/);
   const malEstado = { ...actividad, gestiones: { ...actividad.gestiones, por_estado: [{ label: 'X', eventos: 'n', leads: 1 }] } };
   assert.throws(() => validatePeriodoActividad(malEstado, '2026-02-01', '2026-02-28'), /actividad del período/);
+});
+
+test('actividad sin Instagram (backend anterior) valida y exporta 0 sin romper', () => {
+  const resumen = buildPeriodSummary(leads, catalogs, '2026-02-01', '2026-02-28');
+  const viejo = { ...actividad, canales: { ...actividad.canales } };
+  delete viejo.canales.instagram;
+  assert.equal(validatePeriodoActividad(viejo, '2026-02-01', '2026-02-28'), viejo);
+  const texto = periodoCsvLines(resumen, viejo, '2026-02-28');
+  assert.ok(texto.some(t => t === [csvReporteField('Instagram'), csvReporteField(0)].join(',')));
 });
 
 test('actividad: altas por clase de fechas pueden superar a la etiqueta del evento', () => {
@@ -168,7 +179,8 @@ test('csv del periodo: tres bloques de resumen con TOTAL y % via periodoPct', ()
   assert.ok(entre.indexOf('AGENDADO C') < entre.indexOf('INSCRITO'));
   // canales y agenda cierran el documento con su orden exacto
   assert.ok(texto.some(t => t.includes('Canales de la actividad')));
-  assert.ok(texto.some(t => t.includes('Llamada y WhatsApp')));
+  assert.ok(texto.some(t => t === [csvReporteField('Instagram'), csvReporteField(actividad.canales.instagram)].join(',')));
+  assert.ok(texto.some(t => t.includes('Llamada WhatsApp')));
   assert.equal(texto.filter(t => t.includes('Reporte por período')).length, 1);
 });
 

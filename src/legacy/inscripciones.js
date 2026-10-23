@@ -6,7 +6,7 @@
  * unico nivel vigente por programa. La fecha de inscripcion la declara la
  * asesora y puede quedar vacia (pendiente de completar).
  */
-import { csvReporteField } from './reportes.js';
+import { csvReporteField, MONTH_CHRONO, periodoValidDate } from './reportes.js';
 
 /** Programas y niveles validos. El id es el valor que viaja al servidor. */
 export const PROGRAMAS_INSCRIPCION = [
@@ -65,6 +65,75 @@ export function programaEtiqueta(programa) {
  */
 export function esInscritoGestion(value) {
   return String(value || '').trim().toUpperCase().startsWith('INSCRIT');
+}
+
+/** Mes/anio explicitos -> limites inclusivos, sin depender de la zona del navegador. */
+export function inscripcionMesRange(mes, anio) {
+  const indice = MONTH_CHRONO.indexOf(String(mes || '').trim().toUpperCase());
+  const year = String(anio || '').trim();
+  if (indice < 0 || !/^\d{4}$/.test(year) || Number(year) < 1900) throw new Error('Elige un mes y año de inscripción válidos.');
+  const dias = new Date(Date.UTC(Number(year), indice + 1, 0)).getUTCDate();
+  const base = `${year}-${String(indice + 1).padStart(2, '0')}`;
+  return [`${base}-01`, `${base}-${dias}`];
+}
+
+/** Clase legible de una inscripcion segun la regla de fechas. */
+export function claseInscripcionEtiqueta(clase) {
+  const valor = String(clase || '').trim().toUpperCase();
+  if (valor === 'NORMAL') return 'Inscrito';
+  if (valor === 'DATA_DURA') return 'Inscrito Data Dura';
+  if (valor === 'PENDIENTE') return 'Sin clase (falta fecha de ingreso válida)';
+  if (valor === 'INCONSISTENTE') return 'Sin clase (ingreso posterior a la inscripción)';
+  return 'Sin clase';
+}
+
+/** Valida el agregado historico; no confunde personas con programas o eventos. */
+export function validateInscritosHistorial(data, desde, hasta) {
+  const count = n => Number.isSafeInteger(Number(n)) && Number(n) >= 0;
+  const fail = () => { throw new Error('El conteo de inscritos del historial es inválido. Actualiza e inténtalo nuevamente.'); };
+  if (!data || !periodoValidDate(desde) || !periodoValidDate(hasta) || desde > hasta
+      || data.desde !== desde || data.hasta !== hasta
+      || !['personas_inscritas', 'normales', 'data_dura', 'revision', 'pendientes_fecha'].every(k => count(data[k]))
+      || data.normales + data.data_dura + data.revision !== data.personas_inscritas
+      || !Array.isArray(data.por_campana)
+      || data.por_campana.some(r => !r || typeof r.campana !== 'string' || !count(r.personas) || !count(r.normales) || !count(r.data_dura) || !count(r.revision) || r.normales + r.data_dura + r.revision !== r.personas)
+      || data.por_campana.reduce((total, r) => total + r.personas, 0) !== data.personas_inscritas
+      || data.por_campana.reduce((total, r) => total + r.normales, 0) !== data.normales
+      || data.por_campana.reduce((total, r) => total + r.data_dura, 0) !== data.data_dura
+      || data.por_campana.reduce((total, r) => total + r.revision, 0) !== data.revision) {
+    fail();
+  }
+  return data;
+}
+
+/** Detalle y resumen deben representar las mismas personas y clases del rango. */
+export function validateInscritosDetalle(filas, resumen) {
+  const fail = () => { throw new Error('El conteo cambió o el detalle es inválido. Actualiza el reporte antes de continuar.'); };
+  if (!Array.isArray(filas) || filas.length !== resumen.personas_inscritas) fail();
+  const ids = new Set(), clases = { NORMAL: 0, DATA_DURA: 0, PENDIENTE: 0, INCONSISTENTE: 0 };
+  for (const f of filas) {
+    if (!f || !/^\d+$/.test(String(f.id ?? '')) || ids.has(String(f.id))
+        || !periodoValidDate(f.fecha_inscripcion) || f.fecha_inscripcion < resumen.desde || f.fecha_inscripcion > resumen.hasta
+        || !Object.hasOwn(clases, f.clase)) fail();
+    ids.add(String(f.id));
+    clases[f.clase]++;
+  }
+  if (clases.NORMAL !== resumen.normales || clases.DATA_DURA !== resumen.data_dura
+      || clases.PENDIENTE + clases.INCONSISTENTE !== resumen.revision) fail();
+  return filas;
+}
+
+/** Detalle historico: una persona por rango, con el mismo evento del contador. */
+export function inscritosHistorialCsvLines(filas, desde, hasta, generado) {
+  const lines = [], row = values => lines.push(values.map(csvReporteField).join(','));
+  row(['Personas inscritas según historial']);
+  row(['Desde (inclusive)', desde, 'Hasta (inclusive)', hasta]);
+  row(['Generado (Miami)', generado]);
+  row(['Una persona por rango; última entrada registrada dentro del rango. Una baja posterior no elimina su inscripción.']);
+  row(['Inscrito ingresó en el mismo mes de su inscripción; Inscrito Data Dura ingresó en un mes anterior.']);
+  row(['ID', 'Nombre', 'Teléfono', 'Fecha de inscripción', 'Clase', 'Estado al inscribirse', 'Campaña', 'Programa actual', 'Estado actual']);
+  for (const f of filas || []) row([f.id, f.nombre || '', f.telefono ? "'" + f.telefono : '', f.fecha_inscripcion, claseInscripcionEtiqueta(f.clase), f.estado_inscripcion, f.campana || 'Sin campaña', f.programa || '', f.estado_actual || '']);
+  return lines;
 }
 
 /**
@@ -202,6 +271,11 @@ if (typeof window !== 'undefined') {
   window.programaPorId = programaPorId;
   window.programaEtiqueta = programaEtiqueta;
   window.esInscritoGestion = esInscritoGestion;
+  window.inscripcionMesRange = inscripcionMesRange;
+  window.validateInscritosHistorial = validateInscritosHistorial;
+  window.validateInscritosDetalle = validateInscritosDetalle;
+  window.claseInscripcionEtiqueta = claseInscripcionEtiqueta;
+  window.inscritosHistorialCsvLines = inscritosHistorialCsvLines;
   window.nivelesDePrograma = nivelesDePrograma;
   window.normalizaFechaInscripcion = normalizaFechaInscripcion;
   window.inscripcionPayload = inscripcionPayload;

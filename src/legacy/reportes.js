@@ -383,6 +383,15 @@ export function historicalRecordMonth(monthlyStats, activeMonths) {
   return { month: recordMonth, count: recordCount };
 }
 
+/** Medios retirados del negocio (CogniTalking y variantes con errata del
+ * valor almacenado): sus leads siguen contando, pero ningun reporte,
+ * grafico ni CSV muestra el nombre; se agrupan bajo 'Otros'. */
+export const esMedioRetirado = label => /^cogni\s*talk/i.test(String(label ?? '').trim());
+
+/** Etiqueta visible de un medio en listados, ficha y exportaciones: los
+ * retirados del negocio se muestran como 'Otros'; el dato guardado no cambia. */
+export const medioVisible = m => esMedioRetirado(m) ? 'Otros' : String(m ?? '').trim();
+
 /**
  * Series de datos de los 8 graficos del panel historico (logica pura).
  * Recibe los agregados y KPIs ya calculados por el render para no
@@ -424,7 +433,9 @@ export function historicalChartSeries(data, aggregates, kpis) {
 
   const medioCounts = {};
   leids.forEach(l => {
-    const m = getField(l, 'Medio').trim() || 'Directo/Otro';
+    const crudo = getField(l, 'Medio').trim();
+    // Medio retirado del negocio: cuenta en el resto del grafico, sin nombre.
+    const m = crudo && !esMedioRetirado(crudo) ? crudo : 'Directo/Otro';
     medioCounts[m] = (medioCounts[m] || 0) + 1;
   });
   const sortedMedios = Object.entries(medioCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
@@ -843,6 +854,9 @@ export function buildPeriodSummary(leads, catalogs, desde, hasta) {
     return porClave;
   };
   const categorias = { medio: nuevaCategoria('medio'), campana: nuevaCategoria('campana'), gestion: nuevaCategoria('gestion') };
+  // El catalogo puede traer medios retirados del negocio: no abren fila propia
+  // para que el nombre no aparezca en el reporte; sus leads se reportan bajo 'Otros'.
+  for (const clave of [...categorias.medio.keys()]) if (esMedioRetirado(clave)) categorias.medio.delete(clave);
   const extras = { medio: new Map(), campana: new Map(), gestion: new Map() };
   const celdas = new Map();
   let fechasInvalidas = 0;
@@ -864,7 +878,8 @@ export function buildPeriodSummary(leads, catalogs, desde, hasta) {
   };
   // Una sola pasada: medios, campañas, gestiones y matriz salen de esta selección.
   for (const lead of seleccion) {
-    const medio = registrar('medio', getField(lead, 'Medio'));
+    const medioCrudo = getField(lead, 'Medio');
+    const medio = registrar('medio', esMedioRetirado(medioCrudo) ? 'Otros' : medioCrudo);
     const campana = registrar('campana', getField(lead, 'Campaña'));
     const gestion = registrar('gestion', getField(lead, 'GESTION'));
     const clave = `${gestion}\u0000${campana}`;
@@ -931,7 +946,12 @@ export function validatePeriodoActividad(data, desde, hasta) {
   if (!data || data.desde !== desde || data.hasta !== hasta) fail();
   for (const key of ['gestiones', 'canales', 'citas']) if (!data[key] || typeof data[key] !== 'object') fail();
   const g = data.gestiones, q = data.canales, c = data.citas;
-  if (![g.total_eventos, g.leads_unicos, g.agendados_normales, g.agendados_data_dura, g.inscritos_normales, g.inscritos_data_dura].every(count)) fail();
+  if (![g.total_eventos, g.leads_unicos, g.agendados_normales, g.agendados_data_dura, g.inscritos_normales, g.inscritos_data_dura, g.inscripciones_realizadas_normales, g.inscripciones_realizadas_data_dura].every(count)) fail();
+  // Las altas reales son un subconjunto de las personas gestionadas estando
+  // inscritas, pero las filas usan clasificaciones distintas (la fecha de
+  // ingreso para las altas; la etiqueta del evento para los seguimientos),
+  // asi que la cota solo vale sobre la suma de ambas columnas.
+  if (g.inscripciones_realizadas_normales + g.inscripciones_realizadas_data_dura > g.inscritos_normales + g.inscritos_data_dura) fail();
   if (![q.llamadas_normales, q.llamadas_data_dura, q.llamada_whatsapp, q.whatsapp, q.otros].every(count)) fail();
   if (![c.programadas_normales, c.programadas_data_dura, c.asistieron, c.no_asistieron, c.canceladas, c.reprogramadas, c.doral_normal, c.doral_data_dura, c.weston_normal, c.weston_data_dura, c.sin_sede].every(count)) fail();
   if (!Array.isArray(g.por_estado) || g.por_estado.some(r => !r || typeof r.label !== 'string' || !count(r.eventos) || !count(r.leads))) fail();
@@ -948,31 +968,42 @@ export function validatePeriodoActividad(data, desde, hasta) {
  * @param {string} generado Fecha Miami del momento (el wrapper evalua miamiToday).
  * @returns {string[]} Lineas de texto (unir con \\n para downloadCSV).
  */
-export function periodoCsvLines(summary, actividad, generado) {
+export function periodoCsvLines(summary, actividad, generado, inscritosHistorial = null) {
   const d = summary, a = actividad, lines = [], row = values => lines.push(values.map(csvReporteField).join(','));
   row(['Reporte por período']);
   row(['Desde (inclusive)', d.desde, 'Hasta (inclusive)', d.hasta]);
   row(['Gestión actual; no estado histórico al cierre del período']);
   row(['Generado (Miami)', generado]);
   row(['Leads sin fecha válida (excluidos)', d.fechas_invalidas]);
-  for (const [title, rows] of [['Resumen general de leads por entrada (Medio)', d.medios], ['Resumen general de campañas', d.campanas], ['Resumen específico de gestión actual', d.gestiones]]) {
+  for (const [title, rows] of [['Captación por medio · leads ingresados', d.medios], ['Captación por campaña · leads ingresados', d.campanas], ['Estado actual de los leads ingresados', d.gestiones]]) {
     row([]); row([title]); row(['Categoría', 'Leads', '%']);
     rows.forEach(r => row([r.label, r.count, periodoPct(r.count, d.total)]));
     row(['TOTAL', d.total, periodoPct(d.total, d.total)]);
   }
-  row([]); row(['Matriz gestión actual × campaña']); row(['Gestión', ...d.matriz.campanas, 'Total']);
+  row([]); row(['Matriz estado actual × campaña · leads ingresados']); row(['Gestión', ...d.matriz.campanas, 'Total']);
   d.matriz.filas.forEach(r => row([r.label, ...r.counts, r.total]));
   row(['TOTAL', ...d.matriz.totales_columnas, d.total]);
+  if (inscritosHistorial) {
+    row([]); row(['Personas inscritas en el período según historial']);
+    row(['Una persona por rango; última entrada registrada dentro del rango. Una baja posterior no elimina su inscripción.']);
+    row(['Personas inscritas', inscritosHistorial.personas_inscritas]);
+    row(['Inscrito', inscritosHistorial.normales]);
+    row(['Inscrito Data Dura', inscritosHistorial.data_dura]);
+    row(['Sin clase (revisar fechas)', inscritosHistorial.revision]);
+    row([]); row(['Inscripciones por campaña (campaña actual del lead)']); row(['Campaña', 'Personas', 'Inscrito', 'Data Dura', 'Sin clase']);
+    [...(inscritosHistorial.por_campana || [])].sort((a, b) => compareAlphaEs(a.campana, b.campana)).forEach(r => row([r.campana, r.personas, r.normales, r.data_dura, r.revision]));
+    row(['TOTAL', inscritosHistorial.personas_inscritas, inscritosHistorial.normales, inscritosHistorial.data_dura, inscritosHistorial.revision]);
+  }
   const ga = a.gestiones, qa = a.canales, ca = a.citas;
   row([]); row(['Actividad realizada en el período (gestiones por fecha trabajada)']); row(['Métrica', 'Cantidad']);
-  row(['Leads únicos gestionados', ga.leads_unicos]); row(['Pasados a Agendado', ga.agendados_normales]); row(['Pasados a Agendado Data Dura', ga.agendados_data_dura]); row(['Pasados a Inscrito', ga.inscritos_normales]); row(['Pasados a Inscrito Data Dura', ga.inscritos_data_dura]); row(['Total de gestiones', ga.total_eventos]);
+  row(['Leads únicos gestionados', ga.leads_unicos]); row(['Inscripciones realizadas · Inscrito (altas)', ga.inscripciones_realizadas_normales]); row(['Inscripciones realizadas · Data Dura (altas)', ga.inscripciones_realizadas_data_dura]); row(['Gestionados en estado Agendado', ga.agendados_normales]); row(['Gestionados en estado Agendado Data Dura', ga.agendados_data_dura]); row(['Gestionados en estado Inscrito', ga.inscritos_normales]); row(['Gestionados en estado Inscrito Data Dura', ga.inscritos_data_dura]); row(['Total de gestiones', ga.total_eventos]);
   row([]); row(['Gestiones por estado']); row(['Estado', 'Leads únicos', 'Total de gestiones']);
   [...ga.por_estado].sort((a, b) => compareAlphaEs(a.label, b.label)).forEach(r => row([r.label, r.leads, r.eventos]));
   row(['Nota: Leads únicos cuenta personas distintas; Total de gestiones suma todos los intentos. Un mismo lead puede repetirse en varios estados, por eso los leads únicos no se suman.']);
   row([]); row(['Canales de la actividad']); row(['Canal', 'Cantidad']);
   row(['Llamada y WhatsApp', qa.llamada_whatsapp]); row(['Llamadas', qa.llamadas_normales]); row(['Llamadas Data Dura', qa.llamadas_data_dura]); row(['Otros o sin canal', qa.otros]); row(['WhatsApp', qa.whatsapp]);
   row([]); row(['Agenda (citas por fecha programada)']); row(['Estado', 'Cantidad']);
-  row(['Asistieron', ca.asistieron]); row(['Canceladas', ca.canceladas]); row(['Doral: programadas normales', ca.doral_normal]); row(['Doral: programadas Data Dura', ca.doral_data_dura]); row(['No asistieron', ca.no_asistieron]); row(['Programadas Data Dura', ca.programadas_data_dura]); row(['Programadas normales', ca.programadas_normales]); row(['Reprogramadas', ca.reprogramadas]); row(['Sin sede (históricas)', ca.sin_sede]); row(['Weston: programadas normales', ca.weston_normal]); row(['Weston: programadas Data Dura', ca.weston_data_dura]);
+  row(['Asistieron', ca.asistieron]); row(['Canceladas', ca.canceladas]); row(['Doral: programadas normales', ca.doral_normal]); row(['Doral: programadas Data Dura', ca.doral_data_dura]); row(['No asistieron', ca.no_asistieron]); row(['Programadas Data Dura', ca.programadas_data_dura]); row(['Programadas normales', ca.programadas_normales]); row(['Reprogramadas', ca.reprogramadas]); row(['Sin sede (programadas)', ca.sin_sede]); row(['Weston: programadas normales', ca.weston_normal]); row(['Weston: programadas Data Dura', ca.weston_data_dura]);
   return lines;
 }
 
@@ -1002,7 +1033,7 @@ export function periodoGestionesCsvLines(rows, generado) {
   ]));
   return lines;
 }
-const DIARIO_KEYS = ['gestionados', 'whatsapp', 'facebook', 'cognitalking', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosDoral', 'agendadosDoralDura', 'agendadosWeston', 'agendadosWestonDura', 'agendadosTotal', 'reprogramadasHoy', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'agendadosGestionadosDia', 'agendadosGestionadosDura', 'whatsappNuevos', 'detalleGestionados', 'detalleTotal', 'llamadasNuevos', 'llamadasGestionados', 'llamadasDetalleTotal', 'canalInstagram', 'canalesOtros', 'canalesTotal'];
+const DIARIO_KEYS = ['gestionados', 'whatsapp', 'facebook', 'directo', 'otros', 'llamadasDia', 'llamadasDura', 'llamadaWhatsapp', 'llamadasTotal', 'agendadosDia', 'agendadosDura', 'agendadosDoral', 'agendadosDoralDura', 'agendadosWeston', 'agendadosWestonDura', 'agendadosTotal', 'reprogramadasHoy', 'visitas', 'noAsistieron', 'canceladas', 'reprogramadas', 'agendadosGestionadosDia', 'agendadosGestionadosDura', 'whatsappNuevos', 'detalleGestionados', 'detalleTotal', 'llamadasNuevos', 'llamadasGestionados', 'llamadasDetalleTotal', 'canalInstagram', 'canalesOtros', 'canalesTotal'];
 
 /** 'Otros o sin canal': buckets retirados de pantalla, juntos. */
 const numCanalesOtros = c => (Number(c?.visita) || 0) + (Number(c?.sin_clasificar) || 0);
@@ -1031,10 +1062,12 @@ export function detalleGestionHoy(b, grupo = 'whatsapp') {
   return { nuevos, gestionados: total - nuevos, total };
 }
 
-/** Cabecera del CSV diario (36 columnas: ASESORA + 33 numericas + notas).
- * 'Otros o sin canal' agrega los buckets retirados de pantalla
- * (visita conservatorio + sin clasificar) para que el total cuadre. */
-const DIARIO_HEADERS = ['Asesora', 'Gestiones realizadas', 'WhatsApp', 'Facebook/Instagram', 'CogniTalking', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Citas nuevas hoy', 'Citas nuevas Data Dura', 'Citas nuevas Doral', 'Citas nuevas Data Dura Doral', 'Citas nuevas Weston', 'Citas nuevas Data Dura Weston', 'Total citas nuevas', 'Citas reprogramadas hoy', 'Visitas registradas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Pasados a Agendado hoy', 'Pasados a Agendado Data Dura hoy', 'WhatsApp nuevos hoy', 'WhatsApp gestionados hoy', 'Total WhatsApp', 'Llamadas nuevos hoy', 'Llamadas gestionados hoy', 'Total llamadas de gestión', 'Canal Instagram', 'Otros o sin canal', 'Total canales', 'Problemas', 'Observaciones'];
+/** Cabecera del CSV diario (35 columnas: ASESORA + 32 numericas + notas).
+ * 'Otros' de procedencia absorbe los medios retirados del negocio (p.ej.
+ * CogniTalking) para que el nombre no aparezca; 'Otros o sin canal' agrega
+ * los buckets retirados de pantalla (visita conservatorio + sin clasificar)
+ * para que el total cuadre. */
+const DIARIO_HEADERS = ['Asesora', 'Gestiones realizadas', 'WhatsApp', 'Facebook/Instagram', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Citas nuevas hoy', 'Citas nuevas Data Dura', 'Citas nuevas Doral', 'Citas nuevas Data Dura Doral', 'Citas nuevas Weston', 'Citas nuevas Data Dura Weston', 'Total citas nuevas', 'Citas reprogramadas hoy', 'Visitas registradas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Pasados a Agendado hoy', 'Pasados a Agendado Data Dura hoy', 'WhatsApp nuevos hoy', 'WhatsApp gestionados hoy', 'Total WhatsApp', 'Llamadas nuevos hoy', 'Llamadas gestionados hoy', 'Total llamadas de gestión', 'Canal Instagram', 'Otros o sin canal', 'Total canales', 'Problemas', 'Observaciones'];
 
 /**
  * Resuelve la nota asociada a un bloque del reporte diario con la regla
@@ -1066,7 +1099,7 @@ export function diarioCsvLines(fecha, filtro, generado, bloques, notasResueltas)
     const p = b.procedencia || {}, l = b.llamadas || {}, c = b.citas || {};
     const detalle = detalleGestionHoy(b);
     const llamadas = detalleGestionHoy(b, 'llamadas');
-    const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p.CogniTalking, p['Directo o Referido'], p.Otros, l.del_dia, l.data_dura, l.llamada_whatsapp, (Number(l.del_dia) || 0) + (Number(l.data_dura) || 0) + (Number(l.llamada_whatsapp) || 0), c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.citas_reprogramadas_hoy, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, detalle.nuevos, detalle.gestionados, detalle.total, llamadas.nuevos, llamadas.gestionados, llamadas.total, (b.canales || {}).instagram, numCanalesOtros(b.canales), totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
+    const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p['Directo o Referido'], (Number(p.CogniTalking) || 0) + (Number(p.Otros) || 0), l.del_dia, l.data_dura, l.llamada_whatsapp, (Number(l.del_dia) || 0) + (Number(l.data_dura) || 0) + (Number(l.llamada_whatsapp) || 0), c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.citas_reprogramadas_hoy, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, detalle.nuevos, detalle.gestionados, detalle.total, llamadas.nuevos, llamadas.gestionados, llamadas.total, (b.canales || {}).instagram, numCanalesOtros(b.canales), totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
     values.forEach((v, n) => { sumas[DIARIO_KEYS[n]] += v; });
     const nota = notasResueltas[i] || {};
     lineas.push([b.autor_name ?? b.advisor, ...values, nota.problemas ?? '', nota.observaciones ?? ''].map(csvReporteField).join(','));
@@ -1145,8 +1178,17 @@ export function bloqueDiaHtml(b, i, manualHtml) {
 }
 
 /** Shell del panel diario con el aviso de notas y el Resumen general. */
-export function cuerpoReporteDiario(notasOk, total, bloquesHtml) {
-  return `${notasOk ? '' : '<div class="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">No se pudieron cargar las notas guardadas. La edicion esta desactivada para no sobrescribir datos: recarga la pagina o intentalo mas tarde.</div>'}<section class="daily-summary space-y-3"><h3 class="font-bold text-lg text-indigo-900">Resumen general</h3><div class="grid grid-cols-2 sm:grid-cols-5 gap-3">${celdaDiago('Gestiones realizadas', total.g)}${celdaDiago('Total llamadas', total.l)}${celdaDiago('Citas nuevas hoy', total.c)}${celdaDiago('Reprogramadas hoy', total.r)}${celdaDiago('Visitas registradas', total.v)}</div></section><section class="space-y-3"><h3 class="font-bold text-lg text-indigo-900">Comparativa por asesora</h3>${bloquesHtml || '<p class="text-slate-500">Sin gestiones para esta fecha.</p>'}</section>`;
+export function cuerpoReporteDiario(notasOk, total, bloquesHtml, equipoHtml = '') {
+  return `${notasOk ? '' : '<div class="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">No se pudieron cargar las notas guardadas. La edicion esta desactivada para no sobrescribir datos: recarga la pagina o intentalo mas tarde.</div>'}<section class="daily-summary space-y-3"><h3 class="font-bold text-lg text-indigo-900">Resumen general</h3><div class="grid grid-cols-2 sm:grid-cols-5 gap-3">${celdaDiago('Gestiones realizadas', total.g)}${celdaDiago('Total llamadas', total.l)}${celdaDiago('Citas nuevas hoy', total.c)}${celdaDiago('Reprogramadas hoy', total.r)}${celdaDiago('Visitas registradas', total.v)}</div></section>${equipoHtml}<section class="space-y-3"><h3 class="font-bold text-lg text-indigo-900">Comparativa por asesora</h3>${bloquesHtml || '<p class="text-slate-500">Sin gestiones para esta fecha.</p>'}</section>`;
+}
+
+/** Totales del dia de todas las asesoras (bloque 'equipo' del RPC): las
+ * mismas cuatro tarjetas del detalle por asesora, siempre del equipo
+ * completo de la fecha y ajenas al filtro individual. El servidor decide
+ * quien cuenta como asesora; sin bloque, no se inventa la seccion. */
+export function equipoDiarioHtml(equipo) {
+  if (!equipo || typeof equipo !== 'object' || Array.isArray(equipo)) return '';
+  return `<section class="daily-summary space-y-3"><h3 class="font-bold text-lg text-indigo-900">Totales de las asesoras</h3><p class="text-xs text-slate-500">Suma de lo realizado por todas las asesoras del día; el filtro de asesora no cambia este bloque.</p><div class="grid md:grid-cols-2 xl:grid-cols-4 gap-3">${detallesBloqueHtml(equipo)}</div></section>`;
 }
 
 /**
@@ -1404,6 +1446,8 @@ if (typeof window !== 'undefined') {
   window.periodoValidDate = periodoValidDate;
   window.periodoPct = periodoPct;
   window.csvReporteField = csvReporteField;
+  window.esMedioRetirado = esMedioRetirado;
+  window.medioVisible = medioVisible;
   window.campaignCosteResultado = campaignCosteResultado;
   window.campaignTotals = campaignTotals;
   window.computeHistoricalAggregates = computeHistoricalAggregates;
@@ -1434,6 +1478,7 @@ if (typeof window !== 'undefined') {
   window.resolverNotaBloque = resolverNotaBloque;
   window.indiceNotas = indiceNotas;
   window.notaDeBloque = notaDeBloque;
+  window.equipoDiarioHtml = equipoDiarioHtml;
   window.totalDiario = totalDiario;
   window.detallesBloqueHtml = detallesBloqueHtml;
   window.manualBloqueHtml = manualBloqueHtml;

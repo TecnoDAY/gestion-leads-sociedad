@@ -2,8 +2,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  badgeGestionHtml, controlesPaginacionHtml, filaLeadHtml, infoPaginacion,
-  rangoPaginacion, tablaVaciaLeadsHtml,
+  badgeGestionHtml, bloqueRepetidosHtml, controlesPaginacionHtml, fichaLeadHtml,
+  filaLeadHtml, infoPaginacion, rangoPaginacion, tablaVaciaLeadsHtml, tarjetaLeadMovilHtml,
 } from '../../src/legacy/leads.js';
 
 const lead = extras => ({ id: 11, Nombre: 'Ana', Telefono: '1 (786) 555-1234', 'Campaña': 'Kids', Medio: 'WhatsApp', Mes: 'octubre', Fecha: '3/10/2026', GESTION: 'AGENDADO', 'Agente ': 'Loli', ...extras });
@@ -50,6 +50,26 @@ test('filaLeadHtml: etiqueta de interesado en (solo si lo tiene)', () => {
   const escapado = filaLeadHtml(lead({ 'INTERESADO EN': '<b>x</b>' }), { leadId: 11, origin: 'actual', isAdmin: false });
   assert.match(escapado, /Interés: &lt;b&gt;x&lt;\/b&gt;/);
   assert.doesNotMatch(escapado, /<b>x<\/b>/);
+});
+
+test('medios retirados del negocio se muestran como Otros sin tocar el dato', () => {
+  const l = lead({ Medio: 'Cognitalkign' });
+  const fila = filaLeadHtml(l, { leadId: 21, origin: 'actual', isAdmin: false });
+  assert.match(fila, />Otros</);
+  assert.doesNotMatch(fila, /Cognitalkign/, 'el nombre no aparece en la tabla');
+  const tarjeta = tarjetaLeadMovilHtml(l, { leadId: 21, origin: 'actual', isAdmin: false });
+  assert.match(tarjeta, /Otros/);
+  assert.doesNotMatch(tarjeta, /Cognitalkign/, 'el nombre no aparece en la tarjeta movil');
+  const ficha = fichaLeadHtml(l, {});
+  assert.match(ficha, />Otros</);
+  assert.doesNotMatch(ficha, /Cognitalkign/, 'el nombre no aparece en la ficha');
+  const repetidos = bloqueRepetidosHtml([l], 'actual', l.id);
+  assert.match(repetidos, /· Otros</);
+  assert.doesNotMatch(repetidos, /Cognitalkign/, 'el nombre no aparece en los repetidos');
+  assert.equal(l.Medio, 'Cognitalkign', 'el valor guardado no se modifica');
+  // Los medios vigentes se muestran tal cual y el vacio sigue como '-'.
+  assert.match(filaLeadHtml(lead(), { leadId: 11, origin: 'actual', isAdmin: false }), />WhatsApp</);
+  assert.match(filaLeadHtml(lead({ Medio: '' }), { leadId: 11, origin: 'actual', isAdmin: false }), />-</);
 });
 
 test('tablaVaciaLeadsHtml: mensaje y limpiar filtros', () => {

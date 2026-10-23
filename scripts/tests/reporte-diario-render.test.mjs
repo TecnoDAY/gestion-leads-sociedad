@@ -3,9 +3,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  asesorasDisponibles,
-  bloqueDiaHtml, cuerpoReporteDiario, detallesBloqueHtml, indiceNotas,
-  manualBloqueHtml, notaDeBloque, totalDiario,
+  asesorasDisponibles, bloqueDiaHtml, cuerpoReporteDiario, detallesBloqueHtml,
+  equipoDiarioHtml, indiceNotas, manualBloqueHtml, notaDeBloque, totalDiario,
 } from '../../src/legacy/reportes.js';
 
 const notas = [
@@ -84,6 +83,28 @@ test('cuerpoReporteDiario: aviso de notas y shell con total y bloques', () => {
   assert.match(ok, /Resumen general/);
   assert.match(ok, /Gestiones realizadas/);
   assert.match(ok, /Comparativa por asesora/);
+  // Con bloque de equipo, la seccion va entre el resumen y la comparativa;
+  // sin ella (RPC previa) el shell no cambia.
+  const conEquipo = cuerpoReporteDiario(true, { g: 7, l: 6, c: 4, r: 2, v: 4 }, 'BLOQ', 'EQUIPO');
+  assert.ok(/Resumen general[\s\S]*EQUIPO[\s\S]*Comparativa por asesora/.test(conEquipo));
+  assert.equal(cuerpoReporteDiario(true, { g: 0, l: 0, c: 0, r: 0, v: 0 }, ''), `<section class="daily-summary space-y-3"><h3 class="font-bold text-lg text-indigo-900">Resumen general</h3><div class="grid grid-cols-2 sm:grid-cols-5 gap-3">${'<div class="daily-metric"><div class="text-xs text-slate-500">Gestiones realizadas</div><strong class="text-lg text-indigo-900">0</strong></div>'}${'<div class="daily-metric"><div class="text-xs text-slate-500">Total llamadas</div><strong class="text-lg text-indigo-900">0</strong></div>'}${'<div class="daily-metric"><div class="text-xs text-slate-500">Citas nuevas hoy</div><strong class="text-lg text-indigo-900">0</strong></div>'}${'<div class="daily-metric"><div class="text-xs text-slate-500">Reprogramadas hoy</div><strong class="text-lg text-indigo-900">0</strong></div>'}${'<div class="daily-metric"><div class="text-xs text-slate-500">Visitas registradas</div><strong class="text-lg text-indigo-900">0</strong></div>'}</div></section><section class="space-y-3"><h3 class="font-bold text-lg text-indigo-900">Comparativa por asesora</h3><p class="text-slate-500">Sin gestiones para esta fecha.</p></section>`, 'sin equipo el shell queda intacto');
+});
+
+test('equipoDiarioHtml: cuatro tarjetas del equipo o nada sin bloque', () => {
+  const equipo = { autor_name: 'Total asesoras', gestionados: 3,
+    procedencia: { WhatsApp: 1, 'Facebook/Instagram': 1, CogniTalking: 0, 'Directo o Referido': 1, Otros: 0 },
+    llamadas: { del_dia: 1, data_dura: 0, llamada_whatsapp: 1, total: 2, nuevos: 1, gestionados: 1, total_gestion: 2 },
+    whatsapp: { nuevos: 0, gestionados: 1, total: 1 },
+    canales: { llamada: 1, data_dura: 0, llamada_whatsapp: 1, whatsapp: 1, instagram: 0, visita: 0, sin_clasificar: 0, total: 3 },
+    citas: { agendados_dia: 1, agendados_data_dura: 0, total_agendados: 1, citas_reprogramadas_hoy: 1, visitas: 1, no_asistieron: 0, canceladas: 0, reprogramadas: 0 } };
+  const html = equipoDiarioHtml(equipo);
+  assert.match(html, /Totales de las asesoras/);
+  assert.match(html, /el filtro de asesora no cambia este bloque/);
+  for (const titulo of ['Procedencia', 'Canales', 'Detalle de gestión', 'Citas creadas y resultados registrados hoy']) assert.match(html, new RegExp(titulo));
+  assert.match(html, /Total llamadas<\/td><td[^>]*>2<\/td>/);
+  assert.doesNotMatch(html, /Total asesoras/, 'el bloque no se presenta como una asesora');
+  assert.equal(equipoDiarioHtml(null), '', 'sin bloque no hay seccion');
+  assert.equal(equipoDiarioHtml([]), '', 'un arreglo no es un bloque de equipo');
 });
 
 test('asesorasDisponibles: ids estables al filtrar (bug de cambio de asesora)', () => {

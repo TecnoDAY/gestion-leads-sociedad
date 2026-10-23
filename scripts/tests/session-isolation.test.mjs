@@ -41,7 +41,7 @@ const names = ['clearSessionState', 'resetDashboardInscripciones', 'closeInvalid
   'markPeriodoReportDirty', 'updatePeriodoCsvState',
   'resetReportePeriodo', 'setReporteVista', 'setPeriodoPreset', 'periodoRangeKey',
   'loadPeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
-  'loadPeriodoInscripciones', 'renderPeriodoInscripciones',
+  'loadPeriodoInscripciones', 'renderPeriodoInscripcionesResumen', 'renderPeriodoInscritosDetalle',
   'stopIdleTracking', 'endAgentSessionLocally', 'startAgentActivityTracking'];
 const sessionCacheNames = ['loadHistoricoData', 'performLoadHistoricoData', 'loadLeadsData', 'performLoadLeadsData',
   'getExactLeadsCount', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor',

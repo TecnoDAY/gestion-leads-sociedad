@@ -19,11 +19,11 @@ const { appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc
 const reportesMod = await import('../../src/legacy/reportes.js');
 const { MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
   histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
-  periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
+  periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles, medioVisible,
   computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
   tablaVaciaHistoricoHtml, tablaHistoricoHtml, histChartMonthly, histChartConversion, histChartCampaign, histChartMedio, histChartAgent, histChartMonthlyStates, histChartMonthlyCampaigns, histChartFunnel,
   buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
-  indiceNotas, notaDeBloque, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles , campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines, periodoGestionesCsvLines } = reportesMod;
+  indiceNotas, notaDeBloque, equipoDiarioHtml, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles , campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines, periodoGestionesCsvLines } = reportesMod;
 // Helpers puros del area Leads extraidos a src/legacy/leads.js
 const leadsMod = await import('../../src/legacy/leads.js');
 const { sortMonthCatalog, normalizePhone, isNuevoEsteMes, withOrigin, getLeadOrigin,
@@ -40,7 +40,7 @@ const inscripcionesMod = await import('../../src/legacy/inscripciones.js');
 const { PROGRAMAS_INSCRIPCION, esInscritoGestion, nivelesDePrograma, normalizaFechaInscripcion,
   inscripcionPayload, inscripcionDesdeFilas, inscripcionTienePendientes,
   programaEtiqueta, validateInscripcionesReport, inscripcionesCsvLines,
-  programaRequiereDetalle } = inscripcionesMod;
+   programaRequiereDetalle, inscripcionMesRange, validateInscritosHistorial, validateInscritosDetalle, claseInscripcionEtiqueta, inscritosHistorialCsvLines } = inscripcionesMod;
 // validAppointmentId vive en src/legacy/citas.js
 const { validAppointmentId } = citasMod;
 // actionsMod se importa al final (tests parse-all fase 15).
@@ -72,7 +72,7 @@ const names = [
   'fetchRowsByIdCursor', 'fetchPagedResult', 'fetchRowsByIds', 'fetchLeadsByIdCursor', 'fetchHistoricoByIdCursor', 'haveSameLeadIds',
   'performLoadOlderLeads', 'returnToRecentLeads', 'refillLoadedWindow', 'applyRealtimeEvent', 'updateCompleteCacheOnly', 'removeFromCompleteCacheOnly',
   'loadCitas', 'clearCitasResults', 'appointmentSessionValid', 'loadLeadAppointments', 'renderLeadAppointments', 'renderCitasKpis',
-  'loadLeadNotes', 'loadLeadGestiones', 'loadLeadsByGestionRange', 'loadLeadsByMonth', 'clearDashRange', 'applyFilters', 'resetAllFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
+  'loadLeadNotes', 'loadLeadGestiones', 'loadLeadsByGestionRange', 'loadLeadsByMonth', 'loadLeadsByInscripcionRange', 'clearDashRange', 'applyFilters', 'resetAllFilters', 'populateFilterOptions', 'populateSelect', 'setDataSource',
   'activeCatalogValues', 'catalogOptions', 'readHistRange',
   'filterHistoricalLeads', 'populateHistoricalFilterOptions',
   'loadReporteDiario', 'renderReporteV2', 'downloadCSV', 'exportCurrentLeadsCSV', 'exportHistoricalSummaryCSV',
@@ -100,7 +100,7 @@ const names = [
   'renderInteresadoEnChips', 'setInteresadoEn', 'interesadoEnValue', 'alternarInteresadoEn',
   'applyNewInscripcionVisibility', 'applyEditInscripcionVisibility', 'loadEditEnrollments', 'guardarInscripciones',
   'updateEditEstadoChip',
-  'loadPeriodoInscripciones', 'renderPeriodoInscripciones', 'exportPeriodoInscripcionesCSV'
+  'loadPeriodoInscripciones', 'renderPeriodoInscripcionesResumen', 'renderPeriodoInscritosDetalle', 'exportPeriodoInscritosHistorialCSV'
 ];
 // `var` (no `let`) en programasInteresadoEn: asi el test puede inyectar el
 // catalogo como el hace la app al cargar las campañas activas.
@@ -149,11 +149,11 @@ function frontend(extra = {}) {
     // Helpers de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js
     MONTH_CHRONO, GESTION_STATE_GROUPS, parseFechaLead, normalizeLeadMonth, leadReportDate, isInscritoDataDura,
     histMonthKey, histMonthLabel, sortHistMonthKeys, normalizeGestion, groupGestionEstado,
-    periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles,
+    periodoPresetRange, periodoValidDate, periodoPct, csvReporteField, campaignCosteResultado, campaignTotals, totalCanalesVisibles, medioVisible,
     computeHistoricalAggregates, applyHistoricalFilters, historicalFilterOptions, histDateInputToTs, histRangePresetDates, historicalSummaryCsv, historicalKpiTotals, historicalRecordMonth, histRangeNoticeText, historicalSummaryRows, historicalChartSeries,
     tablaVaciaHistoricoHtml, tablaHistoricoHtml, histChartMonthly, histChartConversion, histChartCampaign, histChartMedio, histChartAgent, histChartMonthlyStates, histChartMonthlyCampaigns, histChartFunnel,
     buildPeriodSummary, validatePeriodoSummary, validatePeriodoActividad, periodoCsvLines, diarioCsvLines, resolverNotaBloque,
-    indiceNotas, notaDeBloque, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles,
+    indiceNotas, notaDeBloque, equipoDiarioHtml, totalDiario, detallesBloqueHtml, manualBloqueHtml, bloqueDiaHtml, cuerpoReporteDiario, asesorasDisponibles,
     campanasDeFuentes, resumenCampanasHtml, estadoVacioCampanasHtml, filaCampanaHtml, totalCampanasHtml, campanasCsvLines, periodoGestionesCsvLines,
     // Helpers del area Leads extraidos a src/legacy/leads.js
     sortMonthCatalog, normalizePhone, isNuevoEsteMes, compareLeadIdsDescending, withOrigin, getLeadOrigin, aplicarUpsertLead, aplicarRemoveLead,
@@ -170,7 +170,7 @@ function frontend(extra = {}) {
     PROGRAMAS_INSCRIPCION, esInscritoGestion, nivelesDePrograma, normalizaFechaInscripcion,
     inscripcionPayload, inscripcionDesdeFilas, inscripcionTienePendientes,
     programaEtiqueta, validateInscripcionesReport, inscripcionesCsvLines,
-    programaRequiereDetalle,
+    programaRequiereDetalle, inscripcionMesRange, validateInscritosHistorial, validateInscritosDetalle, claseInscripcionEtiqueta, inscritosHistorialCsvLines,
     // miamiToday se stubbea en el test para determinismo (2026-09-30)
     miamiToday: () => '2026-09-30',
     supabaseClient: null, currentUser: { id: 'user-test' }, currentAccess: { activo: true, nombre: 'Test', updated_at: 'v1' },
@@ -289,12 +289,258 @@ const periodoSinRed = () => { const rpcCalls = []; return { rpcCalls, supabaseCl
 // agregada (management_period_summary): par clientes de test para ambos modos.
 const periodoActividadFixture = (desde = '2026-10-01', hasta = '2026-10-07') => ({
   desde, hasta,
-  gestiones: { total_eventos: 9, leads_unicos: 4, agendados_normales: 2, agendados_data_dura: 1, inscritos_normales: 3, inscritos_data_dura: 0, por_estado: [{ label: 'AGENDADO', eventos: 2, leads: 2 }] },
+  gestiones: { total_eventos: 9, leads_unicos: 4, agendados_normales: 2, agendados_data_dura: 1, inscripciones_realizadas_normales: 1, inscripciones_realizadas_data_dura: 1, inscritos_normales: 3, inscritos_data_dura: 1, por_estado: [{ label: 'AGENDADO', eventos: 2, leads: 2 }] },
   canales: { llamadas_normales: 5, llamadas_data_dura: 2, llamada_whatsapp: 1, whatsapp: 1, otros: 0 },
   citas: { programadas_normales: 3, programadas_data_dura: 2, asistieron: 4, no_asistieron: 1, canceladas: 0, reprogramadas: 0, doral_normal: 1, doral_data_dura: 1, weston_normal: 2, weston_data_dura: 0, sin_sede: 1 },
 });
-const periodoConActividad = () => { const rpcCalls = []; return { rpcCalls, supabaseClient: { rpc: (name, args) => { rpcCalls.push([name, args]); if (name !== 'management_period_summary') throw new Error('rpc inesperada: ' + name); return Promise.resolve({ data: periodoActividadFixture(args.p_desde, args.p_hasta), error: null }); } } }; };
-const settle = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
+const periodoHistorialFixture = (desde = '2026-10-01', hasta = '2026-10-07') => ({desde, hasta, personas_inscritas: 0, normales: 0, data_dura: 0, revision: 0, pendientes_fecha: 0, por_campana: []});
+const periodoConActividad = () => { const rpcCalls = []; return { rpcCalls, supabaseClient: { rpc: (name, args) => {
+  rpcCalls.push([name, args]);
+  if (name === 'crm_inscripciones_detalle') return database({detalle:[]}).from('detalle');
+  const builders = {management_period_summary:periodoActividadFixture,crm_inscripciones_resumen:periodoHistorialFixture};
+  if (!builders[name]) throw new Error('rpc inesperada: ' + name);
+  return Promise.resolve({data:builders[name](args.p_desde,args.p_hasta),error:null});
+} } }; };
+// Espera el drenaje de promesas sin depender del numero de awaits internos.
+const settle = () => new Promise(resolve => setImmediate(resolve));
+
+// El mock materializa la respuesta del servidor; la regla de transiciones se
+// ejecuta contra PostgreSQL en inscritos-historial.sql.mjs, no se replica aqui.
+function inscripcionesClient(leads, eventos, options = {}) {
+  const db = database({leads: options.rls ? leads.filter(l=>!l.archived_at) : leads, lead_gestiones: options.gestiones || []}, options);
+  const eventDb = database({eventos}, options);
+  const detalleDb = database({detalle:eventos.map(f=>{
+    const l=leads.find(l=>l.id===f.id) || {};
+    return {...f,nombre:l.Nombre,telefono:l.Telefono,campana:l['Campaña'] || 'Sin campaña',programa:l['PROGRAMA INSCRIPCION'],estado_actual:l.GESTION};
+  })}, options);
+  const rpcCalls = [];
+  return { ...db, rpcCalls, rpc(name, args) {
+    rpcCalls.push([name, args]);
+    if (name === 'crm_inscripciones_historial') return eventDb.from('eventos');
+    if (name === 'crm_inscripciones_detalle') return detalleDb.from('detalle');
+    if (name === 'crm_inscripciones_resumen') return Promise.resolve({data:options.resumen || periodoHistorialFixture(args.p_desde,args.p_hasta),error:null});
+    throw new Error('RPC no prevista en este caso: ' + name);
+  }};
+}
+
+test('inscritos: Leads usa mes/anio del historial y clasifica por ingreso, no por etiqueta', async () => {
+  const leads = [
+    {id:1,Fecha:'05/10/2026',Mes:'Octubre',GESTION:'Inscrito Data Dura'},
+    {id:2,Fecha:'01/08/2026',Mes:'Agosto',GESTION:'Inscrito'},
+    {id:3,Fecha:'01/10/2026',Mes:'Octubre',GESTION:'Informacion'},
+    {id:4,Fecha:'02/10/2026',Mes:'Octubre',GESTION:'Inscrito'},
+  ];
+  // id1: etiqueta Data Dura pero ingreso e inscripcion en octubre -> Normal.
+  // id2: etiqueta Inscrito pero ingreso en agosto -> Data Dura.
+  // id4: sin fecha de ingreso legible -> no aparece en ningun filtro.
+  const db = inscripcionesClient(leads,[
+    {id:1,fecha_inscripcion:'2026-10-05',clase:'NORMAL'},
+    {id:2,fecha_inscripcion:'2026-10-08',clase:'DATA_DURA'},
+    {id:4,fecha_inscripcion:'2026-10-02',clase:'PENDIENTE'},
+  ],{maxRows:1});
+  const f = frontend({supabaseClient:db,dataSource:'todos',allHistorico:[{id:1,Mes:'Octubre',GESTION:'Inscrito',__origin:'historico'}]});
+  f.element('filterMes').value='Octubre'; f.element('filterGestion').value='Inscrito'; f.element('filterInscripcionAnio').value='2026';
+  await f.context.applyFilters();
+  assert.deepEqual(Array.from(f.context.filteredLeads,l=>l.id),[1], 'la etiqueta Data Dura no decide la clase');
+  assert.equal(f.context.filteredLeads.find(l=>l.id===1)['FECHA INSCRIPCION'],'2026-10-05');
+  assert.ok(db.rpcCalls.every(([name,args])=>name==='crm_inscripciones_historial' && args.p_desde==='2026-10-01' && args.p_hasta==='2026-10-31' && args.p_actuales===true));
+  assert.ok(db.calls.every(q=>q.table==='leads'), 'no descarga historiales al navegador');
+  f.element('filterGestion').value='Inscrito Data';
+  await f.context.applyFilters();
+  assert.deepEqual(Array.from(f.context.filteredLeads,l=>l.id),[2], 'el inscrito con ingreso anterior es Data Dura aunque la etiqueta diga lo contrario');
+  f.element('filterGestion').value='Inscrito'; f.element('filterMes').value='';
+  await f.context.applyFilters();
+  assert.deepEqual(Array.from(f.context.filteredLeads,l=>l.id).sort((a,b)=>a-b),[1], 'sin clase verificable no se atribuye a Inscrito');
+});
+
+test('inscritos: consulta global supera 2000, pendientes sin mes y CSV incluye la fecha', async () => {
+  const leads = rows(2105,{Mes:'Octubre',Fecha:'05/10/2026',GESTION:'Inscrito',Medio:'Cognitalkign'});
+  const events = rows(2105,{fecha_inscripcion:'2026-10-05',clase:'NORMAL'}); events[0].fecha_inscripcion=null;
+  const db = inscripcionesClient(leads,events,{maxRows:137});
+  const f = frontend({supabaseClient:db,allLeads:[leads[0]]});
+  f.element('filterGestion').value='Inscrito';
+  await f.context.applyFilters();
+  assert.equal(f.context.filteredLeads.length,2105);
+  assert.equal(f.context.filteredLeads.find(l=>l.id===1)['FECHA INSCRIPCION'],null);
+  f.context.exportCurrentLeadsCSV();
+  const csv = await f.downloads[0].blob.text();
+  assert.match(csv,/Fecha de inscripción \(historial\)/); assert.match(csv,/"2026-10-05"/); assert.match(csv,/"Pendiente"/);
+  // Medio retirado del negocio: el CSV de leads muestra 'Otros', no el nombre.
+  assert.match(csv,/"Otros"/); assert.doesNotMatch(csv,/Cognitalkign/);
+});
+
+test('inscritos: rango de gestion intersecta ids sin volver a filtrar por mes de ingreso', async () => {
+  const leads = rows(2,{Mes:'Octubre',Fecha:'05/10/2026',GESTION:'Inscrito'});
+  const db = inscripcionesClient(leads,rows(2,{fecha_inscripcion:'2026-10-05',clase:'NORMAL'}),{gestiones:[{id:10,lead_id:2,fecha_gestion:'2026-10-20'}]});
+  const f = frontend({supabaseClient:db});
+  f.element('filterGestion').value='Inscrito'; f.element('filterMes').value='Octubre'; f.element('filterInscripcionAnio').value='2026';
+  f.element('dashDesde').value='2026-10-20'; f.element('dashHasta').value='2026-10-20';
+  await f.context.applyFilters();
+  assert.deepEqual(Array.from(f.context.filteredLeads,l=>l.id),[2]);
+});
+
+test('inscritos: error, anio invalido e historico no se disfrazan de resultados por ingreso', async () => {
+  const f = frontend({allLeads:[{id:1,Mes:'Octubre',GESTION:'Inscrito'}],filteredLeads:[{id:99}]});
+  f.element('filterGestion').value='Inscrito'; f.element('filterMes').value='Octubre';
+  await f.context.applyFilters(); assert.equal(f.context.filteredLeads.length,0);
+  assert.match(f.element('inscripcionFilterScope').textContent,/No se pudieron verificar/);
+  const db = inscripcionesClient([],[]); f.context.supabaseClient=db;
+  f.element('filterInscripcionAnio').value='incorrecto';
+  await f.context.applyFilters(); assert.equal(db.rpcCalls.length,0);
+  f.context.dataSource='historico';
+  await f.context.applyFilters(); assert.equal(f.context.filteredLeads.length,0);
+  assert.match(f.toasts.at(-1)[0],/histórico 2025 no tiene historial/);
+});
+
+test('inscritos: una respuesta de otra sesion no publica ni llena la cache', async () => {
+  let finish; const pending = new Promise(resolve=>{finish=resolve;});
+  const f = frontend({supabaseClient:{rpc:()=>({order(){return this;},range(){return pending;}})},filteredLeads:[{id:99}]});
+  f.element('filterGestion').value='Inscrito';
+  const request=f.context.applyFilters();
+  f.context.sessionGeneration++; f.context.currentUser={id:'otro'};
+  finish({data:[{id:1,fecha_inscripcion:'2026-10-05'}],error:null});
+  await request;
+  assert.deepEqual(Array.from(f.context.filteredLeads,l=>l.id),[99]);
+  assert.equal(vm.runInContext('mesRangeKey',f.context),'');
+});
+
+test('historial por periodo: contador y CSV conservan baja posterior y programas sin nivel', async () => {
+  const resumen={...periodoHistorialFixture(),personas_inscritas:2,normales:1,data_dura:1,
+    por_campana:[{campana:'Kids',personas:1,normales:1,data_dura:0,revision:0},{campana:'Sin campaña',personas:1,normales:0,data_dura:1,revision:0}]};
+  const leads=[{id:1,Nombre:'Camara',GESTION:'No procede',archived_at:'2026-11-01',Campaña:'Kids','PROGRAMA INSCRIPCION':'Taller camara'},
+    {id:2,Nombre:'Data',GESTION:'Inscrito Data Dura'}];
+  const eventos=[{id:1,fecha_inscripcion:'2026-10-05',clase:'NORMAL',estado_inscripcion:'Inscrito'},
+    {id:2,fecha_inscripcion:'2026-10-06',clase:'DATA_DURA',estado_inscripcion:'Inscrito Data Dura'}];
+  const db=inscripcionesClient(leads,eventos,{resumen,maxRows:1,rls:true});
+  const f=periodFrontend({supabaseClient:db,periodoLoadedRevision:0});
+  await f.context.loadPeriodoInscripciones(resumen.desde,resumen.hasta);
+  const html=f.element('periodoInscripciones').innerHTML;
+  assert.match(html,/Inscripciones realizadas en el período/);
+  // La matriz por campana va arriba, con los totales del resumen.
+  assert.match(html,/<th scope="col" class="whitespace-nowrap text-right">Kids</);
+  assert.match(html,/<th scope="col" class="whitespace-nowrap text-right">Sin campaña</);
+  assert.match(html,/>Total<\/th>/); assert.match(html,/>2<\/td><\/tr><\/tfoot>/);
+  assert.doesNotMatch(html,/Sin clase \(revisar fechas\)/, 'sin revision no hay aviso ni fila extra');
+  assert.doesNotMatch(html,/sin fecha verificable/, 'el indicador global desaparecio del bloque');
+  assert.equal((html.match(/period-metric/g)||[]).length,3,'tres tarjetas: total, Inscrito y Data Dura');
+  const detalle=f.element('periodoProgramas').innerHTML;
+  assert.match(detalle,/Fecha de inscripción de la persona/);
+  assert.match(detalle,/<time datetime="2026-10-05">05\/10\/2026<\/time>/);
+  assert.match(detalle,/Camara/); assert.match(detalle,/Taller camara/);
+  assert.match(detalle,/Inscrito Data Dura/);
+  assert.doesNotMatch(detalle,/Fecha declarada|Inscripciones vigentes|Pendientes de fecha/);
+  assert.ok(db.rpcCalls.every(([name])=>!name.startsWith('lead_enrollments_')));
+  await f.context.exportPeriodoInscritosHistorialCSV();
+  assert.equal(f.downloads.length,1);
+  const csv=await f.downloads[0].blob.text();
+  assert.match(csv,/Taller camara/); assert.match(csv,/No procede/);
+  assert.match(csv,/Kids/); assert.match(csv,/"Inscrito Data Dura","Inscrito Data Dura","Sin campaña"/);
+  assert.match(csv,/"Clase"/);
+  assert.equal(csv.split('\n').length,8);
+  assert.ok(db.rpcCalls.some(([name])=>name==='crm_inscripciones_detalle'));
+  assert.equal(db.calls.length,0,'el CSV no consulta directamente leads, donde RLS oculta archivados');
+});
+
+test('inscripciones del periodo: aviso de revision solo con casos y vacio con mensaje unico', async () => {
+  // Con fechas por revisar: aviso explicando que ya suman en el total y
+  // fila propia en la matriz.
+  const conRevision={...periodoHistorialFixture(),personas_inscritas:3,normales:1,data_dura:1,revision:1,
+    por_campana:[{campana:'Kids',personas:3,normales:1,data_dura:1,revision:1}]};
+  const f=periodFrontend({supabaseClient:inscripcionesClient(rows(3),[
+    {id:1,fecha_inscripcion:'2026-10-05',clase:'PENDIENTE'},
+    {id:2,fecha_inscripcion:'2026-10-06',clase:'NORMAL'},
+    {id:3,fecha_inscripcion:'2026-10-07',clase:'DATA_DURA'}
+  ],{resumen:conRevision}),periodoLoadedRevision:0});
+  await f.context.loadPeriodoInscripciones(conRevision.desde,conRevision.hasta);
+  const html=f.element('periodoInscripciones').innerHTML;
+  assert.match(html,/con fechas por revisar/);
+  assert.match(html,/ya están sumadas en el total/);
+  assert.match(html,/<th scope="row" class="font-medium">Sin clase \(revisar fechas\)/);
+  // Periodo vacio: tarjetas en cero, un solo mensaje y sin tabla vacia.
+  const vacia=periodoHistorialFixture();
+  const fv=periodFrontend({supabaseClient:inscripcionesClient([],[],{resumen:vacia}),periodoLoadedRevision:0});
+  await fv.context.loadPeriodoInscripciones(vacia.desde,vacia.hasta);
+  const vacioHtml=fv.element('periodoInscripciones').innerHTML;
+  assert.match(vacioHtml,/No se registraron inscripciones en estas fechas/);
+  assert.equal((vacioHtml.match(/period-metric/g)||[]).length,3,'las tres tarjetas se ven incluso en vacio');
+  assert.doesNotMatch(vacioHtml,/period-table/);
+  assert.doesNotMatch(vacioHtml,/fechas por revisar/);
+  assert.doesNotMatch(fv.element('periodoProgramas').innerHTML,/<table/);
+});
+
+test('historial CSV: cambio de conteo o de sesion bloquea descarga', async () => {
+  const resumen={...periodoHistorialFixture(),personas_inscritas:2,normales:2,
+    por_campana:[{campana:'Kids',personas:2,normales:2,data_dura:0,revision:0}]};
+  const eventos=rows(2,{fecha_inscripcion:'2026-10-05',clase:'NORMAL'});
+  const db=inscripcionesClient(rows(2), eventos,{resumen});
+  const f=periodFrontend({supabaseClient:db,periodoLoadedRevision:0});
+  await f.context.loadPeriodoInscripciones(resumen.desde,resumen.hasta);
+  const inicial= db.rpc.bind(db);
+  db.rpc=(name,args)=> name==='crm_inscripciones_detalle'
+    ? database({detalle:[eventos[0]]}).from('detalle') : inicial(name,args);
+  await f.context.exportPeriodoInscritosHistorialCSV();
+  assert.equal(f.downloads.length,0); assert.match(f.toasts.at(-1)[0],/conteo cambió/);
+  let finish; const pending=new Promise(resolve=>{finish=resolve;});
+  f.context.supabaseClient={rpc:()=>({order(){return this;},range(){return pending;}})};
+  const request=f.context.exportPeriodoInscritosHistorialCSV();
+  f.context.sessionGeneration++;
+  finish({data:[],error:null}); await request;
+  assert.equal(f.downloads.length,0);
+});
+
+test('detalle historico: paginacion completa, escape HTML y errores sin restos antiguos', async () => {
+  const resumen={...periodoHistorialFixture(),personas_inscritas:2001,normales:2001,
+    por_campana:[{campana:'Kids',personas:2001,normales:2001,data_dura:0,revision:0}]};
+  const leads=rows(2001,{Nombre:'<img src=x onerror=alert(1)>','PROGRAMA INSCRIPCION':'<script>programa</script>'});
+  const eventos=rows(2001,{fecha_inscripcion:'2026-10-05',clase:'NORMAL'});
+  const db=inscripcionesClient(leads,eventos,{resumen,maxRows:137});
+  const f=periodFrontend({supabaseClient:db,periodoLoadedRevision:0});
+  await f.context.loadPeriodoInscripciones(resumen.desde,resumen.hasta);
+  const html=f.element('periodoProgramas').innerHTML;
+  assert.equal((html.match(/<time /g)||[]).length,2001);
+  assert.match(html,/&lt;img/); assert.match(html,/&lt;script&gt;/);
+  assert.doesNotMatch(html,/<img|<script>/);
+  f.context.supabaseClient=inscripcionesClient([],[],{resumen});
+  await f.context.loadPeriodoInscripciones(resumen.desde,resumen.hasta);
+  assert.match(f.element('periodoInscripciones').innerHTML,/conteo cambió/);
+  assert.equal(f.element('periodoProgramas').innerHTML,'');
+  assert.equal(vm.runInContext('periodoInscripcionesData',f.context),null);
+});
+
+test('detalle historico: respuesta tardia y trafficker no publican datos personales', async () => {
+  const resumen=periodoHistorialFixture();
+  let finish;
+  const pending=new Promise(resolve=>{finish=resolve;});
+  const f=periodFrontend({supabaseClient:{rpc(name) {
+    if(name==='crm_inscripciones_resumen') return Promise.resolve({data:resumen,error:null});
+    return {order(){return this;},range(){return pending;}};
+  }}});
+  const request=f.context.loadPeriodoInscripciones(resumen.desde,resumen.hasta);
+  await Promise.resolve();
+  f.element('periodoHasta').value='2026-10-08';
+  finish({data:[],error:null}); await request;
+  assert.equal(f.element('periodoProgramas').innerHTML,'');
+  assert.equal(vm.runInContext('periodoInscripcionesData',f.context),null);
+  const protegido=periodFrontend({isTrafficker:true,supabaseClient:{rpc(){throw new Error('No debe consultar');}}});
+  protegido.element('periodoProgramas').innerHTML='contenido previo';
+  await protegido.context.loadPeriodoInscripciones(resumen.desde,resumen.hasta);
+  assert.equal(protegido.element('periodoProgramas').innerHTML,'');
+  assert.equal(protegido.element('periodoInscripciones').innerHTML,'');
+});
+
+test('historial reporte: error de RPC bloquea CSV y reset descarta respuesta pendiente', async () => {
+  const f=periodFrontend({supabaseClient:{rpc:()=>Promise.resolve({error:{message:'no disponible'}})},periodoData:{},periodoLoadedKey:'2026-10-01|2026-10-07',periodoLoadedRevision:0,periodoActividadData:{},periodoActividadKey:'2026-10-01|2026-10-07'});
+  await f.context.loadPeriodoInscripciones('2026-10-01','2026-10-07');
+  assert.match(f.element('periodoInscripciones').innerHTML,/actualización de la base de datos/);
+  f.context.exportReportePeriodoCSV(); assert.equal(f.downloads.length,0);
+  let finish; const pending=new Promise(resolve=>{finish=resolve;});
+  f.context.supabaseClient={rpc:()=>pending};
+  const request=f.context.loadPeriodoInscripciones('2026-10-01','2026-10-07');
+  f.context.resetReportePeriodo();
+  finish({data:periodoHistorialFixture(),error:null}); await request;
+  assert.equal(vm.runInContext('periodoInscripcionesData',f.context),null);
+  assert.equal(f.element('periodoInscripciones').innerHTML,'');
+});
 
 test('buildPeriodSummary: catálogo+extras, dedup id, archivados, límites y matriz coherentes', () => {
   const f = frontend();
@@ -358,13 +604,13 @@ test('período: cálculo local sin RPC; cuatro secciones, ceros, escape y aviso'
   await f.context.loadReportePeriodo();
   // La cohorte no toca la red; la actividad intenta UNA sola RPC agregada y su
   // fallo no borra los cuatro cuadros.
-  assert.ok(rpcCalls.every(([name]) => name === 'management_period_summary' || name === 'lead_enrollments_report'));
+   assert.ok(rpcCalls.every(([name]) => ['management_period_summary', 'crm_inscripciones_detalle', 'crm_inscripciones_resumen'].includes(name)));
   const body = f.element('periodoBody').innerHTML;
   assert.equal((body.match(/<section/g) || []).length, 4);
   assert.match(body, /Cero/); assert.match(body, /0\.00%/); assert.match(body, /50\.00%/); assert.match(body, /100\.00%/);
   assert.match(body, /&lt;demo&gt;/); assert.doesNotMatch(body, /<demo>/);
   assert.match(body, /overflow-x-auto/); assert.match(body, /sticky left-0/);
-  assert.match(f.element('periodoAviso').textContent, /2026-10-01 a 2026-10-07 \(inclusive\) · 4 leads por fecha de entrada · 1 sin fecha válida \(excluidos\)\./);
+  assert.match(f.element('periodoAviso').textContent, /2026-10-01 a 2026-10-07 \(inclusive\) · Captación: 4 leads ingresados por fecha de entrada · 1 sin fecha válida \(excluidos\)\./);
   assert.match(f.element('periodoAviso').textContent, /no histórica al cierre/);
   assert.equal(f.context.periodoLoadedKey, '2026-10-01|2026-10-07');
   assert.equal(f.context.periodoData.total, 4);
@@ -377,7 +623,7 @@ test('período: total cero conserva categorías, cuatro totales y CSV exportable
   await settle();
   assert.doesNotMatch(f.element('periodoBody').innerHTML, /NaN|Infinity|100\.00%/);
   assert.equal((f.element('periodoBody').innerHTML.match(/TOTAL/g) || []).length, 4);
-  assert.match(f.element('periodoAviso').textContent, /· 0 leads por fecha de entrada · 0 sin fecha válida \(excluidos\)/);
+  assert.match(f.element('periodoAviso').textContent, /· Captación: 0 leads ingresados por fecha de entrada · 0 sin fecha válida \(excluidos\)/);
   f.context.exportReportePeriodoCSV(); assert.equal(f.downloads.length, 1);
 });
 
@@ -478,7 +724,7 @@ test('período: CSV usa rango cargado, cuatro secciones, ceros, totales, neutral
   await f.context.loadReportePeriodo();
   // Bloqueo mientras la actividad no se ha resuelto (RPC pendiente).
   let actividadResolve; const pending = new Promise(res => { actividadResolve = res; });
-  f.context.supabaseClient = { rpc: () => pending };
+  f.context.supabaseClient = { rpc: (name,args) => name === 'management_period_summary' ? pending : supabaseClient.rpc(name,args) };
   await f.context.loadReportePeriodo();
   f.context.exportReportePeriodoCSV(); assert.equal(f.downloads.length, 0);
   assert.match(f.toasts.at(-1)[0], /actividad del período aún no está cargada/);
@@ -491,14 +737,17 @@ test('período: CSV usa rango cargado, cuatro secciones, ceros, totales, neutral
   const csv = await f.downloads[0].blob.text();
   assert.match(csv, /Desde \(inclusive\).*2026-10-01.*Hasta \(inclusive\).*2026-10-07/);
   assert.match(csv, /Gestión actual; no estado histórico/); assert.match(csv, /"'=Campaña <demo>"/);
-  assert.match(csv, /"Cero","0","0\.00%"/); assert.equal((csv.match(/"TOTAL"/g) || []).length, 4);
+  assert.match(csv, /"Cero","0","0\.00%"/); assert.equal((csv.match(/"TOTAL"/g) || []).length, 5, 'cuatro bloques de captacion + el desglose por campana');
   assert.match(csv, /"Leads sin fecha válida \(excluidos\)","1"/);
   assert.match(csv, /"Actividad realizada en el período/);
-  assert.match(csv, /"Pasados a Agendado Data Dura","1"/);
+  assert.match(csv, /"Inscripciones realizadas · Inscrito \(altas\)","1"/);
+  assert.match(csv, /"Inscripciones realizadas · Data Dura \(altas\)","1"/);
+  assert.match(csv, /"Gestionados en estado Agendado Data Dura","1"/);
+  assert.match(csv, /"Sin sede \(programadas\)","1"/);
   assert.match(csv, /"Programadas Data Dura","2"/);
   assert.match(csv, /"AGENDADO","2","2"/);
   f.context.currentAccess.activo = false; f.context.exportReportePeriodoCSV(); assert.equal(f.downloads.length, 1);
-  assert.ok(rpcCalls.every(([name]) => name === 'management_period_summary' || name === 'lead_enrollments_report'));
+  assert.ok(rpcCalls.every(([name]) => ['management_period_summary', 'crm_inscripciones_detalle', 'crm_inscripciones_resumen'].includes(name)));
 });
 
 test('período: ayudas y encabezados explican leads únicos vs gestiones sin cambiar cifras', async () => {
@@ -1244,8 +1493,9 @@ test('seguimiento: Teléfono visible fuera del bloque admin y selector incluye L
   assert.ok(telIndex > nombreIndex && telIndex < adminIndex);
   const selStart = html.indexOf('id="editUltimaGestion"');
   const selHtml = html.slice(selStart, selStart + 1500);
-  for (const v of ['Llamada Data Dura', 'Llamada y WhatsApp', 'WhatsApp', 'Instagram', 'Visita Conservatorio'])
+  for (const v of ['Llamada Data Dura', 'Llamada y WhatsApp', 'WhatsApp', 'Instagram'])
     assert.ok(selHtml.includes(`value="${v}"`), `falta la opción ${v}`);
+  assert.equal(selHtml.includes('value="Visita Conservatorio"'), false, 'canal retirado del negocio, sin opción');
 });
 
 test('editar lead: Telefono solo se envía cuando cambia; canal manual se respeta', async () => {
@@ -2238,6 +2488,36 @@ test('filtro de asesora reconsulta RPC y deja una sola fila', async () => {
   f.element('reporteAsesora').value = 'b'; await f.context.loadReporteDiario();
   assert.deepEqual(plain(f.db.rpcCalls.at(-1).args), { p_fecha: '2026-03-05', p_autor_user_id: 'b' }); assert.match(f.element('reporteAuto').innerHTML, /Bea/); assert.doesNotMatch(f.element('reporteAuto').innerHTML, /Ana/);
 });
+test('reporte diario: totales del equipo con las cuatro tarjetas, ajenos al filtro', async () => {
+  // Bloque 'equipo' del RPC: suma de todas las asesoras del dia.
+  const equipo = { autor_user_id: null, autor_name: 'Total asesoras', gestionados: 6,
+    procedencia: { WhatsApp: 2, 'Facebook/Instagram': 1, CogniTalking: 0, 'Directo o Referido': 2, Otros: 1 },
+    llamadas: { del_dia: 2, data_dura: 1, llamada_whatsapp: 1, total: 4, nuevos: 2, gestionados: 2, total_gestion: 4 },
+    whatsapp: { nuevos: 1, gestionados: 1, total: 2 },
+    canales: { llamada: 2, data_dura: 1, llamada_whatsapp: 1, whatsapp: 1, instagram: 0, visita: 0, sin_clasificar: 1, total: 6 },
+    citas: { agendados_dia: 3, agendados_data_dura: 1, total_agendados: 4, agendados_doral: 2, agendados_weston: 1, citas_reprogramadas_hoy: 1, visitas: 2, no_asistieron: 1, canceladas: 0, reprogramadas: 1 } };
+  const f = reportFixture(args => ({ asesoras: [advisor('Ana', 'a', 2), advisor('Bea', 'b', 3)].filter(x => !args.p_autor_user_id || x.autor_user_id === args.p_autor_user_id), equipo }));
+  await f.context.loadReporteDiario();
+  const html = f.element('reporteAuto').innerHTML;
+  // La seccion va entre el resumen general y la comparativa individual.
+  const inicio = html.indexOf('Totales de las asesoras');
+  const comparativa = html.indexOf('Comparativa por asesora');
+  assert.ok(inicio > -1 && comparativa > inicio, 'seccion de equipo presente y antes de la comparativa');
+  const seccion = html.slice(inicio, comparativa);
+  for (const titulo of ['Procedencia', 'Canales', 'Detalle de gestión', 'Citas creadas y resultados registrados hoy']) assert.match(seccion, new RegExp(titulo));
+  assert.match(seccion, /Total grupo WhatsApp<\/td><td[^>]*>2<\/td>/);
+  assert.match(seccion, /Total llamadas<\/td><td[^>]*>4<\/td>/);
+  // El filtro individual recorta la comparativa, nunca el bloque de equipo.
+  f.element('reporteAsesora').value = 'a'; await f.context.loadReporteDiario();
+  const filtrado = f.element('reporteAuto').innerHTML;
+  assert.doesNotMatch(filtrado, /Bea — /);
+  assert.match(filtrado, /Totales de las asesoras/);
+  assert.match(filtrado, /Total llamadas<\/td><td[^>]*>4<\/td>/, 'el equipo no cambia con el filtro');
+  // Respuesta sin bloque de equipo (RPC previa): la seccion no se inventa.
+  const viejo = reportFixture({ asesoras: [advisor('Ana', 'a', 1)] });
+  await viejo.context.loadReporteDiario();
+  assert.doesNotMatch(viejo.element('reporteAuto').innerHTML, /Totales de las asesoras/);
+});
 test('CSV del reporte v2 exporta columnas nuevas y totaliza los bloques visibles', async () => {
   const a = { ...advisor('Ana', 'a', 2), procedencia: { WhatsApp: 1, 'Facebook/Instagram': 2, CogniTalking: 3, 'Directo o Referido': 4, Otros: 5 }, llamadas: { del_dia: 1, data_dura: 2, llamada_whatsapp: 3, total: 6 }, citas: { agendados_dia: 1, agendados_data_dura: 2, total_agendados: 3, visitas: 4, no_asistieron: 5, canceladas: 6, reprogramadas: 7 }, inscritos: { del_dia: 1, data_dura: 2, total: 3 } };
   const f = reportFixture({ asesoras: [a, { ...a, autor_name: 'Bea', autor_user_id: 'b' }] }); await f.context.loadReporteDiario(); f.context.exportReporteDiarioCSV();
@@ -2272,7 +2552,9 @@ test('CSV reporte: separa citas nuevas y reprogramadas y suma las columnas visib
   const rows = decodeCSV(new TextDecoder().decode(await f.downloads[0].blob.arrayBuffer()).slice(1));
   const headers = rows[4], total = rows.at(-1), col = n => Number(total[headers.indexOf(n)]);
   // Detalle: nuevos y resto son una particion del total.
-  assert.equal(headers.length, 36); assert.equal(total.length, 36);
+  assert.equal(headers.length, 35); assert.equal(total.length, 35);
+  assert.equal(headers.includes('CogniTalking'), false, 'medio retirado sin columna propia');
+  assert.equal(col('Otros'), 4, 'Otros absorbe CogniTalking (1+1 por asesora)');
   assert.equal(col('Gestiones realizadas'), 2); assert.equal(col('Citas nuevas Doral'), 2); assert.equal(col('Citas nuevas Data Dura Weston'), 2);
   assert.equal(col('Total citas nuevas'), 4); assert.equal(col('Citas reprogramadas hoy'), 6); assert.equal(col('Reprogramadas'), 2);
   assert.equal(headers.includes('Inscritos del día'), false, 'inscripciones fuera del CSV diario');

@@ -52,6 +52,14 @@ test('medios: top 6 por frecuencia con fallback Directo/Otro', () => {
   assert.deepEqual(series.medios.counts, [2, 2, 1]);
 });
 
+test('medios retirados del negocio cuentan en Directo/Otro sin nombre propio', () => {
+  const rows = [lead(), lead({ Mes: 'MARZO', Fecha: '5/3/2026', 'Medio': 'Cognitalkign' })];
+  const { series } = seriesFor(rows);
+  assert.equal(series.medios.labels.some(l => /cogni/i.test(l)), false, 'el nombre no aparece');
+  assert.deepEqual(series.medios.labels, ['Facebook', 'Directo/Otro']);
+  assert.deepEqual(series.medios.counts, [1, 1]);
+});
+
 test('asesores: regla Sin Asignar oculto salvo total > 2, orden por inscritos', () => {
   const { series } = seriesFor();
   // 'Sin Asignar' tiene total 1 y queda fuera; Ana/Beto empatan a 1 inscrito

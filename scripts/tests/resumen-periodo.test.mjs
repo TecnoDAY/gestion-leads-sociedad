@@ -53,6 +53,20 @@ test('resumen por periodo: total, fechas invalidas y catalogos activos', () => {
   assert.equal(s.totales.matriz, 2);
 });
 
+test('resumen por periodo: medio retirado del negocio se agrupa en Otros sin perder conteo', () => {
+  const cats = { medio: [{ value: 'Cognitalkign', active: true }, { value: 'Facebook', active: true }], campana: [], gestion: [] };
+  const filas = [
+    { id: 1, Medio: 'Cognitalkign', 'Campaña': 'Kids', GESTION: 'INSCRITO', Fecha: '10/2/2026' },
+    { id: 2, Medio: 'Cognitalking', 'Campaña': 'Kids', GESTION: 'INSCRITO', Fecha: '11/2/2026' },
+    { id: 3, Medio: 'Facebook', 'Campaña': 'Kids', GESTION: 'INSCRITO', Fecha: '12/2/2026' },
+  ];
+  const s = buildPeriodSummary(filas, cats, '2026-02-01', '2026-02-28');
+  assert.equal(s.total, 3);
+  assert.equal(s.medios.some(r => /cogni/i.test(r.label)), false, 'el nombre no aparece en el reporte');
+  assert.deepEqual(s.medios.map(r => [r.label, r.count]), [['Facebook', 1], ['Otros', 2], ['Sin definir', 0]]);
+  assert.equal(s.medios.reduce((t, r) => t + r.count, 0), s.total, 'los conteos no se pierden');
+});
+
 test('matriz gestion x campana coherente con los conteos por celda', () => {
   const s = buildPeriodSummary(leads, catalogs, '2026-02-01', '2026-02-28');
   assert.deepEqual(s.matriz.campanas, ['Kids', 'Sin definir', 'Verano']);
@@ -87,6 +101,7 @@ const actividad = {
   desde: '2026-02-01', hasta: '2026-02-28',
   gestiones: {
     total_eventos: 5, leads_unicos: 3, agendados_normales: 2, agendados_data_dura: 1,
+    inscripciones_realizadas_normales: 1, inscripciones_realizadas_data_dura: 0,
     inscritos_normales: 1, inscritos_data_dura: 0,
     por_estado: [
       { label: 'INSCRITO', eventos: 2, leads: 1 },
@@ -110,6 +125,24 @@ test('validatePeriodoActividad aprueba una respuesta coherente y falla alterada'
   assert.throws(() => validatePeriodoActividad(malEstado, '2026-02-01', '2026-02-28'), /actividad del período/);
 });
 
+test('actividad: altas por clase de fechas pueden superar a la etiqueta del evento', () => {
+  // Datos reales de octubre 2026: 3 altas Data Dura por fecha de ingreso
+  // (Maislen, Yuri, Jeannine) frente a 1 sola gestion con etiqueta Data.
+  // El validador no debe cruzar clasificaciones distintas.
+  const octubre = {
+    ...actividad, desde: '2026-10-01', hasta: '2026-10-31',
+    gestiones: {
+      ...actividad.gestiones, leads_unicos: 13,
+      inscripciones_realizadas_normales: 1, inscripciones_realizadas_data_dura: 3,
+      inscritos_normales: 12, inscritos_data_dura: 1,
+    },
+  };
+  assert.equal(validatePeriodoActividad(octubre, octubre.desde, octubre.hasta), octubre);
+  // La cota si vale sobre la suma: las altas son un subconjunto de los gestionados.
+  const excedida = { ...octubre, gestiones: { ...octubre.gestiones, inscritos_normales: 2, inscritos_data_dura: 1 } };
+  assert.throws(() => validatePeriodoActividad(excedida, octubre.desde, octubre.hasta), /actividad del período/);
+});
+
 test('csv del periodo: cabecera, generado y excluidos en orden', () => {
   const s = buildPeriodSummary(leads, catalogs, '2026-02-01', '2026-02-28');
   const lines = periodoCsvLines(s, actividad, '2026-10-13');
@@ -122,12 +155,12 @@ test('csv del periodo: cabecera, generado y excluidos en orden', () => {
 test('csv del periodo: tres bloques de resumen con TOTAL y % via periodoPct', () => {
   const s = buildPeriodSummary(leads, catalogs, '2026-02-01', '2026-02-28');
   const texto = periodoCsvLines(s, actividad, '2026-10-13');
-  const iMedios = texto.findIndex(t => t.includes('Resumen general de leads por entrada (Medio)'));
+  const iMedios = texto.findIndex(t => t.includes('Captación por medio · leads ingresados'));
   assert.ok(iMedios > 0);
   // la fila de cabecera Categoría/Leads/% y el TOTAL cierran cada bloque
   assert.ok(texto[iMedios + 1].includes('Categoría'));
   assert.ok(texto.slice(iMedios, iMedios + 6).some(t => t === [csvReporteField('TOTAL'), csvReporteField(s.total), csvReporteField(periodoPct(s.total, s.total))].join(',')));
-  const iMatriz = texto.findIndex(t => t.includes('Matriz gestión actual × campaña'));
+  const iMatriz = texto.findIndex(t => t.includes('Matriz estado actual × campaña · leads ingresados'));
   assert.ok(iMatriz > iMedios);
   // por_estado sale ordenado alfabeticamente: AGENDADO C antes que INSCRITO
   const iPorEstado = texto.findIndex(t => t.includes('Gestiones por estado'));

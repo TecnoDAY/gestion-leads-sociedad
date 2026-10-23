@@ -6,8 +6,9 @@
  */
 
 import { compareAlphaEs, compareLeadIdsDescending, consolidateLeadsById, escapeAttr, escapeHtml, getField, miamiToday, sortAlphaEs } from './helpers.js';
+import { programaRequiereDetalle } from './inscripciones.js';
 import { programaPorId } from './inscripciones.js';
-import { MONTH_CHRONO, parseFechaLead } from './reportes.js';
+import { MONTH_CHRONO, medioVisible, parseFechaLead } from './reportes.js';
 
 /**
  * Orden de un catalogo de meses: cronologico canonico; valores no reconocidos
@@ -399,7 +400,7 @@ export function filaLeadHtml(lead, { leadId, origin, isAdmin }) {
   const nombre = getField(lead, 'Nombre') || 'Sin Nombre';
   const telefono = getField(lead, 'Telefono');
   const campana = getField(lead, 'Campaña');
-  const medio = getField(lead, 'Medio');
+  const medio = medioVisible(getField(lead, 'Medio'));
   const gestion = getField(lead, 'GESTION') || 'Información';
   const agente = getField(lead, 'Agente ') || getField(lead, 'Agente') || '-';
   const badgeHtml = badgeGestionHtml(gestion);
@@ -408,7 +409,8 @@ export function filaLeadHtml(lead, { leadId, origin, isAdmin }) {
           <td class="px-3.5 py-3 font-mono text-[11px] text-slate-400 tabular-nums">#${leadId}</td>
           <td class="px-3.5 py-3 text-slate-300">
             <div class="font-medium text-white">${escapeHtml(fecha || '-')}</div>
-            <div class="text-[11px] text-slate-500">${escapeHtml(mes || '')}</div>
+             <div class="text-[11px] text-slate-500">${escapeHtml(mes || '')}</div>
+             ${Object.hasOwn(lead, 'FECHA INSCRIPCION') ? `<div class="text-[11px] text-indigo-300">${escapeHtml(lead['FECHA INSCRIPCION'] ? 'Inscripción: ' + lead['FECHA INSCRIPCION'] : 'Fecha de inscripción pendiente')}</div>` : ''}
           </td>
           <td class="px-3.5 py-3">
             <div class="flex flex-col gap-1">
@@ -462,6 +464,54 @@ export function tablaVaciaLeadsHtml() {
             <button type="button" data-ev="click:resetAllFilters()">Limpiar filtros</button>
           </td>
         </tr>`;
+}
+
+/** Tarjeta movil de un lead; reutiliza datos y acciones de la tabla. */
+export function tarjetaLeadMovilHtml(lead, { leadId, origin, isAdmin }) {
+  const originBadge = origin === 'historico'
+    ? '<span class="text-[11px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold shrink-0">2025</span>'
+    : '';
+  const nombre = getField(lead, 'Nombre') || 'Sin Nombre';
+  const gestion = getField(lead, 'GESTION') || 'Información';
+  const badgeHtml = badgeGestionHtml(gestion);
+  const campana = getField(lead, 'Campaña') || '-';
+  const medio = medioVisible(getField(lead, 'Medio')) || '-';
+  const agente = getField(lead, 'Agente ') || getField(lead, 'Agente') || '-';
+  const fecha = getField(lead, 'Fecha') || '-';
+  const mes = getField(lead, 'Mes') || '';
+  return `<article class="mobile-lead-card" data-lead-id="${escapeAttr(leadId)}" data-lead-origin="${escapeAttr(origin)}">
+    <div class="mobile-lead-main">
+      <div class="mobile-lead-primary">
+        <button data-ev="click:openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" class="mobile-lead-name">${escapeHtml(nombre)}</button>
+        <div class="mobile-lead-badges">${badgeHtml}${originBadge}${interesadoBadge(lead)}${nuevoBadge(lead)}</div>
+      </div>
+      <div class="mobile-lead-actions">
+        <button type="button" disabled title="WhatsApp deshabilitado hasta conectar la API" aria-label="WhatsApp deshabilitado hasta conectar la API" class="mobile-lead-action mobile-lead-action--whatsapp opacity-60 cursor-not-allowed">
+          <i data-lucide="message-circle" class="w-4 h-4"></i>
+        </button>
+        <button data-ev="click:openEditLeadModal('${escapeAttr(leadId)}', '${origin}')" class="mobile-lead-action mobile-lead-action--edit" aria-label="Editar"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+        <button data-ev="click:openViewLeadModal('${escapeAttr(leadId)}', '${origin}')" class="mobile-lead-action mobile-lead-action--view" aria-label="Ver"><i data-lucide="eye" class="w-4 h-4"></i></button>
+      </div>
+    </div>
+    <div class="mobile-lead-meta">
+      <span><i data-lucide="calendar" class="w-3 h-3"></i>${escapeHtml(fecha)} ${mes ? `<span class="mobile-lead-meta-muted">${escapeHtml(mes)}</span>` : ''}</span>
+      ${Object.hasOwn(lead, 'FECHA INSCRIPCION') ? `<span>${escapeHtml(lead['FECHA INSCRIPCION'] ? 'Inscripción: ' + lead['FECHA INSCRIPCION'] : 'Fecha de inscripción pendiente')}</span>` : ''}
+      <span><i data-lucide="tag" class="w-3 h-3"></i>${escapeHtml(campana)}</span>
+      <span><i data-lucide="share-2" class="w-3 h-3"></i>${escapeHtml(medio)}</span>
+      <span><i data-lucide="user" class="w-3 h-3"></i>${escapeHtml(agente)}</span>
+      <span class="font-mono text-[11px] text-slate-400">#${leadId}</span>
+    </div>
+  </article>`;
+}
+
+/** Estado vacio para la lista movil de leads. */
+export function listaVaciaLeadsMovilHtml() {
+  return `<div class="mobile-leads-empty">
+    <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+    <p class="text-sm font-semibold">No se encontraron leads con los filtros actuales.</p>
+    <p class="mt-1 text-xs">Prueba con otros criterios o limpia los filtros para ver los registros.</p>
+    <button type="button" data-ev="click:resetAllFilters()">Limpiar filtros</button>
+  </div>`;
 }
 
 /** Texto de la info de paginacion (o 'Sin registros'). */
@@ -615,8 +665,11 @@ export function quickLeadsHtml(leads, ctx = {}) {
     } else {
       // La columna de inscripcion es siempre la misma: etiquetas, aviso de
       // pendiente, cargando o error, para que la vista no cambie de forma.
+      const programaGuardado = String(getField(lead, 'PROGRAMA INSCRIPCION') || '').trim();
+      const programaSinDetalle = programaGuardado && !programaRequiereDetalle(programaGuardado);
       let contenido;
       if (filas.length) contenido = quickInscripcionesHtml(filas, true);
+      else if (programaSinDetalle) contenido = `<span class="inline-flex items-center gap-1 rounded-full border border-indigo-500/40 bg-indigo-500/10 px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap text-indigo-300">${escapeHtml(programaGuardado)}</span>`;
       else if (estado === 'error') contenido = '<span class="text-[11px] text-rose-300">No se pudieron cargar las inscripciones</span> <button type="button" data-quick-action="retry-inscripciones" class="rounded-lg border border-slate-600 px-2 py-1 font-semibold text-slate-300 hover:bg-slate-700 cursor-pointer">Reintentar</button>';
       else if (estado === 'cargando') contenido = '<span class="text-[11px] text-slate-400">Cargando…</span>';
       else contenido = '<span class="text-[11px] text-amber-300">Inscripción pendiente de completar</span>';
@@ -730,7 +783,7 @@ export function bloqueRepetidosHtml(items, finalOrigin, leadId) {
                   ${yearBadge}
                   ${esActual ? '<span class="text-[11px] uppercase px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-semibold">Este lead</span>' : ''}
                 </div>
-                <div class="text-[11px] text-slate-400 truncate">${escapeHtml(getField(l, 'Campaña') || '-')} · ${escapeHtml(getField(l, 'Medio') || '-')}</div>
+                <div class="text-[11px] text-slate-400 truncate">${escapeHtml(getField(l, 'Campaña') || '-')} · ${escapeHtml(medioVisible(getField(l, 'Medio')) || '-')}</div>
                 <div class="text-[11px] text-slate-400">Agente: ${escapeHtml(getField(l, 'Agente ') || '-')}</div>
                 <div>${badgeGestionHtml(getField(l, 'GESTION'))}</div>
                 ${obs ? `<p class="text-[11px] text-slate-500 leading-snug">${escapeHtml(obs)}</p>` : ''}
@@ -844,7 +897,7 @@ export function fichaLeadHtml(lead, ctx) {
 
           <div class="lead-detail-card">
             <span class="flex items-center gap-1.5 text-[11px] uppercase text-slate-500 font-semibold block"><i data-lucide="radio" class="w-3 h-3 shrink-0"></i>Medio</span>
-            <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(getField(lead, 'Medio') || '-')}</span>
+            <span class="lead-detail-value font-medium mt-0.5 block">${escapeHtml(medioVisible(getField(lead, 'Medio')) || '-')}</span>
           </div>
 
           <div class="lead-detail-card">
@@ -1050,6 +1103,8 @@ if (typeof window !== 'undefined') {
   window.badgeGestionHtml = badgeGestionHtml;
   window.filaLeadHtml = filaLeadHtml;
   window.tablaVaciaLeadsHtml = tablaVaciaLeadsHtml;
+  window.tarjetaLeadMovilHtml = tarjetaLeadMovilHtml;
+  window.listaVaciaLeadsMovilHtml = listaVaciaLeadsMovilHtml;
   window.infoPaginacion = infoPaginacion;
   window.rangoPaginacion = rangoPaginacion;
   window.controlesPaginacionHtml = controlesPaginacionHtml;

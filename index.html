@@ -8,6 +8,12 @@
   <!-- CRM privado: no debe indexarse ni rastrearse -->
   <meta name="robots" content="noindex, nofollow" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#4f46e5" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
   <meta property="og:title" content="Gestión de Leads 2026 — Sociedad Actoral" />
   <meta property="og:description" content="Dashboard analítico con matriz cruzada, KPIs en tiempo real y seguimiento de leads para Sociedad Actoral." />
   <meta property="og:type" content="website" />
@@ -108,6 +114,11 @@
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="statusDot"></span>
           <span id="statusText" class="hidden md:inline">Actualizado</span>
         </div>
+
+        <!-- App / notificaciones -->
+        <button id="btnApp" data-ev="click:openAppModal()" title="Instalar la app y notificaciones" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer">
+          <i data-lucide="smartphone" class="w-4 h-4"></i>
+        </button>
 
         <!-- Refresh Button -->
         <button id="btnRefresh" data-ev="click:refreshLeadsData()" title="Refrescar datos de Supabase" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer">
@@ -222,7 +233,7 @@
              <div class="flex flex-wrap items-center gap-2">
                <span class="dashboard-eyebrow"><i data-lucide="calendar-range" class="w-3.5 h-3.5"></i> Análisis por período</span>
                <h1 class="text-xl font-bold text-indigo-900">Reporte por período</h1>
-               <p class="text-sm text-slate-600">Leads activos por fecha de entrada, desde y hasta inclusive.</p>
+               <p class="text-sm text-slate-600">Inscripciones realizadas, captación de leads y actividad del equipo, desde y hasta inclusive.</p>
              </div>
              <div class="flex flex-wrap gap-2 items-end">
                <label class="text-xs">Desde <input id="periodoDesde" type="date" data-ev="change:loadReportePeriodo()" class="block mt-0.5"></label>
@@ -233,8 +244,9 @@
            </div>
            <details class="mt-1 text-xs text-slate-500">
              <summary class="cursor-pointer select-none hover:text-indigo-700">Cómo se calcula este reporte</summary>
-             <p class="mt-1"><strong>Leads por fecha de entrada:</strong> leads activos cuya Fecha de entrada cayó entre Desde y Hasta (incluidos). La gestión que se muestra es la actual del lead, no la que tenía al cerrar el período.</p>
-             <p class="mt-1"><strong>Actividad realizada en el período:</strong> gestiones registradas entre las fechas elegidas y citas contadas por su fecha programada (Miami).</p>
+             <p class="mt-1"><strong>Inscripciones realizadas en el período:</strong> personas que pasaron a Inscrito o Inscrito Data Dura entre las fechas, según el historial de gestiones. Cada persona cuenta una vez (su última entrada registrada en el rango); una baja o archivo posterior no la elimina. La matriz usa la campaña actual del lead.</p>
+             <p class="mt-1"><strong>Leads por fecha de entrada:</strong> captación. Leads activos cuya Fecha de entrada cayó entre Desde y Hasta (incluidos). La gestión que se muestra es la actual del lead, no la que tenía al cerrar el período.</p>
+             <p class="mt-1"><strong>Actividad realizada en el período:</strong> gestiones registradas entre las fechas elegidas y citas contadas por su fecha programada (Miami). Distingue inscripciones realizadas (altas) de gestiones hechas estando inscrito.</p>
            </details>
          </header>
          <div class="period-presets report-presets text-sm flex flex-wrap gap-2" aria-label="Rangos de calendario (Miami)">
@@ -244,9 +256,10 @@
            <button type="button" data-ev="click:setPeriodoPreset('mes')" class="border border-slate-300 rounded px-3 py-1.5 text-xs">Mes actual hasta hoy (Miami)</button>
          </div>
          <p id="periodoAviso" role="status" aria-live="polite" class="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800"></p>
-         <div id="periodoBody" class="space-y-4"></div>
+         <div id="periodoInscripciones" class="space-y-4" aria-label="Inscripciones realizadas en el período"></div>
+         <div id="periodoBody" class="space-y-4" aria-label="Captación y estado actual de los leads ingresados"></div>
          <div id="periodoActividad" class="space-y-4" aria-label="Actividad realizada en el período"></div>
-          <div id="periodoInscripciones" class="space-y-4" aria-label="Inscripciones por programa y nivel"></div>
+         <div id="periodoProgramas" class="space-y-4" aria-label="Detalle de personas inscritas según historial"></div>
       </section>
     </div>
 
@@ -413,6 +426,10 @@
           <select id="filterMes" data-ev="change:applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
             <option value="">Todos los meses</option>
           </select>
+          <div id="filterInscripcionAnioBox" class="hidden mt-2">
+            <label for="filterInscripcionAnio" class="block text-xs text-slate-400 mb-1">Año de inscripción</label>
+            <input id="filterInscripcionAnio" type="number" min="1900" max="9999" step="1" data-ev="change:applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100">
+          </div>
         </div>
 
         <!-- Filtro Campaña -->
@@ -478,6 +495,7 @@
         </div>
       </div>
       <p class="mt-1 text-[11px] text-slate-500">El rango busca leads gestionados en esas fechas; «Estatus actual» muestra cómo están hoy. Las citas creadas por día se consultan en el reporte diario.</p>
+      <p id="inscripcionFilterScope" role="status" class="text-xs text-indigo-300 hidden"></p>
     </section>
 
     <!-- DASHBOARD ANALÍTICO - MATRIZ CRUZADA (GESTIÓN VS CAMPAÑAS) -->
@@ -547,7 +565,7 @@
       </div>
 
       <!-- Data Table -->
-      <div id="leadsTableViewport" class="overflow-x-auto min-h-[380px]">
+      <div id="leadsTableViewport" class="overflow-x-auto min-h-[380px] hidden md:block">
         <table id="leadsTable" class="w-full text-left text-xs border-collapse">
           <thead class="bg-slate-950/70 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800 sticky top-0 z-10">
             <tr>
@@ -567,6 +585,9 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Lista movil de leads -->
+      <div id="mobileLeadsList" class="md:hidden hidden space-y-3"></div>
 
       <!-- Pagination Footer -->
       <div class="leads-pagination p-3.5 border-t border-slate-800 bg-slate-900/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
@@ -1067,7 +1088,14 @@
         </form>
         <button type="button" data-ev="click:handlePasswordReset()" class="mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer self-start">¿Olvidaste tu contraseña?</button>
         <p id="loginStatus" role="status" aria-live="polite" class="mt-5 text-xs text-slate-600">La cuenta debe estar autorizada por un administrador.</p>
-        <p class="mt-7 pt-5 border-t border-slate-200 text-[11px] leading-relaxed text-slate-600">El uso de este panel está sujeto a la <a href="/privacidad.html" class="text-indigo-700 underline hover:text-indigo-900">política de privacidad</a>.</p>
+        <div class="mt-5 pt-5 border-t border-slate-200">
+          <p class="text-xs font-semibold text-slate-700 mb-2">Instala la app en tu teléfono</p>
+          <div class="flex items-center gap-3">
+            <img id="loginQr" src="/qr-instalar.png" alt="Código QR para instalar la aplicación" class="rounded-lg border border-slate-200 bg-white p-1.5" width="96" height="96" />
+            <p class="text-[11px] leading-relaxed text-slate-600">Escanea este código con la cámara de tu Android para abrir el CRM e instalarlo.</p>
+          </div>
+        </div>
+        <p class="mt-5 pt-5 border-t border-slate-200 text-[11px] leading-relaxed text-slate-600">El uso de este panel está sujeto a la <a href="/privacidad.html" class="text-indigo-700 underline hover:text-indigo-900">política de privacidad</a>.</p>
       </div>
     </div>
   </div>
@@ -1347,7 +1375,6 @@
               <option value="Llamada">Llamada</option>
               <option value="Llamada Data Dura">Llamada Data Dura</option>
               <option value="Llamada y WhatsApp">Llamada WhatsApp</option>
-              <option value="Visita Conservatorio">Visita Conservatorio</option>
               <option value="WhatsApp" selected>WhatsApp</option>
             </select>
           </div>
@@ -1492,7 +1519,6 @@
               <option value="Llamada">Llamada</option>
               <option value="Llamada Data Dura">Llamada Data Dura</option>
               <option value="Llamada y WhatsApp">Llamada WhatsApp</option>
-              <option value="Visita Conservatorio">Visita Conservatorio</option>
               <option value="WhatsApp">WhatsApp</option>
             </select>
           </div>
@@ -1646,6 +1672,57 @@
     </div>
   </div>
 
+  <!-- ================= MODAL APP / NOTIFICACIONES ================= -->
+  <div id="modalApp" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/70 p-4">
+    <div class="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-white">Instalar app y notificaciones</h2>
+        <button data-ev="click:closeAppModal()" class="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <p class="text-sm text-slate-300 mb-4">Escanea el código o instala la aplicación en este teléfono. Requiere conexión a internet.</p>
+      <div class="flex justify-center mb-4">
+        <img id="appQr" src="/qr-instalar.png" alt="Código QR para instalar la aplicación" class="rounded-xl border border-slate-700 bg-white p-2" width="180" height="180" />
+      </div>
+      <div class="space-y-3">
+        <button id="btnInstallApp" data-ev="click:installApp()" class="w-full px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Instalar en este dispositivo</button>
+        <button id="btnEnablePush" data-ev="click:enablePushNotifications()" class="w-full px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold">Activar notificaciones</button>
+        <button id="btnDisablePush" data-ev="click:disablePushNotifications()" class="w-full px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300">Desactivar notificaciones</button>
+        <p id="appStatus" class="text-xs text-slate-400 text-center"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= BARRA INFERIOR MOVIL ================= -->
+  <nav id="bottomNav" class="fixed bottom-0 inset-x-0 z-40 hidden border-t border-slate-700/80 bg-slate-900/95 backdrop-blur px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+    <div class="mx-auto grid max-w-md grid-cols-4 gap-1">
+      <button type="button" data-ev="click:switchTab('dashboard')" class="bottom-nav-button" data-bottom-tab="dashboard"><i data-lucide="home" class="w-5 h-5"></i><span>Inicio</span></button>
+      <button type="button" data-ev="click:switchTab('leads')" class="bottom-nav-button" data-bottom-tab="leads"><i data-lucide="users" class="w-5 h-5"></i><span>Leads</span></button>
+      <button type="button" data-ev="click:switchTab('citas')" class="bottom-nav-button" data-bottom-tab="citas"><i data-lucide="calendar-check" class="w-5 h-5"></i><span>Citas</span></button>
+      <button type="button" data-ev="click:openMoreMenu()" class="bottom-nav-button" data-bottom-tab="more"><i data-lucide="menu" class="w-5 h-5"></i><span>Más</span></button>
+    </div>
+  </nav>
+
+  <!-- ================= MENU MAS MOVIL ================= -->
+  <div id="modalMore" class="fixed inset-0 z-50 hidden items-end justify-center bg-slate-950/70 p-0 sm:items-center sm:p-4" data-ev="click:closeMoreMenu()">
+    <div class="w-full max-w-md rounded-t-2xl border border-slate-700 bg-slate-900 p-4 shadow-2xl sm:rounded-2xl">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-base font-bold text-white">Más opciones</h2>
+        <button type="button" data-ev="click:closeMoreMenu()" class="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="grid gap-2">
+        <button type="button" data-ev="click:switchTab('reporte')" class="more-menu-button"><i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Reportes</span></button>
+        <button type="button" data-ev="click:switchTab('campanas')" class="more-menu-button"><i data-lucide="megaphone" class="w-4 h-4"></i><span>Campañas</span></button>
+        <button type="button" data-ev="click:switchTab('historico')" class="more-menu-button"><i data-lucide="line-chart" class="w-4 h-4"></i><span>Análisis histórico</span></button>
+        <button type="button" data-ev="click:openAppModal()" class="more-menu-button"><i data-lucide="smartphone" class="w-4 h-4"></i><span>App y notificaciones</span></button>
+        <button type="button" data-ev="click:openHelpModal()" class="more-menu-button"><i data-lucide="circle-help" class="w-4 h-4"></i><span>Centro de ayuda</span></button>
+        <button type="button" id="btnMoreAdminUsers" data-admin-only data-ev="click:toggleAdminUsers(true)" class="more-menu-button hidden"><i data-lucide="users" class="w-4 h-4"></i><span>Usuarios</span></button>
+        <button type="button" id="btnMoreCatalogs" data-admin-only data-ev="click:openCatalogsModal()" class="more-menu-button hidden"><i data-lucide="list" class="w-4 h-4"></i><span>Catálogos</span></button>
+        <button type="button" data-ev="click:cycleTheme()" class="more-menu-button"><i data-lucide="moon" class="w-4 h-4"></i><span>Cambiar tema</span></button>
+        <button type="button" data-ev="click:handleSignOut()" class="more-menu-button text-rose-300"><i data-lucide="log-out" class="w-4 h-4"></i><span>Salir</span></button>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= TOAST NOTIFICATION CONTAINER ================= -->
   <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
@@ -1656,9 +1733,18 @@
     // -------------------------------------------------------------
     const SUPABASE_URL = "https://hkkuyomlcqyxtzblowle.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_bcFmG6jsAW6lo2WJn3L7BA_BKtiIsmR"; // public/publishable key; never a service-role key
+    const VAPID_PUBLIC_KEY = "BEFR2BUOlY-qv8HBzxxGq08AgYy5o2AHSQAB4QDff0ioy-YJ_E6ZrxJcBqNZla0579UC1Lzy-8Bi9_3wRqZnGjU";
 
     let supabaseClient = null;
     let isSupabaseLive = false;
+    // ---- PWA / instalacion ----
+    let deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', (event) => { event.preventDefault(); deferredInstallPrompt = event; });
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((err) => console.warn('No se pudo registrar el service worker:', err));
+      });
+    }
     let currentUser = null;
     let currentAccess = null;
     let isAdmin = false;
@@ -2138,6 +2224,7 @@
         setAppAuthenticated(user, resolvedAccess);
         const valid = () => generation === sessionGeneration && currentUser?.id === user.id && currentAccess?.updated_at === resolvedAccess.updated_at;
         document.body.classList.add('session-ready');
+        document.getElementById('bottomNav')?.classList.add('is-visible');
         document.getElementById('modalLogin')?.classList.add('hidden');
         document.getElementById('modalLogin')?.classList.remove('flex');
         startAgentActivityTracking();
@@ -2321,6 +2408,7 @@
     async function handleSignOut() {
       try { await endAgentSessionLocally('manual_logout'); } catch (_) { /* cierre best-effort: no bloquea el flujo */ }
       clearSessionState();
+      document.getElementById('bottomNav')?.classList.remove('is-visible');
       if (supabaseClient) try { await supabaseClient.auth.signOut({ scope: 'local' }); } catch (_) { /* cierre local de todos modos */ }
     }
 
@@ -2661,6 +2749,11 @@
       }
       document.querySelectorAll('[data-sidebar-tab]').forEach(button => {
         button.classList.toggle('is-active', button.dataset.sidebarTab === tab);
+      });
+      const moreTabs = new Set(['reporte', 'campanas', 'historico']);
+      document.querySelectorAll('#bottomNav [data-bottom-tab]').forEach(button => {
+        const isActive = button.dataset.bottomTab === tab || (button.dataset.bottomTab === 'more' && moreTabs.has(tab));
+        button.classList.toggle('is-active', isActive);
       });
       if (window.lucide) lucide.createIcons();
     }
@@ -3869,6 +3962,30 @@
       return leads;
     }
 
+    // Solo ids/fechas derivados en SQL; nunca se descarga el historial completo.
+    async function loadLeadsByInscripcionRange(desde = null, hasta = null) {
+      const generation = sessionGeneration, uid = currentUser?.id, access = currentAccess?.updated_at;
+      const valid = () => generation === sessionGeneration && uid === currentUser?.id && access === currentAccess?.updated_at && currentAccess?.activo;
+      const key = `inscripcion|${desde}|${hasta}|${leadDataRevision}|${generation}|${uid}|${access}`;
+      if (key === mesRangeKey) return mesRangeLeads;
+      const { data, error } = await fetchPagedResult(() => supabaseClient.rpc('crm_inscripciones_historial', {
+        p_desde: desde, p_hasta: hasta, p_actuales: true
+      }));
+      if (!valid()) return null;
+      if (error) throw error;
+      const fechas = new Map(data.map(f => [String(f.id), { fecha: f.fecha_inscripcion, clase: String(f.clase || '').toUpperCase() }]));
+      const result = await fetchRowsByIds('leads', '*', data.map(f => f.id), { excludeArchived: true });
+      if (!valid()) return null;
+      if (result.error) throw result.error;
+      const leads = consolidateLeadsById(result.data).map(l => ({ ...l,
+        'FECHA INSCRIPCION': fechas.get(String(l.id))?.fecha ?? null,
+        'CLASE INSCRIPCION': fechas.get(String(l.id))?.clase || '',
+      }));
+      mesRangeKey = key;
+      mesRangeLeads = leads;
+      return leads;
+    }
+
     async function applyFilters() {
       clearTimeout(filterDebounceTimer);
       // Invalidar cualquier consulta del rango aún en vuelo
@@ -3885,6 +4002,26 @@
       const dashHasta = document.getElementById('dashHasta')?.value || '';
       const errEl = document.getElementById('dashRangeError');
       const scopeEl = document.getElementById('dashRangeScope');
+      const inscritos = esInscritoGestion(gestion);
+      if (inscritos) {
+        // Puede haber inscripciones en un mes sin ningun ingreso reciente.
+        const selectMes = document.getElementById('filterMes');
+        const existentes = new Set(Array.from(selectMes?.options || []).map(o => String(o.value || '').toUpperCase()));
+        MONTH_CHRONO.forEach(m => {
+          if (!selectMes || existentes.has(m)) return;
+          const opt = document.createElement('option');
+          opt.value = m.charAt(0) + m.slice(1).toLowerCase(); opt.textContent = opt.value;
+          selectMes.appendChild(opt);
+        });
+      }
+      const inscripcionScope = document.getElementById('inscripcionFilterScope');
+      const anioEl = document.getElementById('filterInscripcionAnio');
+      if (anioEl && !anioEl.value) anioEl.value = miamiToday().slice(0, 4);
+      document.getElementById('filterInscripcionAnioBox')?.classList.toggle('hidden', !inscritos || !mes);
+      if (inscripcionScope) {
+        inscripcionScope.classList.toggle('hidden', !inscritos);
+        inscripcionScope.textContent = inscritos ? 'Por fecha de inscripción del historial. Inscrito agrupa a quienes ingresaron en ese mismo mes; Data Dura, a quienes ingresaron antes. Sin fecha de ingreso verificable no aparecen en ninguno de los dos. El histórico 2025 no tiene este historial.' : '';
+      }
 
       // Validar rango de fechas de gestión
       let gestionBase = null; // conjunto global temporal: leads con gestión en el período
@@ -3926,7 +4063,31 @@
       // Con rango de gestión activo el mes se aplica localmente sobre ese
       // conjunto (una sola descarga); en histórico la colección ya es completa.
       let mesBase = null;
-      if (mes !== '' && gestionBase === null && dataSource !== 'historico') {
+      if (inscritos) {
+        if (dataSource === 'historico') {
+          showToast('El histórico 2025 no tiene historial verificable de inscripción. Elige Leads actuales.', 'warning');
+          filteredLeads = []; currentPage = 1; updateKpis(); renderMatrix(); renderTable();
+          return;
+        }
+        try {
+          if (!supabaseClient || !currentUser) throw new Error('No se pudo verificar la sesión.');
+          const rango = mes ? inscripcionMesRange(mes, anioEl?.value || miamiToday().slice(0, 4)) : [null, null];
+          mesBase = await loadLeadsByInscripcionRange(...rango);
+          if (!valid() || mesBase === null) return;
+          if (gestionBase !== null) {
+            const gestionIds = new Set(gestionBase.map(l => String(l.id)));
+            mesBase = mesBase.filter(l => gestionIds.has(String(l.id)));
+            gestionBase = null;
+          }
+        } catch (error) {
+          if (!valid()) return;
+          filteredLeads = []; currentPage = 1; updateKpis(); renderMatrix(); renderTable();
+          const message = 'No se pudieron verificar las fechas de inscripción. No se usa el mes de ingreso como sustituto. ' + (error?.message || '');
+          if (inscripcionScope) { inscripcionScope.classList.remove('hidden'); inscripcionScope.textContent = message; }
+          showToast(message, 'error');
+          return;
+        }
+      } else if (mes !== '' && gestionBase === null && dataSource !== 'historico') {
         if (!supabaseClient || !currentUser) {
           showToast('No se pudo consultar la base de datos. Verifica la sesión.', 'error');
           return; // nada parcial presentado como global
@@ -3949,7 +4110,7 @@
       const baseLeads = gestionBase !== null
         ? gestionBase
         : mesBase !== null
-          ? (dataSource === 'todos' ? [...mesBase, ...allHistorico] : mesBase)
+          ? (dataSource === 'todos' && !inscritos ? [...mesBase, ...allHistorico] : mesBase)
           : getVisibleBaseLeads();
 
       filteredLeads = baseLeads.filter(lead => {
@@ -3963,10 +4124,17 @@
             return false;
           }
         }
-        if (mes && getField(lead, 'Mes').trim() !== mes) return false;
+        if (!inscritos && mes && getField(lead, 'Mes').trim() !== mes) return false;
         if (campana && getField(lead, 'Campaña').trim() !== campana) return false;
         if (medio && getField(lead, 'Medio').trim() !== medio) return false;
-        if (gestion && getField(lead, 'GESTION').trim() !== gestion) return false;
+        if (inscritos) {
+          // Regla compartida con el reporte: la clase sale de comparar el
+          // ingreso con la fecha de inscripcion, no de la etiqueta guardada.
+          // Sin clase verificable no se atribuye a ninguno de los dos filtros.
+          const clase = String(getField(lead, 'CLASE INSCRIPCION') || '').trim().toUpperCase();
+          const claseBuscada = gestion.toUpperCase().includes('DATA') ? 'DATA_DURA' : 'NORMAL';
+          if (!esInscritoGestion(getField(lead, 'GESTION')) || clase !== claseBuscada) return false;
+        } else if (gestion && getField(lead, 'GESTION').trim().toLowerCase() !== gestion.toLowerCase()) return false;
         const agenteLead = getField(lead, 'Agente ').trim() || getField(lead, 'Agente').trim();
         if (asesora && agenteLead !== asesora) return false;
         return true;
@@ -4000,6 +4168,7 @@
     function resetAllFilters() {
       if (document.getElementById('filterSearch')) document.getElementById('filterSearch').value = '';
       if (document.getElementById('filterMes')) document.getElementById('filterMes').value = '';
+      if (document.getElementById('filterInscripcionAnio')) document.getElementById('filterInscripcionAnio').value = '';
       if (document.getElementById('filterCampana')) document.getElementById('filterCampana').value = '';
       if (document.getElementById('filterMedio')) document.getElementById('filterMedio').value = '';
       if (document.getElementById('filterGestion')) document.getElementById('filterGestion').value = '';
@@ -4383,6 +4552,8 @@
 
       if (pageItems.length === 0) {
         tbody.innerHTML = tablaVaciaLeadsHtml();
+        const mobileListEmpty = document.getElementById('mobileLeadsList');
+        if (mobileListEmpty) { mobileListEmpty.innerHTML = listaVaciaLeadsMovilHtml(); mobileListEmpty.classList.remove('hidden'); }
         updatePaginationUI(0, 0, 0, 1);
         if (window.lucide) lucide.createIcons();
         return;
@@ -4396,6 +4567,19 @@
       });
 
       tbody.innerHTML = html;
+
+      // Renderizado movil de tarjetas en paralelo.
+      const mobileList = document.getElementById('mobileLeadsList');
+      if (mobileList) {
+        let mobileHtml = '';
+        pageItems.forEach((lead, idx) => {
+          const leadId = lead.id || (startIndex + idx + 1);
+          mobileHtml += tarjetaLeadMovilHtml(lead, { leadId, origin: getLeadOrigin(lead), isAdmin });
+        });
+        mobileList.innerHTML = mobileHtml;
+        mobileList.classList.remove('hidden');
+      }
+
       updatePaginationUI(startIndex + 1, endIndex, totalItems, totalPages);
       if (window.lucide) lucide.createIcons();
     }
@@ -4627,6 +4811,7 @@
                   ? `Lead registrado, pero no se guardó ${fallos.join(' ni ')}. Revisa la ficha del lead.`
                   : (agendado ? "Lead y cita registrados con éxito" : "Lead registrado con éxito en Supabase"),
                 fallos.length ? 'warning' : 'success');
+             if (typeof notifyLeadChange === 'function') notifyLeadChange('created', data.id);
              closeNewLeadModal(true);
             populateFilterOptions();
             applyFilters();
@@ -5399,6 +5584,7 @@
               await loadLeadsData();
               if (!validRequest()) return;
             }
+            if (typeof notifyLeadChange === 'function') notifyLeadChange('updated', leadId);
             closeEditLeadModal(true);
             populateFilterOptions();
             applyFilters();
@@ -5813,12 +5999,14 @@ async function deleteLeadAppointment(id) {
         showToast("No hay registros para exportar", "warning");
         return;
       }
-      const headers = ["ID", "Mes", "Fecha", "Nombre", "Telefono", "Campaña", "Medio", "GESTION", "Ciudad", "Agente", "Observaciones"];
+      const conInscripcion = filteredLeads.some(l => Object.hasOwn(l, 'FECHA INSCRIPCION'));
+      const headers = ["ID", "Mes", "Fecha", "Nombre", "Telefono", "Campaña", "Medio", "GESTION", "Ciudad", "Agente", "Observaciones", ...(conInscripcion ? ['Fecha de inscripción (historial)'] : [])];
       const rows = filteredLeads.map(l => [
         l.id || '',
         getField(l, 'Mes'), getField(l, 'Fecha'), getField(l, 'Nombre'),
-        getField(l, 'Telefono'), getField(l, 'Campaña'), getField(l, 'Medio'),
-        getField(l, 'GESTION'), getField(l, 'Ciudad'), getField(l, 'Agente '), getField(l, 'OBSERVACIONES ')
+        getField(l, 'Telefono'), getField(l, 'Campaña'), medioVisible(getField(l, 'Medio')),
+        getField(l, 'GESTION'), getField(l, 'Ciudad'), getField(l, 'Agente '), getField(l, 'OBSERVACIONES '),
+        ...(conInscripcion ? [getField(l, 'FECHA INSCRIPCION') || 'Pendiente'] : [])
       ].map(csvReporteField));
       downloadCSV([headers.join(','), ...rows.map(r => r.join(','))].join('\n'), `Leads_Sociedad_Actoral_${miamiToday()}.csv`);
       showToast(`${filteredLeads.length.toLocaleString()} leads exportados a CSV`, "success");
@@ -5886,6 +6074,14 @@ async function deleteLeadAppointment(id) {
             <p class="font-medium text-xs">Cargando los últimos 2.000 leads desde Supabase…</p>
           </td>
         </tr>`;
+      }
+      const mobileList = document.getElementById('mobileLeadsList');
+      if (mobileList && isLoading) {
+        mobileList.innerHTML = `<div class="text-center py-12 text-slate-400">
+          <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p class="font-medium text-xs">Cargando leads…</p>
+        </div>`;
+        mobileList.classList.remove('hidden');
       }
     }
 
@@ -6153,10 +6349,13 @@ async function deleteLeadAppointment(id) {
       periodoActividadData = null;
       periodoActividadKey = '';
       periodoActividadGeneration += 1;
+      periodoInscripcionesData = null;
+      periodoInscripcionesKey = '';
+      periodoInscripcionesGeneration += 1;
       if (periodoRefreshTimer) { clearTimeout(periodoRefreshTimer); periodoRefreshTimer = null; }
       reporteVistaActiva = 'diario';
       ['periodoDesde', 'periodoHasta'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
-      ['periodoBody', 'periodoAviso', 'periodoActividad', 'periodoInscripciones'].forEach(id => document.getElementById(id)?.replaceChildren());
+      ['periodoBody', 'periodoAviso', 'periodoActividad', 'periodoInscripciones', 'periodoProgramas'].forEach(id => document.getElementById(id)?.replaceChildren());
       const select = document.getElementById('reporteVista');
       if (select) select.value = 'diario';
       document.getElementById('reportePeriodo')?.classList.add('hidden');
@@ -6171,7 +6370,8 @@ async function deleteLeadAppointment(id) {
       if (!btn) return;
       btn.disabled = !(currentUser && currentAccess?.activo && reporteVistaActiva === 'periodo' && currentMainTab === 'reporte'
         && periodoData && periodoActividadData && periodoLoadedKey && periodoLoadedKey === periodoRangeKey()
-        && periodoActividadKey === periodoLoadedKey && periodoLoadedRevision === periodoSourceRevision);
+        && periodoActividadKey === periodoLoadedKey && periodoLoadedRevision === periodoSourceRevision
+        && (isTrafficker || (periodoInscripcionesData?.historial && periodoInscripcionesKey === periodoLoadedKey)));
     }
 
     // Invalida lo calculado/subido por una mutación de leads o catálogos. Solo
@@ -6193,6 +6393,7 @@ async function deleteLeadAppointment(id) {
       if (body) body.replaceChildren();
       document.getElementById('periodoActividad')?.replaceChildren();
       document.getElementById('periodoInscripciones')?.replaceChildren();
+      document.getElementById('periodoProgramas')?.replaceChildren();
       const aviso = document.getElementById('periodoAviso');
       if (aviso) aviso.textContent = 'Datos actualizados. Recalculando…';
       if (periodoRefreshTimer) clearTimeout(periodoRefreshTimer);
@@ -6255,6 +6456,8 @@ async function deleteLeadAppointment(id) {
       const body = document.getElementById('periodoBody'), aviso = document.getElementById('periodoAviso');
       const actividadBox = document.getElementById('periodoActividad');
       if (actividadBox) actividadBox.replaceChildren();
+      document.getElementById('periodoInscripciones')?.replaceChildren();
+      document.getElementById('periodoProgramas')?.replaceChildren();
       const desde = document.getElementById('periodoDesde').value, hasta = document.getElementById('periodoHasta').value;
       body.replaceChildren();
       if (!periodoValidDate(desde) || !periodoValidDate(hasta) || desde > hasta) { aviso.textContent = 'Rango inválido: elige Desde y Hasta válidos, en orden.'; updatePeriodoCsvState(); return; }
@@ -6277,7 +6480,7 @@ async function deleteLeadAppointment(id) {
         periodoData = data;
         periodoLoadedKey = key;
         periodoLoadedRevision = sourceRevision;
-        aviso.textContent = `${desde} a ${hasta} (inclusive) · ${data.total} leads por fecha de entrada · ${data.fechas_invalidas} sin fecha válida (excluidos). Gestión actual, no histórica al cierre.`;
+        aviso.textContent = `${desde} a ${hasta} (inclusive) · Captación: ${data.total} leads ingresados por fecha de entrada · ${data.fechas_invalidas} sin fecha válida (excluidos). Gestión actual, no histórica al cierre.`;
         updatePeriodoCsvState();
         loadPeriodoActividad(desde, hasta);
         loadPeriodoInscripciones(desde, hasta);
@@ -6298,7 +6501,7 @@ async function deleteLeadAppointment(id) {
 
     // -------------------------------------------------------------
     // REPORTE DE INSCRIPCIONES POR PROGRAMA Y NIVEL
-    // RPC lead_enrollments_report (conteos) y lead_enrollments_detail (CSV).
+    // Resumen y detalle comparten las inscripciones del historial, no fechas manuales.
     // El trafficker no tiene acceso a PII: la seccion no se le muestra.
     // -------------------------------------------------------------
     async function loadPeriodoInscripciones(desde, hasta) {
@@ -6306,58 +6509,91 @@ async function deleteLeadAppointment(id) {
       periodoInscripcionesData = null;
       periodoInscripcionesKey = '';
       const box = document.getElementById('periodoInscripciones');
-      if (isTrafficker) { if (box) box.replaceChildren(); return; }
+      const boxProgramas = document.getElementById('periodoProgramas');
+      if (boxProgramas) boxProgramas.replaceChildren();
+      if (isTrafficker) { if (box) box.replaceChildren(); if (boxProgramas) boxProgramas.replaceChildren(); return; }
       if (box) box.innerHTML = '<div class="period-loading text-sm" role="status">Cargando inscripciones…</div>';
       if (!supabaseClient || !currentUser || !currentAccess?.activo || currentMainTab !== 'reporte' || reporteVistaActiva !== 'periodo') { if (box) box.replaceChildren(); return; }
       const generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at, key = `${desde}|${hasta}`;
-      const valid = () => token === periodoInscripcionesGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'reporte' && reporteVistaActiva === 'periodo' && periodoRangeKey() === key;
+      const revision = periodoSourceRevision;
+      const valid = () => token === periodoInscripcionesGeneration && revision === periodoSourceRevision && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'reporte' && reporteVistaActiva === 'periodo' && periodoRangeKey() === key;
       try {
-        const { data, error } = await supabaseClient.rpc('lead_enrollments_report', { p_desde: desde, p_hasta: hasta });
+        const historial = await supabaseClient.rpc('crm_inscripciones_resumen', { p_desde: desde, p_hasta: hasta });
         if (!valid()) return;
-        if (error) throw new Error(String(error.message || '').includes('crm_access_forbidden') ? 'Tu usuario no tiene permiso para este reporte.' : 'No se pudo cargar el reporte de inscripciones.');
-        validateInscripcionesReport(data, desde, hasta);
-        if (box) box.innerHTML = renderPeriodoInscripciones(data);
+        if (historial.error) throw new Error('No se pudo cargar el reporte de inscripciones del historial. Comprueba que la actualización de la base de datos esté aplicada.');
+        validateInscritosHistorial(historial.data, desde, hasta);
+        const detalle = await fetchPagedResult(() => supabaseClient.rpc('crm_inscripciones_detalle', { p_desde: desde, p_hasta: hasta }));
+        if (!valid()) return;
+        if (detalle.error) throw new Error('No se pudo cargar el detalle de inscritos. Actualiza e inténtalo nuevamente.');
+        validateInscritosDetalle(detalle.data, historial.data);
+        const data = { historial: historial.data };
+        if (box) box.innerHTML = renderPeriodoInscripcionesResumen(historial.data);
+        if (boxProgramas) boxProgramas.innerHTML = renderPeriodoInscritosDetalle(detalle.data);
         periodoInscripcionesData = data;
         periodoInscripcionesKey = key;
+        updatePeriodoCsvState();
       } catch (error) {
         if (!valid()) return;
         periodoInscripcionesData = null;
         periodoInscripcionesKey = '';
         if (box) box.innerHTML = `<div class="rounded border border-rose-300 bg-rose-50 p-3 text-rose-700 text-sm">${escapeHtml(error?.message || 'No se pudo cargar el reporte de inscripciones.')}</div>`;
+        updatePeriodoCsvState();
       }
     }
 
-    function renderPeriodoInscripciones(data) {
-      const metric = (label, value) => `<div><p class="text-xs text-slate-500">${escapeHtml(label)}</p><p class="text-lg font-bold text-indigo-900 tabular-nums">${value}</p></div>`;
-      const porNivel = (data.por_programa_nivel || []).map(r => `<tr><th scope="row" class="font-medium">${escapeHtml(programaEtiqueta(r.programa))}</th><td>${escapeHtml(r.nivel)}</td><td class="text-right tabular-nums">${r.personas}</td></tr>`).join('');
-      const porMes = (data.por_mes || []).map(m => `<tr><th scope="row" class="font-medium">${escapeHtml(m.mes)}</th><td class="text-right tabular-nums">${m.personas}</td><td class="text-right tabular-nums">${m.inscripciones}</td></tr>`).join('');
-      return `<section class="period-card"><div class="flex items-center justify-between gap-2 flex-wrap"><h3 class="font-bold text-indigo-900">Inscripciones por programa y nivel</h3><button type="button" id="periodoBtnInscripcionesCsv" data-ev="click:exportPeriodoInscripcionesCSV()" class="rounded bg-slate-700 text-white px-3 py-1.5 text-xs">Descargar inscripciones CSV</button></div>`
-        + `<p class="text-xs text-slate-500 mt-1">Personas inscritas (cada persona cuenta una vez, aunque esté en los dos programas) e inscripciones vigentes por programa y nivel. La fecha la declara la asesora: las que faltan quedan pendientes y no se atribuyen a ningún período.</p>`
-        + `<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">${metric('Personas inscritas', data.personas_inscritas)}${metric('Inscripciones vigentes', data.inscripciones)}${metric('Pendientes de fecha', data.pendientes_fecha)}${metric('Altas en el período', data.altas_periodo)}${metric('Bajas en el período', data.bajas_periodo)}${metric('Cambios de nivel', data.cambios_nivel_periodo)}</div>`
-        + `<div class="grid md:grid-cols-2 gap-4 mt-4"><div class="overflow-x-auto"><table class="period-table"><thead><tr><th scope="col">Programa</th><th scope="col">Nivel</th><th scope="col" class="text-right">Personas</th></tr></thead><tbody>${porNivel || '<tr><td colspan="3" class="text-xs text-slate-500">Sin inscripciones registradas.</td></tr>'}</tbody></table></div>`
-        + `<div class="overflow-x-auto"><table class="period-table"><thead><tr><th scope="col">Mes de inscripción</th><th scope="col" class="text-right">Personas</th><th scope="col" class="text-right">Inscripciones</th></tr></thead><tbody>${porMes || '<tr><td colspan="3" class="text-xs text-slate-500">Sin altas en el período.</td></tr>'}</tbody></table></div></div></section>`;
+    // Resumen de inscripciones del periodo: va al principio del reporte y
+    // comparte poblacion (personas unicas por rango) con el CSV de inscritos.
+    function renderPeriodoInscripcionesResumen(h) {
+      const revision = Number(h.revision) || 0;
+      const campanas = [...(h.por_campana || [])].sort((a, b) => compareAlphaEs(a.campana, b.campana));
+      const metric = (label, value) => `<div class="period-metric"><p class="text-xs text-slate-500">${escapeHtml(label)}</p><strong class="text-lg font-bold">${value}</strong></div>`;
+      const fila = (label, pick) => `<tr><th scope="row" class="font-medium">${escapeHtml(label)}${periodoTip('inscritoRealizada')}</th>${campanas.map(c => `<td class="text-right tabular-nums">${pick(c)}</td>`).join('')}<td class="text-right font-bold tabular-nums">${campanas.reduce((t, c) => t + pick(c), 0)}</td></tr>`;
+      const matrizHtml = campanas.length
+        ? `<div class="overflow-x-auto"><table class="period-table"><thead><tr><th scope="col">Inscripción${periodoTip('inscritoRealizada')}</th>${campanas.map(c => `<th scope="col" class="whitespace-nowrap text-right">${escapeHtml(c.campana)}${periodoTip('campanaInscrito')}</th>`).join('')}<th scope="col" class="text-right">Total</th></tr></thead><tbody>`
+          + fila('Inscrito', c => c.normales)
+          + fila('Inscrito Data Dura', c => c.data_dura)
+          + (revision ? fila('Sin clase (revisar fechas)', c => c.revision) : '')
+          + `</tbody><tfoot><tr><th scope="row">Total</th>${campanas.map(c => `<td class="text-right tabular-nums">${c.personas}</td>`).join('')}<td class="text-right font-bold tabular-nums">${h.personas_inscritas}</td></tr></tfoot></table></div>`
+        : '<p class="text-sm text-slate-500 mt-3">No se registraron inscripciones en estas fechas.</p>';
+      return `<section class="period-card"><div class="flex items-center justify-between gap-2 flex-wrap"><h3 class="font-bold text-indigo-900">Inscripciones realizadas en el período</h3><button type="button" data-ev="click:exportPeriodoInscritosHistorialCSV()" class="rounded bg-slate-700 text-white px-3 py-1.5 text-xs">Descargar inscritos CSV</button></div>`
+        + `<p class="text-xs text-slate-500 mt-1">Personas que pasaron a inscritas entre estas fechas, según el historial de gestiones. Cada persona cuenta una vez y una baja posterior no la elimina.</p>`
+        + `<div class="grid grid-cols-3 gap-3 mt-3">${metric('Personas inscritas', h.personas_inscritas)}${metric('Inscrito', h.normales)}${metric('Inscrito Data Dura', h.data_dura)}</div>`
+        + (revision ? `<p class="text-xs text-amber-600 mt-2">Incluye ${revision} inscripción${revision === 1 ? '' : 'es'} con fechas por revisar; ya están sumadas en el total.</p>` : '')
+        + `<div class="mt-4">${matrizHtml}</div></section>`;
     }
 
-    async function exportPeriodoInscripcionesCSV() {
-      if (!currentUser || !currentAccess?.activo || reporteVistaActiva !== 'periodo' || currentMainTab !== 'reporte' || !periodoData) { showToast('El reporte no está cargado. Actualiza antes de exportar.', 'warning'); return; }
-      if (isTrafficker) { showToast('Tu usuario no tiene permiso para este detalle.', 'warning'); return; }
-      const d = periodoData;
-      const btn = document.getElementById('periodoBtnInscripcionesCsv');
-      const prev = btn ? btn.textContent : '';
-      if (btn) { btn.disabled = true; btn.textContent = 'Descargando…'; }
+    function renderPeriodoInscritosDetalle(filas) {
+      const rows = filas.map(f => {
+        const fecha = f.fecha_inscripcion.split('-').reverse().join('/');
+        return `<tr><th scope="row">${escapeHtml(f.nombre || 'Sin nombre')}</th><td class="whitespace-nowrap"><time datetime="${escapeAttr(f.fecha_inscripcion)}">${escapeHtml(fecha)}</time></td><td>${escapeHtml(claseInscripcionEtiqueta(f.clase))}</td><td>${escapeHtml(f.programa || 'Sin programa registrado')}</td></tr>`;
+      }).join('');
+      return `<section class="period-card"><div class="flex items-center justify-between gap-2 flex-wrap"><h3 class="font-bold text-indigo-900">Personas inscritas en el período · Detalle</h3><button type="button" data-ev="click:exportPeriodoInscritosHistorialCSV()" class="rounded bg-slate-700 text-white px-3 py-1.5 text-xs">Descargar inscritos CSV</button></div>`
+        + `<p class="text-xs text-slate-500 mt-1">Fecha de inscripción de la persona según el historial de gestiones. El programa es el actual, no necesariamente el de la fecha de inscripción. Cada persona aparece una vez.</p>`
+        + (filas.length ? `<div class="overflow-x-auto mt-4"><table class="period-table"><thead><tr><th scope="col">Persona</th><th scope="col">Fecha de inscripción de la persona</th><th scope="col">Clasificación</th><th scope="col">Programa actual</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="text-sm text-slate-500 mt-3">No se registraron inscripciones en estas fechas.</p>')
+        + '</section>';
+    }
+
+    async function exportPeriodoInscritosHistorialCSV() {
+      const key = periodoRangeKey(), revision = periodoSourceRevision;
+      if (isTrafficker || !currentUser || !currentAccess?.activo || currentMainTab !== 'reporte' || reporteVistaActiva !== 'periodo'
+          || !periodoInscripcionesData?.historial || periodoInscripcionesKey !== key || periodoLoadedRevision !== revision) {
+        showToast('Actualiza el reporte de inscritos antes de exportar.', 'warning'); return;
+      }
+      const generation = sessionGeneration, uid = currentUser.id, access = currentAccess.updated_at;
+      const valid = () => generation === sessionGeneration && uid === currentUser?.id && access === currentAccess?.updated_at && currentAccess?.activo
+        && currentMainTab === 'reporte' && reporteVistaActiva === 'periodo' && key === periodoRangeKey() && revision === periodoSourceRevision;
+      const h = periodoInscripcionesData.historial;
       try {
-        const { data, error } = await supabaseClient.rpc('lead_enrollments_detail', { p_desde: d.desde, p_hasta: d.hasta });
-        if (error) throw error;
-        const filas = Array.isArray(data) ? data : [];
-        if (!filas.length) { showToast('No hay inscripciones para este período.', 'info'); return; }
-        const lines = inscripcionesCsvLines(filas, miamiToday());
-        downloadCSV(lines.join('\n'), `Inscripciones_Periodo_${d.desde}_${d.hasta}.csv`);
-        showToast(`${filas.length} inscripciones exportadas a CSV`, 'success');
-      } catch (e) {
-        console.warn('No se pudieron exportar las inscripciones:', e);
-        showToast('No se pudo exportar el detalle de inscripciones.', 'warning');
-      } finally {
-        if (btn) { btn.disabled = false; btn.textContent = prev || 'Descargar inscripciones CSV'; }
+        const result = await fetchPagedResult(() => supabaseClient.rpc('crm_inscripciones_detalle', { p_desde: h.desde, p_hasta: h.hasta }));
+        if (!valid()) return;
+        if (result.error) throw result.error;
+        validateInscritosDetalle(result.data, h);
+        const filas = result.data.map(f => ({ ...f, clase: String(f.clase || '').toUpperCase() }));
+        const lines = inscritosHistorialCsvLines(filas, h.desde, h.hasta, miamiToday());
+        downloadCSV(lines.join('\n'), `Inscritos_Historial_${h.desde}_${h.hasta}.csv`);
+        showToast(`${filas.length} personas inscritas exportadas`, 'success');
+      } catch (error) {
+        if (valid()) showToast(error?.message || 'No se pudo exportar el historial de inscritos.', 'error');
       }
     }
 
@@ -6390,20 +6626,22 @@ async function deleteLeadAppointment(id) {
 
     function periodoTip(key) {
       const tips = {
-        medios: 'Leads activos cuya fecha de entrada cae dentro del rango elegido, contados por su Medio de entrada. Cada lead aparece una sola vez.',
-        campanas: 'Leads activos cuya fecha de entrada cae dentro del rango elegido, agrupados por la Campaña con la que entraron. Cada lead aparece una sola vez.',
+        inscritoRealizada: 'Persona que pasó a inscrita dentro del período, según el historial. Inscrito ingresó en el mismo mes de su inscripción; Data Dura ingresó en un mes anterior. Las gestiones posteriores y los cambios entre variantes de inscrito no la mueven de mes.',
+        campanaInscrito: 'Campaña con la que llegó el lead (valor actual). Es una referencia de origen, no la fecha manual del programa.',
+        medios: 'Leads ingresados en el período (captación), contados por su Medio de entrada. Cada lead aparece una sola vez.',
+        campanas: 'Leads ingresados en el período (captación), agrupados por la Campaña con la que entraron. Cada lead aparece una sola vez.',
         leads: 'Personas activas dadas de alta entre las fechas Desde y Hasta (incluidas). Cada lead se cuenta una vez por resumen.',
-        pct: 'Porcentaje sobre el total de leads que entraron en el período seleccionado.',
+        pct: 'Porcentaje sobre el total de leads que entraron en el período seleccionado (captación).',
         gestionActual: 'Estado de gestión que tiene el lead HOY, no el que tenía cuando entró ni al cerrar el período.',
         matriz: 'Cruza la Campaña de entrada del lead con su gestión actual. Cada celda es un lead único.',
         gestiones: 'Registros de gestión creados entre las fechas del período. Un mismo lead puede tener varias gestiones, por eso el total de gestiones puede superar al de leads únicos.',
         canales: 'Cantidad de gestiones realizadas por cada canal durante el período. Llamada y WhatsApp y Llamadas Data Dura se cuentan aparte.',
         citas: 'Citas contadas por su fecha programada en zona horaria de Miami. "Normal" y "DD" (Data Dura) se muestran como normal / Data Dura.',
-        dd: 'DD = Data Dura: leads cuyo mes de origen es distinto al mes del período. Es una clasificación aparte del estado.',
+        dd: 'DD = Data Dura: leads cuyo mes de origen es distinto al mes de la propia gestión. Es una clasificación aparte del estado.',
         estadoTabla: 'Leads únicos cuenta personas distintas; Total de gestiones suma todos los intentos. Un mismo lead puede repetirse en varios estados, por eso la columna de leads únicos no se debe sumar.',
         leadsUnicos: 'Personas distintas que quedaron en este estado durante el período. Cada lead se cuenta una sola vez en esta fila.',
         totalGestiones: 'Registros de gestión con este estado en el período. Un mismo lead puede generar varias filas en diferentes estados, así que la suma puede superar al total de leads gestionados.',
-        actividad: 'Dos análisis: leads por fecha de entrada (cuadros de arriba) y actividad realizada durante el rango (gestiones y citas programadas).',
+        actividad: 'Tres análisis: inscripciones realizadas (arriba), captación por fecha de entrada y actividad del rango (gestiones y citas programadas).',
       };
       const text = tips[key];
       if (!text) return '';
@@ -6426,11 +6664,11 @@ async function deleteLeadAppointment(id) {
       const g = data.gestiones, q = data.canales, c = data.citas;
       const porEstadoOrdenado = [...g.por_estado].sort((a, b) => compareAlphaEs(a.label, b.label));
       const porEstado = porEstadoOrdenado.length ? `<section class="period-card"><div class="flex items-center gap-1.5 mb-1"><h3 class="font-bold text-indigo-900">Gestiones por estado${periodoTip('estadoTabla')}</h3></div><p class="text-xs text-slate-600 mb-2"><strong>Leads únicos</strong> cuenta personas distintas. <strong>Total de gestiones</strong> suma todos los intentos. Un mismo lead puede repetirse en varios estados, por eso la columna de leads únicos no se debe sumar.</p><div class="overflow-x-auto"><table class="period-table period-state-table"><thead><tr><th scope="col">Estado</th><th scope="col">Leads únicos${periodoTip('leadsUnicos')}</th><th scope="col">Total de gestiones${periodoTip('totalGestiones')}</th></tr></thead><tbody>${porEstadoOrdenado.map(r => `<tr><th scope="row">${escapeHtml(r.label)}</th><td>${r.leads}</td><td>${r.eventos}</td></tr>`).join('')}</tbody></table></div></section>` : '';
-      return `<div class="border-t-2 border-indigo-600 pt-3"><div class="flex items-center justify-between gap-2 flex-wrap"><h2 class="text-lg font-bold text-indigo-900">Actividad realizada en el período${periodoTip('actividad')}</h2><button type="button" id="periodoBtnGestionesCsv" data-ev="click:exportPeriodoGestionesCSV()" class="rounded bg-slate-700 text-white px-3 py-1.5 text-xs">Descargar gestiones CSV</button></div><p class="text-xs text-slate-500 mb-2">Gestiones por día trabajado y citas por fecha programada (Miami). Independiente de los cuadros de entrada.</p></div>`
+      return `<div class="border-t-2 border-indigo-600 pt-3"><div class="flex items-center justify-between gap-2 flex-wrap"><h2 class="text-lg font-bold text-indigo-900">Actividad realizada en el período${periodoTip('actividad')}</h2><button type="button" id="periodoBtnGestionesCsv" data-ev="click:exportPeriodoGestionesCSV()" class="rounded bg-slate-700 text-white px-3 py-1.5 text-xs">Descargar gestiones CSV</button></div><p class="text-xs text-slate-500 mb-2">Gestiones por día trabajado y citas por fecha programada (Miami). «Inscripciones realizadas» cuenta altas reales; «gestionados en estado» incluye los seguimientos. Las filas de leads únicos no se suman entre sí.</p></div>`
         + `<div class="grid md:grid-cols-3 gap-4">`
-        + table('Gestiones', row('Leads únicos gestionados', g.leads_unicos) + row('Pasados a Agendado', g.agendados_normales) + row('Pasados a Agendado Data Dura', g.agendados_data_dura) + row('Pasados a Inscrito', g.inscritos_normales) + row('Pasados a Inscrito Data Dura', g.inscritos_data_dura) + row('Total de gestiones', g.total_eventos), 'gestiones')
+        + table('Gestiones', row('Leads únicos gestionados', g.leads_unicos) + row('Inscripciones realizadas · Inscrito (altas)', g.inscripciones_realizadas_normales) + row('Inscripciones realizadas · Data Dura (altas)', g.inscripciones_realizadas_data_dura) + row('Gestionados en estado Agendado', g.agendados_normales) + row('Gestionados en estado Agendado Data Dura', g.agendados_data_dura) + row('Gestionados en estado Inscrito', g.inscritos_normales) + row('Gestionados en estado Inscrito Data Dura', g.inscritos_data_dura) + row('Total de gestiones', g.total_eventos), 'gestiones')
         + table('Canales', row('Llamada y WhatsApp', q.llamada_whatsapp) + row('Llamadas', q.llamadas_normales) + row('Llamadas Data Dura', q.llamadas_data_dura) + row('Otros/sin canal', q.otros) + row('WhatsApp', q.whatsapp), 'canales')
-        + table('Citas (fecha programada)', row('Asistieron', c.asistieron) + row('Canceladas', c.canceladas) + rowTip('Doral: normal / Data Dura', `${c.doral_normal} / ${c.doral_data_dura}`, 'dd') + row('No asistieron', c.no_asistieron) + row('Programadas Data Dura', c.programadas_data_dura) + row('Programadas normales', c.programadas_normales) + row('Reprogramadas', c.reprogramadas) + row('Sin sede (históricas)', c.sin_sede) + rowTip('Weston: normal / Data Dura', `${c.weston_normal} / ${c.weston_data_dura}`, 'dd'), 'citas')
+        + table('Citas (fecha programada)', row('Asistieron', c.asistieron) + row('Canceladas', c.canceladas) + rowTip('Doral: normal / Data Dura', `${c.doral_normal} / ${c.doral_data_dura}`, 'dd') + row('No asistieron', c.no_asistieron) + row('Programadas Data Dura', c.programadas_data_dura) + row('Programadas normales', c.programadas_normales) + row('Reprogramadas', c.reprogramadas) + row('Sin sede (programadas)', c.sin_sede) + rowTip('Weston: normal / Data Dura', `${c.weston_normal} / ${c.weston_data_dura}`, 'dd'), 'citas')
         + `</div>${porEstado}`;
     }
 
@@ -6439,17 +6677,18 @@ async function deleteLeadAppointment(id) {
       const m = data.matriz;
       const cells = counts => counts.map(n => `<td>${n}</td>`).join('');
       const sticky = 'sticky left-0 border-r border-slate-300 whitespace-nowrap';
-      return `<div class="grid md:grid-cols-2 gap-2">${table('Resumen general de leads por entrada (Medio)', data.medios, 'medios')}${table('Resumen general de campañas', data.campanas, 'campanas')}</div>${table('Resumen específico de gestión actual', data.gestiones, 'gestionActual')}<section class="period-card"><h2 class="font-bold text-indigo-900 mb-1">Matriz gestión actual × campaña${periodoTip('matriz')}</h2><div class="overflow-x-auto" tabindex="0" role="region" aria-label="Matriz gestión por campaña, desplazable"><table class="period-table period-matrix min-w-full"><thead><tr><th scope="col" class="${sticky}">Gestión</th>${m.campanas.map(label => `<th scope="col" class="whitespace-nowrap">${escapeHtml(label)}</th>`).join('')}<th scope="col">Total</th></tr></thead><tbody>${m.filas.map(r => `<tr><th scope="row" class="${sticky}">${escapeHtml(r.label)}</th>${cells(r.counts)}<td class="font-bold">${r.total}</td></tr>`).join('')}</tbody><tfoot><tr><th scope="row" class="${sticky}">TOTAL</th>${cells(m.totales_columnas)}<td>${data.total}</td></tr></tfoot></table></div></section>`;
+      return `<div class="grid md:grid-cols-2 gap-2">${table('Captación por medio · leads ingresados', data.medios, 'medios')}${table('Captación por campaña · leads ingresados', data.campanas, 'campanas')}</div>${table('Estado actual de los leads ingresados', data.gestiones, 'gestionActual')}<section class="period-card"><h2 class="font-bold text-indigo-900 mb-1">Matriz estado actual × campaña · leads ingresados${periodoTip('matriz')}</h2><div class="overflow-x-auto" tabindex="0" role="region" aria-label="Matriz gestión por campaña, desplazable"><table class="period-table period-matrix min-w-full"><thead><tr><th scope="col" class="${sticky}">Gestión</th>${m.campanas.map(label => `<th scope="col" class="whitespace-nowrap">${escapeHtml(label)}</th>`).join('')}<th scope="col">Total</th></tr></thead><tbody>${m.filas.map(r => `<tr><th scope="row" class="${sticky}">${escapeHtml(r.label)}</th>${cells(r.counts)}<td class="font-bold">${r.total}</td></tr>`).join('')}</tbody><tfoot><tr><th scope="row" class="${sticky}">TOTAL</th>${cells(m.totales_columnas)}<td>${data.total}</td></tr></tfoot></table></div></section>`;
     }
 
     function exportReportePeriodoCSV() {
       if (!currentUser || !currentAccess?.activo || reporteVistaActiva !== 'periodo' || currentMainTab !== 'reporte' || !periodoData || periodoLoadedKey !== periodoRangeKey()) { showToast('El reporte no está cargado o el rango cambió. Actualiza antes de exportar.', 'warning'); return; }
       if (periodoLoadedRevision !== periodoSourceRevision) { showToast('Los datos cambiaron y el reporte se está actualizando. Espera un momento y vuelve a intentarlo.', 'warning'); updatePeriodoCsvState(); return; }
       if (!periodoActividadData || periodoActividadKey !== periodoLoadedKey) { showToast('La actividad del período aún no está cargada. Espera o reintenta con Actualizar antes de exportar.', 'warning'); updatePeriodoCsvState(); return; }
+      if (!isTrafficker && (!periodoInscripcionesData?.historial || periodoInscripcionesKey !== periodoLoadedKey)) { showToast('Los inscritos del historial aún no están cargados. Actualiza antes de exportar.', 'warning'); updatePeriodoCsvState(); return; }
       const d = periodoData, a = periodoActividadData;
       // El armado de lineas es puro (src/legacy/reportes.js); aca solo
       // guardas, descarga y toast. El generado se evalua con el reloj.
-      const lines = periodoCsvLines(d, a, miamiToday());
+      const lines = periodoCsvLines(d, a, miamiToday(), isTrafficker ? null : periodoInscripcionesData.historial);
       downloadCSV(lines.join('\n'), `Reporte_Periodo_${d.desde}_${d.hasta}.csv`);
       showToast('Reporte por período exportado a CSV', 'success');
     }
@@ -6521,7 +6760,7 @@ async function deleteLeadAppointment(id) {
       return `No se pudo ${accion} la nota. Revisa tu conexion e intentalo nuevamente`;
     }
 
-    function renderReporteV2(bloques, notas = [], notasOk = true) {
+    function renderReporteV2(bloques, notas = [], notasOk = true, equipo = null) {
       // Las piezas del panel son puras (src/legacy/reportes.js, fase 21);
       // aqui solo permisos, lecturas de DOM y composicion.
       const indice = indiceNotas(notas);
@@ -6537,7 +6776,7 @@ async function deleteLeadAppointment(id) {
         const editable = notasOk && !isTrafficker && ((isAdmin && Boolean(b.autor_user_id)) || (own && fechaHoy));
         return bloqueDiaHtml(b, i, manualBloqueHtml(i, nota, editable));
       }).join('');
-      return cuerpoReporteDiario(notasOk, total, bloquesHtml);
+      return cuerpoReporteDiario(notasOk, total, bloquesHtml, equipoDiarioHtml(equipo));
     }
 
     async function loadReporteDiario() {
@@ -6568,7 +6807,7 @@ async function deleteLeadAppointment(id) {
         if (notes.error) console.warn('No se pudieron cargar las notas del reporte:', notes.error);
         const notasCargadas = notes.error ? [] : notes.data || [];
         reporteDayAdvisors=bloques.map(b=>b.autor_name); reporteDayNotes=notasCargadas; reporteDayData=bloques;
-        if(auto) auto.innerHTML=renderReporteV2(bloques, notasCargadas, !notes.error);
+        if(auto) auto.innerHTML=renderReporteV2(bloques, notasCargadas, !notes.error, report.data?.equipo ?? null);
         const reporteAviso = document.getElementById('reporteAviso');
         if (reporteAviso) reporteAviso.textContent = notes.error ? 'No se pudieron cargar las notas guardadas: la edicion esta desactivada hasta recargar.' : reporteAvisoBase;
         reporteLoadedKey = `${fecha}|${selected || ''}`;
@@ -7166,6 +7405,110 @@ async function deleteLeadAppointment(id) {
       let nombre;
       try { nombre = decodeURIComponent(nombreCodificado); } catch { showToast('Nombre de campana invalido', 'warning'); return; }
       return iniciarAjusteMensual(nombre);
+    }
+
+    // ---- PWA / instalacion y notificaciones ----
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+      return outputArray;
+    }
+
+    function openMoreMenu() {
+      const modal = document.getElementById('modalMore');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (window.lucide) lucide.createIcons();
+      modal.querySelector('div')?.focus?.();
+      const closeOnClick = (event) => {
+        if (event.target === modal) closeMoreMenu();
+        if (event.target.closest('button')) setTimeout(closeMoreMenu, 0);
+      };
+      modal.addEventListener('click', closeOnClick, { once: true });
+    }
+    function closeMoreMenu() {
+      const modal = document.getElementById('modalMore');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function openAppModal() {
+      const modal = document.getElementById('modalApp');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      refreshPushStatus();
+    }
+    function closeAppModal() {
+      const modal = document.getElementById('modalApp');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    async function installApp() {
+      if (!deferredInstallPrompt) { showToast('Este navegador no ofrece instalación directa. Usa el menú del navegador.', 'info'); return; }
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      if (outcome === 'accepted') showToast('Aplicación instalada', 'success');
+    }
+    async function refreshPushStatus() {
+      const status = document.getElementById('appStatus');
+      if (!status) return;
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) { status.textContent = 'Este navegador no admite notificaciones push.'; return; }
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        status.textContent = sub ? 'Notificaciones activas en este dispositivo.' : 'Notificaciones desactivadas en este dispositivo.';
+      } catch (_) { status.textContent = 'No se pudo consultar el estado de las notificaciones.'; }
+    }
+    async function enablePushNotifications() {
+      if (!currentUser || !currentAccess?.activo) { showToast('Inicia sesión primero', 'warning'); return; }
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) { showToast('Este navegador no admite notificaciones push', 'warning'); return; }
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') { showToast('Permiso de notificaciones denegado', 'warning'); return; }
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+        const json = sub.toJSON();
+        const { error } = await supabaseClient.from('push_subscriptions').upsert({
+          user_id: currentUser.id,
+          endpoint: json.endpoint,
+          p256dh: json.keys.p256dh,
+          auth: json.keys.auth,
+          user_agent: navigator.userAgent,
+          last_seen_at: new Date().toISOString()
+        }, { onConflict: 'endpoint' });
+        if (error) { console.error(error); showToast('No se pudo guardar la suscripción', 'error'); return; }
+        showToast('Notificaciones activadas', 'success');
+        refreshPushStatus();
+      } catch (err) { console.error(err); showToast('Error al activar notificaciones', 'error'); }
+    }
+    async function disablePushNotifications() {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          const endpoint = sub.endpoint;
+          await sub.unsubscribe();
+          await supabaseClient.from('push_subscriptions').delete().eq('endpoint', endpoint);
+        }
+        showToast('Notificaciones desactivadas', 'success');
+        refreshPushStatus();
+      } catch (err) { console.error(err); showToast('Error al desactivar notificaciones', 'error'); }
+    }
+    async function notifyLeadChange(eventType, leadId) {
+      if (!supabaseClient || !currentUser) return;
+      try {
+        await supabaseClient.functions.invoke('notify-lead-change', { body: { eventType, leadId: Number(leadId) } });
+      } catch (err) { console.warn('No se pudo enviar la notificación:', err); }
     }
 </script>
   <script type="module" src="/src/legacy/actions.js"></script>

@@ -1,6 +1,6 @@
 // Caracterizacion del CSV del reporte diario (fase 16): diarioCsvLines y
 // resolverNotaBloque viven en src/legacy/reportes.js; el golden real es el
-// t5 (36 columnas, fila TOTAL); aqui se fija el armado puro y la coherencia
+// t5 (35 columnas, fila TOTAL); aqui se fija el armado puro y la coherencia
 // de totales (todo lo que se suma se ve; correccion del caso Jessica).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -20,7 +20,7 @@ const bloqueVacio = { autor_name: 'Marcos', autor_user_id: 'u2' };
 // Separar delimitadores externos a comillas (incluye la coma de "De ellos,").
 const campos = line => line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
 
-test('cabecera del CSV diario: titulo, fecha, generado, filtro opcional y 36 columnas', () => {
+test('cabecera del CSV diario: titulo, fecha, generado, filtro opcional y 35 columnas', () => {
   const con = diarioCsvLines('2026-10-13', 'Loli', '2026-10-14', [bloque], []);
   assert.equal(con[0], 'Reporte Diario de Trabajo');
   assert.equal(con[1], csvReporteField('Fecha: 2026-10-13'));
@@ -28,8 +28,12 @@ test('cabecera del CSV diario: titulo, fecha, generado, filtro opcional y 36 col
   assert.equal(con[3], csvReporteField('Filtro: Loli'));
   assert.equal(con[4], '');
   const headers = campos(con[5]);
-  assert.equal(headers.length, 36);
+  assert.equal(headers.length, 35);
   assert.equal(headers[0], csvReporteField('Asesora'));
+  // Medio retirado del negocio: sin columna propia; su conteo va en Otros.
+  assert.equal(headers.includes(csvReporteField('CogniTalking')), false, 'CogniTalking no abre columna');
+  assert.equal(headers[4], csvReporteField('Directo o Referido'));
+  assert.equal(headers[5], csvReporteField('Otros'));
   // la columna agregada va entre Canal Instagram y Total canales
   assert.equal(headers[headers.length - 5], csvReporteField('Canal Instagram'));
   assert.equal(headers[headers.length - 4], csvReporteField('Otros o sin canal'));
@@ -39,7 +43,7 @@ test('cabecera del CSV diario: titulo, fecha, generado, filtro opcional y 36 col
   // sin filtro no hay linea de filtro ni hueco desalineado
   const sin = diarioCsvLines('2026-10-13', '', '2026-10-14', [bloque], []);
   assert.equal(sin[3], '');
-  assert.equal(campos(sin[4]).length, 36);
+  assert.equal(campos(sin[4]).length, 35);
 });
 
 test('filas por bloque con values en el orden de keys y notas resueltas', () => {
@@ -48,12 +52,13 @@ test('filas por bloque con values en el orden de keys y notas resueltas', () => 
   const fila = con.at(-3).split(',');
   assert.equal(fila[0], csvReporteField('Loli'));
   assert.equal(fila[1], csvReporteField('5'));
+  assert.equal(fila[5], csvReporteField('1'), 'Otros absorbe el conteo de CogniTalking');
   assert.equal(fila.at(-2), csvReporteField('sin internet'));
   assert.equal(fila.at(-1), csvReporteField('se retoma luego'));
   // bloque sin datos: todos los numericos en 0
   const filaVacia = con.at(-2).split(',');
   assert.equal(filaVacia[0], csvReporteField('Marcos'));
-  assert.equal(filaVacia.slice(1, -2).filter(v => v === csvReporteField('0')).length, 33);
+  assert.equal(filaVacia.slice(1, -2).filter(v => v === csvReporteField('0')).length, 32);
 });
 
 test('fila TOTAL con sumas por key y dos columnas vacias al final', () => {
@@ -63,7 +68,7 @@ test('fila TOTAL con sumas por key y dos columnas vacias al final', () => {
   assert.equal(total[1], csvReporteField('5'));
   assert.equal(total.at(-1), csvReporteField(''));
   assert.equal(total.at(-2), csvReporteField(''));
-  assert.equal(total.length, 36);
+  assert.equal(total.length, 35);
 });
 
 test('resolverNotaBloque: uid primero, nombre sin uid, fallback b.nota', () => {

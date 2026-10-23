@@ -188,7 +188,10 @@
     .app-sidebar { display: none; }
     #bottomNav { display: none; }
     #bottomNav.is-visible { display: block; }
-    @media (min-width: 640px) { #bottomNav { display: none !important; } }
+    /* Movil unificado <768px: la barra inferior es la unica navegacion;
+       en escritorio/tablet >=768px desaparece. Antes era 640px, lo que dejaba
+       la franja 640-767px con pestañas superiores horizontales. */
+    @media (min-width: 768px) { #bottomNav { display: none !important; } }
     .bottom-nav-button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .2rem; min-height: 3.25rem; border-radius: .75rem; color: #334155; font-size: .75rem; font-weight: 700; transition: color .15s, background-color .15s; }
     .bottom-nav-button.is-active { color: #fff; background: #4f46e5; }
     .bottom-nav-button i { width: 1.25rem; height: 1.25rem; }
@@ -223,27 +226,6 @@
     [data-theme="dark"] .mobile-leads-empty { color: #cbd5e1; }
     [data-theme="dark"] .mobile-leads-empty button { color: #c7d2fe; border-color: #6366f1; }
     [data-theme="dark"] .more-menu-button.text-rose-300 { color: #fda4af; }
-    .mobile-lead-card { border: 1px solid rgba(148,163,184,.2); border-radius: 1rem; padding: .9rem; background: rgba(255,255,255,.92); box-shadow: 0 4px 16px -10px rgba(15,23,42,.2); }
-    [data-theme="dark"] .mobile-lead-card { background: rgba(30,41,59,.92); border-color: rgba(148,163,184,.2); }
-    .mobile-lead-main { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
-    .mobile-lead-primary { min-width: 0; flex: 1; }
-    .mobile-lead-name { display: block; width: 100%; text-align: left; font-size: 1rem; font-weight: 700; color: #0f172a; line-height: 1.25; background: transparent; border: 0; padding: 0; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    [data-theme="dark"] .mobile-lead-name { color: #f1f5f9; }
-    .mobile-lead-badges { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .4rem; }
-    .mobile-lead-actions { display: flex; align-items: center; gap: .35rem; flex-shrink: 0; }
-    .mobile-lead-action { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: .65rem; color: #fff; }
-    .mobile-lead-action--whatsapp { background: #25d366; }
-    .mobile-lead-action--edit { background: #475569; }
-    .mobile-lead-action--view { background: #4f46e5; }
-    .mobile-lead-meta { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-top: .6rem; padding-top: .6rem; border-top: 1px solid rgba(148,163,184,.15); font-size: .78rem; color: #475569; }
-    [data-theme="dark"] .mobile-lead-meta { color: #94a3b8; border-color: rgba(148,163,184,.18); }
-    .mobile-lead-meta > span { display: inline-flex; align-items: center; gap: .25rem; }
-    .mobile-lead-meta i { width: .85rem; height: .85rem; }
-    .mobile-lead-meta-muted { color: #94a3b8; margin-left: .15rem; }
-    .mobile-leads-empty { text-align: center; padding: 2.5rem 1rem; color: #475569; }
-    .mobile-leads-empty button { min-height: 2.75rem; margin-top: .75rem; padding: .5rem .9rem; border: 1px solid #c7d2fe; border-radius: .6rem; color: #4338ca; font-weight: 700; cursor: pointer; }
-    [data-theme="dark"] .mobile-leads-empty { color: #cbd5e1; }
-    [data-theme="dark"] .mobile-leads-empty button { color: #c7d2fe; border-color: #6366f1; }
     .sidebar-nav-button { width: 100%; display: flex; align-items: center; gap: .75rem; padding: .7rem .8rem; border: 1px solid transparent; border-radius: .7rem; color: #94a3b8; font-size: .82rem; font-weight: 600; text-align: left; transition: color .15s ease, background-color .15s ease, border-color .15s ease; cursor: pointer; }
     .sidebar-nav-button:hover { color: #fff; background: rgba(255,255,255,.06); }
     .sidebar-nav-button.is-active { color: #fff; background: #4f46e5; border-color: rgba(165,180,252,.2); box-shadow: 0 12px 24px -16px rgba(99,102,241,.9); }
@@ -492,6 +474,11 @@
     .historical-filters select { width: 100%; }
     .historical-filters label { color: #344054; font-size: .75rem; font-weight: 600; }
     .historical-filter-grid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: .75rem; }
+    /* Sin esto la pista 1fr crece al min-content del item (los dos inputs de
+       fecha del par Desde/Hasta miden ~366px intrinsic) y desborda el
+       documento en movil; verificado con sonda Chromium a 360/390/1024px. */
+    .historical-filter-grid > * { min-width: 0; }
+    .hist-range-pair > label, .hist-range-pair > label > input { min-width: 0; }
     .historical-filter-actions { display: flex; flex-wrap: wrap; align-items: end; gap: .6rem; margin-top: 1rem; }
     .historical-filter-actions input { width: min(100%,10rem); }
     .historical-presets { display: flex; flex-wrap: wrap; gap: .35rem; }
@@ -841,7 +828,6 @@
       .campaigns-controls > button { min-height: 2.75rem; justify-content: center; }
       .campaigns-table tbody input, .campaigns-table tbody select { width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
       .historical-intro, .historical-filters { padding: 1rem; }
-      .historical-filter-grid label { min-width: 0; }
       .historical-filters select, .historical-filters input { width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
       .report-intro, .report-viewbar, .report-content-card { padding: 1rem; }
     }
@@ -888,11 +874,6 @@
       #reporteDiario .daily-filter-grid label, #reporteDiario .daily-filter-grid input, #reporteDiario .daily-filter-grid select { display: block; width: 100%; min-width: 0; }
       #reporteDiario .report-viewbar select, #reportePeriodo .period-controls input { min-height: 2.75rem; font-size: 1rem; }
       #reporteDiario .daily-controls > button { width: 100%; min-height: 2.75rem; justify-content: center; }
-      .leads-pagination { align-items: stretch; text-align: center; }
-      #paginationControls { width: 100%; justify-content: space-between; }
-      #paginationControls .pagination-page-number, #paginationControls .pagination-ellipsis { display: none; }
-      #paginationControls .pagination-arrow { min-width: 2.75rem; min-height: 2.75rem; display: grid; place-items: center; }
-      #paginationControls .pagination-mobile-label { display: inline-flex; align-items: center; font-weight: 700; color: #a5b4fc; }
       .dashboard-filters-header { align-items: flex-start; flex-wrap: wrap; gap: .75rem; }
       .dashboard-filters-header > button { min-height: 2.5rem; padding: .45rem .7rem; border: 1px solid #c7d2fe; border-radius: .55rem; }
       .dashboard-filter-grid > div, .dashboard-filter-extra > div { min-width: 0; }
@@ -902,19 +883,13 @@
       .dashboard-date-fields input { display: block; width: 100%; min-width: 0; margin-top: .25rem; }
       .dashboard-date-fields button, .dashboard-date-fields #dashRangeScope, .dashboard-date-fields #dashRangeError { justify-self: start; grid-column: 1 / -1; }
       .topbar-inner { height: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: .65rem; padding-top: .65rem; padding-bottom: .65rem; }
-      .topbar-actions { width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; padding-bottom: .2rem; }
+      /* Cabecera movil compacta: sin carrusel lateral (el scroll horizontal
+         molestaba); las acciones duplicadas del menu Mas se ocultan en el
+         bloque <767px y solo quedan estado + refresh + Nuevo Lead. */
+      .topbar-actions { width: 100%; min-width: 0; }
       .topbar-actions > * { flex-shrink: 0; }
       .topbar-actions button { min-height: 2.5rem; }
       .topbar-actions #statusText { display: inline; }
-      .mobile-tabs { display: none !important; }
-    main { padding-bottom: 5.5rem; }
-      .mobile-tabs > div { padding-top: .5rem; padding-bottom: .5rem; }
-      .mobile-tabs nav { width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; scroll-snap-type: x proximity; }
-      .mobile-tabs nav button { flex-shrink: 0; min-height: 2.75rem; white-space: nowrap; scroll-snap-align: start; }
-      .mobile-tabs-hint { display: block; padding: 0 1rem .4rem; color: #cbd5e1; font-size: .7rem; text-align: right; }
-      [data-theme="light"] .mobile-tabs-hint { color: #475569; }
-      .mobile-tabs .tabs-info { display: none; }
-      .mobile-tabs .tabs-year { display: none; }
       .dashboard-intro { padding: 1.15rem; }
       .dashboard-kpis { gap: .65rem; }
       .dashboard-kpis .metric-card { min-width: 0; min-height: 8rem; padding: .9rem; }
@@ -941,6 +916,24 @@
       .quick-lead-actions button:disabled { grid-column: 1 / -1; grid-row: 2; }
       [data-theme="light"] .quick-lead-row { border-color: #e4e7ec; background: #fff; }
       [data-theme="light"] .quick-lead-row .quick-lead-campaign::before, [data-theme="light"] .quick-lead-row .quick-lead-status::before { color: #667085; }
+    }
+    /* ===== Movil unificado <768px: coincide con md: de Tailwind y con los
+       layouts de tarjeta ya existentes. La barra inferior es la unica
+       navegacion: pestañas superiores ocultas, cabecera sin acciones
+       duplicadas del menu Mas, paginacion de tarjetas y avisos flotando
+       por encima de la barra inferior. ===== */
+    @media (max-width: 767px) {
+      .mobile-tabs { display: none !important; }
+      main { padding-bottom: 5.5rem; }
+      #btnApp, #btnTheme, #btnAdminUsers, #btnCatalogs, #btnHelp, #btnSignOut { display: none !important; }
+      .topbar-actions { flex-wrap: wrap; row-gap: .5rem; }
+      .leads-pagination { align-items: stretch; text-align: center; }
+      #paginationControls { width: 100%; justify-content: space-between; }
+      #paginationControls .pagination-page-number, #paginationControls .pagination-ellipsis { display: none; }
+      #paginationControls .pagination-arrow { min-width: 2.75rem; min-height: 2.75rem; display: grid; place-items: center; }
+      #paginationControls .pagination-mobile-label { display: inline-flex; align-items: center; font-weight: 700; color: #a5b4fc; }
+      #toastContainer { bottom: calc(5.75rem + env(safe-area-inset-bottom)); }
+      #idleBanner { bottom: calc(5.75rem + env(safe-area-inset-bottom)); }
     }
     @media (min-width: 400px) and (max-width: 639px) {
       #reportePeriodo .period-controls, #reportePeriodo .period-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); }

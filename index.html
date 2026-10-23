@@ -2839,7 +2839,7 @@
     // Semana por defecto: el humano reporto que al entrar a Citas no veia el
     // calendario (quedaba oculto tras el toggle con Lista inicial). El
     // calendario es el entregable central de la pestana; la tabla Lista sigue
-    // a un clic. En movil <640px setCitasViewMode fuerza vista Dia.
+    // a un clic. En movil <768px setCitasViewMode fuerza vista Dia.
     let citasViewMode = 'semana';
     let citasCalendarReady = false;
     let citasCurrentRange = { start: '', end: '' };
@@ -2970,10 +2970,11 @@
           citasCalendarReady = true;
           // Limpiar mensaje de carga tras montar
           if (msg) msg.classList.add('hidden');
-          // En móvil (<640px) usar vista día por defecto al activar el modo
+          // En móvil (<768px, mismo breakpoint que la barra inferior) usar
+          // vista día por defecto al activar el modo calendario.
           // Decisión simple: cada vez que se activa modo calendario en viewport estrecho,
           // forzamos 'timeGridDay' para evitar desbordamiento horizontal en semana/mes.
-          const isMobile = window.innerWidth < 640;
+          const isMobile = window.innerWidth < 768;
           const fcView = isMobile ? 'timeGridDay' : CITAS_VIEW_FC[mode];
           if (fcView) window.citasCalendarApi?.setView?.(fcView);
           // Refrescar título inicial

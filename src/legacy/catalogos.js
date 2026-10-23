@@ -6,6 +6,27 @@ export function activeCatalogValues(rows, kind) {
   return (rows[kind] || []).filter(row => row.active).map(row => row.value);
 }
 
+/**
+ * Ventana móvil de 12 meses para el filtro Mes: 9 anteriores, el actual y
+ * 2 posteriores. El año se escribe solo al cambiar de año dentro de la lista.
+ * @param {string} today - Fecha base YYYY-MM-DD.
+ * @param {Array<string>} [dataValues] - Valores presentes en los datos.
+ * @returns {Array<string>}
+ */
+export function mesesVentanaActual(today, dataValues = []) {
+  const [y, m] = String(today).split('-').map(Number);
+  const out = []; let prev = null;
+  for (let i = -9; i <= 2; i++) {
+    const d = new Date(Date.UTC(y, (m - 1) + i, 1));
+    const year = d.getUTCFullYear();
+    const name = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'][d.getUTCMonth()];
+    out.push(prev !== null && year !== prev ? `${name} ${year}` : name);
+    prev = year;
+  }
+  if (dataValues.some(v => String(v ?? '').trim().toUpperCase() === 'OTRO')) out.push('OTRO');
+  return [...new Set(out)];
+}
+
 export function catalogOptions(rows, kind, dataValues) {
   const known = new Set((rows[kind] || []).map(row => row.value));
   // Las entradas repetidas de varios leads/citas no crean opciones nuevas.
@@ -97,4 +118,4 @@ export function opcionesCatalogoData(values, currentValue) {
   return all.map(v => ({ value: v, label: catalogLabel(v), selected: v === selectedValue }));
 }
 
-if (typeof window !== 'undefined') window.catalogosApi = { activeCatalogValues, catalogOptions, uniqueFieldValues, FILTROS_CATALOGO, opcionesSelectData, opcionesCatalogoData, programasDisponibles };
+if (typeof window !== 'undefined') window.catalogosApi = { activeCatalogValues, catalogOptions, uniqueFieldValues, FILTROS_CATALOGO, opcionesSelectData, opcionesCatalogoData, programasDisponibles, mesesVentanaActual };

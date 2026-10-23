@@ -3693,8 +3693,14 @@
     function populateFilterOptions() {
       // Deduccion de valores y declaracion de filtros: piezas puras en
       // src/legacy/catalogos.js (fase 32); aqui solo se recorre la lista.
-      catalogosApi.FILTROS_CATALOGO.forEach(({ id, kind, campo }) =>
-        populateSelect(id, catalogOptions(kind, catalogosApi.uniqueFieldValues(getVisibleBaseLeads(), campo))));
+      catalogosApi.FILTROS_CATALOGO.forEach(({ id, kind, campo }) => {
+        const dataValues = catalogosApi.uniqueFieldValues(getVisibleBaseLeads(), campo);
+        const gestion = String(document.getElementById('filterGestion')?.value || '').toUpperCase();
+        const values = kind === 'mes' && !gestion.includes('INSCRIT')
+          ? catalogosApi.mesesVentanaActual(typeof miamiToday === 'function' ? miamiToday() : '2026-10-01', dataValues)
+          : catalogOptions(kind, dataValues);
+        populateSelect(id, values);
+      });
     }
 
     function populateSelect(elementId, values) {
@@ -3995,6 +4001,7 @@
       const valid = () => gen === dashRangeGen && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt;
       const search = (document.getElementById('filterSearch')?.value || '').toLowerCase().trim();
       const mes = document.getElementById('filterMes')?.value || '';
+      const mesNombre = (mes.match(/^([A-Za-zÁÉÍÓÚáéíóúñÑ]+)(?:\s+\d{4})?$/) || [])[1] || mes;
       const campana = document.getElementById('filterCampana')?.value || '';
       const medio = document.getElementById('filterMedio')?.value || '';
       const gestion = document.getElementById('filterGestion')?.value || '';
@@ -4094,7 +4101,7 @@
           return; // nada parcial presentado como global
         }
         try {
-          mesBase = await loadLeadsByMonth(mes);
+          mesBase = await loadLeadsByMonth(mesNombre);
           if (!valid() || mesBase === null) return; // sesión obsoleta: no pintar parcial
         } catch (e) {
           if (!valid()) return;
@@ -4125,7 +4132,7 @@
             return false;
           }
         }
-        if (!inscritos && mes && getField(lead, 'Mes').trim() !== mes) return false;
+        if (!inscritos && mes && !(window.mesFiltroCoincide ? window.mesFiltroCoincide(lead, mes) : (getField(lead, 'Mes').trim().toUpperCase() === mes.toUpperCase()))) return false;
         if (campana && getField(lead, 'Campaña').trim() !== campana) return false;
         if (medio && getField(lead, 'Medio').trim() !== medio) return false;
         if (inscritos) {

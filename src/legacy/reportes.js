@@ -81,6 +81,45 @@ export function leadReportDate(lead) {
 }
 
 /**
+ * Ventana móvil de 12 meses para el filtro Mes: 9 anteriores, el actual y
+ * 2 posteriores. El año se escribe solo al cambiar de año dentro de la lista.
+ * @param {string} [today] - Fecha base YYYY-MM-DD (Miami).
+ * @returns {string[]}
+ */
+export function mesesVentanaActual(today = miamiToday()) {
+  const [y, m] = String(today).split('-').map(Number);
+  const out = [];
+  let prevYear = null;
+  for (let i = -9; i <= 2; i++) {
+    const d = new Date(Date.UTC(y, (m - 1) + i, 1));
+    const year = d.getUTCFullYear();
+    const name = MONTH_CHRONO[d.getUTCMonth()];
+    out.push(prevYear !== null && year !== prevYear ? `${name} ${year}` : name);
+    prevYear = year;
+  }
+  return out;
+}
+
+/**
+ * Indica si un lead coincide con un filtro Mes que puede incluir año.
+ * Un filtro sin año conserva el comportamiento anterior (cualquier año).
+ * @param {object} lead
+ * @param {string} filtro
+ * @returns {boolean}
+ */
+export function mesFiltroCoincide(lead, filtro) {
+  const raw = String(filtro ?? '').trim();
+  if (!raw) return true;
+  const month = normalizeLeadMonth(lead);
+  if (month === 'OTRO') return month === raw.toUpperCase();
+  const match = raw.match(/^([A-Za-zÁÉÍÓÚáéíóúñÑ]+)\s+(\d{4})$/);
+  if (!match) return month === raw.toUpperCase();
+  const [, nombre, year] = match;
+  const report = leadReportDate(lead);
+  return month === String(nombre).trim().toUpperCase() && report !== null && String(report.anio) === String(year);
+}
+
+/**
  * Clave ano-mes ('2026-03'): Mes canonico + ano de Fecha.
  * El mes de Fecha solo sirve de respaldo cuando Mes es desconocido.
  * Sin fecha: 'SIN-FECHA·ENERO' u 'OTRO'. ENERO 2025 no es ENERO 2026.
@@ -1462,6 +1501,8 @@ if (typeof window !== 'undefined') {
   window.historicalChartSeries = historicalChartSeries;
   window.tablaVaciaHistoricoHtml = tablaVaciaHistoricoHtml;
   window.tablaHistoricoHtml = tablaHistoricoHtml;
+  window.mesesVentanaActual = mesesVentanaActual;
+  window.mesFiltroCoincide = mesFiltroCoincide;
   window.histChartMonthly = histChartMonthly;
   window.histChartConversion = histChartConversion;
   window.histChartCampaign = histChartCampaign;

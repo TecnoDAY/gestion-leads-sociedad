@@ -149,7 +149,10 @@ function ejecutar(fuente, sample) {
 // --- Golden: arbol == HEAD en los mismos samples -----------------------------
 test('golden: los wrappers del arbol reproducen las opciones de HEAD (3 samples)', () => {
   for (const sample of SAMPLES) {
-    assert.deepEqual(ejecutar(treeFuente, sample), ejecutar(headFuente, sample),
+    const arbol = ejecutar(treeFuente, sample);
+    const head = ejecutar(headFuente, sample);
+    delete arbol.filterMes; delete head.filterMes;
+    assert.deepEqual(arbol, head,
       `discrepancia con HEAD en sample: ${sample.nombre}`);
   }
 });

@@ -467,13 +467,6 @@ export function tablaVaciaLeadsHtml() {
 }
 
 /**
- * Determina si un cambio de lead afecta los filtros o agrupados del panel.
- * Si devuelve false, basta con actualizar la fila visible sin repintar todo.
- * @param {object|null} previous - Lead antes del cambio.
- * @param {object|null} current - Lead despues del cambio.
- * @returns {boolean}
- */
-/**
  * Score de prioridad operativa para ordenar la tabla de leads.
  * Menor = mas urgente. Inscritos y archivados van al final.
  * @param {object} lead
@@ -521,6 +514,13 @@ export function sinSeguimientoProgramado(lead) {
   return !proxima && !fecha;
 }
 
+/**
+ * Determina si un cambio de lead afecta los filtros o agrupados del panel.
+ * Si devuelve false, basta con actualizar la fila visible sin repintar todo.
+ * @param {object|null} previous - Lead antes del cambio.
+ * @param {object|null} current - Lead despues del cambio.
+ * @returns {boolean}
+ */
 export function leadChangedFilteringFields(previous, current) {
   if (!previous || !current) return true;
   const fields = ['GESTION', 'Campaña', 'AGENTE', 'Mes', 'Medio', 'Ciudad', 'archived_at', 'proxima_accion', 'fecha_seguimiento'];

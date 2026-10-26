@@ -77,14 +77,16 @@ try {
   // Antes de separar Instagram, la gestion 18 suma en "otros".
   const canalesPre = (await db.query("select public.management_period_summary('2026-10-01','2026-10-31') as data")).rows[0].data.canales;
   await db.exec(readFileSync(new URL('../../supabase/migrations/202610230001_canales_instagram.sql', import.meta.url), 'utf8'));
+  const canalesInstagram = (await db.query("select public.management_period_summary('2026-10-01','2026-10-31') as data")).rows[0].data.canales;
+  await db.exec(readFileSync(new URL('../../supabase/migrations/202610260002_exclude_archived_report_leads.sql', import.meta.url), 'utf8'));
   const rows = async (from, to, actual) => (await db.query('select id, gestion_id, fecha_inscripcion::text, estado_inscripcion, clase from public.crm_inscripciones_historial($1,$2,$3) order by id', [from, to, actual])).rows;
   const octubre = await rows('2026-10-01', '2026-10-31', false);
-  assert.deepEqual(octubre.map(r => Number(r.id)), [1, 2, 3, 5, 6, 7]);
+  assert.deepEqual(octubre.map(r => Number(r.id)), [1, 2, 5, 6, 7]);
   assert.equal(octubre.find(r => Number(r.id) === 1).fecha_inscripcion, '2026-10-05');
   assert.equal(octubre.find(r => Number(r.id) === 5).fecha_inscripcion, '2026-10-23');
   // Clase por fechas, no por la etiqueta guardada.
   assert.deepEqual(Object.fromEntries(octubre.map(r => [Number(r.id), r.clase])), {
-    1: 'DATA_DURA', 2: 'DATA_DURA', 3: 'NORMAL', 5: 'PENDIENTE', 6: 'INCONSISTENTE', 7: 'NORMAL',
+    1: 'DATA_DURA', 2: 'DATA_DURA', 5: 'PENDIENTE', 6: 'INCONSISTENTE', 7: 'NORMAL',
   });
   const actuales = await rows('2026-10-01', '2026-10-31', true);
   assert.deepEqual(actuales.map(r => Number(r.id)), [1, 2, 5]);
@@ -94,7 +96,7 @@ try {
   assert.equal(todos.find(r => Number(r.id) === 7).fecha_inscripcion, '2026-11-01');
   const resumen = (await db.query("select public.crm_inscripciones_resumen('2026-10-01','2026-10-31') as data")).rows[0].data;
   assert.equal(resumen.personas_inscritas, octubre.length);
-  assert.equal(resumen.normales, 2); assert.equal(resumen.data_dura, 2);
+  assert.equal(resumen.normales, 1); assert.equal(resumen.data_dura, 2);
   assert.equal(resumen.revision, 2); assert.equal(resumen.pendientes_fecha, 1);
   // por_campana: la misma poblacion, con 'Sin campana' cuando falta.
   assert.equal(resumen.por_campana.reduce((t, r) => t + r.personas, 0), resumen.personas_inscritas);
@@ -102,31 +104,30 @@ try {
   assert.equal(resumen.por_campana.reduce((t, r) => t + r.data_dura, 0), resumen.data_dura);
   assert.equal(resumen.por_campana.reduce((t, r) => t + r.revision, 0), resumen.revision);
   const porId = new Map(resumen.por_campana.map(r => [r.campana, r]));
-  assert.deepEqual(porId.get('Kids'), { campana: 'Kids', personas: 4, normales: 1, data_dura: 1, revision: 2 });
+  assert.deepEqual(porId.get('Kids'), { campana: 'Kids', personas: 3, normales: 0, data_dura: 1, revision: 2 });
   assert.deepEqual(porId.get('Sin campaña'), { campana: 'Sin campaña', personas: 1, normales: 0, data_dura: 1, revision: 0 });
   assert.deepEqual(porId.get('Verano'), { campana: 'Verano', personas: 1, normales: 1, data_dura: 0, revision: 0 });
   for (const args of [[null, null, false], ['2026-10-01', null, true], ['2026-11-01', '2026-10-01', false]]) {
     await assert.rejects(rows(...args), /period_range_invalid/);
   }
   await db.exec('set role authenticated');
-  assert.equal((await rows('2026-10-01', '2026-10-31', false)).length, 6);
+  assert.equal((await rows('2026-10-01', '2026-10-31', false)).length, 5);
   assert.equal((await db.query('select * from public.leads where id=3')).rows.length, 0, 'RLS habitual oculta el archivado');
   const detalle = (await db.query("select id, clase, campana, programa from public.crm_inscripciones_detalle('2026-10-01','2026-10-31') order by id")).rows;
-  assert.deepEqual(detalle.map(r=>Number(r.id)), octubre.map(r=>Number(r.id)), 'contador y detalle incluyen el mismo archivado');
-  assert.equal(detalle.find(r=>Number(r.id)===3).programa,'Taller camara');
+  assert.deepEqual(detalle.map(r=>Number(r.id)), octubre.map(r=>Number(r.id)), 'contador y detalle excluyen el mismo archivado');
+  assert.equal(detalle.some(r=>Number(r.id)===3), false);
   assert.equal(detalle.find(r=>Number(r.id)===2).campana,'Sin campaña');
-  assert.equal(detalle.find(r=>Number(r.id)===3).campana,'Kids');
   assert.deepEqual(Object.fromEntries(detalle.map(r => [Number(r.id), r.clase])), {
-    1: 'DATA_DURA', 2: 'DATA_DURA', 3: 'NORMAL', 5: 'PENDIENTE', 6: 'INCONSISTENTE', 7: 'NORMAL',
+    1: 'DATA_DURA', 2: 'DATA_DURA', 5: 'PENDIENTE', 6: 'INCONSISTENTE', 7: 'NORMAL',
   }, 'el detalle CSV lleva la misma clase que el contador');
   // Actividad: altas reales vs seguimientos; clasificacion estable por gestion.
   const actividadOct = (await db.query("select public.management_period_summary('2026-10-01','2026-10-31') as data")).rows[0].data;
   const a = actividadOct.gestiones;
-  assert.equal(a.inscripciones_realizadas_normales, 2, 'altas normales: leads 3 y 7 (ingreso e inscripcion en octubre)');
+  assert.equal(a.inscripciones_realizadas_normales, 1, 'alta normal: lead 7; lead 3 archivado no cuenta');
   assert.equal(a.inscripciones_realizadas_data_dura, 2, 'altas Data Dura: leads 1 y 2 (ingreso en septiembre)');
-  assert.equal(a.inscritos_normales, 5);
+  assert.equal(a.inscritos_normales, 4);
   assert.equal(a.inscritos_data_dura, 3, 'seguimiento 17 (Inscrito->Inscrito Data) y la variante 3 suman sin ser altas');
-  assert.equal(a.total_eventos, 14);
+  assert.equal(a.total_eventos, 13);
   // La llamada de octubre del lead de septiembre es Data Dura por su propia fecha,
   // igual con el rango empezando en septiembre o en octubre (estable).
   const actividadSepOct = (await db.query("select public.management_period_summary('2026-09-01','2026-10-31') as data")).rows[0].data;
@@ -134,7 +135,8 @@ try {
   assert.equal(actividadOct.canales.llamadas_data_dura, 2, 'la clasificacion no depende del inicio del rango');
   // Instagram deja de contarse en "otros" y aparece en su propio canal.
   assert.equal(actividadOct.canales.instagram, 1, 'canal Instagram separado');
-  assert.equal(actividadOct.canales.otros, canalesPre.otros - 1, 'Instagram sale de otros');
+  assert.equal(canalesInstagram.otros, canalesPre.otros - 1, 'Instagram sale de otros');
+  assert.equal(actividadOct.canales.otros, canalesInstagram.otros - 1, 'la gestion sin canal del archivado tambien queda fuera');
   // Citas: sin_sede cuenta solo PROGRAMADA sin sede (la ASISTIO sin sede queda fuera).
   assert.equal(actividadOct.citas.sin_sede, 1);
   assert.equal(actividadOct.citas.doral_normal, 1);

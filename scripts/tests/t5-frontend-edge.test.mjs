@@ -80,7 +80,7 @@ const names = [
   'saveReporteNota', 'deleteReporteNota', 'reporteNotaErrorMsg',
   'resetReportePeriodo', 'setReporteVista', 'setPeriodoPreset', 'periodoRangeKey',
   'buildPeriodSummary', 'validatePeriodoSummary', 'loadReportePeriodo', 'renderReportePeriodo', 'exportReportePeriodoCSV', 'initReporteDiario',
-  'markPeriodoReportDirty', 'updatePeriodoCsvState', 'upsertLeadInState', 'removeLeadFromState',
+  'markPeriodoReportDirty', 'updatePeriodoCsvState', 'upsertLeadInState', 'removeLeadFromState', 'archiveLead',
   'loadPeriodoActividad', 'renderPeriodoActividad', 'periodoTip',
   'exportPeriodoGestionesCSV',
   'loadAuthorizedUsers', 'renderAuthorizedUsers', 'fillSelectFromCatalog', 'populateCatalogSelects',
@@ -407,7 +407,7 @@ test('inscritos: una respuesta de otra sesion no publica ni llena la cache', asy
 test('historial por periodo: contador y CSV conservan baja posterior y programas sin nivel', async () => {
   const resumen={...periodoHistorialFixture(),personas_inscritas:2,normales:1,data_dura:1,
     por_campana:[{campana:'Kids',personas:1,normales:1,data_dura:0,revision:0},{campana:'Sin campaña',personas:1,normales:0,data_dura:1,revision:0}]};
-  const leads=[{id:1,Nombre:'Camara',GESTION:'No procede',archived_at:'2026-11-01',Campaña:'Kids','PROGRAMA INSCRIPCION':'Taller camara'},
+  const leads=[{id:1,Nombre:'Camara',GESTION:'No procede',archived_at:null,Campaña:'Kids','PROGRAMA INSCRIPCION':'Taller camara'},
     {id:2,Nombre:'Data',GESTION:'Inscrito Data Dura'}];
   const eventos=[{id:1,fecha_inscripcion:'2026-10-05',clase:'NORMAL',estado_inscripcion:'Inscrito'},
     {id:2,fecha_inscripcion:'2026-10-06',clase:'DATA_DURA',estado_inscripcion:'Inscrito Data Dura'}];
@@ -438,7 +438,7 @@ test('historial por periodo: contador y CSV conservan baja posterior y programas
   assert.match(csv,/"Clase"/);
   assert.equal(csv.split('\n').length,8);
   assert.ok(db.rpcCalls.some(([name])=>name==='crm_inscripciones_detalle'));
-  assert.equal(db.calls.length,0,'el CSV no consulta directamente leads, donde RLS oculta archivados');
+  assert.equal(db.calls.length,0,'el CSV usa la RPC compartida con el resumen, no consulta leads directamente');
 });
 
 test('inscripciones del periodo: aviso de revision solo con casos y vacio con mensaje unico', async () => {
@@ -831,6 +831,79 @@ test('período: el detalle de gestiones descarga la campaña del lead sin desali
   const segunda = csvFields(filas[1]);
   assert.equal(segunda[2], 'Ana Gómez');
   assert.equal(segunda.at(-1), '');
+});
+
+test('archivados: CSV de gestiones conserva duplicados activos y excluye archivados y ausentes', async () => {
+  const db = database({
+    lead_gestiones: rows(4, { fecha_gestion: '2026-10-03', gestion_nueva: 'Información' }).map(g => ({ ...g, lead_id: g.id })),
+    leads: [
+      { id: 1, Nombre: 'Activo uno', Telefono: '5550100', Campaña: 'Prueba' },
+      { id: 2, Nombre: 'Activo dos', Telefono: '5550100', Campaña: 'Prueba' },
+      { id: 3, Nombre: 'Archivado', archived_at: '2026-11-01' },
+    ],
+  });
+  const f = periodFrontend({ supabaseClient: db, periodoData: { desde: '2026-10-01', hasta: '2026-10-07' },
+    periodoLoadedKey: '2026-10-01|2026-10-07', periodoLoadedRevision: 0 });
+  await f.context.exportPeriodoGestionesCSV();
+  assert.equal(f.downloads.length, 1);
+  const csv = await f.downloads[0].blob.text();
+  assert.equal(csv.split('\n').slice(4).filter(Boolean).length, 2);
+  assert.match(csv, /Activo uno/); assert.match(csv, /Activo dos/);
+  assert.doesNotMatch(csv, /Archivado/);
+});
+
+test('archivados: detalle CSV pagina gestiones y leads completos sin truncar en max_rows', async () => {
+  const db = database({
+    lead_gestiones: rows(2105, { fecha_gestion: '2026-10-03' }).map(g => ({ ...g, lead_id: g.id })),
+    leads: rows(2105).map(l => ({ ...l, Nombre: `Persona ${l.id}` })),
+  }, { maxRows: 137 });
+  const f = periodFrontend({ supabaseClient: db, periodoData: { desde: '2026-10-01', hasta: '2026-10-07' },
+    periodoLoadedKey: '2026-10-01|2026-10-07', periodoLoadedRevision: 0 });
+  await f.context.exportPeriodoGestionesCSV();
+  assert.equal(f.downloads.length, 1);
+  const csv = await f.downloads[0].blob.text();
+  assert.equal(csv.split('\n').slice(4).filter(Boolean).length, 2105);
+  assert.match(csv, /Persona 2105/);
+});
+
+test('archivados: no exporta un CSV de gestiones si se archiva mientras descarga', async () => {
+  const f = periodFrontend({ periodoData: { desde: '2026-10-01', hasta: '2026-10-07' },
+    periodoLoadedKey: '2026-10-01|2026-10-07', periodoLoadedRevision: 0 });
+  f.context.supabaseClient = database({
+    lead_gestiones: [{ id: 1, lead_id: 1, fecha_gestion: '2026-10-03' }], leads: [{ id: 1, Nombre: 'Antes' }],
+  }, { hook: (query, count) => { if (count === 1) f.context.markPeriodoReportDirty(); } });
+  await f.context.exportPeriodoGestionesCSV();
+  assert.equal(f.downloads.length, 0);
+});
+
+test('archivados: archivar elimina solo el ID elegido de leads y caches e invalida reportes', async () => {
+  const leads = [{ id: 1, Telefono: '5550100' }, { id: 2, Telefono: '5550100' }];
+  const calls = [];
+  const f = periodFrontend({ isAdmin: true, allLeads: leads, completeCurrentLoaded: true, completeCurrentLeads: leads,
+    periodoData: { total: 2 }, periodoLoadedRevision: 0,
+    supabaseClient: { rpc: async (name, args) => { calls.push([name, args.p_id]); return { error: null }; } } });
+  for (const name of ['refillLoadedWindow', 'populateFilterOptions', 'applyFilters']) f.context[name] = () => {};
+  await f.context.archiveLead(1, 'actual');
+  assert.deepEqual(calls, [['archive_lead', 1]]);
+  assert.deepEqual(Array.from(f.context.allLeads, l => l.id), [2]);
+  assert.deepEqual(Array.from(f.context.completeCurrentLeads, l => l.id), [2]);
+  assert.equal(f.context.periodoData, null);
+  assert.equal(f.context.periodoSourceRevision, 1);
+  assert.equal(f.element('periodoBtnCsv').disabled, true);
+});
+
+test('archivados: CSV no descarga si todos los leads estan archivados o cambia la sesion', async () => {
+  for (const changeSession of [false, true]) {
+    const f = periodFrontend({ periodoData: { desde: '2026-10-01', hasta: '2026-10-07' },
+      periodoLoadedKey: '2026-10-01|2026-10-07', periodoLoadedRevision: 0 });
+    f.context.supabaseClient = database({
+      lead_gestiones: [{ id: 1, lead_id: 1, fecha_gestion: '2026-10-03' }],
+      leads: [{ id: 1, archived_at: '2026-11-01' }],
+    }, { hook: () => { if (changeSession) f.context.sessionGeneration++; } });
+    await f.context.exportPeriodoGestionesCSV();
+    assert.equal(f.downloads.length, 0);
+    if (!changeSession) assert.match(f.toasts.at(-1)[0], /No hay gestiones de leads activos/);
+  }
 });
 
 test('inscripcion: el detalle de nivel se oculta para los programas de adultos', () => {
@@ -1878,6 +1951,166 @@ test('hotfix campera: appointmentCampusFrom existe y los guardados alcanzan la R
   }
 });
 
+function seguimientoFixture(response = { id: 4590, Nombre: 'Nuevo', GESTION: 'Información' }) {
+  const db = database({ update_lead_followup: response });
+  const f = frontend({ supabaseClient: db, editLeadSubmitting: false, editLeadRequestGeneration: 0,
+    currentEditOrigin: 'actual', allLeads: [{ id: 4590, Nombre: 'Anterior', GESTION: 'Información' }] });
+  Object.assign(f.context, { editLeadNeedsAppointment: () => false, editLeadStaysAgendado: () => false,
+    editSessionValid: () => true, updateConnectionStatus() {}, updateEditSubmitState() {},
+    leadChangedFilteringFields: leadsMod.leadChangedFilteringFields,
+    populateFilterOptions() {}, updateKpis() {}, renderMatrix() {}, renderTable() {},
+    closeEditLeadModal() { f.closed = true; } });
+  f.element('editLeadId').value = '4590';
+  f.element('editNombre').value = 'Nuevo';
+  f.element('editGestion').value = 'Información';
+  return { ...f, db, wasClosed: () => !!f.closed };
+}
+
+test('seguimiento: guardar recalcula busqueda sin sustituir una fila aislada', async () => {
+  const f = seguimientoFixture();
+  f.element('filterSearch').value = 'anterior';
+  await f.context.handleUpdateLead({ preventDefault() {} });
+  assert.equal(f.context.allLeads[0].Nombre, 'Nuevo');
+  assert.equal(f.context.filteredLeads.length, 0);
+  assert.equal(f.wasClosed(), true);
+});
+
+test('seguimiento: guardar conserva pagina y filtros, repinta todas las vistas e invalida etiquetas', async () => {
+  const f = seguimientoFixture();
+  const c = f.context;
+  c.currentPage = 3;
+  f.element('filterSearch').value = 'nuevo';
+  const painted = [];
+  c.updateKpis = () => painted.push('kpis');
+  c.renderMatrix = () => painted.push('matrix');
+  c.renderTable = () => painted.push('table');
+  c.dashboardInscripcionesClave = '4590'; c.dashboardInscripcionesEstado = 'listo';
+  await c.handleUpdateLead({ preventDefault() {} });
+  assert.equal(c.currentPage, 3);
+  assert.equal(f.element('filterSearch').value, 'nuevo');
+  assert.deepEqual(painted, ['kpis', 'matrix', 'table']);
+  assert.equal(c.filteredLeads[0].Nombre, 'Nuevo');
+  assert.equal(c.dashboardInscripcionesEstado, 'idle');
+});
+
+test('seguimiento: conservar pagina al recalcular es explicito; cambio de filtro vuelve a uno', async () => {
+  const f = seguimientoFixture();
+  f.context.currentPage = 3;
+  await f.context.applyFilters({ preservePage: true });
+  assert.equal(f.context.currentPage, 3);
+  await f.context.applyFilters();
+  assert.equal(f.context.currentPage, 1);
+});
+
+test('seguimiento: el filtro seleccionado no desaparece al editar su ultimo lead', () => {
+  const f = seguimientoFixture();
+  f.element('filterCampana').value = 'Anterior';
+  f.context.populateSelect('filterCampana', ['Nueva'], true);
+  assert.equal(f.element('filterCampana').value, 'Anterior');
+  assert.ok(f.element('filterCampana').options.some(o => o.value === 'Anterior'));
+});
+
+test('seguimiento: valores incompletos, fecha imposible y longitud excesiva no llegan al servidor', async () => {
+  for (const [accion, fecha] of [['Llamar', ''], ['', '2026-10-27'], ['Llamar', '2026-02-30'], ['x'.repeat(201), '2026-10-27']]) {
+    const f = seguimientoFixture();
+    f.element('editProximaAccion').value = accion;
+    f.element('editFechaSeguimiento').value = fecha;
+    await f.context.handleUpdateLead({ preventDefault() {} });
+    assert.equal(f.db.rpcCalls.length, 0, `${accion.slice(0, 12)} / ${fecha}`);
+    assert.equal(f.wasClosed(), false);
+    assert.equal(f.context.editLeadSubmitting, false);
+  }
+});
+
+test('seguimiento: respuesta sin persistencia confirmada nunca se maquilla como guardada', async () => {
+  const response = { id: 4590, Nombre: 'Nuevo', proxima_accion: null, fecha_seguimiento: null };
+  const f = seguimientoFixture(response);
+  f.element('editProximaAccion').value = 'Llamar';
+  f.element('editFechaSeguimiento').value = '2026-10-27';
+  await f.context.handleUpdateLead({ preventDefault() {} });
+  assert.equal(response.proxima_accion, null);
+  assert.equal(f.wasClosed(), false);
+  assert.ok(f.toasts.some(([message, kind]) => kind === 'warning' && /confirm/i.test(message)));
+});
+
+test('seguimiento: campos ausentes no confirman un borrado, null explicito si', async () => {
+  for (const confirmed of [false, true]) {
+    const f = seguimientoFixture({ id: 4590, Nombre: 'Nuevo', ...(confirmed ? { proxima_accion: null, fecha_seguimiento: null } : {}) });
+    f.element('editProximaAccion').dataset = { original: 'Llamar' };
+    f.element('editFechaSeguimiento').dataset = { original: '2026-10-27' };
+    await f.context.handleUpdateLead({ preventDefault() {} });
+    assert.equal(f.wasClosed(), confirmed);
+  }
+});
+
+test('seguimiento: error RPC conserva formulario y libera boton sin anunciar exito', async () => {
+  const f = seguimientoFixture();
+  f.context.supabaseClient.rpc = async () => ({ error: { message: 'fallo sintetico' }, data: null });
+  await f.context.handleUpdateLead({ preventDefault() {} });
+  assert.equal(f.wasClosed(), false);
+  assert.equal(f.context.editLeadSubmitting, false);
+  assert.ok(!f.toasts.some(([, kind]) => kind === 'success'));
+});
+
+test('seguimiento: doble envio en vuelo ejecuta una sola RPC', async () => {
+  const f = seguimientoFixture();
+  let release, calls = 0;
+  f.context.supabaseClient.rpc = () => { calls++; return new Promise(resolve => { release = resolve; }); };
+  const request = f.context.handleUpdateLead({ preventDefault() {} });
+  await f.context.handleUpdateLead({ preventDefault() {} });
+  assert.equal(calls, 1);
+  release({ data: { id: 4590, Nombre: 'Nuevo' }, error: null });
+  await request;
+  assert.equal(f.context.editLeadSubmitting, false);
+});
+
+test('seguimiento: respuesta de otra sesion no modifica estado ni cierra el formulario', async () => {
+  const f = seguimientoFixture();
+  vm.runInContext(extractFunction('editSessionValid'), f.context);
+  let release;
+  f.context.supabaseClient.rpc = () => new Promise(resolve => { release = resolve; });
+  const request = f.context.handleUpdateLead({ preventDefault() {} });
+  f.context.sessionGeneration++;
+  f.context.currentUser = { id: 'otro-usuario' };
+  release({ data: { id: 4590, Nombre: 'Respuesta vieja' }, error: null });
+  await request;
+  assert.equal(f.context.allLeads[0].Nombre, 'Anterior');
+  assert.equal(f.wasClosed(), false);
+  assert.equal(f.toasts.length, 0);
+});
+
+test('seguimiento: campos completos o borrado viajan juntos en las cuatro rutas sin RPC adicional', async () => {
+  for (const route of ['asesora', 'admin', 'cita', 'sede']) {
+    for (const clear of [false, true]) {
+      const f = seguimientoFixture();
+      const c = f.context;
+      c.isAdmin = route === 'admin';
+      c.editLeadNeedsAppointment = () => route === 'cita';
+      c.editLeadStaysAgendado = () => route === 'sede';
+      c.editExistingAppointment = { id: 9, advisor_user_id: 'user-test', campus: 'WESTON' };
+      c.document.querySelector = () => ({ value: 'DORAL' });
+      c.invalidateCitasCache = () => {};
+      f.element('editAppointmentDate').value = '2026-10-27T10:00';
+      for (const [id, value] of [['editProximaAccion', 'Llamar'], ['editFechaSeguimiento', '2026-10-27']]) {
+        f.element(id).value = clear ? '' : value;
+        f.element(id).dataset = { original: clear ? value : '' };
+      }
+      const calls = [];
+      c.supabaseClient.rpc = async (name, args) => {
+        calls.push({ name, args });
+        return { data: { id: 4590, proxima_accion: clear ? null : 'Llamar', fecha_seguimiento: clear ? null : '2026-10-27' }, error: null };
+      };
+      await c.handleUpdateLead({ preventDefault() {} });
+      assert.equal(calls.length, 1, route);
+      assert.equal(calls[0].name, route === 'admin' ? 'update_lead_full' : route === 'cita' ? 'update_lead_with_appointment' : route === 'sede' ? 'update_lead_followup_with_appointment_campus' : 'update_lead_followup');
+      const fields = calls[0].args.p_fields || calls[0].args.p_lead;
+      assert.equal(fields.proxima_accion, clear ? '' : 'Llamar');
+      assert.equal(fields.fecha_seguimiento, clear ? '' : '2026-10-27');
+      assert.equal(f.wasClosed(), true, route);
+    }
+  }
+});
+
 test('contrato RPC de citas: una asesora envia todos los nombres, incluidos UUID null', async () => {
   const expectedUpdate = ['p_advisor_user_id','p_campus','p_details','p_fields','p_id','p_notes','p_scheduled_at'];
   const expectedCreate = ['p_advisor_user_id','p_campus','p_details','p_lead_id','p_notes','p_scheduled_at'];
@@ -2233,7 +2466,7 @@ test('filtros y campos automáticos conservan el orden y readonly en HTML', () =
   const dateIndex = source.indexOf('id="dashDesde"');
   const advisorIndex = source.indexOf('id="filterAsesora"');
   assert.ok(sourceIndex < dateIndex && dateIndex < advisorIndex);
-  assert.match(source.slice(sourceIndex - 500, sourceIndex), /grid/);
+  assert.match(source.slice(sourceIndex - 500, sourceIndex), /flex/);
   // Los datos automaticos ya no son campos editables: viven en la franja de
   // solo lectura y los campos reales quedan ocultos (no se pueden escribir).
   assert.match(source, /type="hidden"[^>]*id="editFechaUltima"/);

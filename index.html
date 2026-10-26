@@ -364,6 +364,7 @@
       </div>
       <div class="px-4 py-3 flex flex-wrap gap-2">
         <button type="button" data-ev="click:setDashboardPriority('pendiente')" class="rounded-lg priority-btn rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-slate-700 cursor-pointer">Seguimientos pendientes</button>
+        <button type="button" data-ev="click:setDashboardPriority('sinSeguimiento')" class="rounded-lg priority-btn rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-slate-700 cursor-pointer">Sin seguimiento programado</button>
         <button type="button" data-ev="click:setDashboardPriority('agendado')" class="rounded-lg priority-btn rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/10 cursor-pointer">Agendados</button>
         <button type="button" data-ev="click:setDashboardPriority('inscrito')" class="rounded-lg priority-btn rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/10 cursor-pointer">Inscritos</button>
         <button type="button" data-ev="click:setDashboardPriority('todos')" class="rounded-lg priority-btn rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-indigo-300 hover:bg-indigo-500/10 cursor-pointer">Mostrar todo</button>
@@ -458,39 +459,47 @@
 
       </div>
 
-      <!-- Origen + Rango de Gestión + Asesora en la misma fila -->
-      <div class="dashboard-filter-extra grid grid-cols-1 md:grid-cols-3 items-end gap-4 pt-2 border-t border-slate-700/60">
-        <div class="min-w-[150px]">
-          <label class="block text-xs font-medium text-slate-400 mb-1">Origen</label>
-          <select id="dataSourceFilter" data-ev="change:setDataSource(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+      <!-- Origen + Rango de Gestión + Asesora + Orden en la misma fila -->
+      <div class="dashboard-filter-extra flex flex-wrap items-end gap-3 pt-3 border-t border-amber-200/60 bg-amber-50/60 rounded-lg px-3 py-3 -mx-1">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-amber-900">Origen</label>
+          <select id="dataSourceFilter" data-ev="change:setDataSource(this.value)" class="bg-white border border-amber-200 rounded-lg px-2.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40" style="field-sizing: content; min-width: 8rem;">
             <option value="historico">Histórico 2025</option>
             <option value="actual" selected>Leads actuales</option>
             <option value="todos">Todos</option>
           </select>
         </div>
-        <div class="min-w-0">
+        <div class="flex flex-col gap-1">
           <div class="flex items-center gap-1.5 mb-1">
-            <i data-lucide="calendar-range" class="w-4 h-4 text-indigo-400"></i>
-            <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wider">Rango de gestión</span>
+            <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-amber-700"></i>
+            <span class="text-xs font-semibold text-amber-900 uppercase tracking-wider">Rango de gestión</span>
           </div>
           <div class="dashboard-date-fields flex flex-wrap items-center gap-2">
             <div class="flex items-center gap-1.5">
-              <label class="text-[11px] text-slate-400">Desde</label>
-              <input type="date" id="dashDesde" data-ev="change:applyFilters()" class="w-[120px] bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+              <label class="text-[11px] text-amber-800">Desde</label>
+              <input type="date" id="dashDesde" data-ev="change:applyFilters()" class="bg-white border border-amber-200 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40">
             </div>
             <div class="flex items-center gap-1.5">
-              <label class="text-[11px] text-slate-400">Hasta</label>
-              <input type="date" id="dashHasta" data-ev="change:applyFilters()" class="w-[120px] bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+              <label class="text-[11px] text-amber-800">Hasta</label>
+              <input type="date" id="dashHasta" data-ev="change:applyFilters()" class="bg-white border border-amber-200 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40">
             </div>
-            <button data-ev="click:clearDashRange()" class="text-[11px] text-indigo-400 hover:text-indigo-300 underline cursor-pointer">Limpiar</button>
-            <span id="dashRangeScope" class="text-[11px] text-indigo-300 font-semibold hidden"></span>
-            <div id="dashRangeError" class="text-[11px] text-amber-400 hidden"></div>
+            <button data-ev="click:clearDashRange()" class="text-[11px] px-2 py-1.5 rounded-md border border-amber-300 text-amber-800 bg-amber-100 hover:bg-amber-200 cursor-pointer transition-colors">Limpiar</button>
+            <span id="dashRangeScope" class="text-[11px] text-amber-800 font-semibold hidden"></span>
+            <div id="dashRangeError" class="text-[11px] text-amber-700 hidden"></div>
           </div>
         </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">Asesora</label>
-          <select id="filterAsesora" data-ev="change:applyFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-amber-900">Asesora</label>
+          <select id="filterAsesora" data-ev="change:applyFilters()" class="bg-white border border-amber-200 rounded-lg px-2.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40" style="field-sizing: content; min-width: 10rem;">
             <option value="">Todas las asesoras</option>
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-amber-900">Orden</label>
+          <select id="filterOrden" data-ev="change:applyFilters()" class="bg-white border border-amber-200 rounded-lg px-2.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40" style="field-sizing: content; min-width: 11rem;">
+            <option value="recientes">Más recientes</option>
+            <option value="urgentes">Más urgentes primero</option>
+            <option value="inactivos">Más inactivos primero</option>
           </select>
         </div>
       </div>
@@ -1536,6 +1545,17 @@
             <label class="block font-medium text-slate-300 mb-1">Historial de Observaciones & Notas</label>
             <textarea id="editObservaciones" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono text-xs"></textarea>
             <p class="text-[11px] text-slate-400 mt-1">Puedes agregar nuevas notas fechadas al final del texto.</p>
+          </div>
+          <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border border-slate-700/60 rounded-lg p-3">
+            <div>
+              <label class="block font-medium text-slate-300 mb-1">Próxima acción<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>
+              <input id="editProximaAccion" type="text" maxlength="200" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500" placeholder="Ej: Llamar, enviar información">
+            </div>
+            <div>
+              <label class="block font-medium text-slate-300 mb-1">Fecha de seguimiento<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>
+              <input id="editFechaSeguimiento" type="date" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
+            </div>
+            <p class="sm:col-span-2 text-[11px] text-slate-400 mt-1">Registra solo un seguimiento confirmado. Deja en blanco para quitarlo.</p>
           </div>
         </div>
         </div>
@@ -3227,7 +3247,8 @@
     }
 
     async function fetchHistoricoByIdCursor() {
-      const rows = await fetchRowsByIdCursor(() => supabaseClient.from('leads_historico').select('*'));
+      const HISTORICO_COLUMNS = 'id,Mes,Fecha,Nombre,Telefono,Campaña,Medio,GESTION,AGENTE,Odoo,"Fecha de Atencion","OBSERVACIONES ",created_at,updated_at';
+      const rows = await fetchRowsByIdCursor(() => supabaseClient.from('leads_historico').select(HISTORICO_COLUMNS));
       const consolidated = consolidateLeadsById(rows);
       consolidated.forEach(lead => withOrigin(lead, 'historico'));
       return consolidated;
@@ -3690,7 +3711,7 @@
     // -------------------------------------------------------------
     // 4. FILTROS Y BÚSQUEDA
     // -------------------------------------------------------------
-    function populateFilterOptions() {
+    function populateFilterOptions(preserveSelection = false) {
       // Deduccion de valores y declaracion de filtros: piezas puras en
       // src/legacy/catalogos.js (fase 32); aqui solo se recorre la lista.
       catalogosApi.FILTROS_CATALOGO.forEach(({ id, kind, campo }) => {
@@ -3699,11 +3720,11 @@
         const values = kind === 'mes' && !gestion.includes('INSCRIT')
           ? catalogosApi.mesesVentanaActual(typeof miamiToday === 'function' ? miamiToday() : '2026-10-01', dataValues)
           : catalogOptions(kind, dataValues);
-        populateSelect(id, values);
+        populateSelect(id, values, preserveSelection);
       });
     }
 
-    function populateSelect(elementId, values) {
+    function populateSelect(elementId, values, preserveSelection = false) {
       const select = document.getElementById(elementId);
       if (!select) return;
       const currentVal = select.value;
@@ -3711,7 +3732,8 @@
       select.innerHTML = '';
       select.appendChild(firstOption);
       // Las opciones ya vienen calculadas como datos (fase 32); aqui solo DOM.
-      catalogosApi.opcionesSelectData(values, currentVal).forEach(({ value, label, selected }) => {
+      const opciones = preserveSelection && currentVal && !values.includes(currentVal) ? [...values, currentVal] : values;
+      catalogosApi.opcionesSelectData(opciones, currentVal).forEach(({ value, label, selected }) => {
         const opt = document.createElement('option');
         opt.value = value;
         opt.textContent = label;
@@ -3993,7 +4015,7 @@
       return leads;
     }
 
-    async function applyFilters() {
+    async function applyFilters({ preservePage = false } = {}) {
       clearTimeout(filterDebounceTimer);
       // Invalidar cualquier consulta del rango aún en vuelo
       const gen = ++dashRangeGen;
@@ -4148,6 +4170,19 @@
         return true;
       });
 
+      // Orden de la tabla segun el selector "Orden" (recientes | urgentes | inactivos).
+      const orden = document.getElementById('filterOrden')?.value || 'recientes';
+      if (orden === 'urgentes' && typeof scorePrioridadLead === 'function') {
+        filteredLeads.sort((a, b) => scorePrioridadLead(a) - scorePrioridadLead(b));
+      } else if (orden === 'inactivos' && typeof diasDesdeUltimaGestion === 'function') {
+        filteredLeads.sort((a, b) => {
+          const da = diasDesdeUltimaGestion(a, miamiToday());
+          const db = diasDesdeUltimaGestion(b, miamiToday());
+          return (db === null ? -1 : db) - (da === null ? -1 : da);
+        });
+      }
+      // 'recientes' conserva el orden por defecto (id descendente).
+
       // La prioridad del dashboard solo afecta su lista de resultados. No altera
       // las métricas globales ni la tabla principal de Leads. La fuente base es
       // únicamente la ventana actual de leads actuales, sin históricos ni filtros.
@@ -4167,7 +4202,7 @@
           : 'Sin filtros';
       }
 
-      currentPage = 1;
+      if (!preservePage) currentPage = 1;
       updateKpis();
       renderMatrix();
       renderTable();
@@ -4273,6 +4308,7 @@
       if (kind === 'pendiente') return isSeguimiento;
       if (kind === 'agendado') return isAgendado;
       if (kind === 'inscrito') return isInscrito;
+      if (kind === 'sinSeguimiento') return typeof sinSeguimientoProgramado === 'function' ? sinSeguimientoProgramado(lead) : false;
       return true;
     }
 
@@ -4320,7 +4356,7 @@
       const quickSection = document.getElementById('dashboardQuickLeadsSection');
       const appointmentSection = document.getElementById('dashboardAppointmentsSection');
       if (kind === 'todos' && select) select.value = '';
-      if (kind === 'pendiente' || kind === 'agendado' || kind === 'inscrito') dashboardPriority = kind;
+      if (kind === 'pendiente' || kind === 'agendado' || kind === 'inscrito' || kind === 'sinSeguimiento') dashboardPriority = kind;
       if (kind === 'todos') dashboardPriority = '';
       if (quickSection) quickSection.classList.toggle('hidden', kind === 'agendado');
       if (appointmentSection) appointmentSection.classList.toggle('hidden', kind !== 'agendado');
@@ -4333,6 +4369,7 @@
         pendiente: 'En seguimiento',
         agendado: 'Citas programadas',
         inscrito: 'Leads inscritos',
+        sinSeguimiento: 'Sin seguimiento programado',
         todos: 'Leads recientes',
       };
       const el = document.getElementById('quickLeadsTitle');
@@ -5385,6 +5422,10 @@
       document.getElementById('editUltimoAgente').value = getField(lead, 'ULTIMO AGENTE ') || getField(lead, 'Agente ') || 'Asesor';
       actualizarResumenDatosAutomaticos();
       document.getElementById('editObservaciones').value = getField(lead, 'OBSERVACIONES ');
+      const proximaInput = document.getElementById('editProximaAccion');
+      const fechaSegInput = document.getElementById('editFechaSeguimiento');
+      if (proximaInput) { proximaInput.value = getField(lead, 'proxima_accion'); if (!proximaInput.dataset) proximaInput.dataset = {}; proximaInput.dataset.original = proximaInput.value; }
+      if (fechaSegInput) { fechaSegInput.value = getField(lead, 'fecha_seguimiento').slice(0, 10); if (!fechaSegInput.dataset) fechaSegInput.dataset = {}; fechaSegInput.dataset.original = fechaSegInput.value; }
       const adminFields = document.getElementById('adminLeadFields');
       adminFields?.classList.toggle('hidden', !isAdmin);
       document.getElementById('editNombre').value = getField(lead, 'Nombre');
@@ -5464,6 +5505,17 @@
         return;
       }
 
+      const proximaInput = document.getElementById('editProximaAccion');
+      const fechaSegInput = document.getElementById('editFechaSeguimiento');
+      const proximaVal = (proximaInput?.value || '').trim();
+      const fechaSegVal = (fechaSegInput?.value || '').trim();
+      const seguimientoChanged = (proximaInput?.dataset?.original || '') !== proximaVal
+        || (fechaSegInput?.dataset?.original || '') !== fechaSegVal;
+      if (!!proximaVal !== !!fechaSegVal || proximaVal.length > 200 || (fechaSegVal && !periodoValidDate(fechaSegVal))) {
+        showToast('Completa acción (máximo 200 caracteres) y fecha válida juntas, o deja ambas vacías.', 'warning');
+        return;
+      }
+
       const needsAppointment = editLeadNeedsAppointment();
       const scheduledAt = needsAppointment ? appointmentInputISO(document.getElementById('editAppointmentDate')?.value) : null;
       const appointmentNote = needsAppointment ? (document.getElementById('editAppointmentNote')?.value.trim() || '') : '';
@@ -5527,6 +5579,12 @@
           : undefined,
       }, { isAdmin, nombreAcceso: currentAccess?.nombre });
 
+      // Seguimiento: viaja en la MISMA operacion que el lead cuando cambio.
+      if (seguimientoChanged) {
+        updatedFields.proxima_accion = proximaVal;
+        updatedFields.fecha_seguimiento = fechaSegVal;
+      }
+
       try {
         if (supabaseClient) {
           let existingCampusUpdate = null;
@@ -5561,6 +5619,13 @@
             console.error("Error al actualizar en Supabase:", error);
             showToast(formatSaveError(error, needsAppointment), "error");
           } else {
+            if (!updated || String(updated.id) !== String(leadId)
+                || (seguimientoChanged && (!Object.hasOwn(updated, 'proxima_accion')
+                  || !Object.hasOwn(updated, 'fecha_seguimiento') || (updated.proxima_accion || '') !== proximaVal
+                  || (updated.fecha_seguimiento || '') !== fechaSegVal))) {
+              showToast('No se pudo confirmar el guardado completo. Revisa la ficha antes de reintentar; el lead podría haberse actualizado.', 'warning');
+              return;
+            }
             // Lo que se guarda aparte del lead: si algo falla, el lead ya
             // esta guardado y el toast final lo dice.
             const fallos = [];
@@ -5577,6 +5642,7 @@
                 if (updated) updated['PROGRAMA INSCRIPCION'] = programaElegido;
               } else fallos.push('el programa de inscripción');
             }
+            if (!validRequest()) return;
             // "Interesado en" viaja en el payload del lead (misma operacion),
             // asi que no hay nada mas que guardar aqui.
             editInteresadoEnPrevio = interesadoEnValue('edit');
@@ -5592,10 +5658,12 @@
               await loadLeadsData();
               if (!validRequest()) return;
             }
+            resetDashboardInscripciones();
+            populateFilterOptions(true);
+            await applyFilters({ preservePage: true });
+            if (!validRequest()) return;
             if (typeof notifyLeadChange === 'function') notifyLeadChange('updated', leadId);
             closeEditLeadModal(true);
-            populateFilterOptions();
-            applyFilters();
           }
         }
       } catch (err) {
@@ -6564,7 +6632,7 @@ async function deleteLeadAppointment(id) {
           + `</tbody><tfoot><tr><th scope="row">Total</th>${campanas.map(c => `<td class="text-right tabular-nums">${c.personas}</td>`).join('')}<td class="text-right font-bold tabular-nums">${h.personas_inscritas}</td></tr></tfoot></table></div>`
         : '<p class="text-sm text-slate-500 mt-3">No se registraron inscripciones en estas fechas.</p>';
       return `<section class="period-card"><div class="flex items-center justify-between gap-2 flex-wrap"><h3 class="font-bold text-indigo-900">Inscripciones realizadas en el período</h3><button type="button" data-ev="click:exportPeriodoInscritosHistorialCSV()" class="rounded bg-slate-700 text-white px-3 py-1.5 text-xs">Descargar inscritos CSV</button></div>`
-        + `<p class="text-xs text-slate-500 mt-1">Personas que pasaron a inscritas entre estas fechas, según el historial de gestiones. Cada persona cuenta una vez y una baja posterior no la elimina.</p>`
+        + `<p class="text-xs text-slate-500 mt-1">Personas que pasaron a inscritas entre estas fechas, según el historial de gestiones. Cada registro cuenta una vez; una baja de estado no borra la inscripción, pero archivar el lead lo excluye de todos los reportes.</p>`
         + `<div class="grid grid-cols-3 gap-3 mt-3">${metric('Personas inscritas', h.personas_inscritas)}${metric('Inscrito', h.normales)}${metric('Inscrito Data Dura', h.data_dura)}</div>`
         + (revision ? `<p class="text-xs text-amber-600 mt-2">Incluye ${revision} inscripción${revision === 1 ? '' : 'es'} con fechas por revisar; ya están sumadas en el total.</p>` : '')
         + `<div class="mt-4">${matrizHtml}</div></section>`;
@@ -6709,24 +6777,29 @@ async function deleteLeadAppointment(id) {
       const prev = btn ? btn.textContent : '';
       if (btn) { btn.disabled = true; btn.textContent = 'Descargando…'; }
       const d = periodoData;
+      const generation = sessionGeneration, uid = currentUser.id, access = currentAccess.updated_at, revision = periodoSourceRevision, key = periodoLoadedKey;
+      const valid = () => generation === sessionGeneration && uid === currentUser?.id && access === currentAccess?.updated_at && currentAccess?.activo
+        && currentMainTab === 'reporte' && reporteVistaActiva === 'periodo' && key === periodoRangeKey() && revision === periodoSourceRevision;
       try {
-        const { data: gestiones, error } = await supabaseClient
+        const { data: gestiones, error } = await fetchPagedResult(() => supabaseClient
           .from('lead_gestiones')
           .select('id, lead_id, fecha_gestion, gestion_anterior, gestion_nueva, canal, autor_name, autor_user_id, is_data_dura, created_at')
           .gte('fecha_gestion', d.desde)
-          .lte('fecha_gestion', d.hasta)
-          .order('fecha_gestion', { ascending: true });
+          .lte('fecha_gestion', d.hasta));
+        if (!valid()) return;
         if (error) throw error;
         if (!gestiones || gestiones.length === 0) { showToast('No hay gestiones en este período.', 'info'); return; }
         const ids = [...new Set(gestiones.map(g => g.lead_id))];
-        const { data: leads, error: leadsError } = await supabaseClient
-          .from('leads')
-          .select('id, "Nombre", "Telefono", "AGENTE", "OBSERVACIONES ", "Campaña"')
-          .in('id', ids);
+        const { data: leads, error: leadsError } = await fetchRowsByIds('leads',
+          'id, "Nombre", "Telefono", "AGENTE", "OBSERVACIONES ", "Campaña"', ids, { excludeArchived: true });
+        if (!valid()) return;
         if (leadsError) throw leadsError;
         const leadMap = new Map((leads || []).map(l => [String(l.id), l]));
-        const rows = gestiones.map(g => {
-          const l = leadMap.get(String(g.lead_id)) || {};
+        const activas = gestiones.filter(g => leadMap.has(String(g.lead_id)))
+          .sort((a, b) => String(a.fecha_gestion).localeCompare(String(b.fecha_gestion)) || compareLeadIdsDescending(b, a));
+        if (!activas.length) { showToast('No hay gestiones de leads activos en este período.', 'info'); return; }
+        const rows = activas.map(g => {
+          const l = leadMap.get(String(g.lead_id));
           let hora = '';
           if (g.created_at) {
             try { hora = new Date(g.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'America/New_York' }); } catch (e) { hora = ''; }
@@ -6751,7 +6824,7 @@ async function deleteLeadAppointment(id) {
         showToast(`${rows.length} gestiones exportadas a CSV`, 'success');
       } catch (e) {
         console.warn('No se pudo exportar el detalle de gestiones:', e);
-        showToast('No se pudo exportar el detalle de gestiones.', 'warning');
+        if (valid()) showToast('No se pudo exportar el detalle de gestiones.', 'warning');
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = prev || 'Descargar gestiones CSV'; }
       }

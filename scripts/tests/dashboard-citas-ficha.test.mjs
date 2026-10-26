@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { test } from 'node:test';
-import { miamiDayBounds } from '../../src/legacy/helpers.js';
+import { getField, miamiDayBounds } from '../../src/legacy/helpers.js';
+import { filaCitaHtml } from '../../src/legacy/citas.js';
 
 const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
 
@@ -98,6 +99,64 @@ test('loadCitas admite hasta vacío y consulta Programadas desde hoy', async () 
   assert.equal(calls.some(call => call.method === 'gte' && call.value === miamiDayBounds('2026-10-16')[0]), true);
   assert.equal(calls.some(call => call.method === 'lt'), false);
   assert.equal(elements.get('citasAviso').textContent, '');
+});
+
+test('loadCitas pide notes y la tabla muestra la nota opcional', async () => {
+  const elements = new Map();
+  for (const id of ['citasDesde', 'citasHasta', 'citasResultado', 'citasSede', 'citasCampana', 'citasAsesor', 'citasAviso', 'citasTableBody']) {
+    elements.set(id, { value: id === 'citasDesde' ? '2026-10-26' : '', innerHTML: '', textContent: '', setAttribute() {}, removeAttribute() {}, replaceChildren() {} });
+  }
+  const selects = [];
+  const row = {
+    id: 74, lead_id: 1, scheduled_at: '2026-10-27T21:45:00Z', created_at: '2026-10-26T21:08:00Z',
+    status: 'PROGRAMADA', advisor_name: 'Jessica', advisor_user_id: 'u1', student_name: 'Bella Celin Soli',
+    contact_email: 'joselundberg28@gmail.com', student_age: 6, campus: 'DORAL', is_data_dura: false,
+    notes: 'MT piojitos',
+  };
+  const query = {
+    // fetchPagedResult lee .data del builder cuando no es thenable.
+    data: [row],
+    select(fields) { selects.push(String(fields)); return this; },
+    gte() { return this; },
+    lt() { return this; },
+    order() { return this; },
+    range() { return Promise.resolve({ data: [row], error: null, count: 1 }); },
+  };
+  let rendered = '';
+  const context = vm.createContext({
+    document: { getElementById: id => elements.get(id) },
+    miamiToday: () => '2026-10-26',
+    miamiDayBounds,
+    getField,
+    supabaseClient: { from: () => query },
+    currentUser: { id: 'u1' },
+    currentAccess: { activo: true, updated_at: 'v1' },
+    isAdmin: false,
+    isSupervisor: false,
+    currentMainTab: 'citas',
+    sessionGeneration: 1,
+    citasRequestGeneration: 0,
+    citasViewMode: 'lista',
+    setCitasViewMode: async () => {},
+    renderCitas() { rendered = filaCitaHtml(context.citasCache[0], { isAdmin: false, userId: 'u1' }); },
+    clearCitasResults() {},
+    showToast() {},
+    catalogOptions: (_key, values) => values,
+    fillCitasSelect() {},
+    ordenarCitasDesc: rows => rows,
+    unirCitasConLeads: (rows, leads) => ({ citas: rows.map(r => ({ ...r, lead: leads[0] })), aviso: '' }),
+    fetchPagedResult: async makeQuery => {
+      const result = makeQuery();
+      const resolved = await (typeof result?.then === 'function' ? result : Promise.resolve(result));
+      return resolved && resolved.error ? resolved : { data: resolved?.data ?? [], error: null };
+    },
+    fetchRowsByIds: async () => ({ data: [{ id: 1, Nombre: 'Jose Lundberg', Telefono: '1 (863) 303-6888', Mes: 'Octubre' }], error: null }),
+  });
+  vm.runInContext(extracted, context);
+  await context.loadCitas();
+  const campos = selects.flatMap(s => s.split(/[\s,]+/)).filter(Boolean);
+  assert.equal(campos.includes('notes'), true, `loadCitas no pidió notes: ${selects.join(' | ')}`);
+  assert.equal(rendered.includes('MT piojitos'), true, 'La tabla de visitas no muestra la nota opcional');
 });
 
 test('miamiStartOfDayISO calcula medianoche en Miami', () => {

@@ -2830,7 +2830,7 @@
       const [startISO] = miamiDayBounds(desde), [, endISO] = hasta ? miamiDayBounds(hasta) : [null, null];
       if (!startISO || (hasta && !endISO)) return showLoadError('El rango de fechas de Miami no es válido.');
       const valid = () => token === citasRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentMainTab === 'citas' && document.getElementById('citasDesde')?.value + '|' + (document.getElementById('citasHasta')?.value || '') === key;
-      let citasQuery = supabaseClient.from('lead_appointments').select('id,lead_id,scheduled_at,created_at,status,advisor_name,advisor_user_id,student_name,contact_email,student_age,campus,is_data_dura').gte('scheduled_at', startISO);
+      let citasQuery = supabaseClient.from('lead_appointments').select('id,lead_id,scheduled_at,created_at,status,advisor_name,advisor_user_id,student_name,contact_email,student_age,campus,is_data_dura,notes').gte('scheduled_at', startISO);
       if (endISO) citasQuery = citasQuery.lt('scheduled_at', endISO);
       const { data, error } = await fetchPagedResult(() => citasQuery);
       if (!valid()) return;

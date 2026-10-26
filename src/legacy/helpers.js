@@ -167,4 +167,64 @@ if (typeof window !== "undefined") {
   window.miamiDayBounds = miamiDayBounds;
   window.compareLeadIdsDescending = compareLeadIdsDescending;
   window.consolidateLeadsById = consolidateLeadsById;
+  window.diasDesdeUltimaGestion = diasDesdeUltimaGestion;
+  window.estadoSeguimiento = estadoSeguimiento;
+}
+
+/**
+ * Clasifica un seguimiento confirmado segun su fecha respecto a hoy.
+ * @param {string|null|undefined} fechaSeguimiento - Fecha YYYY-MM-DD del seguimiento.
+ * @param {string} [hoy] - Fecha de referencia YYYY-MM-DD (por defecto hoy Miami).
+ * @returns {'vencido'|'hoy'|'futuro'|null} null si no hay fecha valida.
+ */
+export function estadoSeguimiento(fechaSeguimiento, hoy) {
+  const ref = (typeof hoy === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(hoy)) ? hoy : miamiToday();
+  if (!fechaSeguimiento) return null;
+  const limpio = String(fechaSeguimiento).trim().split('T')[0].trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(limpio)) return null;
+  if (limpio < ref) return 'vencido';
+  if (limpio === ref) return 'hoy';
+  return 'futuro';
+}
+
+/**
+ * Calcula los días transcurridos desde la última gestión de un lead.
+ * Acepta fechas en formato DD/MM/YYYY o YYYY-MM-DD (con o sin hora).
+ * Devuelve null si no hay fecha válida o si la gestión es futura.
+ * @param {object|null|undefined} lead - Objeto lead.
+ * @param {string} [hoy] - Fecha de referencia YYYY-MM-DD (por defecto hoy Miami).
+ * @returns {number|null} Días de inactividad (0 = hoy) o null.
+ */
+export function diasDesdeUltimaGestion(lead, hoy) {
+  const ref = (typeof hoy === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(hoy)) ? hoy : miamiToday();
+  const raw = getField(lead, 'Fecha Última Gestión');
+  if (!raw) return null;
+  const limpio = String(raw).trim().split('T')[0].trim();
+  if (!limpio) return null;
+  let d;
+  if (limpio.includes('/')) {
+    const partes = limpio.split('/');
+    if (partes.length !== 3) return null;
+    const dia = parseInt(partes[0], 10);
+    const mes = parseInt(partes[1], 10) - 1;
+    const anio = parseInt(partes[2], 10);
+    if (!Number.isFinite(dia) || !Number.isFinite(mes) || !Number.isFinite(anio)) return null;
+    d = new Date(anio, mes, dia);
+  } else if (limpio.includes('-')) {
+    const partes = limpio.split('-');
+    if (partes.length !== 3) return null;
+    const anio = parseInt(partes[0], 10);
+    const mes = parseInt(partes[1], 10) - 1;
+    const dia = parseInt(partes[2], 10);
+    if (!Number.isFinite(dia) || !Number.isFinite(mes) || !Number.isFinite(anio)) return null;
+    d = new Date(anio, mes, dia);
+  } else {
+    d = new Date(limpio);
+  }
+  if (isNaN(d.getTime())) return null;
+  const [y, m, dd] = ref.split('-').map(Number);
+  const hoyDate = new Date(y, m - 1, dd);
+  const diff = Math.floor((hoyDate.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return null;
+  return diff;
 }

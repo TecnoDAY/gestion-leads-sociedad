@@ -5,7 +5,7 @@
  * sigue resolviendolos via window.* (registro al final de este modulo).
  */
 
-import { compareAlphaEs, compareLeadIdsDescending, consolidateLeadsById, escapeAttr, escapeHtml, getField, miamiToday, sortAlphaEs } from './helpers.js';
+import { compareAlphaEs, compareLeadIdsDescending, consolidateLeadsById, diasDesdeUltimaGestion, escapeAttr, escapeHtml, estadoSeguimiento, getField, miamiToday, sortAlphaEs } from './helpers.js';
 import { programaRequiereDetalle } from './inscripciones.js';
 import { programaPorId } from './inscripciones.js';
 import { MONTH_CHRONO, medioVisible, parseFechaLead } from './reportes.js';
@@ -405,7 +405,7 @@ export function filaLeadHtml(lead, { leadId, origin, isAdmin }) {
   const agente = getField(lead, 'Agente ') || getField(lead, 'Agente') || '-';
   const badgeHtml = badgeGestionHtml(gestion);
   const cleanPhone = telefono.replace(/\D/g, '');
-  return `<tr class="hover:bg-slate-800/80 transition-colors group">
+  return `<tr class="hover:bg-slate-800/80 transition-colors group" data-lead-id="${escapeAttr(String(leadId))}">
           <td class="px-3.5 py-3 font-mono text-[11px] text-slate-400 tabular-nums">#${leadId}</td>
           <td class="px-3.5 py-3 text-slate-300">
             <div class="font-medium text-white">${escapeHtml(fecha || '-')}</div>
@@ -464,6 +464,134 @@ export function tablaVaciaLeadsHtml() {
             <button type="button" data-ev="click:resetAllFilters()">Limpiar filtros</button>
           </td>
         </tr>`;
+}
+
+/**
+ * Determina si un cambio de lead afecta los filtros o agrupados del panel.
+ * Si devuelve false, basta con actualizar la fila visible sin repintar todo.
+ * @param {object|null} previous - Lead antes del cambio.
+ * @param {object|null} current - Lead despues del cambio.
+ * @returns {boolean}
+ */
+/**
+ * Score de prioridad operativa para ordenar la tabla de leads.
+ * Menor = mas urgente. Inscritos y archivados van al final.
+ * @param {object} lead
+ * @returns {number}
+ */
+export function scorePrioridadLead(lead, hoy = miamiToday()) {
+  if (!lead) return 999;
+  const gestion = String(getField(lead, 'GESTION') || '').toUpperCase();
+  if (gestion.includes('INSCRITO') || gestion.includes('MATRICULADO')) return 1000;
+  if (lead.archived_at) return 1001;
+
+  const diasInactivos = diasDesdeUltimaGestion ? diasDesdeUltimaGestion(lead, hoy) : null;
+  const fechaSeg = getField(lead, 'fecha_seguimiento');
+  const estadoSeg = estadoSeguimiento ? estadoSeguimiento(fechaSeg, hoy) : null;
+
+  // Seguimiento vencido: maxima prioridad
+  if (estadoSeg === 'vencido') return 0;
+  // Seguimiento para hoy
+  if (estadoSeg === 'hoy') return 1;
+  // Seguimiento futuro: no es urgente aunque lleve dias sin gestion
+  if (estadoSeg === 'futuro') return 5;
+  // Sin gestion reciente: mas dias = mas urgente (solo si no hay seguimiento futuro)
+  if (diasInactivos !== null && diasInactivos >= 7) return 2;
+  if (diasInactivos !== null && diasInactivos >= 3) return 3;
+  if (diasInactivos !== null && diasInactivos >= 1) return 4;
+  // Sin seguimiento programado
+  if (!fechaSeg) return 6;
+  // Lead fresco (gestionado hoy, sin seguimiento)
+  return 7;
+}
+
+/**
+ * Indica si un lead no tiene seguimiento programado y requiere continuidad comercial.
+ * Excluye inscritos, matriculados y archivados.
+ * @param {object} lead
+ * @returns {boolean}
+ */
+export function sinSeguimientoProgramado(lead) {
+  if (!lead) return false;
+  const gestion = String(getField(lead, 'GESTION') || '').toUpperCase();
+  if (gestion.includes('INSCRITO') || gestion.includes('MATRICULADO')) return false;
+  if (lead.archived_at) return false;
+  const proxima = String(getField(lead, 'proxima_accion') || '').trim();
+  const fecha = String(getField(lead, 'fecha_seguimiento') || '').trim();
+  return !proxima && !fecha;
+}
+
+export function leadChangedFilteringFields(previous, current) {
+  if (!previous || !current) return true;
+  const fields = ['GESTION', 'Campaña', 'AGENTE', 'Mes', 'Medio', 'Ciudad', 'archived_at', 'proxima_accion', 'fecha_seguimiento'];
+  return fields.some(f => String(previous[f] ?? '') !== String(current[f] ?? ''));
+}
+
+/**
+ * Actualiza una sola fila de la tabla de leads en el DOM sin repintar todo.
+ * Devuelve true si la fila existia y se actualizo, false si no estaba visible.
+ * @param {object} lead - Lead actualizado.
+ * @param {{origin?: string, isAdmin?: boolean}} [ctx]
+ * @returns {boolean}
+ */
+export function updateLeadRowInTable(lead, ctx = {}) {
+  if (!lead || lead.id === undefined || lead.id === null) return false;
+  const row = (typeof document !== 'undefined')
+    ? document.querySelector(`tr[data-lead-id="${CSS.escape(String(lead.id))}"]`)
+    : null;
+  if (!row) return false;
+  const origin = ctx.origin || 'actual';
+  const isAdmin = !!ctx.isAdmin;
+  row.outerHTML = filaLeadHtml(lead, { leadId: lead.id, origin, isAdmin });
+  return true;
+}
+
+/**
+ * Actualiza una sola tarjeta de la lista rapida en el DOM sin repintar todo.
+ * Devuelve true si la tarjeta existia y se actualizo.
+ * @param {object} lead
+ * @param {{prioridad?: string}} [ctx]
+ * @returns {boolean}
+ */
+export function updateQuickLeadCard(lead, ctx = {}) {
+  if (!lead || lead.id === undefined || lead.id === null) return false;
+  // La lista rapida no marca data-lead-id en el contenedor raiz; se busca por el boton.
+  if (typeof document === 'undefined') return false;
+  const button = document.querySelector(`[data-quick-action="view"][data-lead-id="${CSS.escape(String(lead.id))}"]`);
+  if (!button) return false;
+  const row = button.closest('.quick-lead-row');
+  if (!row) return false;
+  // Reemplazar el innerHTML de la fila completa es mas seguro que patchear campos.
+  const parent = row.parentNode;
+  if (!parent) return false;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = quickLeadsHtml([lead], ctx);
+  const newRow = tmp.querySelector('.quick-lead-row');
+  if (!newRow) return false;
+  parent.replaceChild(newRow, row);
+  return true;
+}
+
+/**
+ * Actualiza una sola tarjeta movil en el DOM sin repintar toda la lista.
+ * Devuelve true si la tarjeta existia y se actualizo.
+ * @param {object} lead - Lead actualizado.
+ * @param {{origin?: string, isAdmin?: boolean}} [ctx]
+ * @returns {boolean}
+ */
+export function updateMobileLeadCard(lead, ctx = {}) {
+  if (!lead || lead.id === undefined || lead.id === null) return false;
+  if (typeof document === 'undefined') return false;
+  const card = document.querySelector(`.mobile-lead-card[data-lead-id="${CSS.escape(String(lead.id))}"]`);
+  if (!card) return false;
+  const origin = ctx.origin || 'actual';
+  const isAdmin = !!ctx.isAdmin;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = tarjetaLeadMovilHtml(lead, { leadId: lead.id, origin, isAdmin });
+  const newCard = tmp.querySelector('.mobile-lead-card');
+  if (!newCard) return false;
+  card.parentNode.replaceChild(newCard, card);
+  return true;
 }
 
 /** Tarjeta movil de un lead; reutiliza datos y acciones de la tabla. */
@@ -654,6 +782,10 @@ export function quickLeadsHtml(leads, ctx = {}) {
     const campana = getField(lead, 'Campaña') || 'Sin campaña';
     const fecha = getField(lead, 'Fecha') || 'Sin fecha';
     const gestion = getField(lead, 'GESTION') || 'Sin estado';
+    const diasInactivos = diasDesdeUltimaGestion(lead, miamiToday());
+    const proximaAccion = getField(lead, 'proxima_accion');
+    const fechaSeguimiento = getField(lead, 'fecha_seguimiento');
+    const estadoSeg = estadoSeguimiento(fechaSeguimiento, miamiToday());
     // Las inscripciones solo existen para los leads actuales: el historico
     // comparte ids numericos con el actual y no debe mostrar sus programas.
     const filas = prioridad === 'inscrito' && origin === 'actual'
@@ -676,7 +808,7 @@ export function quickLeadsHtml(leads, ctx = {}) {
       columna = `<span class="quick-lead-programas">${contenido}</span>`;
     }
     return `<div class="quick-lead-row text-xs">
-          <div class="quick-lead-meta"><button type="button" data-quick-action="view" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="font-semibold text-left text-white hover:text-indigo-400 cursor-pointer">${escapeHtml(nombre)}</button><p class="mt-1 text-slate-400">${escapeHtml(fecha)}${origin === 'historico' ? ' · Histórico 2025' : ''}${prioridad === 'inscrito' ? ` · ${escapeHtml(campana)}` : ''}</p></div>
+          <div class="quick-lead-meta"><button type="button" data-quick-action="view" data-lead-id="${escapeAttr(id)}" data-origin="${origin}" class="font-semibold text-left text-white hover:text-indigo-400 cursor-pointer">${escapeHtml(nombre)}</button><p class="mt-1 text-slate-400">${escapeHtml(fecha)}${origin === 'historico' ? ' · Histórico 2025' : ''}${prioridad === 'inscrito' ? ` · ${escapeHtml(campana)}` : ''}${diasInactivos === null ? '' : (diasInactivos === 0 ? ' · última gestión: hoy' : ` · sin gestión hace ${diasInactivos} día${diasInactivos === 1 ? '' : 's'}`)}${proximaAccion || fechaSeguimiento ? ` · seguimiento: ${escapeHtml(proximaAccion || 'pendiente')}${fechaSeguimiento ? ' (' + escapeHtml(fechaSeguimiento.slice(0, 10)) + (estadoSeg === 'vencido' ? ' · vencido' : estadoSeg === 'hoy' ? ' · hoy' : '') + ')' : ''}` : ''}</p></div>
           ${columna}
           <span class="quick-lead-status">${badgeGestionHtml(gestion)}</span>
           <div class="quick-lead-actions">
@@ -1102,6 +1234,12 @@ if (typeof window !== 'undefined') {
   window.matrizLeadsHtml = matrizLeadsHtml;
   window.badgeGestionHtml = badgeGestionHtml;
   window.filaLeadHtml = filaLeadHtml;
+  window.scorePrioridadLead = scorePrioridadLead;
+  window.leadChangedFilteringFields = leadChangedFilteringFields;
+  window.sinSeguimientoProgramado = sinSeguimientoProgramado;
+  window.updateLeadRowInTable = updateLeadRowInTable;
+  window.updateQuickLeadCard = updateQuickLeadCard;
+  window.updateMobileLeadCard = updateMobileLeadCard;
   window.tablaVaciaLeadsHtml = tablaVaciaLeadsHtml;
   window.tarjetaLeadMovilHtml = tarjetaLeadMovilHtml;
   window.listaVaciaLeadsMovilHtml = listaVaciaLeadsMovilHtml;

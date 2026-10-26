@@ -1,9 +1,9 @@
 // Caracterizacion de la tabla de leads y su paginacion (fase 25).
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { describe, test } from 'node:test';
 import {
   badgeGestionHtml, bloqueRepetidosHtml, controlesPaginacionHtml, fichaLeadHtml,
-  filaLeadHtml, infoPaginacion, rangoPaginacion, tablaVaciaLeadsHtml, tarjetaLeadMovilHtml,
+  filaLeadHtml, infoPaginacion, leadChangedFilteringFields, rangoPaginacion, scorePrioridadLead, sinSeguimientoProgramado, tablaVaciaLeadsHtml, tarjetaLeadMovilHtml,
 } from '../../src/legacy/leads.js';
 
 const lead = extras => ({ id: 11, Nombre: 'Ana', Telefono: '1 (786) 555-1234', 'Campaña': 'Kids', Medio: 'WhatsApp', Mes: 'octubre', Fecha: '3/10/2026', GESTION: 'AGENDADO', 'Agente ': 'Loli', ...extras });
@@ -105,4 +105,92 @@ test('controlesPaginacionHtml: bordes deshabilitados, activa y etiqueta movil', 
   const larga = controlesPaginacionHtml(5, 20);
   assert.match(larga, /pagination-ellipsis/);
   assert.match(larga, /Página 5 de 20/);
+});
+
+describe('sinSeguimientoProgramado', () => {
+  test('lead sin proxima_accion ni fecha_seguimiento devuelve true', () => {
+    assert.equal(sinSeguimientoProgramado({ id: 1, GESTION: 'Información', 'Fecha Última Gestión ': '23/10/2026' }), true);
+  });
+  test('lead con proxima_accion devuelve false', () => {
+    assert.equal(sinSeguimientoProgramado({ id: 1, GESTION: 'Información', proxima_accion: 'Llamar', 'Fecha Última Gestión ': '23/10/2026' }), false);
+  });
+  test('lead con fecha_seguimiento devuelve false', () => {
+    assert.equal(sinSeguimientoProgramado({ id: 1, GESTION: 'Información', fecha_seguimiento: '2026-10-30', 'Fecha Última Gestión ': '23/10/2026' }), false);
+  });
+  test('lead inscrito devuelve false', () => {
+    assert.equal(sinSeguimientoProgramado({ id: 1, GESTION: 'INSCRITO', 'Fecha Última Gestión ': '23/10/2026' }), false);
+  });
+  test('lead archivado devuelve false', () => {
+    assert.equal(sinSeguimientoProgramado({ id: 1, GESTION: 'Información', archived_at: '2026-10-01T00:00:00Z', 'Fecha Última Gestión ': '23/10/2026' }), false);
+  });
+  test('lead null devuelve false', () => {
+    assert.equal(sinSeguimientoProgramado(null), false);
+  });
+});
+
+describe('scorePrioridadLead', () => {
+  const hoy = '2026-10-23';
+  test('inscrito va al final', () => {
+    assert.ok(scorePrioridadLead({ id: 1, GESTION: 'INSCRITO', 'Fecha Última Gestión ': '23/10/2026' }, hoy) >= 1000);
+  });
+  test('archivado va al final', () => {
+    assert.ok(scorePrioridadLead({ id: 1, GESTION: 'Información', archived_at: '2026-10-01T00:00:00Z' }, hoy) >= 1000);
+  });
+  test('seguimiento vencido es mas urgente', () => {
+    const lead = { id: 1, GESTION: 'Información', proxima_accion: 'Llamar', fecha_seguimiento: '2026-10-20' };
+    assert.equal(scorePrioridadLead(lead, hoy), 0);
+  });
+  test('seguimiento para hoy es segundo', () => {
+    const lead = { id: 1, GESTION: 'Información', proxima_accion: 'Llamar', fecha_seguimiento: '2026-10-23' };
+    assert.equal(scorePrioridadLead(lead, hoy), 1);
+  });
+  test('sin gestion 7+ dias es urgente', () => {
+    const lead = { id: 1, GESTION: 'Información', 'Fecha Última Gestión ': '10/10/2026' };
+    assert.equal(scorePrioridadLead(lead, hoy), 2);
+  });
+  test('sin gestion 3-6 dias es medio', () => {
+    const lead = { id: 1, GESTION: 'Información', 'Fecha Última Gestión ': '20/10/2026' };
+    assert.equal(scorePrioridadLead(lead, hoy), 3);
+  });
+  test('lead gestionado hoy sin seguimiento es sin seguimiento programado', () => {
+    const lead = { id: 1, GESTION: 'Información', 'Fecha Última Gestión ': '23/10/2026' };
+    assert.equal(scorePrioridadLead(lead, hoy), 6);
+  });
+  test('seguimiento futuro es bajo', () => {
+    const lead = { id: 1, GESTION: 'Información', proxima_accion: 'Llamar', fecha_seguimiento: '2026-10-30' };
+    assert.equal(scorePrioridadLead(lead, hoy), 5);
+  });
+  test('sin seguimiento programado es 6', () => {
+    const lead = { id: 1, GESTION: 'Información', 'Fecha Última Gestión ': '23/10/2026', 'proxima_accion': '', 'fecha_seguimiento': '' };
+    assert.equal(scorePrioridadLead(lead, hoy), 6);
+  });
+});
+
+describe('leadChangedFilteringFields', () => {
+  test('null previous returns true (new lead)', () => {
+    assert.equal(leadChangedFilteringFields(null, { id: 1 }), true);
+  });
+  test('null current returns true', () => {
+    assert.equal(leadChangedFilteringFields({ id: 1 }, null), true);
+  });
+  test('only Nombre changed returns false', () => {
+    const prev = { id: 1, GESTION: 'Información', 'Campaña': 'Kids', AGENTE: 'Loli', Mes: 'octubre', Medio: 'WhatsApp', Ciudad: 'Doral' };
+    const curr = { ...prev, Nombre: 'Nuevo nombre' };
+    assert.equal(leadChangedFilteringFields(prev, curr), false);
+  });
+  test('GESTION changed returns true', () => {
+    const prev = { id: 1, GESTION: 'Información', 'Campaña': 'Kids', AGENTE: 'Loli', Mes: 'octubre', Medio: 'WhatsApp', Ciudad: 'Doral' };
+    const curr = { ...prev, GESTION: 'Agendado' };
+    assert.equal(leadChangedFilteringFields(prev, curr), true);
+  });
+  test('Campaña changed returns true', () => {
+    const prev = { id: 1, GESTION: 'Información', 'Campaña': 'Kids', AGENTE: 'Loli', Mes: 'octubre', Medio: 'WhatsApp', Ciudad: 'Doral' };
+    const curr = { ...prev, 'Campaña': 'Verano' };
+    assert.equal(leadChangedFilteringFields(prev, curr), true);
+  });
+  test('archived_at changed returns true', () => {
+    const prev = { id: 1, GESTION: 'Información', 'Campaña': 'Kids', AGENTE: 'Loli', Mes: 'octubre', Medio: 'WhatsApp', Ciudad: 'Doral', archived_at: null };
+    const curr = { ...prev, archived_at: '2026-10-24T00:00:00Z' };
+    assert.equal(leadChangedFilteringFields(prev, curr), true);
+  });
 });

@@ -13,6 +13,8 @@ const {
   sortAlphaEs,
   miamiToday,
   miamiDayBounds,
+  diasDesdeUltimaGestion,
+  estadoSeguimiento,
 } = mod;
 
 describe('legacy helpers - escapeHtml / escapeAttr', () => {
@@ -144,5 +146,47 @@ describe('legacy helpers - miamiDayBounds', () => {
     assert.deepEqual(miamiDayBounds('2026-13-01'), [null, null]);
     assert.deepEqual(miamiDayBounds(''), [null, null]);
     assert.deepEqual(miamiDayBounds(null), [null, null]);
+  });
+});
+
+describe('diasDesdeUltimaGestion', () => {
+  test('sin fecha devuelve null', () => {
+    assert.equal(diasDesdeUltimaGestion(null), null);
+    assert.equal(diasDesdeUltimaGestion({}), null);
+    assert.equal(diasDesdeUltimaGestion({ 'Fecha Última Gestión ': '' }), null);
+  });
+  test('fecha de hoy devuelve 0', () => {
+    assert.equal(diasDesdeUltimaGestion({ 'Fecha Última Gestión ': '2026-10-23' }, '2026-10-23'), 0);
+  });
+  test('fecha anterior devuelve dias', () => {
+    assert.equal(diasDesdeUltimaGestion({ 'Fecha Última Gestión ': '2026-10-20' }, '2026-10-23'), 3);
+  });
+  test('acepta formato DD/MM/YYYY', () => {
+    assert.equal(diasDesdeUltimaGestion({ 'Fecha Última Gestión ': '20/10/2026' }, '2026-10-23'), 3);
+  });
+  test('gestion futura devuelve null', () => {
+    assert.equal(diasDesdeUltimaGestion({ 'Fecha Última Gestión ': '2026-10-30' }, '2026-10-23'), null);
+  });
+  test('fecha invalida devuelve null', () => {
+    assert.equal(diasDesdeUltimaGestion({ 'Fecha Última Gestión ': 'no-es-fecha' }, '2026-10-23'), null);
+  });
+});
+
+describe('estadoSeguimiento', () => {
+  test('sin fecha devuelve null', () => {
+    assert.equal(estadoSeguimiento(null, '2026-10-23'), null);
+    assert.equal(estadoSeguimiento('', '2026-10-23'), null);
+  });
+  test('fecha anterior es vencido', () => {
+    assert.equal(estadoSeguimiento('2026-10-20', '2026-10-23'), 'vencido');
+  });
+  test('fecha igual es hoy', () => {
+    assert.equal(estadoSeguimiento('2026-10-23', '2026-10-23'), 'hoy');
+  });
+  test('fecha posterior es futuro', () => {
+    assert.equal(estadoSeguimiento('2026-10-30', '2026-10-23'), 'futuro');
+  });
+  test('fecha invalida devuelve null', () => {
+    assert.equal(estadoSeguimiento('no-es-fecha', '2026-10-23'), null);
   });
 });

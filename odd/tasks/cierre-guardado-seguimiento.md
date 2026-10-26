@@ -21,7 +21,7 @@ Modo: on. Fuente: usuario (plan aprobado: reproducir antes de corregir). Runner:
 ## Tareas
 - [x] T1 Inspeccionar firmas y cuerpos remotos (solo lectura).
 - [x] T2 Reproducir/corregir confirmacion de guardado y refresco conservando pagina.
-- [x] T3 Preparar migracion correctiva local preservando contratos/permisos (no aplicada ni ejecutada en PostgreSQL).
+- [x] T3 Preparar migracion correctiva local preservando contratos/permisos (aplicada en remoto 2026-10-26 con autorizacion humana; suite SQL aislada sin ejecutar).
 - [x] T4 Verificar suite/lint/build y revision independiente (limites de QA y SQL declarados).
 - [ ] T5 Validacion de navegador y transacciones/reintentos/concurrencia en entorno aislado.
 
@@ -29,7 +29,7 @@ Modo: on. Fuente: usuario (plan aprobado: reproducir antes de corregir). Runner:
 - [x] No atribuir al servidor campos no devueltos.
 - [x] Recalcular busqueda, orden, tabla, movil e Inicio tras guardar.
 - [x] Conservar pagina y filtros y refrescar inscripciones.
-- [ ] Firma SQL usada por frontend admite seguimiento atomico.
+- [x] Firma SQL usada por frontend admite seguimiento atomico (7 args delega en update_lead_followup y sus dos whitelists aceptan el par).
 - [ ] Pruebas transaccionales/duplicados/concurrencia verificadas o explicitamente pendientes.
 - [ ] Validacion manual escritorio/movil completada.
 
@@ -56,6 +56,11 @@ Revision SQL final independiente: wrapper admin/full y resto/followup, permisos 
 Reinicio de servidor durante suite final: proceso interrumpido, temporales de navegador/log perdidos. No se repitieron las comprobaciones de navegador ya terminadas.
 Suite reanudada (2026-10-26): RED tres casos de prioridad por fecha ignorada. Correccion minima: scorePrioridadLead acepta hoy como segundo argumento, por defecto Miami actual. Sin cambiar expectativas. GREEN final: npm test 831/831 Node + 11 Python; npm run lint y npm run build passed; git diff --check passed. QA strict: rutas rastreadas comprobadas, sin staged (no audita contenido unstaged).
 Navegador antes del reinicio: se amplio check sintetico con etiquetas de inscritos actualizadas y seleccion de filtro preservada; passed en 1280/390. No certifica CSS, temas, autenticacion ni base real.
+Despliegue remoto (2026-10-26, autorizacion humana explicita): correctiva aplicada en dos apply_migration. part1 = update_lead_followup + update_lead_full; part2 = update_lead_with_appointment de 7 args, wrapper de sede y ACL. Deriva de nombre frente al fichero local unico 202610260001_correct_atomic_followup_contracts.sql; cualquier db push posterior la re-aplicaria (es idempotente). Usar apply_migration, no db push.
+Verificacion posterior solo lectura: los 5 contratos estaticos reproducidos contra pg_get_functiondef (delegacion en update_lead_followup, cita de 7 args, guards crm/telefono/nombre/lead_contacts, par + largo 200 + ISO + to_char, USING sin quote_literal); wrapper con rama admin/full y orden lead antes que cita antes que sede; whitelists admin y no-admin incluyen proxima_accion/fecha_seguimiento; ACL overloads 5 y 6 revocados de authenticated/anon/public y 7 args/full/followup solo authenticated. Advisors: solo avisos preexistentes (52 SECURITY DEFINER, btree_gist, passwords), ninguno nuevo critico.
+Revision SQL independiente (2026-10-26) confirmo 6/6 puntos y anadio el bug del wrapper admin+sede (ya corregido) y la deriva de nombres de migracion local/remoto.
+Bugs cerrados en produccion: el par de seguimiento rechazado por whitelist en admin y no-admin al agendar; admin con sede existente con followup_fields_only; update_lead_full sin sincronizacion lead_contacts; quote_literal anulaba JSON null en seguimiento; overload de 5 args expuesto a authenticated.
+Pendiente explicito: no se ejecuto supabase/tests/atomic_followup_contracts.sql (sin psql, sin CLI de Supabase, demonio docker inexistente). La validacion aplicada es estatica + inspeccion de cuerpos remotos; no hay prueba funcional de ejecucion.
 
 ## Progreso
-Estado: waiting-human; punto 1 NO cerrado. Siguiente: decidir contrato para rechazar ediciones obsoletas y semantica de programacion sin gestion; habilitar validacion PostgreSQL aislada antes de plantear despliegue. Bloqueos: remoto requiere autorizacion especifica, SQL transaccional/reintentos/concurrencia sin ejecutar. Sin commits/push ni nuevas escrituras remotas.
+Estado: waiting-human; punto 1 NO cerrado. Remoto corregido y verificado estaticamente (2026-10-26, autorizado); codigo local commiteado y push: e712251 (nota opcional en tabla de visitas), 7cf93b9/b75a0e9 (prioridad de seguimiento y contratos), 60b257b (JSDoc). Siguiente: decidir contrato para rechazar ediciones obsoletas y semantica de programacion sin gestion; habilitar validacion PostgreSQL aislada (requiere instalar CLI y arrancar docker = autorizacion humana). Bloqueos: SQL transaccional/duplicados/reintentos/concurrencia sin ejecutar; validacion manual escritorio/movil sin realizar.

@@ -14,6 +14,7 @@ import { test } from 'node:test';
 import { getField, catalogLabel, sortAlphaEs } from '../../src/legacy/helpers.js';
 import * as catalogosApi from '../../src/legacy/catalogos.js';
 import { FILTROS_CATALOGO, opcionesCatalogoData, opcionesSelectData, uniqueFieldValues } from '../../src/legacy/catalogos.js';
+import { esMedioRetirado } from '../../src/legacy/reportes.js';
 
 const root = new URL('../..', import.meta.url).pathname;
 const headHtml = execSync('git show HEAD:index.html', { cwd: root, encoding: 'utf8' });
@@ -123,7 +124,7 @@ function ejecutar(fuente, sample) {
     },
     getVisibleBaseLeads: () => sample.leads,
     catalogRows: sample.catalogRows,
-    catalogosApi, getField, catalogLabel,
+    catalogosApi, getField, catalogLabel, esMedioRetirado,
   });
   vm.runInContext(fuente, c);
   c.populateFilterOptions();

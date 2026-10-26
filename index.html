@@ -1369,7 +1369,7 @@
           <div>
             <label class="block font-medium text-slate-300 mb-1">Medio</label>
             <select id="newMedio" data-ev="change:syncNewUltimaGestion()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
-              <option value="CogniTalkign">CogniTalkign</option>
+              <option value="">Selecciona un medio</option>
               <option value="Instagram">Instagram</option>
               <option value="Lead Directo">Lead Directo</option>
               <option value="Referidos Andres">Referidos Andres</option>
@@ -3720,7 +3720,8 @@
         const values = kind === 'mes' && !gestion.includes('INSCRIT')
           ? catalogosApi.mesesVentanaActual(typeof miamiToday === 'function' ? miamiToday() : '2026-10-01', dataValues)
           : catalogOptions(kind, dataValues);
-        populateSelect(id, values, preserveSelection);
+        const valuesFiltrados = kind === 'medio' ? values.filter(v => !esMedioRetirado(v)) : values;
+        populateSelect(id, valuesFiltrados, preserveSelection);
       });
     }
 
@@ -3806,7 +3807,7 @@
       // Mes conserva orden cronológico; el resto de catálogos sale alfabético.
       const mes = sortMonthCatalog(activeCatalogValues('mes'));
       const campana = sortAlphaEs(activeCatalogValues('campana'));
-      const medio = sortAlphaEs(activeCatalogValues('medio'));
+      const medio = sortAlphaEs(activeCatalogValues('medio')).filter(v => !esMedioRetirado(v));
       const gestion = sortAlphaEs(activeCatalogValues('gestion'));
       // Formulario Nuevo
       fillSelectFromCatalog('newMes', mes);

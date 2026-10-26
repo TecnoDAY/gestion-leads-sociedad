@@ -2482,6 +2482,11 @@ test('filtros y campos automáticos conservan el orden y readonly en HTML', () =
     'los datos automaticos van antes de los controles editables');
 });
 
+test('medio retirado CogniTalkign no aparece como opción fija en Nuevo lead', () => {
+  assert.doesNotMatch(html, /<option value="CogniTalkign"/,
+    'CogniTalkign no debe ser opción fija en el formulario Nuevo lead');
+});
+
 test('rango incompleto no finge filtrar ni consulta, error y sesión obsoleta no pintan parcial', async () => {
   const f = frontend({ allLeads: [{ id: 1 }], filteredLeads: [{ id: 'previous' }] }), c = f.context;
   c.supabaseClient = database({});

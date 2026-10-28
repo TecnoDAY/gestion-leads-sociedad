@@ -107,7 +107,7 @@ test('aviso visible indica período y límite de 2.000 sin afirmar cobertura tot
 });
 
 test('consulta explícita exige filtros y pagina sin mezclar orígenes ni duplicar la carga rápida', async () => {
-  const fields = Object.fromEntries(['kanbanQueryError', 'kanbanRunQuery', 'kanbanMore', 'kanbanSearch',
+  const fields = Object.fromEntries(['kanbanQueryError', 'kanbanQueryStatus', 'kanbanRunQuery', 'kanbanMore', 'kanbanSearch',
     'kanbanQueryDesde', 'kanbanQueryHasta', 'kanbanQueryText', 'kanbanQueryOrigin'].map(id => [id, {
     value: '', textContent: '', disabled: false, classList: { toggle: () => {} },
   }]));
@@ -137,6 +137,45 @@ test('consulta explícita exige filtros y pagina sin mezclar orígenes ni duplic
   assert.equal(calls[1].p_antes_id, 101);
   assert.equal(context.getBase().length, 101);
   assert.equal(renders, 2);
+});
+
+test('al consultar muestra progreso, evita doble petición y conserva resultados si falla', async () => {
+  const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+  const view = html.slice(html.indexOf('<div id="viewKanban"'), html.indexOf('<!-- ================= FOOTER'));
+  assert.match(view, /Resultados visibles: <strong id="kanbanStatTotal"/);
+  assert.match(view, /id="kanbanQueryStatus"[^>]*role="status"/);
+  const fields = Object.fromEntries(['kanbanQueryError', 'kanbanQueryStatus', 'kanbanRunQuery', 'kanbanMore',
+    'kanbanSearch', 'kanbanQueryDesde', 'kanbanQueryHasta', 'kanbanQueryText', 'kanbanQueryOrigin'].map(id => [id, {
+    value: '', textContent: '', disabled: false, classList: { toggle: () => {} },
+  }]));
+  fields.kanbanQueryOrigin.value = 'actual';
+  fields.kanbanQueryText.value = 'Nombre';
+  let rejectRequest;
+  let calls = 0;
+  let renders = 0;
+  const source = js.match(/async function runQuery\(append = false\) \{[\s\S]*?\n\}/)?.[0];
+  const context = vm.createContext({
+    document: { getElementById: id => fields[id] },
+    window: { crmQueryKanban: () => { calls++; return new Promise((_, reject) => { rejectRequest = reject; }); } },
+    validarRangoIngreso: () => {}, renderBoard: () => { renders++; }, updatePeriodNotice: () => {},
+  });
+  vm.runInContext(`let requestGeneration = 0, currentBase = [{ id: 7 }],
+    consulta = { p_origen: 'actual', p_busqueda: 'Previo' }, moreAvailable = false, errorState;
+    ${source}; this.runQuery = runQuery; this.getBase = () => currentBase; this.getQuery = () => consulta`, context);
+  const pending = context.runQuery();
+  assert.match(fields.kanbanQueryStatus.textContent, /Consultando/);
+  assert.equal(fields.kanbanRunQuery.disabled, true);
+  await context.runQuery();
+  assert.equal(calls, 1);
+  assert.equal(context.getBase()[0].id, 7);
+  rejectRequest(new Error('Sin conexión'));
+  await pending;
+  assert.equal(context.getBase()[0].id, 7);
+  assert.equal(context.getQuery().p_busqueda, 'Previo');
+  assert.equal(renders, 0);
+  assert.equal(fields.kanbanQueryStatus.textContent, '');
+  assert.equal(fields.kanbanRunQuery.disabled, false);
+  assert.match(fields.kanbanQueryError.textContent, /Sin conexión/);
 });
 
 test('el histórico no permite arrastrar ni guardar estados y abre la ficha histórica', () => {

@@ -18,6 +18,8 @@ Modo: off. Fuente: default. Runner: `node --test scripts/tests/kanban-*.test.mjs
 - T1 [x] Migración de consulta paginada validada con RLS y sin cambios a Data Dura.
 - T2 [x] Adaptador y panel con consulta explícita, resultados/siguiente página y retorno rápido.
 - T3 [ ] Pruebas de fechas, errores, origen, búsqueda, permisos, build; verificación remota.
+- T4 [x] Corregir la CI con checkout completo requerido por el test golden existente.
+- T5 [x] Aclarar resultados visibles y progreso de la consulta, conservando resultados tras error.
 ## Criterios de aceptación
 - [x] Vista rápida no inicia petición adicional y se conserva al entrar.
 - [x] Consulta exige búsqueda válida o fechas completas y devuelve páginas de máximo 100 sin truncamiento silencioso.
@@ -36,5 +38,11 @@ T1 — Estado: passed con limitación. `apply_migration(tablero_consulta_base)`:
 T2 — Estado: passed local. Panel en index.html y adaptador con guardia de sesión; histórico no arrastrable y ficha por origen; botón volver a rápida. `node --test scripts/tests/kanban-*.test.mjs`: 18/18; `pnpm build` y `pnpm check:app` correctos. No se ha desplegado frontend.
 
 T3 — Estado: pendiente comprobación funcional autenticada. `pnpm test`: 856 JS y 11 Python correctos. Smoke HTTP con clave publicable sin sesión: 401 / 42501 (`permission denied for function tablero_consultar`); no se dispone de sesión de usuario autorizada para probar respuesta con filas. La consulta agregada de fechas por parser devuelve 127 actuales en 20–28 oct 2026, 0 fechas inválidas en ambas tablas; no prueba que el RPC funcione con una sesión real.
+
+T4 — Estado: passed local, remoto pendiente de verificar tras publicación. CI en main (run 40754740923) y previa a Tablero (run 40754255692) fallaron porque `admin-usuarios.test.mjs` usa `git show 898f88f:index.html` y checkout@v4 solo trae el commit actual. `node --test scripts/tests/ci-history.test.mjs scripts/tests/admin-usuarios.test.mjs`: 16/16. `fetch-depth: 0` aplicado en `.github/workflows/ci.yml`; sin cambiar/saltar el golden.
+
+T5 — Estado: passed local. «Resultados visibles» representa las tarjetas tras búsqueda local, no el total de la base; el aviso de consulta ya indica resultados cargados y «hay más». Durante RPC: mensaje `Consultando…`/`Cargando más resultados…` con `role=status` y botones deshabilitados, evita segunda petición; un error deja tablero y filtros anteriores. Prueba acotada de fallo y doble clic, `node --test scripts/tests/*.test.mjs`: 861/861; Python: 11/11; `tsc --noEmit`, `check-app`, `vite build` + `inline-dist` y `git diff --check`: correctos. Comprobación visual autenticada no disponible.
+
+Fuera de esta iteración: búsqueda telefónica ignorando formato necesita cambiar el RPC remoto (nueva aprobación antes de aplicar); el merge incompleto del árbol original se conserva intacto y requiere decisión separada para reconciliar trabajo ajeno.
 ## Progreso
-Estado: backend aplicado y código local listo, frontend sin desplegar. Última tarea: T3. Siguiente: test con navegador autenticado/usuario CRM y despliegue frontend solo si se autoriza. Bloqueo: sin sesión de prueba autorizada.
+Estado: T4/T5 comprobados localmente; verificación remota de CI tras publicación pendiente. T3 sigue pendiente de prueba autenticada. Siguiente: verificar en sesión CRM; búsqueda telefónica remota y despliegue frontend requieren autorización por separado. El merge local original se conserva para reconciliar solo tras aclarar propiedad de esos cambios.

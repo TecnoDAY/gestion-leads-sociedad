@@ -1477,7 +1477,7 @@
 
       <form id="formEditLead" data-ev="submit:handleUpdateLead(event)" class="flex flex-col min-h-0 flex-1 text-xs">
         <input type="hidden" id="editLeadId">
-        <div class="lead-form-scroll space-y-3 bg-[#FFF1E8]">
+        <div class="lead-form-scroll space-y-2 bg-[#FFF1E8]">
 
         <div class="lead-form-primary">
         <h4 class="flex items-center gap-2 text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-indigo-500/15 text-indigo-600"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i></span>Gestión y datos de contacto</h4>
@@ -1485,11 +1485,8 @@
           <!-- Datos automaticos: solo informacion, en una sola franja (3 columnas).
                Va primero: al abrir el modal se ve en que estado esta el lead y
                despues los controles para cambiarlo. -->
-          <div class="sm:col-span-2 rounded-lg border border-[#E8C4AF] bg-[#FCE8DE] px-3 py-2.5">
-            <div class="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              <span class="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-slate-500"></span>Datos automáticos
-            </div>
-            <div class="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-3">
+          <div class="sm:col-span-2 rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2">
+            <div class="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-3">
               <div class="min-w-0">
                 <div class="text-[11px] text-slate-600">Agente asignado</div>
                 <div id="editAgenteResumen" class="truncate text-slate-900">-</div>
@@ -1548,8 +1545,8 @@
            <div><label class="block font-medium text-slate-700 mb-1">Teléfono / WhatsApp</label><input id="editTelefono" type="text" inputmode="tel" autocomplete="tel" data-ev="blur:formatPhoneField(this)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500" placeholder="Ej: 1 (786) 555-1234"></div>
            <div class="sm:col-span-2">
             <label class="block font-medium text-slate-700 mb-1">Interesado en<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>
-            <div id="editInteresadoEnChips" class="flex flex-wrap gap-1.5"></div>
-            <p class="text-[11px] text-slate-600 mt-1">Solo informativo: no cambia la campaña del lead. Toca un programa para elegirlo y tócalo otra vez para quitarlo.</p>
+            <div id="editInteresadoEnChips" class="flex flex-wrap items-center gap-1.5"></div>
+            <p class="text-[11px] text-slate-600 mt-1">Marca o desmarca. No cambia la campaña.</p>
             <input type="hidden" id="editInteresadoEn" value="">
           </div>
            <div class="sm:col-span-2">
@@ -1558,9 +1555,9 @@
               <button type="button" id="btnCreateTaskFromLead" class="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">+ Crear tarea</button>
             </div>
             <textarea id="editObservaciones" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono text-xs"></textarea>
-            <p class="text-[11px] text-slate-600 mt-1">Puedes agregar nuevas notas fechadas al final del texto.</p>
+            <p class="text-[11px] text-slate-600 mt-1">Añade notas al final.</p>
           </div>
-          <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border border-slate-700/60 rounded-lg p-3">
+          <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border border-slate-700/60 rounded-lg p-2">
             <div>
               <label class="block font-medium text-slate-700 mb-1">Próxima acción<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>
               <input id="editProximaAccion" type="text" maxlength="200" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500" placeholder="Ej: Llamar, enviar información">

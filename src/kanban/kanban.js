@@ -412,6 +412,8 @@ window.crmResetKanban = () => {
   moreAvailable = false;
   const feedback = document.getElementById('kanbanQueryError');
   if (feedback) feedback.textContent = '';
+  const status = document.getElementById('kanbanQueryStatus');
+  if (status) status.textContent = '';
   document.getElementById('kanbanMore')?.classList.add('hidden');
   document.getElementById('kanbanQueryPanel')?.classList.add('hidden');
   const notice = document.getElementById('kanbanPeriodNotice');
@@ -422,8 +424,11 @@ window.crmResetKanban = () => {
 
 async function runQuery(append = false) {
   const el = id => document.getElementById(id);
+  if (el('kanbanRunQuery')?.disabled || el('kanbanMore')?.disabled) return;
   const feedback = el('kanbanQueryError');
   if (feedback) feedback.textContent = '';
+  const status = el('kanbanQueryStatus');
+  if (status) status.textContent = '';
   let params;
   let generation;
   try {
@@ -442,6 +447,7 @@ async function runQuery(append = false) {
     generation = ++requestGeneration;
     el('kanbanRunQuery').disabled = true;
     el('kanbanMore').disabled = true;
+    if (status) status.textContent = append ? 'Cargando más resultados…' : 'Consultando…';
     const rows = await window.crmQueryKanban({ ...params, p_limite: 100 });
     if (generation !== requestGeneration) return;
     moreAvailable = rows.length > 100;
@@ -456,6 +462,7 @@ async function runQuery(append = false) {
     if (feedback && (generation === undefined || generation === requestGeneration)) feedback.textContent = error?.message || 'No se pudo consultar el Tablero.';
   } finally {
     if (generation === undefined || generation === requestGeneration) {
+      if (status) status.textContent = '';
       if (el('kanbanRunQuery')) el('kanbanRunQuery').disabled = false;
       if (el('kanbanMore')) el('kanbanMore').disabled = false;
     }
@@ -467,6 +474,8 @@ function backToQuick() {
   consulta = null;
   moreAvailable = false;
   document.getElementById('kanbanQueryError').textContent = '';
+  const status = document.getElementById('kanbanQueryStatus');
+  if (status) status.textContent = '';
   document.getElementById('kanbanMore')?.classList.add('hidden');
   if (document.getElementById('kanbanRunQuery')) document.getElementById('kanbanRunQuery').disabled = false;
   if (document.getElementById('kanbanMore')) document.getElementById('kanbanMore').disabled = false;

@@ -1073,7 +1073,7 @@
           <div><label class="block text-xs text-slate-400">Hasta</label><input id="kanbanHasta" type="date" class="mt-1 rounded-lg px-2.5 py-2 text-xs kanban-input"></div>
         </div>
         <div class="flex items-center gap-4 text-xs text-slate-400">
-          <span>Total: <strong id="kanbanStatTotal" class="text-slate-200">0</strong></span>
+          <span>Resultados visibles: <strong id="kanbanStatTotal" class="text-slate-200">0</strong></span>
           <span>Inscritos: <strong id="kanbanStatInscritos" class="text-emerald-400">0</strong></span>
           <span>No Contesta: <strong id="kanbanStatNoContesta" class="text-rose-400">0</strong></span>
         </div>
@@ -1089,6 +1089,7 @@
           <button type="button" id="kanbanBackQuick" class="text-xs rounded-lg px-3 py-2 kanban-input">Volver a vista rápida</button>
         </div>
         <p id="kanbanQueryError" class="text-xs text-rose-500" role="alert"></p>
+        <p id="kanbanQueryStatus" class="text-xs kanban-text-muted" role="status" aria-live="polite"></p>
         <div id="kanbanScrollShell" class="relative kanban-scroll-shell">
         <button type="button" id="kanbanScrollLeft" class="absolute left-1 top-1/2 -translate-y-1/2 z-20 bg-slate-900/90 border border-slate-700 rounded-full w-8 h-8 flex items-center justify-center text-slate-200 hover:bg-slate-700 shadow" aria-label="Anterior">‹</button>
         <div id="kanbanBoard" class="flex gap-5 overflow-x-auto pb-2 px-10 kanban-board-scroll"></div>

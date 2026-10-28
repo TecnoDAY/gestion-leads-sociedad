@@ -6,9 +6,12 @@ const TASKS = {
   advisors: [],
   advisorsError: false,
   sessionVersion: 0,
+  activeUserId: null,
+  activeRole: null,
   lastLeadResults: [],
   realtime: null,
   refreshTimer: null,
+  lastHeartbeatAt: 0,
   notified: new Set(JSON.parse(localStorage.getItem('tasksNotified') || '[]')),
 };
 
@@ -73,9 +76,18 @@ async function refreshTasks() {
   const version = TASKS.sessionVersion, userId = getUser()?.id;
   const valid = () => version === TASKS.sessionVersion && canUse() && getUser()?.id === userId;
   const pending = (async () => {
-  try { await rpc('refresh_crm_task_assignments'); } catch (_) {}
+  if (Date.now() - TASKS.lastHeartbeatAt >= 45000) {
+    try {
+      await rpc('crm_task_heartbeat');
+      if (valid()) TASKS.lastHeartbeatAt = Date.now();
+    } catch (e) { console.warn('No se pudo actualizar la presencia de tareas', e); }
+  }
   if (!valid()) return;
-  const { data, error } = await getClient().from('crm_tasks').select('*').order('scheduled_at', { ascending: true });
+  let { data, error } = await getClient().from('crm_tasks_visible').select('*').order('scheduled_at', { ascending: true });
+  // La interfaz local sigue operativa antes de aplicar la migracion. Otros errores fallan cerrados.
+  if (error?.code === 'PGRST205' || error?.code === '42P01') {
+    ({ data, error } = await getClient().from('crm_tasks').select('*').order('scheduled_at', { ascending: true }));
+  }
   if (!valid()) return;
   if (error) {
     console.warn('No se pudieron cargar tareas', error);
@@ -95,7 +107,11 @@ async function refreshTasks() {
 }
 
 function tasksForScope(scope) {
-  return filterTasks(TASKS.cache, scope, getUser()?.id);
+  const isAdmin = getAccess()?.activo && getAccess()?.role === 'admin';
+  if (scope === 'all' && !isAdmin) return [];
+  const visible = isAdmin ? TASKS.cache : TASKS.cache.filter(t =>
+    t.assignee_id === getUser()?.id || (t.status === 'sin_asignar' && t.assignee_id == null) || (t.status === 'asignada' && t.is_shared));
+  return filterTasks(visible, scope, getUser()?.id);
 }
 
 function renderTasksView() {
@@ -103,6 +119,13 @@ function renderTasksView() {
   if (!root) return;
   const list = document.getElementById('tasksList');
   if (!list) return;
+  const isAdmin = getAccess()?.activo && getAccess()?.role === 'admin';
+  if (!isAdmin && TASKS.scope === 'all') TASKS.scope = 'mine';
+  root.querySelector('[data-scope="all"]')?.classList.toggle('hidden', !isAdmin);
+  root.querySelectorAll('.tasks-scope').forEach(b => {
+    const active = b.dataset.scope === TASKS.scope;
+    b.className = `tasks-scope rounded-full px-4 py-1.5 text-sm font-medium ${active ? 'bg-indigo-600 text-white' : 'bg-[#FCE8DE] text-slate-700 hover:bg-[#F5D5C5]'}${b.dataset.scope === 'all' && !isAdmin ? ' hidden' : ''}`;
+  });
   const items = sortTasks(tasksForScope(TASKS.scope));
   if (!items.length) {
     list.innerHTML = '<p class="px-4 py-8 text-center text-sm text-slate-500">No hay tareas en esta vista.</p>';
@@ -112,10 +135,10 @@ function renderTasksView() {
     const st = taskState(t);
     const lead = t.lead_id ? ` · Lead #${t.lead_id}` : '';
     const assignee = t.assignee_id === getUser()?.id ? 'Tuya' : (TASKS.advisors.find(a => a.user_id === t.assignee_id)?.nombre || (t.assignee_id ? 'Asignada' : 'Sin asignar'));
-    const canClaim = t.status === 'sin_asignar';
+    const canClaim = t.status === 'sin_asignar' || (t.status === 'asignada' && t.is_shared && t.assignee_id !== getUser()?.id);
     const canComplete = t.status !== 'completada' && t.status !== 'cancelada' && (t.assignee_id === getUser()?.id || getAccess()?.role === 'admin' || getAccess()?.role === 'supervisor');
     const stateClass = st === 'vencida' ? 'text-rose-300' : st === 'completada' ? 'text-emerald-300' : 'text-slate-400';
-    const stateLabel = st === 'vencida' ? 'Vencida' : st === 'completada' ? 'Completada' : 'Pendiente';
+    const stateLabel = st === 'vencida' ? 'Vencida' : st === 'completada' ? 'Completada' : st === 'cancelada' ? 'Retirada' : 'Pendiente';
     return `<article class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div class="min-w-0">
         <p class="text-xs font-semibold uppercase tracking-wide ${stateClass}">${stateLabel}${lead}</p>
@@ -126,7 +149,7 @@ function renderTasksView() {
         ${t.lead_id ? `<button data-task-view="${t.lead_id}" class="rounded-lg bg-[#FCE8DE] px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-[#F5D5C5]">Ver ficha</button>` : ''}
         ${canClaim ? `<button data-task-claim="${t.id}" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">Tomar</button>` : ''}
         ${canComplete ? `<button data-task-complete="${t.id}" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500">Completar</button>` : ''}
-        <button data-task-cancel="${t.id}" class="rounded-lg bg-[#FCE8DE] px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-[#F5D5C5]">Cancelar</button>
+        ${isAdmin && t.status !== 'cancelada' ? `<button data-task-cancel="${t.id}" class="rounded-lg bg-[#FCE8DE] px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-[#F5D5C5]">Retirar</button>` : ''}
       </div>
     </article>`;
   }).join('');
@@ -140,39 +163,42 @@ function renderTasksView() {
 
 async function claimTask(id) {
   try { await rpc('claim_crm_task', { p_task_id: id }); await refreshTasks(); window.showToast?.('Tarea tomada', 'success'); }
-  catch (e) { window.showToast?.(e?.message || 'No se pudo tomar la tarea', 'warning'); }
+  catch (e) {
+    try { await refreshTasks(); } catch (refreshError) { console.warn('No se pudieron actualizar tareas tras una toma rechazada', refreshError); }
+    window.showToast?.(e?.message === 'task_not_claimable' ? 'La tarea ya no está disponible para tomar' : (e?.message || 'No se pudo tomar la tarea'), 'warning');
+  }
 }
 async function completeTask(id) {
   try { await rpc('complete_crm_task', { p_task_id: id }); await refreshTasks(); window.showToast?.('Tarea completada', 'success'); }
   catch (e) { window.showToast?.(e?.message || 'No se pudo completar', 'warning'); }
 }
 async function cancelTask(id) {
-  if (!confirm('¿Cancelar esta tarea?')) return;
-  try { await rpc('cancel_crm_task', { p_task_id: id }); await refreshTasks(); window.showToast?.('Tarea cancelada', 'info'); }
-  catch (e) { window.showToast?.(e?.message || 'No se pudo cancelar', 'warning'); }
+  if (getAccess()?.role !== 'admin' || !confirm('¿Retirar esta tarea? Quedará en el historial.')) return;
+  try { await rpc('cancel_crm_task', { p_task_id: id }); await refreshTasks(); window.showToast?.('Tarea retirada', 'info'); }
+  catch (e) { window.showToast?.(e?.message || 'No se pudo retirar', 'warning'); }
 }
 
 function updateBell() {
   const badge = document.getElementById('tasksBellCount');
   if (!badge) return;
-  const mine = tasksForScope('mine').filter(t => taskState(t) === 'vencida').length;
+  const mine = tasksForScope('mine').length;
   const unassigned = tasksForScope('unassigned').length;
   const total = mine + unassigned;
-  badge.textContent = total > 9 ? '9+' : String(total);
+  badge.textContent = String(total);
   badge.classList.toggle('hidden', total === 0);
 }
 
 function renderDashboardBlock() {
   const block = document.getElementById('tasksAttentionBlock');
   if (!block) return;
-  const mineDue = tasksForScope('mine').filter(t => taskState(t) === 'vencida').length;
+  const mine = tasksForScope('mine').length;
   const unassigned = tasksForScope('unassigned').length;
-  if (mineDue === 0 && unassigned === 0) { block.classList.add('hidden'); return; }
+  if (mine === 0 && unassigned === 0) { block.classList.add('hidden'); return; }
   block.classList.remove('hidden');
   block.innerHTML = `<div class="flex items-center justify-between gap-3">
     <div>
       <p class="text-sm font-semibold text-slate-100">Tareas que requieren atención</p>
-      <p class="text-[11px] text-slate-400">${mineDue} tuyas vencidas · ${unassigned} sin asignar</p>
+        <p class="text-[11px] text-slate-400">${mine} tuyas pendientes · ${unassigned} disponibles</p>
     </div>
     <button id="tasksGoBtn" class="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-xs text-white">Ver tareas</button>
   </div>`;
@@ -291,18 +317,16 @@ function initTasksView() {
       </header>
       <div class="flex flex-wrap gap-2" role="tablist" aria-label="Filtros de tareas">
         <button data-scope="mine" class="tasks-scope rounded-full bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white">Mis tareas</button>
-        <button data-scope="unassigned" class="tasks-scope rounded-full bg-[#FCE8DE] px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-[#F5D5C5]">Sin asignar</button>
+        <button data-scope="all" class="tasks-scope hidden rounded-full bg-[#FCE8DE] px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-[#F5D5C5]">Todas</button>
+        <button data-scope="unassigned" class="tasks-scope rounded-full bg-[#FCE8DE] px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-[#F5D5C5]">Disponibles</button>
         <button data-scope="completed" class="tasks-scope rounded-full bg-[#FCE8DE] px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-[#F5D5C5]">Completadas</button>
       </div>
       <div id="tasksList" class="divide-y divide-[#E8C4AF] overflow-hidden rounded-xl border border-[#E8C4AF] bg-white"></div>
     </section>`;
     document.getElementById('tasksNewBtn')?.addEventListener('click', () => openCreateTaskModal(null));
     root.querySelectorAll('.tasks-scope').forEach(b => b.addEventListener('click', () => {
+      if (b.dataset.scope === 'all' && getAccess()?.role !== 'admin') return;
       TASKS.scope = b.dataset.scope;
-      root.querySelectorAll('.tasks-scope').forEach(x => {
-        const active = x.dataset.scope === TASKS.scope;
-        x.className = `tasks-scope rounded-full px-4 py-1.5 text-sm font-medium ${active ? 'bg-indigo-600 text-white' : 'bg-[#FCE8DE] text-slate-700 hover:bg-[#F5D5C5]'}`;
-      });
       renderTasksView();
     }));
   }
@@ -335,6 +359,8 @@ function initBell() {
 
 export function initTasksModule() {
   initBell();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && canUse()) refreshTasks(); });
+  window.addEventListener('focus', () => { if (canUse()) refreshTasks(); });
   // bind modal save
   // lead search inside the task modal
   const leadSearch = document.getElementById('taskLeadSearch');
@@ -383,6 +409,10 @@ export function initTasksModule() {
 
 function onSessionCleared() {
   TASKS.sessionVersion += 1;
+  TASKS.lastHeartbeatAt = 0;
+  TASKS.activeUserId = null;
+  TASKS.activeRole = null;
+  TASKS.scope = 'mine';
   refreshPromise = null;
   if (TASKS.refreshTimer) { clearInterval(TASKS.refreshTimer); TASKS.refreshTimer = null; }
   if (TASKS.realtime) { try { getClient()?.removeChannel?.(TASKS.realtime); } catch (_) {} TASKS.realtime = null; }
@@ -398,7 +428,12 @@ function onSessionCleared() {
 }
 
 function onSessionReady() {
-  if (!canUse()) return;
+  if (!canUse()) { onSessionCleared(); return; }
+  if (TASKS.activeUserId !== getUser()?.id || TASKS.activeRole !== getAccess()?.role) {
+    onSessionCleared();
+    TASKS.activeUserId = getUser()?.id;
+    TASKS.activeRole = getAccess()?.role;
+  }
   // Las alertas deben cargarse al iniciar sesión, aunque nadie abra Tareas.
   initTasksView();
 }
@@ -420,3 +455,5 @@ if (document.readyState === 'loading') {
 } else {
   try { initTasksModule(); } catch (_) {}
 }
+// Una restauracion rapida de sesion puede terminar antes de cargar este modulo.
+if (canUse()) onSessionReady();

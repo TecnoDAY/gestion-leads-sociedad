@@ -1,5 +1,5 @@
 // Servicio puro de tareas CRM (sin dependencias de DOM).
-export const TASK_ACTIVE_THRESHOLD_MS = 5 * 60 * 1000;
+export const TASK_ACTIVE_THRESHOLD_MS = 3 * 60 * 1000;
 
 export function isAdvisorActive(lastActivityAt, now = Date.now(), thresholdMs = TASK_ACTIVE_THRESHOLD_MS) {
   if (!lastActivityAt) return false;
@@ -35,7 +35,7 @@ export function formatDateTime(iso) {
 export function filterTasks(tasks, scope, userId) {
   const list = Array.isArray(tasks) ? tasks : [];
   if (scope === 'mine') return list.filter(t => t.assignee_id === userId && t.status !== 'completada' && t.status !== 'cancelada');
-  if (scope === 'unassigned') return list.filter(t => t.status === 'sin_asignar');
+  if (scope === 'unassigned') return list.filter(t => (t.status === 'sin_asignar' && t.assignee_id == null) || (t.status === 'asignada' && t.is_shared && t.assignee_id !== userId));
   if (scope === 'completed') return list.filter(t => t.status === 'completada' || t.status === 'cancelada');
   return list;
 }

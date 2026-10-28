@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Golden de admin-usuarios.test.mjs consulta un commit anterior.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
         with:

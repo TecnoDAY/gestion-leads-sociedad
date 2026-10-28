@@ -5,6 +5,7 @@ const TASKS = {
   scope: 'mine',
   advisors: [],
   advisorsError: false,
+  sessionVersion: 0,
   lastLeadResults: [],
   realtime: null,
   refreshTimer: null,
@@ -28,11 +29,14 @@ async function rpc(name, args) {
 
 async function loadAdvisors() {
   if (!canUse()) return;
+  const version = TASKS.sessionVersion, userId = getUser()?.id;
   TASKS.advisorsError = false;
   try {
     const data = await rpc('list_crm_task_advisors');
+    if (version !== TASKS.sessionVersion || getUser()?.id !== userId) return;
     TASKS.advisors = Array.isArray(data) ? data : [];
   } catch (e) {
+    if (version !== TASKS.sessionVersion || getUser()?.id !== userId) return;
     TASKS.advisors = [];
     TASKS.advisorsError = true;
     console.warn('No se pudieron cargar asesoras:', e?.message || e);
@@ -66,9 +70,13 @@ let refreshPromise = null;
 async function refreshTasks() {
   if (!canUse()) return;
   if (refreshPromise) return refreshPromise;
-  refreshPromise = (async () => {
+  const version = TASKS.sessionVersion, userId = getUser()?.id;
+  const valid = () => version === TASKS.sessionVersion && canUse() && getUser()?.id === userId;
+  const pending = (async () => {
   try { await rpc('refresh_crm_task_assignments'); } catch (_) {}
+  if (!valid()) return;
   const { data, error } = await getClient().from('crm_tasks').select('*').order('scheduled_at', { ascending: true });
+  if (!valid()) return;
   if (error) {
     console.warn('No se pudieron cargar tareas', error);
     const list = document.getElementById('tasksList');
@@ -80,7 +88,10 @@ async function refreshTasks() {
   updateBell();
   renderDashboardBlock();
   notifyDue();
-  }).finally(() => { refreshPromise = null; });
+  })();
+  const result = pending.finally(() => { if (refreshPromise === result) refreshPromise = null; });
+  refreshPromise = result;
+  return result;
 }
 
 function tasksForScope(scope) {
@@ -371,11 +382,16 @@ export function initTasksModule() {
 }
 
 function onSessionCleared() {
+  TASKS.sessionVersion += 1;
+  refreshPromise = null;
   if (TASKS.refreshTimer) { clearInterval(TASKS.refreshTimer); TASKS.refreshTimer = null; }
   if (TASKS.realtime) { try { getClient()?.removeChannel?.(TASKS.realtime); } catch (_) {} TASKS.realtime = null; }
   TASKS.cache = [];
   TASKS.advisors = [];
   TASKS.advisorsError = false;
+  TASKS.lastLeadResults = [];
+  closeCreateTaskModal();
+  setTaskLead(null);
   renderTasksView();
   updateBell();
   renderDashboardBlock();
@@ -383,13 +399,8 @@ function onSessionCleared() {
 
 function onSessionReady() {
   if (!canUse()) return;
-  const root = document.getElementById('viewTareas');
-  if (root?.dataset.initialized) {
-    loadAdvisors();
-    refreshTasks();
-  }
-  updateBell();
-  renderDashboardBlock();
+  // Las alertas deben cargarse al iniciar sesión, aunque nadie abra Tareas.
+  initTasksView();
 }
 
 window.tasksModuleApi = {

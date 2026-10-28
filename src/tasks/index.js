@@ -94,7 +94,7 @@ function renderTasksView() {
   if (!list) return;
   const items = sortTasks(tasksForScope(TASKS.scope));
   if (!items.length) {
-    list.innerHTML = '<p class="px-4 py-8 text-center text-sm text-slate-400">No hay tareas en esta vista.</p>';
+    list.innerHTML = '<p class="px-4 py-8 text-center text-sm text-rose-700">No hay tareas en esta vista.</p>';
     return;
   }
   list.innerHTML = items.map(t => {
@@ -108,14 +108,14 @@ function renderTasksView() {
     return `<article class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div class="min-w-0">
         <p class="text-xs font-semibold uppercase tracking-wide ${stateClass}">${stateLabel}${lead}</p>
-        <p class="mt-1 text-sm font-medium text-slate-100">${escapeHtml(t.descripcion)}</p>
-        <p class="mt-1 text-xs text-slate-400">${formatDateTime(t.scheduled_at)} · ${escapeHtml(assignee)}</p>
+        <p class="mt-1 text-sm font-medium text-slate-900">${escapeHtml(t.descripcion)}</p>
+        <p class="mt-1 text-xs text-rose-700">${formatDateTime(t.scheduled_at)} · ${escapeHtml(assignee)}</p>
       </div>
       <div class="flex shrink-0 gap-2">
-        ${t.lead_id ? `<button data-task-view="${t.lead_id}" class="rounded-lg bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-600">Ver ficha</button>` : ''}
+        ${t.lead_id ? `<button data-task-view="${t.lead_id}" class="rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-medium text-rose-900 hover:bg-rose-200">Ver ficha</button>` : ''}
         ${canClaim ? `<button data-task-claim="${t.id}" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">Tomar</button>` : ''}
         ${canComplete ? `<button data-task-complete="${t.id}" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500">Completar</button>` : ''}
-        <button data-task-cancel="${t.id}" class="rounded-lg bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-600">Cancelar</button>
+        <button data-task-cancel="${t.id}" class="rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-medium text-rose-900 hover:bg-rose-200">Cancelar</button>
       </div>
     </article>`;
   }).join('');
@@ -195,10 +195,10 @@ function setTaskLead(lead) {
     ctx.classList.remove('hidden');
     ctx.innerHTML = `<div class="flex items-start justify-between gap-3">
       <div>
-        <p class="font-semibold text-slate-100">${escapeHtml(lead.nombre || 'Lead #' + lead.id)}</p>
-        <p class="text-xs text-slate-300">${escapeHtml(lead.telefono || '')}${lead.telefono && lead.interesadoEn ? ' · ' : ''}${escapeHtml(lead.interesadoEn ? 'Interés: ' + lead.interesadoEn : '')}</p>
+        <p class="font-semibold text-slate-900">${escapeHtml(lead.nombre || 'Lead #' + lead.id)}</p>
+        <p class="text-xs text-rose-700">${escapeHtml(lead.telefono || '')}${lead.telefono && lead.interesadoEn ? ' · ' : ''}${escapeHtml(lead.interesadoEn ? 'Interés: ' + lead.interesadoEn : '')}</p>
       </div>
-      <button type="button" id="taskLeadClear" class="text-xs text-indigo-300 hover:text-indigo-200">Cambiar</button>
+      <button type="button" id="taskLeadClear" class="text-xs text-indigo-600 hover:text-indigo-700">Cambiar</button>
     </div>`;
     document.getElementById('taskLeadClear')?.addEventListener('click', () => setTaskLead(null));
   }
@@ -270,7 +270,7 @@ function initTasksView() {
   if (!root) return;
   if (!root.dataset.initialized) {
     root.dataset.initialized = '1';
-    root.innerHTML = `<section class="rounded-2xl border border-slate-700/70 bg-slate-800/50 p-5 sm:p-6 space-y-5">
+    root.innerHTML = `<section class="rounded-2xl border border-rose-200 bg-rose-50 p-5 sm:p-6 space-y-5">
       <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 class="text-xl font-semibold text-white">Tareas</h2>
@@ -280,17 +280,17 @@ function initTasksView() {
       </header>
       <div class="flex flex-wrap gap-2" role="tablist" aria-label="Filtros de tareas">
         <button data-scope="mine" class="tasks-scope rounded-full bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white">Mis tareas</button>
-        <button data-scope="unassigned" class="tasks-scope rounded-full bg-slate-700 px-4 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-600">Sin asignar</button>
-        <button data-scope="completed" class="tasks-scope rounded-full bg-slate-700 px-4 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-600">Completadas</button>
+        <button data-scope="unassigned" class="tasks-scope rounded-full bg-rose-100 px-4 py-1.5 text-sm font-medium text-rose-900 hover:bg-rose-200">Sin asignar</button>
+        <button data-scope="completed" class="tasks-scope rounded-full bg-rose-100 px-4 py-1.5 text-sm font-medium text-rose-900 hover:bg-rose-200">Completadas</button>
       </div>
-      <div id="tasksList" class="divide-y divide-slate-700/70 overflow-hidden rounded-xl border border-slate-700/70"></div>
+      <div id="tasksList" class="divide-y divide-rose-200 overflow-hidden rounded-xl border border-rose-200 bg-white"></div>
     </section>`;
     document.getElementById('tasksNewBtn')?.addEventListener('click', () => openCreateTaskModal(null));
     root.querySelectorAll('.tasks-scope').forEach(b => b.addEventListener('click', () => {
       TASKS.scope = b.dataset.scope;
       root.querySelectorAll('.tasks-scope').forEach(x => {
         const active = x.dataset.scope === TASKS.scope;
-        x.className = `tasks-scope rounded-full px-4 py-1.5 text-sm font-medium ${active ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`;
+        x.className = `tasks-scope rounded-full px-4 py-1.5 text-sm font-medium ${active ? 'bg-indigo-600 text-white' : 'bg-rose-100 text-rose-900 hover:bg-rose-200'}`;
       });
       renderTasksView();
     }));

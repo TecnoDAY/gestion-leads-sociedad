@@ -1553,11 +1553,13 @@
             <input type="hidden" id="editInteresadoEn" value="">
           </div>
            <div class="sm:col-span-2">
-            <label class="block font-medium text-slate-300 mb-1">Historial de Observaciones & Notas</label>
+            <div class="mb-1 flex items-center justify-between gap-3">
+              <label class="block font-medium text-slate-300">Historial de Observaciones & Notas</label>
+              <button type="button" id="btnCreateTaskFromLead" class="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">+ Crear tarea</button>
+            </div>
             <textarea id="editObservaciones" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono text-xs"></textarea>
             <p class="text-[11px] text-slate-400 mt-1">Puedes agregar nuevas notas fechadas al final del texto.</p>
           </div>
-          <div class="sm:col-span-2 flex justify-end"><button type="button" id="btnCreateTaskFromLead" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">+ Crear tarea</button></div>
           <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border border-slate-700/60 rounded-lg p-3">
             <div>
               <label class="block font-medium text-slate-300 mb-1">Próxima acción<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>

@@ -74,6 +74,7 @@
       <button type="button" data-sidebar-tab="leads" data-crm-nav data-ev="click:switchTab('leads')" class="sidebar-nav-button"><i data-lucide="users"></i><span>Leads</span></button>
       <button type="button" data-sidebar-tab="tareas" data-crm-nav data-ev="click:switchTab('tareas')" class="sidebar-nav-button"><i data-lucide="check-square"></i><span>Tareas</span></button>
       <button type="button" data-sidebar-tab="citas" data-crm-nav data-ev="click:switchTab('citas')" class="sidebar-nav-button"><i data-lucide="calendar-check"></i><span>Citas</span></button>
+        <button type="button" data-sidebar-tab="kanban" data-crm-nav data-ev="click:switchTab('kanban')" class="sidebar-nav-button"><i data-lucide="columns-3"></i><span>Tablero</span></button>
       <button type="button" data-sidebar-tab="campanas" data-ev="click:switchTab('campanas')" class="sidebar-nav-button"><i data-lucide="megaphone"></i><span>Campañas</span></button>
       <button type="button" data-sidebar-tab="historico" data-crm-nav data-ev="click:switchTab('historico')" class="sidebar-nav-button"><i data-lucide="chart-no-axes-combined"></i><span>Análisis histórico</span></button>
       <button type="button" data-sidebar-tab="reporte" data-ev="click:switchTab('reporte')" class="sidebar-nav-button"><i data-lucide="clipboard-list"></i><span>Reportes</span></button>
@@ -1064,6 +1065,40 @@
       </div>
     </div>
 
+    <div id="viewKanban" class="hidden space-y-4">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div class="flex flex-wrap items-end gap-3">
+          <div><label class="block text-xs text-slate-400">Buscar</label><input id="kanbanSearch" type="text" placeholder="Nombre o teléfono" class="mt-1 rounded-lg px-2.5 py-2 text-xs kanban-input"></div>
+          <div><label class="block text-xs text-slate-400">Desde</label><input id="kanbanDesde" type="date" class="mt-1 rounded-lg px-2.5 py-2 text-xs kanban-input"></div>
+          <div><label class="block text-xs text-slate-400">Hasta</label><input id="kanbanHasta" type="date" class="mt-1 rounded-lg px-2.5 py-2 text-xs kanban-input"></div>
+        </div>
+        <div class="flex items-center gap-4 text-xs text-slate-400">
+          <span>Total: <strong id="kanbanStatTotal" class="text-slate-200">0</strong></span>
+          <span>Inscritos: <strong id="kanbanStatInscritos" class="text-emerald-400">0</strong></span>
+          <span>No Contesta: <strong id="kanbanStatNoContesta" class="text-rose-400">0</strong></span>
+        </div>
+        </div>
+        <p id="kanbanPeriodNotice" class="text-xs kanban-text-muted" role="status" aria-live="polite"></p>
+        <button type="button" id="kanbanToggleQuery" class="text-xs rounded-lg px-3 py-2 kanban-input">Consultar en la base</button>
+        <div id="kanbanQueryPanel" class="hidden flex flex-wrap items-end gap-3 rounded-xl p-3 kanban-column">
+          <label class="text-xs kanban-text">Origen <select id="kanbanQueryOrigin" class="block mt-1 rounded-lg px-2.5 py-2 kanban-input"><option value="actual">Actuales</option><option value="historico">Históricos</option></select></label>
+          <label class="text-xs kanban-text">Nombre o teléfono <input id="kanbanQueryText" type="search" maxlength="80" placeholder="Mínimo 3 caracteres" class="block mt-1 rounded-lg px-2.5 py-2 kanban-input"></label>
+          <label class="text-xs kanban-text">Desde <input id="kanbanQueryDesde" type="date" class="block mt-1 rounded-lg px-2.5 py-2 kanban-input"></label>
+          <label class="text-xs kanban-text">Hasta <input id="kanbanQueryHasta" type="date" class="block mt-1 rounded-lg px-2.5 py-2 kanban-input"></label>
+          <button type="button" id="kanbanRunQuery" class="text-xs rounded-lg px-3 py-2 kanban-input">Consultar</button>
+          <button type="button" id="kanbanBackQuick" class="text-xs rounded-lg px-3 py-2 kanban-input">Volver a vista rápida</button>
+        </div>
+        <p id="kanbanQueryError" class="text-xs text-rose-500" role="alert"></p>
+        <div id="kanbanScrollShell" class="relative kanban-scroll-shell">
+        <button type="button" id="kanbanScrollLeft" class="absolute left-1 top-1/2 -translate-y-1/2 z-20 bg-slate-900/90 border border-slate-700 rounded-full w-8 h-8 flex items-center justify-center text-slate-200 hover:bg-slate-700 shadow" aria-label="Anterior">‹</button>
+        <div id="kanbanBoard" class="flex gap-5 overflow-x-auto pb-2 px-10 kanban-board-scroll"></div>
+        <button type="button" id="kanbanScrollRight" class="absolute right-1 top-1/2 -translate-y-1/2 z-20 bg-slate-900/90 border border-slate-700 rounded-full w-8 h-8 flex items-center justify-center text-slate-200 hover:bg-slate-700 shadow" aria-label="Siguiente">›</button>
+      </div>
+      <div id="kanbanFloatScroll" class="kanban-float-scroll" role="scrollbar" aria-label="Desplazamiento horizontal del tablero" aria-controls="kanbanBoard" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+        <div id="kanbanFloatThumb" class="kanban-float-thumb"></div>
+      </div>
+      <button type="button" id="kanbanMore" class="hidden text-xs rounded-lg px-3 py-2 kanban-input">Cargar más resultados</button>
+    </div>
   </main>
 
   <!-- ================= FOOTER ================= -->
@@ -1872,6 +1907,7 @@
 
     function clearSessionState() {
       sessionGeneration += 1;
+      window.crmResetKanban?.();
       stopIdleTracking();
       try { localStorage.removeItem('idle_last_activity_ts'); } catch (_) { /* cierre best-effort: no bloquea el flujo */ }
       agentSessionId = null;
@@ -2737,7 +2773,8 @@
       const viewCitas = document.getElementById('viewCitas');
       const viewTareas = document.getElementById('viewTareas');
       const viewCamp = document.getElementById('viewCampanas');
-      if (!btnDash || !btnLeads || !btnHist || !btnReporte || !btnCitas || !btnTareas || !btnCamp || !viewDash || !viewLeads || !viewHist || !viewReporte || !viewCitas || !viewTareas || !viewCamp) return;
+      const viewKanban = document.getElementById('viewKanban');
+      if (!btnDash || !btnLeads || !btnHist || !btnReporte || !btnCitas || !btnTareas || !btnCamp || !viewDash || !viewLeads || !viewHist || !viewReporte || !viewCitas || !viewTareas || !viewCamp || !viewKanban) return;
       btnDash.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
       btnLeads.className = btnHist.className = btnReporte.className = btnCitas.className = btnCamp.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent";
       viewDash.classList.remove('hidden');
@@ -2745,7 +2782,9 @@
       viewHist.classList.add('hidden');
       viewReporte.classList.add('hidden');
       viewCitas.classList.add('hidden');
+      viewTareas.classList.add('hidden');
       viewCamp.classList.add('hidden');
+      viewKanban.classList.add('hidden');
       ['tabBtnDashboard', 'tabBtnLeads', 'tabBtnHistorico', 'tabBtnReporte', 'tabBtnCitas'].forEach(id => {
         document.getElementById(id)?.classList.toggle('hidden', isTrafficker);
       });
@@ -2768,10 +2807,12 @@
       const viewCitas = document.getElementById('viewCitas');
       const viewTareas = document.getElementById('viewTareas');
       const viewCamp = document.getElementById('viewCampanas');
-      if (!btnDash || !btnLeads || !btnHist || !btnReporte || !btnCitas || !btnTareas || !btnCamp || !viewDash || !viewLeads || !viewHist || !viewReporte || !viewCitas || !viewTareas || !viewCamp) return;
+      const viewKanban = document.getElementById('viewKanban');
+      if (!btnDash || !btnLeads || !btnHist || !btnReporte || !btnCitas || !btnTareas || !btnCamp || !viewDash || !viewLeads || !viewHist || !viewReporte || !viewCitas || !viewTareas || !viewCamp || !viewKanban) return;
       const inactive = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent";
       [btnDash, btnLeads, btnHist, btnReporte, btnCitas, btnTareas, btnCamp].forEach(b => b.className = inactive);
       viewCamp.classList.add('hidden');
+      viewKanban.classList.add('hidden');
 
       if (tab === 'dashboard') {
         setDashboardTabState();
@@ -2782,6 +2823,9 @@
         btnCamp.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
         viewDash.classList.add('hidden'); viewLeads.classList.add('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden'); viewTareas.classList.add('hidden'); viewCamp.classList.remove('hidden');
         initCampanas();
+      } else if (tab === 'kanban') {
+        viewDash.classList.add('hidden'); viewLeads.classList.add('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden'); viewTareas.classList.add('hidden'); viewCamp.classList.add('hidden'); viewKanban.classList.remove('hidden');
+        if (typeof window.initKanban === 'function') window.initKanban();
       } else if (tab === 'reporte') {
         btnReporte.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
          viewDash.classList.add('hidden'); viewLeads.classList.add('hidden'); viewHist.classList.add('hidden'); viewCitas.classList.add('hidden'); viewTareas.classList.add('hidden'); viewReporte.classList.remove('hidden');
@@ -3156,7 +3200,9 @@
     function findLeadByOrigin(origin, leadId) {
       if (leadId === undefined || leadId === null) return undefined;
       const arr = origin === 'historico' ? allHistorico : completeCurrentLoaded ? completeCurrentLeads : allLeads;
-      return arr.find(l => String(l.id) === String(leadId));
+      return arr.find(l => String(l.id) === String(leadId))
+        || (currentMainTab === 'kanban' && currentAccess?.activo
+          ? window.crmFindKanbanLead?.(leadId, origin) : undefined);
     }
 
     function originYear(origin) {
@@ -7637,6 +7683,42 @@ async function deleteLeadAppointment(id) {
         await supabaseClient.functions.invoke('notify-lead-change', { body: { eventType, leadId: Number(leadId) } });
       } catch (err) { console.warn('No se pudo enviar la notificación:', err); }
     }
+     // Adaptador mínimo para el módulo Kanban (lectura + consultas existentes).
+     window.crmSupabase = () => supabaseClient;
+     window.crmIsAdmin = () => isAdmin;
+     window.crmCurrentUser = () => currentUser;
+     window.crmAllLeads = () => allLeads;
+     window.crmCompleteCurrentLeads = () => (completeCurrentLoaded ? completeCurrentLeads : allLeads);
+      window.crmLoadKanbanLeads = async () => {
+        const generation = sessionGeneration, uid = currentUser?.id, access = currentAccess?.updated_at;
+        if (!uid || !currentAccess?.activo || !supabaseClient) throw new Error('Sesión no autorizada.');
+        if (loadLeadsPromise) {
+          const success = await loadLeadsPromise;
+          if (!success) throw new Error('No se pudo completar la carga de Leads.');
+        }
+        if (generation !== sessionGeneration || uid !== currentUser?.id || access !== currentAccess?.updated_at || !currentAccess?.activo) {
+          throw new Error('La sesión cambió durante la consulta.');
+        }
+        if (!isSupabaseLive) throw new Error('La carga de Leads no está disponible.');
+        return allLeads.slice(0, LEADS_BATCH_SIZE);
+      };
+      window.crmQueryKanban = async (params) => {
+        const generation = sessionGeneration, uid = currentUser?.id, access = currentAccess?.updated_at;
+        if (!uid || !currentAccess?.activo || !supabaseClient) throw new Error('Sesión no autorizada.');
+        const { data, error } = await supabaseClient.rpc('tablero_consultar', params);
+        if (generation !== sessionGeneration || uid !== currentUser?.id || access !== currentAccess?.updated_at || !currentAccess?.activo) throw new Error('La sesión cambió durante la consulta.');
+        if (error) throw error;
+        if (!Array.isArray(data)) throw new Error('La consulta devolvió datos inválidos.');
+        return data;
+      };
+     window.crmFilteredLeads = () => filteredLeads;
+     window.crmCatalogGestion = () => (typeof activeCatalogValues === 'function' ? activeCatalogValues('gestion') : ((catalogRows?.gestion || []).filter(r => r.active).map(r => r.value)));
+     window.crmLoadLeadsByMonth = (mes) => loadLeadsByMonth(mes);
+     window.crmLoadLeadsByGestionRange = (desde, hasta) => loadLeadsByGestionRange(desde, hasta);
+     window.crmApplyFilters = (opts) => applyFilters(opts);
+     window.crmOpenViewLead = (origin, id) => { if (typeof openViewLeadModal === 'function') openViewLeadModal(id, origin); };
+     window.crmOpenEditLead = (origin, id) => { if (typeof openEditLeadModal === 'function') openEditLeadModal(id, origin); };
+
 </script>
   <div id="modalTask" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="lead-form-shell overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150 bg-[#FFFAF7] border-[#F1D7C8]" role="dialog" aria-modal="true">
@@ -7690,5 +7772,6 @@ async function deleteLeadAppointment(id) {
   <script type="module" src="/src/legacy/help.js"></script>
   <script type="module" src="/src/legacy/catalogos.js"></script>
   <script type="module" src="/src/legacy/admin.js"></script>
+<script type="module" src="/src/kanban/kanban.js"></script>
 </body>
 </html>

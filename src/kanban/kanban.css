@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+/* Variables de color del Kanban: ajusta aquí la paleta sin tocar JS. */
+:root {
+  --kb-column-bg: #1e293b;
+  --kb-column-border: #334155;
+  --kb-column-header-bg: #0f172a;
+  --kb-card-bg: #1e293b;
+  --kb-card-border: #334155;
+  --kb-card-hover-bg: #334155;
+  --kb-counter-bg: #0f172a;
+  --kb-counter-border: #334155;
+  --kb-text: #e2e8f0;
+  --kb-text-muted: #94a3b8;
+  --kb-input-bg: #0f172a;
+  --kb-input-border: #334155;
+}
+
+[data-theme="light"] {
+  --kb-column-bg: #f1f5f9;
+  --kb-column-border: #e2e8f0;
+  --kb-column-header-bg: #ffffff;
+  --kb-card-bg: #ffffff;
+  --kb-card-border: #e2e8f0;
+  --kb-card-hover-bg: #f8fafc;
+  --kb-counter-bg: #f1f5f9;
+  --kb-counter-border: #cbd5e1;
+  --kb-text: #0f172a;
+  --kb-text-muted: #475569;
+  --kb-input-bg: #ffffff;
+  --kb-input-border: #cbd5e1;
+}
+
+.kanban-column {
+  background-color: var(--kb-column-bg);
+  border: 1px solid var(--kb-column-border);
+}
+.kanban-column-header {
+  background-color: var(--kb-column-header-bg);
+  border-bottom: 1px solid var(--kb-column-border);
+}
+.kanban-card {
+  background-color: var(--kb-card-bg);
+  border: 1px solid var(--kb-card-border);
+}
+.kanban-card:hover {
+  background-color: var(--kb-card-hover-bg);
+}
+.kanban-counter {
+  background-color: var(--kb-counter-bg);
+  border: 1px solid var(--kb-counter-border);
+  color: var(--kb-text-muted);
+}
+.kanban-input {
+  background-color: var(--kb-input-bg);
+  border: 1px solid var(--kb-input-border);
+  color: var(--kb-text);
+}
+.kanban-text { color: var(--kb-text); }
+.kanban-text-muted { color: var(--kb-text-muted); }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--kb-column-bg); border-radius: 8px; }
+::-webkit-scrollbar-thumb { background: var(--kb-card-border); border-radius: 8px; }
+
+.kanban-scroll-shell {
+  position: relative;
+  height: calc(100vh - 260px);
+  min-height: 420px;
+}
+.kanban-board-scroll {
+  height: 100%;
+  align-items: stretch;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: none;
+}
+.kanban-board-scroll::-webkit-scrollbar { height: 0; width: 0; display: none; }
+.kanban-board-scroll > .kanban-column,
+.kanban-board-scroll > div.flex.flex-col {
+  max-height: 100%;
+}
+.kanban-board-scroll .kanban-dropzone {
+  min-height: 0;
+}
+.kanban-board-scroll { cursor: grab; }
+.kanban-board-scroll.is-dragging { cursor: grabbing; user-select: none; }
+/* Barra flotante horizontal: siempre visible al pie del area del CRM. */
+.kanban-float-scroll {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 14px;
+  z-index: 60;
+  background: var(--kb-column-bg);
+  border-top: 1px solid var(--kb-column-border);
+  cursor: pointer;
+  display: none;
+}
+.kanban-float-scroll.is-visible { display: block; }
+.kanban-float-thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  width: 120px;
+  min-width: 48px;
+  border-radius: 999px;
+  background: var(--kb-card-border);
+  border: 1px solid var(--kb-counter-border);
+  cursor: grab;
+}
+.kanban-float-thumb:active { cursor: grabbing; background: var(--kb-text-muted); }
+@media (min-width: 1100px) {
+  .kanban-float-scroll { left: 14rem; }
+}
+.card-ghost { opacity: .4; transform: scale(.98); }
+.column-drag-over { background-color: rgba(99,102,241,.15) !important; border-color: rgba(99,102,241,.5) !important; }

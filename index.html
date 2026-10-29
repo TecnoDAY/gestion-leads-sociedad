@@ -67,11 +67,12 @@
       <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
         <i data-lucide="clapperboard" class="w-5 h-5 text-white"></i>
       </div>
-      <div class="min-w-0"><p class="font-bold text-white leading-tight">Sociedad Actoral</p><p class="text-[11px] text-slate-400 mt-1">Centro de admisiones</p></div>
+      <div class="min-w-0"><p class="font-bold text-white leading-tight">Sociedad Actoral</p><p class="text-[11px] text-slate-600 mt-1">Centro de admisiones</p></div>
     </div>
     <nav class="mt-5 space-y-1" aria-label="Secciones">
       <button type="button" data-sidebar-tab="dashboard" data-crm-nav data-ev="click:switchTab('dashboard')" class="sidebar-nav-button is-active"><i data-lucide="home"></i><span>Inicio</span></button>
       <button type="button" data-sidebar-tab="leads" data-crm-nav data-ev="click:switchTab('leads')" class="sidebar-nav-button"><i data-lucide="users"></i><span>Leads</span></button>
+      <button type="button" data-sidebar-tab="tareas" data-crm-nav data-ev="click:switchTab('tareas')" class="sidebar-nav-button"><i data-lucide="check-square"></i><span>Tareas</span></button>
       <button type="button" data-sidebar-tab="citas" data-crm-nav data-ev="click:switchTab('citas')" class="sidebar-nav-button"><i data-lucide="calendar-check"></i><span>Citas</span></button>
         <button type="button" data-sidebar-tab="kanban" data-crm-nav data-ev="click:switchTab('kanban')" class="sidebar-nav-button"><i data-lucide="columns-3"></i><span>Tablero</span></button>
       <button type="button" data-sidebar-tab="campanas" data-ev="click:switchTab('campanas')" class="sidebar-nav-button"><i data-lucide="megaphone"></i><span>Campañas</span></button>
@@ -119,6 +120,11 @@
         <!-- App / notificaciones -->
         <button id="btnApp" data-ev="click:openAppModal()" title="Instalar la app y notificaciones" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer">
           <i data-lucide="smartphone" class="w-4 h-4"></i>
+        </button>
+        <!-- Tareas -->
+        <button id="tasksBell" title="Tareas" class="relative p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          <span id="tasksBellCount" class="hidden absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">0</span>
         </button>
 
         <!-- Refresh Button -->
@@ -187,6 +193,7 @@
           <i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Reporte</span>
         </button>
         <button id="tabBtnCitas" data-ev="click:switchTab('citas')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent"><i data-lucide="calendar-check" class="w-4 h-4"></i><span>Citas</span></button>
+        <button id="tabBtnTareas" data-ev="click:switchTab('tareas')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent"><i data-lucide="check-square" class="w-4 h-4"></i><span>Tareas</span></button>
         <button id="tabBtnCampanas" data-ev="click:switchTab('campanas')" class="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent"><i data-lucide="megaphone" class="w-4 h-4"></i><span>Campañas</span></button>
       </nav>
 
@@ -266,6 +273,7 @@
 
     <!-- ================= VISTA 1: PANEL OPERATIVO ================= -->
     <div id="viewDashboard" class="space-y-6">
+      <div id="tasksAttentionBlock" class="hidden"></div>
 
     <!-- RESUMEN DE JORNADA / CABECERA COMPACTA -->
     <section class="dashboard-intro glass-card rounded-2xl border border-slate-700/80 p-2.5 sm:p-3 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -418,7 +426,7 @@
           <label class="block text-xs font-medium text-slate-400 mb-1">Buscar lead</label>
           <div class="relative">
             <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-            <input type="text" id="filterSearch" data-ev="input:scheduleApplyFilters()" placeholder="Nombre, teléfono u observación…" class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
+            <input type="text" id="filterSearch" data-ev="input:scheduleApplyFilters()" placeholder="Nombre, teléfono u observación…" class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
           </div>
         </div>
 
@@ -1030,6 +1038,8 @@
       </div>
     </div>
 
+    <div id="viewTareas" class="hidden space-y-5"></div>
+
     <div id="viewCampanas" class="hidden space-y-5">
       <div class="campaigns-intro">
         <div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="megaphone" class="w-3.5 h-3.5"></i> Análisis de campañas</span><h2 class="mt-3 text-2xl font-bold text-white">Campañas</h2><p class="mt-1 text-sm text-slate-400">Compara la inversión de Meta con los resultados registrados en el CRM.</p></div>
@@ -1311,26 +1321,26 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <!-- Nombre -->
           <div class="sm:col-span-2">
-            <label class="block font-medium text-slate-300 mb-1">Nombre Completo *</label>
-            <input type="text" id="newNombre" required autocomplete="name" placeholder="Ej: Marcela Gómez" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <label class="block font-medium text-slate-700 mb-1">Nombre Completo *</label>
+            <input type="text" id="newNombre" required autocomplete="name" placeholder="Ej: Marcela Gómez" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
           </div>
 
           <!-- Teléfono -->
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Teléfono / WhatsApp *</label>
-            <input type="text" id="newTelefono" required inputmode="tel" autocomplete="tel" placeholder="Ej: 1 (786) 555-1234" data-ev="input:queueNewPhoneCheck()" data-ev="blur:formatPhoneFieldAndCheck(this)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <label class="block font-medium text-slate-700 mb-1">Teléfono / WhatsApp *</label>
+            <input type="text" id="newTelefono" required inputmode="tel" autocomplete="tel" placeholder="Ej: 1 (786) 555-1234" data-ev="input:queueNewPhoneCheck()" data-ev="blur:formatPhoneFieldAndCheck(this)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
             <p id="newPhoneWarn" class="hidden mt-1 text-[11px] text-amber-300"></p>
           </div>
 
           <!-- Fecha de llegada (opcional, por defecto hoy en Miami; solo actual o pasada) -->
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Fecha de llegada</label>
+            <label class="block font-medium text-slate-700 mb-1">Fecha de llegada</label>
             <input type="date" id="newFechaLlegada" data-ev="change:syncNewLeadMes()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
           </div>
 
           <!-- Mes (se calcula de la fecha de llegada) -->
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Mes</label>
+            <label class="block font-medium text-slate-700 mb-1">Mes</label>
             <select id="newMes" disabled class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-500 opacity-70 focus:outline-none">
               <option value="ENERO">Enero</option>
               <option value="FEBRERO">Febrero</option>
@@ -1350,7 +1360,7 @@
 
           <!-- Campaña -->
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Campaña</label>
+            <label class="block font-medium text-slate-700 mb-1">Campaña</label>
             <select id="newCampana" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
               <option value="Sin definir">Sin definir</option>
             </select>
@@ -1361,9 +1371,9 @@
 
           <!-- INTERESADO EN (solo informativo) -->
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Interesado en<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>
+            <label class="block font-medium text-slate-700 mb-1">Interesado en<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>
             <div id="newInteresadoEnChips" class="flex flex-wrap gap-1.5"></div>
-            <p class="text-[11px] text-slate-400 mt-1">Solo informativo: no cambia la campaña del lead. Toca un programa para elegirlo y tócalo otra vez para quitarlo.</p>
+            <p class="text-[11px] text-slate-600 mt-1">Solo informativo: no cambia la campaña del lead. Toca un programa para elegirlo y tócalo otra vez para quitarlo.</p>
             <input type="hidden" id="newInteresadoEn" value="">
           </div>
 
@@ -1402,7 +1412,7 @@
 
           <!-- Medio -->
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Medio</label>
+            <label class="block font-medium text-slate-700 mb-1">Medio</label>
             <select id="newMedio" data-ev="change:syncNewUltimaGestion()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
               <option value="">Selecciona un medio</option>
               <option value="Instagram">Instagram</option>
@@ -1413,7 +1423,7 @@
           </div>
 
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Tipo de gestión inicial</label>
+            <label class="block font-medium text-slate-700 mb-1">Tipo de gestión inicial</label>
             <select id="newUltimaGestion" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
               <option value="Instagram">Instagram</option>
               <option value="Llamada">Llamada</option>
@@ -1425,7 +1435,7 @@
 
           <!-- Gestión (Estatus) -->
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Gestión Inicial<button type="button" data-ev="click:openHelpModal('ayuda-nuevo-lead')" title="Ayuda: gestión inicial" aria-label="Ayuda sobre la gestión inicial del lead" class="inline-flex items-center justify-center w-4 h-4 ml-1 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button></label>
+            <label class="block font-medium text-slate-700 mb-1">Gestión Inicial<button type="button" data-ev="click:openHelpModal('ayuda-nuevo-lead')" title="Ayuda: gestión inicial" aria-label="Ayuda sobre la gestión inicial del lead" class="inline-flex items-center justify-center w-4 h-4 ml-1 rounded-full bg-slate-700 hover:bg-indigo-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button></label>
             <select id="newGestion" data-ev="change:toggleNewAppointmentFields()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
               <option value="Agendado">Agendado</option>
               <option value="Información " selected>Información</option>
@@ -1437,13 +1447,13 @@
               <option value="Repetido ">Repetido</option>
               <option value="Vive Lejos">Vive Lejos</option>
             </select>
-            <p class="text-[11px] text-slate-400 mt-1">Agendado o AGENDADO DATADURA exige cita.</p>
+            <p class="text-[11px] text-slate-600 mt-1">Agendado o AGENDADO DATADURA exige cita.</p>
           </div>
 
           <!-- Agente -->
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Asesor / Agente</label>
-            <input type="text" id="newAgente" list="agenteList" placeholder="Ej: Ana, Jessica, Loli" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <label class="block font-medium text-slate-700 mb-1">Asesor / Agente</label>
+            <input type="text" id="newAgente" list="agenteList" placeholder="Ej: Ana, Jessica, Loli" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
             <p id="newAgenteHint" class="text-[11px] text-slate-500 mt-1 hidden">Se asignará automáticamente con tu nombre de agente.</p>
             <datalist id="agenteList">
               <option value="Ana">
@@ -1454,14 +1464,15 @@
 
           <!-- Ciudad -->
           <div class="sm:col-span-2">
-            <label class="block font-medium text-slate-300 mb-1">Ciudad / Zona</label>
-            <input type="text" id="newCiudad" placeholder="Ej: Doral, Coral Gables, Weston, Hialeah" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <label class="block font-medium text-slate-700 mb-1">Ciudad / Zona</label>
+            <input type="text" id="newCiudad" placeholder="Ej: Doral, Coral Gables, Weston, Hialeah" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
           </div>
 
           <!-- Observaciones -->
           <div class="sm:col-span-2">
-            <label class="block font-medium text-slate-300 mb-1">Observaciones Iniciales</label>
-            <textarea id="newObservaciones" rows="3" placeholder="Notas de seguimiento, intereses específicos, edades de los alumnos..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
+            <label class="block font-medium text-slate-700 mb-1">Observaciones Iniciales</label>
+            <textarea id="newObservaciones" rows="2" placeholder="Notas de seguimiento, intereses específicos, edades de los alumnos..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
+            <label class="inline-flex items-center gap-2 text-[11px] text-slate-300 mt-1"><input type="checkbox" id="newCreateTaskAfterSave" class="accent-indigo-500"> Crear una tarea al guardar este lead</label>
           </div>
         </div>
         </div>
@@ -1480,20 +1491,20 @@
 
   <!-- ================= MODAL: EDITAR / SEGUIMIENTO ================= -->
   <div id="modalEditLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="lead-form-shell overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150" role="dialog" aria-modal="true" aria-labelledby="editLeadTitle">
-      <div class="lead-form-header">
+    <div class="lead-form-shell overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150 bg-[#FFF1E8] border-[#E8C4AF]" role="dialog" aria-modal="true" aria-labelledby="editLeadTitle">
+      <div class="lead-form-header bg-[#FCE8DE] border-b border-[#E8C4AF]">
         <div class="flex items-center gap-3">
-          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-300">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-600">
             <i data-lucide="edit-3" class="w-5 h-5"></i>
           </div>
           <div class="min-w-0">
-            <h3 id="editLeadTitle" class="font-bold text-base">Actualizar seguimiento</h3>
-            <p id="editLeadLeadInfo" class="truncate text-xs text-slate-400">ID: -</p>
+            <h3 id="editLeadTitle" class="font-bold text-base text-slate-900">Actualizar seguimiento</h3>
+            <p id="editLeadLeadInfo" class="truncate text-xs text-slate-600">ID: -</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <span id="editLeadEstadoChip" class="hidden shrink-0 rounded-full bg-slate-900/60 px-2.5 py-1 text-[11px] font-semibold text-slate-300"></span>
-          <button type="button" data-ev="click:closeEditLeadModal()" aria-label="Cerrar actualización de seguimiento" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer">
+          <span id="editLeadEstadoChip" class="hidden shrink-0 rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-semibold text-slate-700"></span>
+          <button type="button" data-ev="click:closeEditLeadModal()" aria-label="Cerrar actualización de seguimiento" class="text-slate-600 hover:text-slate-900 p-1 rounded-lg hover:bg-[#F5D5C5] cursor-pointer">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
@@ -1501,30 +1512,27 @@
 
       <form id="formEditLead" data-ev="submit:handleUpdateLead(event)" class="flex flex-col min-h-0 flex-1 text-xs">
         <input type="hidden" id="editLeadId">
-        <div class="lead-form-scroll space-y-3">
+        <div class="lead-form-scroll space-y-2 bg-[#FFF1E8]">
 
         <div class="lead-form-primary">
-        <h4 class="flex items-center gap-2"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-indigo-500/15 text-indigo-300"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i></span>Gestión y datos de contacto</h4>
+        <h4 class="flex items-center gap-2 text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-indigo-500/15 text-indigo-600"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i></span>Gestión y datos de contacto</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <!-- Datos automaticos: solo informacion, en una sola franja (3 columnas).
                Va primero: al abrir el modal se ve en que estado esta el lead y
                despues los controles para cambiarlo. -->
-          <div class="sm:col-span-2 rounded-lg border border-slate-700/60 bg-slate-900/50 px-3 py-2.5">
-            <div class="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              <span class="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-slate-500"></span>Datos automáticos
-            </div>
-            <div class="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-3">
+          <div class="sm:col-span-2 rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2">
+            <div class="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-3">
               <div class="min-w-0">
-                <div class="text-[11px] text-slate-400">Agente asignado</div>
-                <div id="editAgenteResumen" class="truncate text-slate-100">-</div>
+                <div class="text-[11px] text-slate-600">Agente asignado</div>
+                <div id="editAgenteResumen" class="truncate text-slate-900">-</div>
               </div>
               <div class="min-w-0">
-                <div class="text-[11px] text-slate-400">Fecha última gestión</div>
-                <div id="editFechaUltimaResumen" class="truncate text-slate-100">-</div>
+                <div class="text-[11px] text-slate-600">Fecha última gestión</div>
+                <div id="editFechaUltimaResumen" class="truncate text-slate-900">-</div>
               </div>
               <div class="min-w-0">
-                <div class="text-[11px] text-slate-400">Último asesor que gestionó</div>
-                <div id="editUltimoAgenteResumen" class="truncate text-slate-100">-</div>
+                <div class="text-[11px] text-slate-600">Último asesor que gestionó</div>
+                <div id="editUltimoAgenteResumen" class="truncate text-slate-900">-</div>
               </div>
             </div>
             <!-- Los campos reales se conservan (ocultos) para no tocar el guardado -->
@@ -1535,8 +1543,8 @@
 
           <!-- GESTION -->
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Estatus de Gestión *<button type="button" data-ev="click:openHelpModal('ayuda-gestionar-lead')" title="Ayuda: cambiar la gestión" aria-label="Ayuda sobre el cambio de gestión de un lead" class="inline-flex items-center justify-center w-4 h-4 ml-1 rounded-full bg-slate-700 hover:bg-amber-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button></label>
-            <select id="editGestion" data-ev="change:toggleEditAppointmentFields()" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 font-semibold focus:outline-none focus:border-amber-500">
+            <label class="block font-medium text-slate-700 mb-1">Estatus de Gestión *<button type="button" data-ev="click:openHelpModal('ayuda-gestionar-lead')" title="Ayuda: cambiar la gestión" aria-label="Ayuda sobre el cambio de gestión de un lead" class="inline-flex items-center justify-center w-4 h-4 ml-1 rounded-full bg-slate-700 hover:bg-amber-600 text-[10px] font-bold text-slate-100 align-middle cursor-pointer shrink-0">?</button></label>
+            <select id="editGestion" data-ev="change:toggleEditAppointmentFields()" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 font-semibold focus:outline-none focus:border-indigo-500">
               <option value="Agendado">Agendado (Cita / Visita)</option>
               <option value="Colgo">Colgo</option>
               <option value="En visto">En visto</option>
@@ -1552,13 +1560,13 @@
               <option value="Repetido ">Repetido</option>
               <option value="Vive Lejos">Vive Lejos</option>
             </select>
-            <p class="text-[11px] text-slate-400 mt-1">Cambiar a Agendado crea la cita al guardar.</p>
+            <p class="text-[11px] text-slate-600 mt-1">Cambiar a Agendado crea la cita al guardar.</p>
           </div>
 
           <!-- ULTIMA GESTION (Canal) -->
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Tipo de Última Gestión</label>
-            <select id="editUltimaGestion" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
+            <label class="block font-medium text-slate-700 mb-1">Tipo de Última Gestión</label>
+            <select id="editUltimaGestion" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500">
               <option value="Instagram">Instagram</option>
               <option value="Llamada">Llamada</option>
               <option value="Llamada Data Dura">Llamada Data Dura</option>
@@ -1568,29 +1576,32 @@
           </div>
 
            <!-- OBSERVACIONES -->
-           <div><label class="block font-medium text-slate-300 mb-1">Nombre</label><input id="editNombre" type="text" autocomplete="name" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"></div>
-           <div><label class="block font-medium text-slate-300 mb-1">Teléfono / WhatsApp</label><input id="editTelefono" type="text" inputmode="tel" autocomplete="tel" data-ev="blur:formatPhoneField(this)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500" placeholder="Ej: 1 (786) 555-1234"></div>
+           <div><label class="block font-medium text-slate-700 mb-1">Nombre</label><input id="editNombre" type="text" autocomplete="name" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500"></div>
+           <div><label class="block font-medium text-slate-700 mb-1">Teléfono / WhatsApp</label><input id="editTelefono" type="text" inputmode="tel" autocomplete="tel" data-ev="blur:formatPhoneField(this)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500" placeholder="Ej: 1 (786) 555-1234"></div>
            <div class="sm:col-span-2">
-            <label class="block font-medium text-slate-300 mb-1">Interesado en<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>
-            <div id="editInteresadoEnChips" class="flex flex-wrap gap-1.5"></div>
-            <p class="text-[11px] text-slate-400 mt-1">Solo informativo: no cambia la campaña del lead. Toca un programa para elegirlo y tócalo otra vez para quitarlo.</p>
+            <label class="block font-medium text-slate-700 mb-1">Interesado en<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>
+            <div id="editInteresadoEnChips" class="flex flex-wrap items-center gap-1.5"></div>
+            <p class="text-[11px] text-slate-600 mt-1">Marca o desmarca. No cambia la campaña.</p>
             <input type="hidden" id="editInteresadoEn" value="">
           </div>
            <div class="sm:col-span-2">
-            <label class="block font-medium text-slate-300 mb-1">Historial de Observaciones & Notas</label>
-            <textarea id="editObservaciones" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono text-xs"></textarea>
-            <p class="text-[11px] text-slate-400 mt-1">Puedes agregar nuevas notas fechadas al final del texto.</p>
+            <div class="mb-1 flex items-center justify-between gap-3">
+              <label class="block font-medium text-slate-300">Historial de Observaciones & Notas</label>
+              <button type="button" id="btnCreateTaskFromLead" class="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">+ Crear tarea</button>
+            </div>
+            <textarea id="editObservaciones" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono text-xs"></textarea>
+            <p class="text-[11px] text-slate-600 mt-1">Añade notas al final.</p>
           </div>
-          <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border border-slate-700/60 rounded-lg p-3">
+          <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border border-slate-700/60 rounded-lg p-2">
             <div>
-              <label class="block font-medium text-slate-300 mb-1">Próxima acción<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>
-              <input id="editProximaAccion" type="text" maxlength="200" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500" placeholder="Ej: Llamar, enviar información">
+              <label class="block font-medium text-slate-700 mb-1">Próxima acción<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>
+              <input id="editProximaAccion" type="text" maxlength="200" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500" placeholder="Ej: Llamar, enviar información">
             </div>
             <div>
-              <label class="block font-medium text-slate-300 mb-1">Fecha de seguimiento<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>
-              <input id="editFechaSeguimiento" type="date" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500">
+              <label class="block font-medium text-slate-700 mb-1">Fecha de seguimiento<span class="ml-1 text-[11px] font-normal text-slate-400">opcional</span></label>
+              <input id="editFechaSeguimiento" type="date" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500">
             </div>
-            <p class="sm:col-span-2 text-[11px] text-slate-400 mt-1">Registra solo un seguimiento confirmado. Deja en blanco para quitarlo.</p>
+            <p class="sm:col-span-2 text-[11px] text-slate-600 mt-1">Registra solo un seguimiento confirmado. Deja en blanco para quitarlo.</p>
           </div>
         </div>
         </div>
@@ -1640,22 +1651,22 @@
           <div class="flex items-center gap-2 text-sm font-semibold text-white"><i data-lucide="settings-2" class="w-4 h-4 text-indigo-400"></i>Datos principales del lead</div>
           <p class="text-[11px] text-slate-400">Solo el administrador puede modificar estos campos.</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div><label class="block font-medium text-slate-300 mb-1">Mes</label><input id="editMes" type="text" list="mesList" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
-            <div><label class="block font-medium text-slate-300 mb-1">Fecha</label><input id="editFecha" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
-            <div><label class="block font-medium text-slate-300 mb-1">Campaña</label><input id="editCampana" type="text" list="campanaEditList" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
-            <div><label class="block font-medium text-slate-300 mb-1">Medio</label><input id="editMedio" type="text" list="medioList" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
-            <div><label class="block font-medium text-slate-300 mb-1">Ciudad</label><input id="editCiudad" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
-            <div><label class="block font-medium text-slate-300 mb-1">Agente asignado</label><input id="editAgenteAdmin" type="text" list="agenteList" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
-            <div><label class="block font-medium text-slate-300 mb-1">Odoo</label><input id="editOdoo" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
-            <div><label class="block font-medium text-slate-300 mb-1">Fecha de Atención</label><input id="editFechaAtencion" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
-            <div class="sm:col-span-2"><label class="block font-medium text-slate-300 mb-1">Landing</label><input id="editLanding" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-700 mb-1">Mes</label><input id="editMes" type="text" list="mesList" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-700 mb-1">Fecha</label><input id="editFecha" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-700 mb-1">Campaña</label><input id="editCampana" type="text" list="campanaEditList" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-700 mb-1">Medio</label><input id="editMedio" type="text" list="medioList" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-700 mb-1">Ciudad</label><input id="editCiudad" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-700 mb-1">Agente asignado</label><input id="editAgenteAdmin" type="text" list="agenteList" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-700 mb-1">Odoo</label><input id="editOdoo" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div><label class="block font-medium text-slate-700 mb-1">Fecha de Atención</label><input id="editFechaAtencion" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+            <div class="sm:col-span-2"><label class="block font-medium text-slate-700 mb-1">Landing</label><input id="editLanding" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"></div>
           </div>
         </section>
 
         </div>
-        <div class="lead-form-footer">
-          <button type="button" data-ev="click:closeEditLeadModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium cursor-pointer">Cancelar</button>
-          <button type="submit" id="btnSubmitEditLead" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center gap-2 cursor-pointer">
+        <div class="lead-form-footer bg-[#FCE8DE] border-t border-[#E8C4AF]">
+          <button type="button" data-ev="click:closeEditLeadModal()" class="px-4 py-2 rounded-lg border border-[#E8C4AF] bg-white hover:bg-[#FCE8DE] text-slate-700 font-medium cursor-pointer">Cancelar</button>
+          <button type="submit" id="btnSubmitEditLead" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center gap-2 cursor-pointer">
             <i data-lucide="save" class="w-4 h-4"></i>
             <span>Guardar cambios</span>
           </button>
@@ -1871,10 +1882,28 @@
     try {
       if (window.supabase && window.supabase.createClient) {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabaseClient = supabaseClient;
       }
     } catch (err) {
       console.error("Error inicializando Supabase Client:", err);
     }
+
+    function searchLeadsForTask(query) {
+      const q = String(query || '').trim().toLowerCase();
+      if (!q) return [];
+      const source = Array.isArray(allLeads) ? allLeads : [];
+      return source.filter((lead) => {
+        const nombre = String(lead?.Nombre || lead?.nombre || '').toLowerCase();
+        const telefono = String(lead?.Telefono || lead?.telefono || '').toLowerCase();
+        return nombre.includes(q) || telefono.includes(q);
+      }).slice(0, 8).map((lead) => ({
+        id: lead.id,
+        nombre: lead?.Nombre || lead?.nombre || `Lead #${lead.id}`,
+        telefono: lead?.Telefono || lead?.telefono || '',
+        interesadoEn: lead?.['INTERESADO EN'] || lead?.interesadoEn || '',
+      }));
+    }
+    window.searchLeadsForTask = searchLeadsForTask;
 
     function clearSessionState() {
       sessionGeneration += 1;
@@ -1883,6 +1912,9 @@
       try { localStorage.removeItem('idle_last_activity_ts'); } catch (_) { /* cierre best-effort: no bloquea el flujo */ }
       agentSessionId = null;
       idleLastTouchSent = 0;
+      window.currentUser = null;
+      window.currentAccess = null;
+      if (window.tasksModuleApi?.onSessionCleared) window.tasksModuleApi.onSessionCleared();
       authValidationPromise = null;
       sessionInitializationPromise = null;
       viewLeadGeneration += 1;
@@ -2095,6 +2127,8 @@
     function setAppAuthenticated(user, access) {
       currentUser = user;
       currentAccess = access;
+      window.currentUser = user;
+      window.currentAccess = access;
       isAdmin = access?.role === 'admin' && access?.activo === true;
       isTrafficker = access?.role === 'trafficker' && access?.activo === true;
       isSupervisor = access?.role === 'supervisor' && access?.activo === true;
@@ -2278,6 +2312,7 @@
           return false;
         }
         setAppAuthenticated(user, resolvedAccess);
+        if (window.tasksModuleApi?.onSessionReady) window.tasksModuleApi.onSessionReady();
         const valid = () => generation === sessionGeneration && currentUser?.id === user.id && currentAccess?.updated_at === resolvedAccess.updated_at;
         document.body.classList.add('session-ready');
         document.getElementById('bottomNav')?.classList.add('is-visible');
@@ -2729,15 +2764,17 @@
       const btnHist = document.getElementById('tabBtnHistorico');
       const btnReporte = document.getElementById('tabBtnReporte');
       const btnCitas = document.getElementById('tabBtnCitas');
+      const btnTareas = document.getElementById('tabBtnTareas');
       const btnCamp = document.getElementById('tabBtnCampanas');
       const viewDash = document.getElementById('viewDashboard');
       const viewLeads = document.getElementById('viewLeads');
       const viewHist = document.getElementById('viewHistorico');
       const viewReporte = document.getElementById('reporteDiario');
       const viewCitas = document.getElementById('viewCitas');
+      const viewTareas = document.getElementById('viewTareas');
       const viewCamp = document.getElementById('viewCampanas');
       const viewKanban = document.getElementById('viewKanban');
-      if (!btnDash || !btnLeads || !btnHist || !btnReporte || !btnCitas || !btnCamp || !viewDash || !viewLeads || !viewHist || !viewReporte || !viewCitas || !viewCamp || !viewKanban) return;
+      if (!btnDash || !btnLeads || !btnHist || !btnReporte || !btnCitas || !btnTareas || !btnCamp || !viewDash || !viewLeads || !viewHist || !viewReporte || !viewCitas || !viewTareas || !viewCamp || !viewKanban) return;
       btnDash.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
       btnLeads.className = btnHist.className = btnReporte.className = btnCitas.className = btnCamp.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent";
       viewDash.classList.remove('hidden');
@@ -2759,17 +2796,19 @@
       const btnHist = document.getElementById('tabBtnHistorico');
       const btnReporte = document.getElementById('tabBtnReporte');
       const btnCitas = document.getElementById('tabBtnCitas');
+      const btnTareas = document.getElementById('tabBtnTareas');
       const btnCamp = document.getElementById('tabBtnCampanas');
       const viewDash = document.getElementById('viewDashboard');
       const viewLeads = document.getElementById('viewLeads');
       const viewHist = document.getElementById('viewHistorico');
       const viewReporte = document.getElementById('reporteDiario');
       const viewCitas = document.getElementById('viewCitas');
+      const viewTareas = document.getElementById('viewTareas');
       const viewCamp = document.getElementById('viewCampanas');
       const viewKanban = document.getElementById('viewKanban');
-      if (!btnDash || !btnLeads || !btnHist || !btnReporte || !btnCitas || !btnCamp || !viewDash || !viewLeads || !viewHist || !viewReporte || !viewCitas || !viewCamp || !viewKanban) return;
+      if (!btnDash || !btnLeads || !btnHist || !btnReporte || !btnCitas || !btnTareas || !btnCamp || !viewDash || !viewLeads || !viewHist || !viewReporte || !viewCitas || !viewTareas || !viewCamp || !viewKanban) return;
       const inactive = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent";
-      [btnDash, btnLeads, btnHist, btnReporte, btnCitas, btnCamp].forEach(b => b.className = inactive);
+      [btnDash, btnLeads, btnHist, btnReporte, btnCitas, btnTareas, btnCamp].forEach(b => b.className = inactive);
       viewCamp.classList.add('hidden');
       viewKanban.classList.add('hidden');
 
@@ -2777,21 +2816,25 @@
         setDashboardTabState();
       } else if (tab === 'leads') {
         btnLeads.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
-        viewDash.classList.add('hidden'); viewLeads.classList.remove('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden');
+        viewDash.classList.add('hidden'); viewLeads.classList.remove('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden'); viewTareas.classList.add('hidden');
       } else if (tab === 'campanas') {
         btnCamp.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
-        viewDash.classList.add('hidden'); viewLeads.classList.add('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden'); viewCamp.classList.remove('hidden');
+        viewDash.classList.add('hidden'); viewLeads.classList.add('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden'); viewTareas.classList.add('hidden'); viewCamp.classList.remove('hidden');
         initCampanas();
       } else if (tab === 'kanban') {
         viewDash.classList.add('hidden'); viewLeads.classList.add('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden'); viewCamp.classList.add('hidden'); viewKanban.classList.remove('hidden');
         if (typeof window.initKanban === 'function') window.initKanban();
       } else if (tab === 'reporte') {
         btnReporte.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
-         viewDash.classList.add('hidden'); viewLeads.classList.add('hidden'); viewHist.classList.add('hidden'); viewCitas.classList.add('hidden'); viewReporte.classList.remove('hidden');
+         viewDash.classList.add('hidden'); viewLeads.classList.add('hidden'); viewHist.classList.add('hidden'); viewCitas.classList.add('hidden'); viewTareas.classList.add('hidden'); viewReporte.classList.remove('hidden');
          setReporteVista(reporteVistaActiva);
       } else if (tab === 'citas') {
         btnCitas.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
-        viewDash.classList.add('hidden'); viewLeads.classList.add('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.remove('hidden'); initCitasPanel();
+        viewDash.classList.add('hidden'); viewLeads.classList.add('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.remove('hidden'); viewTareas.classList.add('hidden'); initCitasPanel();
+      } else if (tab === 'tareas') {
+        btnTareas.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-500/30";
+        viewDash.classList.add('hidden'); viewLeads.classList.add('hidden'); viewHist.classList.add('hidden'); viewReporte.classList.add('hidden'); viewCitas.classList.add('hidden'); viewTareas.classList.remove('hidden');
+        if (window.tasksModuleApi) window.tasksModuleApi.initTasksView();
       } else {
         btnHist.className = "flex items-center gap-2 px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
         viewDash.classList.add('hidden');
@@ -2803,7 +2846,7 @@
 
       [btnDash, btnLeads, btnHist, btnCitas].forEach(button => button.classList.toggle('hidden', isTrafficker));
       if (window.matchMedia?.('(max-width: 639px)').matches) {
-        const activeButton = { dashboard: btnDash, leads: btnLeads, historico: btnHist, reporte: btnReporte, citas: btnCitas, campanas: btnCamp }[tab];
+        const activeButton = { dashboard: btnDash, leads: btnLeads, historico: btnHist, reporte: btnReporte, citas: btnCitas, tareas: btnTareas, campanas: btnCamp }[tab];
         const tabsNav = activeButton?.parentElement;
         if (tabsNav && !activeButton.classList.contains('hidden')) {
           tabsNav.scrollTo({ left: activeButton.offsetLeft - tabsNav.offsetLeft - 8, behavior: 'smooth' });
@@ -4902,7 +4945,9 @@
                   : (agendado ? "Lead y cita registrados con éxito" : "Lead registrado con éxito en Supabase"),
                 fallos.length ? 'warning' : 'success');
              if (typeof notifyLeadChange === 'function') notifyLeadChange('created', data.id);
+             const createTaskAfter = !!document.getElementById('newCreateTaskAfterSave')?.checked;
              closeNewLeadModal(true);
+             if (createTaskAfter && window.tasksModuleApi) window.tasksModuleApi.openCreateTaskModal(data.id, newLeadData?.Nombre || null, newLeadData?.Telefono || null, newLeadData?.['INTERESADO EN'] || null);
             populateFilterOptions();
             applyFilters();
           }
@@ -7673,7 +7718,49 @@ async function deleteLeadAppointment(id) {
      window.crmOpenEditLead = (origin, id) => { if (typeof openEditLeadModal === 'function') openEditLeadModal(id, origin); };
 
 </script>
+  <div id="modalTask" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="lead-form-shell overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in zoom-in-95 duration-150 bg-[#FFFAF7] border-[#F1D7C8]" role="dialog" aria-modal="true">
+      <div class="lead-form-header bg-[#FCE8DE] border-b border-[#F1D7C8]">
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-600"><i data-lucide="check-square" class="w-5 h-5"></i></div>
+          <div><h2 class="text-base font-semibold text-slate-900">Nueva tarea</h2><p class="text-[11px] text-slate-600">Programa un recordatorio y asígnalo.</p></div>
+        </div>
+        <button type="button" id="taskCancelBtn" class="p-2 rounded-lg hover:bg-[#F5D5C5] text-slate-700"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="lead-form-body space-y-4 px-6 py-5 bg-[#FFFAF7]">        <input type="hidden" id="taskLeadId" value="">
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">Contacto</label>
+          <div class="relative">
+            <input id="taskLeadSearch" type="text" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-slate-900 placeholder-slate-500 focus:border-indigo-500 focus:outline-none" placeholder="Buscar lead por nombre o teléfono…">
+            <div id="taskLeadResults" class="absolute z-10 mt-1 hidden max-h-48 w-full overflow-y-auto rounded-lg border border-slate-700 bg-slate-800 shadow-lg"></div>
+          </div>
+          <div id="taskLeadContext" class="mt-2 hidden rounded-lg border border-[#E8C4AF] bg-[#FFF1E8] px-3 py-2 text-sm text-slate-900"></div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">Indicación para la asesora</label>
+          <input id="taskDescription" type="text" maxlength="200" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-slate-900 placeholder-slate-500 focus:border-indigo-500 focus:outline-none" placeholder="Ej: Llamar para confirmar documentación">
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1.5">Fecha y hora</label>
+            <input id="taskScheduledAt" type="datetime-local" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-slate-100 focus:border-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1.5">Responsable</label>
+            <select id="taskAssignee" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-slate-100 focus:border-indigo-500 focus:outline-none"></select>
+            <button type="button" id="taskRetryAdvisors" class="mt-2 hidden text-xs text-indigo-400 hover:text-indigo-300">Reintentar carga de responsables</button>
+          </div>
+        </div>
+      </div>
+      <div class="lead-form-footer bg-[#FCE8DE] border-t border-[#F1D7C8]">
+        <button type="button" id="taskCancelBtn2" class="px-4 py-2 rounded-lg border border-[#E8C4AF] bg-white text-slate-700 font-medium hover:bg-[#FCE8DE]">Cancelar</button>
+        <button type="button" id="taskSaveBtn" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Guardar tarea</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="/src/legacy/actions.js"></script>
+  <script type="module" src="/src/tasks/index.js"></script>
   <script type="module" src="/src/citas-calendar.js"></script>
   <script type="module" src="/src/legacy/helpers.js"></script>
   <script type="module" src="/src/legacy/citas.js"></script>

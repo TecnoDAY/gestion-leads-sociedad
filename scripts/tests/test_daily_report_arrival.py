@@ -5,7 +5,7 @@ from scripts.tests.test_daily_report_whatsapp import DailyReportHarness, ROOT
 
 
 class ArrivalPartitionsTest(DailyReportHarness):
-    migration = ROOT / 'supabase/migrations/202610200003_daily_report_llamada_whatsapp_grupo.sql'
+    migration = ROOT / 'supabase/migrations/archive/202610200003_daily_report_llamada_whatsapp_grupo.sql'
 
     def event(self, channel, previous=None, arrival='16/10/2026', **kwargs):
         self.add(channel, previous, **kwargs)

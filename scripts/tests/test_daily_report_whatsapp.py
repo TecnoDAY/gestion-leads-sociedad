@@ -19,7 +19,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MIGRATION = ROOT / 'supabase/migrations/202610160006_daily_report_management_detail.sql'
+MIGRATION = ROOT / 'supabase/migrations/archive/202610160006_daily_report_management_detail.sql'
 
 
 class DailyReportHarness(unittest.TestCase):

@@ -4192,7 +4192,7 @@
         }
         try {
           if (!supabaseClient || !currentUser) throw new Error('No se pudo verificar la sesión.');
-          const rango = mes ? inscripcionMesRange(mes, anioEl?.value || miamiToday().slice(0, 4)) : [null, null];
+          const rango = mes ? inscripcionMesRange(mesNombre, anioEl?.value || miamiToday().slice(0, 4)) : [null, null];
           mesBase = await loadLeadsByInscripcionRange(...rango);
           if (!valid() || mesBase === null) return;
           if (gestionBase !== null) {
@@ -4303,6 +4303,13 @@
       if (document.getElementById('filterSearch')) document.getElementById('filterSearch').value = '';
       if (document.getElementById('filterMes')) document.getElementById('filterMes').value = '';
       if (document.getElementById('filterInscripcionAnio')) document.getElementById('filterInscripcionAnio').value = '';
+      // Invalidar caches de rango para que "Limpiar" no reutilice datos anteriores.
+      mesRangeKey = '';
+      mesRangeLeads = [];
+      gestionRangeKey = '';
+      gestionRangeLeads = [];
+      const inscripcionBox = document.getElementById('filterInscripcionAnioBox');
+      if (inscripcionBox) inscripcionBox.classList.add('hidden');
       if (document.getElementById('filterCampana')) document.getElementById('filterCampana').value = '';
       if (document.getElementById('filterMedio')) document.getElementById('filterMedio').value = '';
       if (document.getElementById('filterGestion')) document.getElementById('filterGestion').value = '';

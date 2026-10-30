@@ -13,10 +13,21 @@
 
 ## Flujo
 
-### 1. Extraer el DDL actual de producción
+### 1. Extraer el DDL actual de producción (en tu máquina local)
+
+> ⚠️ Este paso requiere la CLI autenticada y Docker corriendo.
+> Ejecutar en tu máquina, NO en el sandbox del agente.
 
 ```fish
+# Asegurar Docker corriendo
+sudo systemctl start docker
+
+# Extraer DDL completo del esquema public
 supabase db dump --linked --schema public -f /tmp/baseline.sql
+
+# Verificar que se generó
+wc -l /tmp/baseline.sql
+head -20 /tmp/baseline.sql
 ```
 
 Esto genera el DDL completo (tablas, columnas, constraints, índices, RLS, funciones, triggers).

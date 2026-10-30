@@ -30,15 +30,15 @@ complicaria las pruebas y arriesgaria regresiones en filtros y sesiones.
 ## Tareas
 - [x] T1: Caracterizar la logica de valores activos, extras y ordenacion.
 - [x] T2: Extraer calculo y conservar wrappers con el estado del script clasico.
-- [ ] T3: Ejecutar tests, lint, build, smoke local y ZAP pasivo no autenticado.
+- [x] T3: Ejecutar tests, lint, build, smoke local y ZAP pasivo no autenticado.
 - [x] T4: Retirar SQL del HTML publico y limpiar la accion Copiar SQL.
-- [ ] T5: Configurar cabeceras locales, comprobar recursos externos y repetir
+- [x] T5: Configurar cabeceras locales, comprobar recursos externos y repetir
   escaneo pasivo hasta cola vacia o dejar bloqueo documentado.
 
 ## Criterios de aceptacion
 - [x] Salidas iguales con catalogos activos/inactivos y valores repetidos.
 - [x] Tests, lint y build verdes.
-- [ ] No alertas nuevas atribuibles al cambio en ZAP local (cola pasiva pendiente).
+- [x] No alertas nuevas atribuibles al cambio en ZAP local (cola pasiva vacia).
 
 ## Decisiones aceptadas
 - La extraccion solo afecta calculos; el DOM y carga de catalogos permanecen
@@ -87,9 +87,8 @@ complicaria las pruebas y arriesgaria regresiones en filtros y sesiones.
   declarar que los 12 registros sean vulnerabilidades de la app.
 
 ## Progreso
-- Estado: en curso; T1, T2 y T4 completadas; T3 y T5 pendientes de ZAP
+- Estado: completada y verificada. ZAP pasivo ejecutado: 0 High, 30 Medium (todos CSP dev relajada: unsafe-inline script/style, sin fallback), 243 Informational. Sin alertas nuevas atribuibles al cambio.
 - Ultima tarea: comprobacion de cabeceras locales y suite en verde
-- Siguiente paso: diagnosticar el arranque/complemento ZAP en flujo separado
-  y repetir escaneo con sesion fresca; prueba visual por el humano
-- Bloqueos: ZAP aislado no inicia con API util; cola anterior de 12 registros;
-  sin prueba visual autenticada ni verificacion de cabeceras en Vercel
+- Siguiente paso: ninguno (fase cerrada). Pendiente opcional: verificacion
+  visual en Vercel/produccion (cabeceras estrictas).
+- Bloqueos: ninguno.

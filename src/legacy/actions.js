@@ -35,7 +35,7 @@ export const HANDLERS = new Set([
   'goToPage', 'handleAuthorizeUser', 'handleChangeEmail', 'handleCreateLead', 'handleLogin',
   'handlePasswordReset', 'handleSetPassword', 'handleSignOut', 'handleUpdateLead',
   'disablePushNotifications', 'enablePushNotifications', 'iniciarAjusteMensualFromData', 'installApp', 'loadAgentSessionsReport', 'loadAuthorizedUsers',
-  'loadCampanas', 'loadCitas', 'loadDashboardAppointments', 'loadLeadNotes', 'loadOlderLeads',
+  'loadCampanas', 'loadCitas', 'loadDashboardAppointments', 'loadLeadNotes', 'llamarLead', 'loadOlderLeads',
   'loadReporteDiario', 'loadReportePeriodo', 'openCatalogsModal', 'openChangeEmail',
   'openDashboardAppointmentsDetail', 'openEditLeadFromView', 'openEditLeadModal', 'openHelpModal',
   'closeMoreMenu', 'openAppModal', 'openLeadFromView', 'openMoreMenu', 'openNewLeadModal', 'openRlsModal', 'openViewLeadModal', 'queueNewPhoneCheck',

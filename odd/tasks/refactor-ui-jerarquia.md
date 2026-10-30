@@ -60,15 +60,15 @@ Runner: `npm run lint && npm test && npm run build`
 
 ## Criterios de aceptacion
 
-- [ ] Leads es una vista independiente; Inicio no contiene filtros ni tabla.
-- [ ] `switchTab('leads')` marca la pestana y el boton lateral correctos.
-- [ ] El rol trafficker sigue viendo solo Campanas.
+- [x] Leads es una vista independiente; Inicio no contiene filtros ni tabla.
+- [x] `switchTab('leads')` marca la pestana y el boton lateral correctos.
+- [x] El rol trafficker sigue viendo solo Campanas.
 - [x] Fase 2: superficies solidas y degradado solo en bienvenida.
 - [x] Fase 3: una accion primaria; administracion agrupada.
 - [x] Fase 4: nombre/telefono legibles; accion visible "Gestionar".
 - [x] Fase 5: en Citas el titulo y filtros preceden al calendario; 4 KPIs principales y desglose colapsable.
 - [x] Fase 6: cabecera de Reportes compacta.
-- [ ] `npm run lint`, `npm test` y `npm run build` en verde.
+- [x] `npm run lint`, `npm test` y `npm run build` en verde.
 
 ## Evidencia
 
@@ -126,7 +126,7 @@ Runner: `npm run lint && npm test && npm run build`
 
 ## Progreso
 
-Estado: en curso
-Ultima tarea: T5 (Fase 5) completada - plan completo ejecutado
-Siguiente paso: confirmación del humano (qa-gate al cierre)
+Estado: completada y verificada (visual humano OK)
+Ultima tarea: T6 (Fase 6) completada
+Siguiente paso: ninguno
 Bloqueos: ninguno

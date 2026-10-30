@@ -71,14 +71,14 @@ try {
       (2,2,'PROGRAMADA',null,false,'2026-10-11 15:00-04'),
       (3,3,'ASISTIO',null,false,'2026-10-12 15:00-04');
   `);
-  await db.exec(readFileSync(new URL('../../supabase/migrations/202610220002_inscritos_historial.sql', import.meta.url), 'utf8'));
-  await db.exec(readFileSync(new URL('../../supabase/migrations/202610220003_inscritos_resumen_campana.sql', import.meta.url), 'utf8'));
-  await db.exec(readFileSync(new URL('../../supabase/migrations/202610220004_inscritos_clase_ingreso.sql', import.meta.url), 'utf8'));
+  await db.exec(readFileSync(new URL('../../supabase/migrations/archive/202610220002_inscritos_historial.sql', import.meta.url), 'utf8'));
+  await db.exec(readFileSync(new URL('../../supabase/migrations/archive/202610220003_inscritos_resumen_campana.sql', import.meta.url), 'utf8'));
+  await db.exec(readFileSync(new URL('../../supabase/migrations/archive/202610220004_inscritos_clase_ingreso.sql', import.meta.url), 'utf8'));
   // Antes de separar Instagram, la gestion 18 suma en "otros".
   const canalesPre = (await db.query("select public.management_period_summary('2026-10-01','2026-10-31') as data")).rows[0].data.canales;
-  await db.exec(readFileSync(new URL('../../supabase/migrations/202610230001_canales_instagram.sql', import.meta.url), 'utf8'));
+  await db.exec(readFileSync(new URL('../../supabase/migrations/archive/202610230001_canales_instagram.sql', import.meta.url), 'utf8'));
   const canalesInstagram = (await db.query("select public.management_period_summary('2026-10-01','2026-10-31') as data")).rows[0].data.canales;
-  await db.exec(readFileSync(new URL('../../supabase/migrations/202610260002_exclude_archived_report_leads.sql', import.meta.url), 'utf8'));
+  await db.exec(readFileSync(new URL('../../supabase/migrations/archive/202610260002_exclude_archived_report_leads.sql', import.meta.url), 'utf8'));
   const rows = async (from, to, actual) => (await db.query('select id, gestion_id, fecha_inscripcion::text, estado_inscripcion, clase from public.crm_inscripciones_historial($1,$2,$3) order by id', [from, to, actual])).rows;
   const octubre = await rows('2026-10-01', '2026-10-31', false);
   assert.deepEqual(octubre.map(r => Number(r.id)), [1, 2, 5, 6, 7]);

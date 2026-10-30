@@ -1603,7 +1603,7 @@ test('editar lead: Telefono solo se envía cuando cambia; canal manual se respet
 });
 
 test('migración canal data dura manual: trigger normaliza, RPC prioriza marca y followup admite Telefono', () => {
-  const sql = readFileSync('supabase/migrations/202610020001_canal_datadura_manual_telefono.sql', 'utf8');
+  const sql = readFileSync('supabase/migrations/archive/202610020001_canal_datadura_manual_telefono.sql', 'utf8');
   assert.match(sql, /add column if not exists is_data_dura boolean/);
   assert.match(sql, /'llamada data dura'/);
   // El reporte prioriza la marca manual y solo usa Mes/Fecha en históricos NULL.
@@ -1656,7 +1656,7 @@ test('fecha de llegada: formulario editable, Mes derivado y validación futura; 
   assert.match(html, /fechaLlegadaDisplay\(fechaSel, hoyMiami\)/);
   assert.match(fichaFuente, /\(fechaSel \|\| hoyMiami\)\.split\('-'\)/);
   // Backend create_lead: valida formato/pasado, deriva Mes y registra la gestión.
-  const sql = readFileSync('supabase/migrations/202610020004_create_lead_fecha_gestion.sql', 'utf8');
+  const sql = readFileSync('supabase/migrations/archive/202610020004_create_lead_fecha_gestion.sql', 'utf8');
   assert.match(sql, /fecha_llegada_invalida/);
   assert.match(sql, /llegada > hoy or llegada < date '2000-01-01'/);
   assert.match(sql, /meses\[extract\(month from llegada\)::int\]/);
@@ -1676,7 +1676,7 @@ test('citas: wrapper publica plantilla y no la evalua si falta el nodo', () => {
 });
 
 test('citas: lectura compartida para el equipo y botones de edición solo para asesora asignada o admin', () => {
-  const sql = readFileSync('supabase/migrations/202610020003_citas_lectura_equipo.sql', 'utf8').split('-- Rollback')[0];
+  const sql = readFileSync('supabase/migrations/archive/202610020003_citas_lectura_equipo.sql', 'utf8').split('-- Rollback')[0];
   assert.match(sql, /using \(public\.is_active_user\(\) and public\.is_crm_user\(\)\)/);
   assert.doesNotMatch(sql, /advisor_user_id = auth\.uid\(\)/);
   // Las escrituras siguen restringidas por RPC; el frontend oculta los botones.
@@ -1712,7 +1712,7 @@ test('aviso de teléfono existente: solo conteo, no bloquea, dígitos cortos no 
   // El envío del formulario no depende del aviso.
   assert.doesNotMatch(html, /btnSubmitNewLead[^;]{0,200}newPhoneWarn/);
   // La migración expone solo conteos a usuarios CRM activos.
-  const sql = readFileSync('supabase/migrations/202610020005_check_lead_phone_occurrences.sql', 'utf8');
+  const sql = readFileSync('supabase/migrations/archive/202610020005_check_lead_phone_occurrences.sql', 'utf8');
   assert.match(sql, /check_lead_phone_occurrences\(p_phone text\)/);
   assert.match(sql, /is_crm_user\(\) then raise exception/);
   assert.match(sql, /regexp_replace/);
@@ -1851,7 +1851,7 @@ test('inactividad: aviso a 4 min, cierre a 5, multi-pestaña y registro en tabla
   assert.match(html, /sessionEndReason = 'session_invalid'/);
 
   // Migración: tabla con motivos controlados, sin PII extra y retención de 90 días.
-  const sql = readFileSync('supabase/migrations/202610020006_agent_sessions.sql', 'utf8');
+  const sql = readFileSync('supabase/migrations/archive/202610020006_agent_sessions.sql', 'utf8');
   assert.match(sql, /create table if not exists public\.agent_sessions/);
   assert.match(sql, /end_reason in \('manual_logout', 'idle_timeout', 'session_invalid'\)/);
   assert.match(sql, /ended_at < now\(\) - interval '90 days'/);
@@ -2253,7 +2253,7 @@ test('mutaciones de cita ejecutan sus RPC con contratos completos', async () => 
 });
 
 test('seguimiento y cambio de sede se guardan con una sola RPC atomica', async () => {
-  const sql = readFileSync('supabase/migrations/202610050002_atomic_followup_appointment_campus.sql', 'utf8');
+  const sql = readFileSync('supabase/migrations/archive/202610050002_atomic_followup_appointment_campus.sql', 'utf8');
   assert.match(sql, /updated := public\.update_lead_followup\(p_id, p_fields\);[\s\S]*perform public\.update_lead_appointment_campus\(p_appointment_id, p_campus\);/);
   assert.match(sql, /appointment_lead_id <> p_id/);
   assert.match(sql, /revoke all on function public\.update_lead_followup_with_appointment_campus[\s\S]*from public, anon/);
@@ -2285,7 +2285,7 @@ test('hora de citas se interpreta y se muestra siempre en Miami', () => {
 });
 
 test('hotfix alta atomica: create_lead_with_appointment usa la interna y los bloques condicionales no rompen otros guardados', () => {
-  const sql = readFileSync('supabase/migrations/202610050001_fix_atomic_appointment_creation.sql', 'utf8');
+  const sql = readFileSync('supabase/migrations/archive/202610050001_fix_atomic_appointment_creation.sql', 'utf8');
   assert.match(sql, /create or replace function public\._create_lead_with_gestion\(p_lead jsonb\)/);
   assert.match(sql, /created := public\._create_lead_with_gestion\(p_lead\);\n  perform public\.create_lead_appointment/);
   assert.match(sql, /revoke all on function public\._create_lead_with_gestion\(jsonb\) from public, anon, authenticated, service_role/);
@@ -2346,7 +2346,7 @@ test('editar lead ya agendado: sede de la cita visible y editable sin crear cita
 });
 
 test('data dura sync: trigger solo toca citas PROGRAMADA, corrección guardada y RPCs con permisos', () => {
-  const sql = readFileSync('supabase/migrations/202610090001_data_dura_appointment_sync.sql', 'utf8');
+  const sql = readFileSync('supabase/migrations/archive/202610090001_data_dura_appointment_sync.sql', 'utf8');
   // Trigger: convive con los existentes, AFTER UPDATE OF GESTION, solo PROGRAMADA.
   assert.match(sql, /after update of "GESTION" on public\.leads/i);
   assert.match(sql, /where lead_id = new\.id and status = 'PROGRAMADA'/);
@@ -2369,7 +2369,7 @@ test('data dura sync: trigger solo toca citas PROGRAMADA, corrección guardada y
 });
 
 test('citas por sede: requerida en las 3 rutas, filro/KPIs, corrección y reporte desglosado', () => {
-  const sql = readFileSync('supabase/migrations/202610020007_appointment_campus.sql', 'utf8');
+  const sql = readFileSync('supabase/migrations/archive/202610020007_appointment_campus.sql', 'utf8');
   assert.match(sql, /add column if not exists campus text/);
   assert.match(sql, /add constraint lead_appointments_campus_check check \(campus in \('DORAL', 'WESTON'\)\)/);
   assert.match(sql, /campus_invalid/);
@@ -2442,7 +2442,7 @@ test('citas: KPIs compactos muestran 4 principales y el resto en desglose por es
 });
 
 test('migración de detalles de cita: columnas, p_details, validación, edición y reschedule conservador', () => {
-  const sql = readFileSync('supabase/migrations/202610020002_appointment_student_details.sql', 'utf8');
+  const sql = readFileSync('supabase/migrations/archive/202610020002_appointment_student_details.sql', 'utf8');
   assert.match(sql, /add column if not exists student_name text/);
   assert.match(sql, /add column if not exists contact_email text/);
   assert.match(sql, /add column if not exists student_age smallint/);
@@ -2820,7 +2820,7 @@ test('CSV reporte: separa citas nuevas y reprogramadas y suma las columnas visib
 });
 
 test('canales: migracion cierra la contabilidad (canales excluyentes, fallback y reconciliacion guardada)', () => {
-  const sql = readFileSync('supabase/migrations/202610090003_canal_cierre_contable_reporte.sql', 'utf8');
+  const sql = readFileSync('supabase/migrations/archive/202610090003_canal_cierre_contable_reporte.sql', 'utf8');
   // Bloque canales excluyente con total construido como suma de partes.
   assert.match(sql, /'canales', jsonb_build_object/);
   assert.match(sql, /'sin_clasificar', blocks\.c_sin_clasificar/);
@@ -2842,7 +2842,7 @@ test('canales: migracion cierra la contabilidad (canales excluyentes, fallback y
 });
 
 test('reporte diario: agendamientos por creación, resultados por resolución y autor del trabajo', () => {
-  const sql = readFileSync('supabase/migrations/202610100001_daily_report_appointment_work_date.sql', 'utf8');
+  const sql = readFileSync('supabase/migrations/archive/202610100001_daily_report_appointment_work_date.sql', 'utf8');
   assert.match(sql, /\(a\.created_at at time zone 'America\/New_York'\)::date = p_fecha/);
   assert.match(sql, /\(a\.resolved_at at time zone 'America\/New_York'\)::date = p_fecha/);
   assert.match(sql, /coalesce\(a\.created_by_user_id, a\.advisor_user_id\) as worker_id/);
@@ -2852,7 +2852,7 @@ test('reporte diario: agendamientos por creación, resultados por resolución y 
 });
 
 test('reporte diario: las reprogramaciones no inflan citas nuevas', () => {
-  const sql = readFileSync('supabase/migrations/202610100002_daily_report_new_vs_rescheduled.sql', 'utf8');
+  const sql = readFileSync('supabase/migrations/archive/202610100002_daily_report_new_vs_rescheduled.sql', 'utf8');
   assert.match(sql, /and a\.rescheduled_from_id is null/);
   assert.match(sql, /and a\.rescheduled_from_id is not null/);
   assert.match(sql, /from rebooked a where a\.worker_id is not distinct from f\.user_id/);
@@ -2874,7 +2874,7 @@ test('whatsapp gestión: canal inicial en crear, preselección por Medio y RPC c
   f.context.syncNewUltimaGestion();
   assert.equal(f.element('newUltimaGestion').value, 'Llamada');
   // SQL: separación nuevos (gestion_anterior IS NULL) vs gestionados, sin duplicar Llamada y WhatsApp.
-  const sql = readFileSync('supabase/migrations/202610090002_whatsapp_gestion_report.sql', 'utf8');
+  const sql = readFileSync('supabase/migrations/archive/202610090002_whatsapp_gestion_report.sql', 'utf8');
   assert.match(sql, /gestion_anterior\b/);
   assert.match(sql, /canal = 'whatsapp' and gestion_anterior is null/);
   assert.match(sql, /canal = 'whatsapp' and gestion_anterior is not null/);
@@ -3226,13 +3226,13 @@ test('cita unica: la UI no duplica funciones ni expone el borrado a no-admin', (
 });
 
 test('migraciones de cita unica: indice parcial y RPC admin sin privilege escalation', () => {
-  const indice = readFileSync('supabase/migrations/202610080001_one_programmed_appointment_per_lead.sql', 'utf8');
+  const indice = readFileSync('supabase/migrations/archive/202610080001_one_programmed_appointment_per_lead.sql', 'utf8');
   assert.match(indice, /create unique index if not exists lead_appointments_one_programmed_per_lead_uidx/);
   assert.match(indice, /where status = 'PROGRAMADA'/, 'el indice debe ser parcial: las historicas siguen libres');
   assert.match(indice, /having count\(\*\) > 1/, 'abortar ante duplicados, nunca reconciliar solo');
   assert.match(indice, /raise exception using errcode = '23505'/);
 
-  const rpc = readFileSync('supabase/migrations/202610080002_delete_lead_appointment_admin.sql', 'utf8');
+  const rpc = readFileSync('supabase/migrations/archive/202610080002_delete_lead_appointment_admin.sql', 'utf8');
   assert.match(rpc, /security definer set search_path = public/, 'search_path fijo: evita hijack de funcion');
   assert.match(rpc, /if not public\.is_admin_user\(\) then[\s\S]*raise exception using errcode = '42501'/);
   assert.match(rpc, /delete from public\.lead_appointments\s+where id = p_id/, 'borra solo la cita indicada');

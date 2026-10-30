@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
 // Static contract checks only: these do not execute PostgreSQL or prove rollback.
-const migrations = new URL('../../supabase/migrations/', import.meta.url);
+const migrations = new URL('../../supabase/migrations/archive/', import.meta.url);
 const sql = readdirSync(migrations).filter((name) => name.endsWith('.sql')).sort()
   .map((name) => readFileSync(new URL(name, migrations), 'utf8')).join('\n');
 const definitions = [...sql.matchAll(/create or replace function public\.(update_lead_\w+)\(([^)]*)\)[\s\S]*?as \$\$([\s\S]*?)\$\$;/gi)];

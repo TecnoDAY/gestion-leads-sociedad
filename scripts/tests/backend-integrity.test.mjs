@@ -8,14 +8,14 @@ import vm from 'node:vm';
 
 const root = new URL('../../', import.meta.url);
 const baseline = process.env.BACKEND_INTEGRITY_BASELINE === '1';
-const migrationPath = 'supabase/migrations/202609300005_backend_integrity.sql';
+const migrationPath = 'supabase/migrations/archive/202609300005_backend_integrity.sql';
 const edgePath = 'supabase/functions/authorize-user/index.ts';
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 const head = (path) => execFileSync('git', ['show', `HEAD:${path}`], { cwd: root, encoding: 'utf8' });
 const migration = baseline ? '' : read(migrationPath);
-const migrations = readdirSync(new URL('supabase/migrations/', root))
+const migrations = readdirSync(new URL('supabase/migrations/archive/', root))
   .filter((name) => name.endsWith('.sql') && name < '202609300005')
-  .sort().map((name) => read(`supabase/migrations/${name}`)).join('\n');
+  .sort().map((name) => read(`supabase/migrations/archive/${name}`)).join('\n');
 const effectiveSQL = migrations + '\n' + migration;
 const edge = baseline ? head(edgePath) : read(edgePath);
 
@@ -38,7 +38,7 @@ function guard(name) {
 
 test('rename guard pins canonical HEAD and final wrapper bodies, tolerating only whitespace', () => {
   const sql = guard('create_lead_guard');
-  const canonical = functionBody(definition('create_lead', head('supabase/migrations/202609290001_campaign_stats.sql')));
+  const canonical = functionBody(definition('create_lead', head('supabase/migrations/archive/202609290001_campaign_stats.sql')));
   const wrapper = functionBody(definition('create_lead', migration));
   for (const [name, body] of [['canonical_body_md5', canonical], ['wrapper_body_md5', wrapper]]) {
     const fingerprint = sql.match(new RegExp(`${name} constant text := '([a-f0-9]{32})'`));
@@ -102,7 +102,7 @@ test('bootstrap repeat validates the existing private schema before touching its
 });
 
 test('monthly rollup removes only PUBLIC and anon execution, preserving service and active-user contract', () => {
-  const sql = read('supabase/migrations/202609300004_campaign_monthly_rollup_year.sql');
+  const sql = read('supabase/migrations/archive/202609300004_campaign_monthly_rollup_year.sql');
   for (const role of ['public', 'anon']) {
     assert.ok(sql.includes(`revoke all on function public.campaign_monthly_rollup(int, text) from ${role};`));
   }
@@ -126,7 +126,7 @@ test('create with appointment is still one transaction; update wrapper remains c
   assert.match(create, /jsonb_typeof\(p_lead\) is distinct from 'object'/);
   assert.match(create, /created := public\.create_lead_record\(p_lead\);[\s\S]*perform public\.create_lead_appointment\(created\.id/);
   assert.doesNotMatch(create, /exception\s+when|commit;|rollback;/i);
-  const canonical = head('supabase/migrations/202609290001_campaign_stats.sql');
+  const canonical = head('supabase/migrations/archive/202609290001_campaign_stats.sql');
   assert.equal(definition('update_lead_with_appointment'), definition('update_lead_with_appointment', canonical));
   assert.doesNotMatch(migration, /campaign_monthly_rollup|agendados/i);
 });

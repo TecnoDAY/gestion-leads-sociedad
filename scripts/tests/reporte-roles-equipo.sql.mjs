@@ -58,11 +58,11 @@ try {
       (1, '22222222-2222-2222-2222-222222222222', 'Bea', 'ASISTIO', '2026-10-22 13:00-04'),
       (2, '33333333-3333-3333-3333-333333333333', 'Supervisor', 'REPROGRAMADA', '2026-10-22 14:00-04');
   `);
-  await db.exec(readFileSync(new URL('../../supabase/migrations/202610220005_reporte_roles_equipo.sql', import.meta.url), 'utf8'));
+  await db.exec(readFileSync(new URL('../../supabase/migrations/archive/202610220005_reporte_roles_equipo.sql', import.meta.url), 'utf8'));
   await db.exec(`alter table public.leads add column archived_at timestamptz;
     alter table public.lead_appointment_events add column appointment_id bigint;
     update public.lead_appointment_events set appointment_id = case id when 1 then 4 when 2 then 2 end;`);
-  await db.exec(readFileSync(new URL('../../supabase/migrations/202610260002_exclude_archived_report_leads.sql', import.meta.url), 'utf8'));
+  await db.exec(readFileSync(new URL('../../supabase/migrations/archive/202610260002_exclude_archived_report_leads.sql', import.meta.url), 'utf8'));
 
   const reporte = async (uid, autor = null) => {
     await db.exec(`set test.uid = '${uid ?? ''}'`);

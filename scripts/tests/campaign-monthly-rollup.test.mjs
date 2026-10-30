@@ -6,8 +6,8 @@ import test from 'node:test';
 import { parseFechaLead } from '../../src/legacy/reportes.js';
 import vm from 'node:vm';
 
-const originalPath = 'supabase/migrations/202609290001_campaign_stats.sql';
-const migrationPath = process.env.CAMPAIGN_MIGRATION || 'supabase/migrations/202609300004_campaign_monthly_rollup_year.sql';
+const originalPath = 'supabase/migrations/archive/202609290001_campaign_stats.sql';
+const migrationPath = process.env.CAMPAIGN_MIGRATION || 'supabase/migrations/archive/202609300004_campaign_monthly_rollup_year.sql';
 const original = readFileSync(new URL(`../../${originalPath}`, import.meta.url), 'utf8');
 const migration = readFileSync(new URL(`../../${migrationPath}`, import.meta.url), 'utf8');
 const functionStart = 'create or replace function public.campaign_monthly_rollup';

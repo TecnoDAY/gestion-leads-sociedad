@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-const sql = readFileSync(new URL('../../supabase/migrations/202610270001_crm_tasks_module.sql', import.meta.url), 'utf8');
-const permissionsSql = readFileSync(new URL('../../supabase/migrations/20261028010200_tareas_permisos_admin.sql', import.meta.url), 'utf8');
-const availabilitySql = readFileSync(new URL('../../supabase/migrations/20261028010300_tareas_disponibilidad.sql', import.meta.url), 'utf8');
+const sql = readFileSync(new URL('../../supabase/migrations/archive/202610270001_crm_tasks_module.sql', import.meta.url), 'utf8');
+const permissionsSql = readFileSync(new URL('../../supabase/migrations/archive/20261028010200_tareas_permisos_admin.sql', import.meta.url), 'utf8');
+const availabilitySql = readFileSync(new URL('../../supabase/migrations/archive/20261028010300_tareas_disponibilidad.sql', import.meta.url), 'utf8');
 
 test('tasks migration defines table and rpcs', () => {
   assert.match(sql, /create table if not exists public\.crm_tasks/);

@@ -15,6 +15,8 @@ SET row_security = off;
 
 CREATE SCHEMA IF NOT EXISTS "public";
 
+CREATE EXTENSION IF NOT EXISTS "btree_gist" WITH SCHEMA "public";
+
 
 ALTER SCHEMA "public" OWNER TO "pg_database_owner";
 

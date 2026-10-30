@@ -223,7 +223,7 @@ test('index.html: el trafficker ve Reportes en solo lectura', () => {
   assert.match(html, /if \(!isTrafficker && \(isLoadingLeads \|\| \(!allLeads\.length && isSupabaseLive !== true\)\)\)/);
 });
 
-const migration = readFileSync(new URL('../../supabase/migrations/202610140001_campaign_period_stats.sql', import.meta.url), 'utf8');
+const migration = readFileSync(new URL('../../supabase/migrations/archive/202610140001_campaign_period_stats.sql', import.meta.url), 'utf8');
 
 test('migracion: tabla de períodos, RLS de solo lectura y RPCs con guards', () => {
   assert.match(migration, /create extension if not exists btree_gist;/);

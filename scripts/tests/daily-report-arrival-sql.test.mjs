@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { detalleGestionHoy, detallesBloqueHtml, diarioCsvLines } from '../../src/legacy/reportes.js';
 
-const migration = readFileSync(new URL('../../supabase/migrations/202610200003_daily_report_llamada_whatsapp_grupo.sql', import.meta.url), 'utf8');
+const migration = readFileSync(new URL('../../supabase/migrations/archive/202610200003_daily_report_llamada_whatsapp_grupo.sql', import.meta.url), 'utf8');
 
 test('particiones reales SQL: llegada, alta, canales, legacy, autor y limites Miami', () => {
   const result = spawnSync('python3', ['-m', 'unittest', 'scripts/tests/test_daily_report_arrival.py', '-v'], { cwd: new URL('../..', import.meta.url), encoding: 'utf8' });
@@ -14,7 +14,7 @@ test('particiones reales SQL: llegada, alta, canales, legacy, autor y limites Mi
 });
 
 test('RPC conserva guardia/ACL, citas y JSON; nuevo depende solo del evento', () => {
-  const base = readFileSync(new URL('../../supabase/migrations/202610160008_daily_report_event_new.sql', import.meta.url), 'utf8');
+  const base = readFileSync(new URL('../../supabase/migrations/archive/202610160008_daily_report_event_new.sql', import.meta.url), 'utf8');
   const section = (sql, start, end) => sql.slice(sql.indexOf(start), sql.indexOf(end));
   // Los actores eventdate el CTE result_events, pero booked/gest permanecen estables.
   assert.match(section(migration, '  booked as (', '  gest as ('), /result_events as \(/);
@@ -28,7 +28,7 @@ test('RPC conserva guardia/ACL, citas y JSON; nuevo depende solo del evento', ()
   assert.match(gest, /where g.fecha_gestion = p_fecha/);
   assert.doesNotMatch(gest, /created_at|::date|to_date/);
   assert.doesNotMatch(migration, /lead_date_parts|lead_date_numbers|dated_leads|capture_date/);
-  const base008 = readFileSync(new URL('../../supabase/migrations/202610160008_daily_report_event_new.sql', import.meta.url), 'utf8');
+  const base008 = readFileSync(new URL('../../supabase/migrations/archive/202610160008_daily_report_event_new.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(base008, /action_name/);
   assert.ok(migration.includes("result_events e where e.action_user_id is not distinct from f.user_id"), "result attribution missing");
   assert.match(migration, /public\._daily_report_data_dura\(mes, fecha, p_fecha\)/);

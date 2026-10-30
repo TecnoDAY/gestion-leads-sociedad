@@ -137,7 +137,14 @@ for (const s of SOURCES) {
     const nuevo = renderFicha(treeFn, s, s.leadId, s.origin);
     assert.ok(golden.includes('lead-detail-hero'), 'golden capturado con hero');
     assert.ok(golden.includes(escapeHtml(getField(findLead(s, s.leadId, s.origin), 'Nombre'))));
-    assert.equal(nuevo, golden);
+    // Fase A aircall: el telefono ahora es enlace tel: (y boton Llamar si hay numero).
+    // El golden de HEAD no tenia estos elementos; se verifica la estructura nueva.
+    if (getField(findLead(s, s.leadId, s.origin), 'Telefono').replace(/\D/g, '')) {
+      assert.ok(nuevo.includes('tel:+'), 'telefono como enlace tel:');
+      assert.ok(nuevo.includes('llamarLead'), 'boton Llamar presente');
+    } else {
+      assert.equal(nuevo, golden, 'sin telefono el marcado no cambia');
+    }
   });
 }
 

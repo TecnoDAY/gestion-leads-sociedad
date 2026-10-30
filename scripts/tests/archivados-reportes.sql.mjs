@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 if (!process.argv[2]) throw new Error('Indica la ruta del modulo PGlite.');
 const { PGlite } = await import(pathToFileURL(process.argv[2]).href);
 const db = new PGlite();
-const migration = new URL('../../supabase/migrations/202610260002_exclude_archived_report_leads.sql', import.meta.url);
+const migration = new URL('../../supabase/migrations/archive/202610260002_exclude_archived_report_leads.sql', import.meta.url);
 try {
   await db.exec(`
     create role anon; create role authenticated;
@@ -46,7 +46,7 @@ try {
   `);
   for (const name of ['202610220002_inscritos_historial.sql', '202610220003_inscritos_resumen_campana.sql',
     '202610220004_inscritos_clase_ingreso.sql', '202610220005_reporte_roles_equipo.sql', '202610230001_canales_instagram.sql']) {
-    await db.exec(readFileSync(new URL('../../supabase/migrations/' + name, import.meta.url), 'utf8'));
+    await db.exec(readFileSync(new URL('../../supabase/migrations/archive/' + name, import.meta.url), 'utf8'));
   }
   await db.exec(readFileSync(migration, 'utf8'));
   const json = async sql => (await db.query(sql)).rows[0].data;

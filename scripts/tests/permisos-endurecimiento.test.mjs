@@ -9,10 +9,10 @@ import { readFileSync } from 'node:fs';
 const raiz = new URL('../../', import.meta.url);
 const leer = ruta => readFileSync(new URL(ruta, raiz), 'utf8');
 
-const ratificacion = leer('supabase/migrations/202610200004_ratificacion_modelo_equipo_citas.sql');
-const endurecimiento = leer('supabase/migrations/202610200005_endurecimiento_privilegios.sql');
-const sesiones = leer('supabase/migrations/202610200006_sesiones_usuario_activo.sql');
-const correcciones = leer('supabase/migrations/202610200007_sesion_inactiva_y_limitador_webhook.sql');
+const ratificacion = leer('supabase/migrations/archive/202610200004_ratificacion_modelo_equipo_citas.sql');
+const endurecimiento = leer('supabase/migrations/archive/202610200005_endurecimiento_privilegios.sql');
+const sesiones = leer('supabase/migrations/archive/202610200006_sesiones_usuario_activo.sql');
+const correcciones = leer('supabase/migrations/archive/202610200007_sesion_inactiva_y_limitador_webhook.sql');
 
 test('004: ratifica el modelo de citas por equipo y solo documenta', () => {
   for (const fn of [

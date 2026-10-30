@@ -14,7 +14,7 @@ import * as adminApi from '../../src/legacy/admin.js';
 
 const baseline = process.argv.includes('--baseline');
 const read = p => baseline ? execFileSync('git', ['show', `HEAD:${p}`], { encoding: 'utf8' }) : readFileSync(p, 'utf8');
-const migration = read('supabase/migrations/202610120001_user_access_idle_timeout.sql');
+const migration = read('supabase/migrations/archive/202610120001_user_access_idle_timeout.sql');
 const html = read('index.html');
 // La ayuda vive en src/legacy/help.js (extraida del monolito en la fase 1).
 const helpSource = read('src/legacy/help.js');

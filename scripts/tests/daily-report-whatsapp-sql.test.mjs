@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { detallesBloqueHtml, diarioCsvLines, csvReporteField } from '../../src/legacy/reportes.js';
 
-const migration = readFileSync(new URL('../../supabase/migrations/202610160006_daily_report_management_detail.sql', import.meta.url), 'utf8');
+const migration = readFileSync(new URL('../../supabase/migrations/archive/202610160006_daily_report_management_detail.sql', import.meta.url), 'utf8');
 
 test('SQL real del reporte: WhatsApp combinado, puro, procedencia y aislamiento (SQLite local)', () => {
   const result = spawnSync('python3', ['-m', 'unittest', 'scripts/tests/test_daily_report_whatsapp.py', '-v'], {
@@ -16,7 +16,7 @@ test('SQL real del reporte: WhatsApp combinado, puro, procedencia y aislamiento 
 });
 
 test('migracion siguiente conserva cuerpo aplicado salvo criterio de seguimientos del detalle', () => {
-  const previous = readFileSync(new URL('../../supabase/migrations/202610160005_daily_report_whatsapp_detail.sql', import.meta.url), 'utf8');
+  const previous = readFileSync(new URL('../../supabase/migrations/archive/202610160005_daily_report_whatsapp_detail.sql', import.meta.url), 'utf8');
   const body = sql => sql.slice(sql.indexOf('declare result jsonb;'), sql.indexOf('\n$$;'));
   const expected = body(previous)
     .replace("canal in ('whatsapp', 'llamada y whatsapp') and gestion_anterior is not null", "canal not in ('llamada', 'llamada data dura', 'visita conservatorio') and gestion_anterior is not null")

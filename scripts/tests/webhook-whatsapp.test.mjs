@@ -327,7 +327,7 @@ test('CORS fail-closed: solo los origenes permitidos reciben la cabecera', async
 });
 
 test('migracion aborta duplicados sin borrar datos y protege message.id con indice unico', async () => {
-  const sql = await readFile(new URL('../../supabase/migrations/202609300003_webhook_whatsapp_message_id.sql', import.meta.url), 'utf8');
+  const sql = await readFile(new URL('../../supabase/migrations/archive/202609300003_webhook_whatsapp_message_id.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(sql, /\b(delete|truncate)\b/i);
   assert.match(sql, /having count\(\*\) > 1/i);
   assert.match(sql, /raise exception/i);

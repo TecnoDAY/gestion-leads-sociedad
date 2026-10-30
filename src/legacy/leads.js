@@ -1019,6 +1019,7 @@ export function fichaLeadHtml(lead, ctx) {
             <div class="flex items-center gap-1.5 mt-0.5">
               ${cleanPhone ? `<button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="text-slate-400 opacity-60 cursor-not-allowed"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></button>` : ''}
               ${cleanPhone ? `<a href="tel:+${escapeAttr(cleanPhone)}" class="lead-detail-value font-mono hover:text-indigo-300">${escapeHtml(telefonoFmt || 'S/N')}</a>` : `<span class="lead-detail-value font-mono">${escapeHtml(telefonoFmt || 'S/N')}</span>`}
+              ${cleanPhone ? `<button type="button" data-ev="click:llamarLead('${escapeAttr(leadId)}','${escapeAttr(cleanPhone)}')" title="Llamar con Aircall" class="p-1 rounded bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/40 cursor-pointer"><i data-lucide="phone" class="w-3.5 h-3.5"></i></button>` : ''}
             </div>
           </div>
 

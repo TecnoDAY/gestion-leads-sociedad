@@ -5794,6 +5794,22 @@
       openViewLeadModal(id, origin);
     }
 
+    async function llamarLead(leadId, phone) {
+      if (!supabaseClient || !currentUser || !currentAccess?.activo) { showToast('Inicia sesión para llamar.', 'warning'); return; }
+      showToast('Iniciando llamada con Aircall…', 'info');
+      try {
+        const { data, error } = await supabaseClient.functions.invoke('aircall-dial', { body: { leadId: Number(leadId), phone: String(phone) } });
+        if (error) throw error;
+        if (!data?.ok) throw new Error(data?.error || 'No se pudo iniciar la llamada.');
+        showToast('Llamada iniciada en Aircall. Revisa la app.', 'success');
+      } catch (err) {
+        const msg = String(err?.message || err || '');
+        if (msg.includes('aircall_not_configured')) showToast('Aircall no está configurado todavía.', 'warning');
+        else if (msg.includes('aircall_user_not_found')) showToast('Tu usuario no está vinculado en Aircall.', 'warning');
+        else showToast('No se pudo iniciar la llamada. ' + msg, 'error');
+      }
+    }
+
     function openViewLeadModal(leadId, origin) {
       viewLeadGeneration += 1;
       // T4: la ficha abre origen+ID exactos, sin fallback cruzado (los ids

@@ -427,7 +427,7 @@ export function filaLeadHtml(lead, { leadId, origin, isAdmin }) {
                   <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
                 </button>
               ` : ''}
-              <span class="font-mono text-[11px]">${escapeHtml(telefono || 'S/N')}</span>
+              ${cleanPhone ? `<a href="tel:+${escapeAttr(cleanPhone)}" class="font-mono text-[11px] hover:text-indigo-300">${escapeHtml(telefono || 'S/N')}</a>` : `<span class="font-mono text-[11px]">${escapeHtml(telefono || 'S/N')}</span>`}
             </div>
           </td>
           <td class="px-3.5 py-3 text-slate-300 truncate max-w-[150px]">${escapeHtml(campana || '-')}</td>
@@ -1018,7 +1018,7 @@ export function fichaLeadHtml(lead, ctx) {
             <span class="flex items-center gap-1.5 text-[11px] uppercase text-slate-500 font-semibold block"><i data-lucide="phone" class="w-3 h-3 shrink-0"></i>Teléfono / WhatsApp</span>
             <div class="flex items-center gap-1.5 mt-0.5">
               ${cleanPhone ? `<button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="text-slate-400 opacity-60 cursor-not-allowed"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></button>` : ''}
-              <span class="lead-detail-value font-mono">${escapeHtml(telefonoFmt || 'S/N')}</span>
+              ${cleanPhone ? `<a href="tel:+${escapeAttr(cleanPhone)}" class="lead-detail-value font-mono hover:text-indigo-300">${escapeHtml(telefonoFmt || 'S/N')}</a>` : `<span class="lead-detail-value font-mono">${escapeHtml(telefonoFmt || 'S/N')}</span>`}
             </div>
           </div>
 

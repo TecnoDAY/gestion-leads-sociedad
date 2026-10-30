@@ -472,7 +472,7 @@
       <div class="dashboard-filter-extra flex flex-wrap items-end gap-3 pt-3 border-t border-amber-200/60 bg-amber-50/60 rounded-lg px-3 py-3 -mx-1">
         <div class="flex flex-col gap-1">
           <label class="text-xs font-medium text-amber-900">Origen</label>
-          <select id="dataSourceFilter" data-ev="change:setDataSource(this.value)" class="bg-white border border-amber-200 rounded-lg px-2.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40" style="field-sizing: content; min-width: 8rem;">
+          <select id="dataSourceFilter" data-ev="change:setDataSource(this.value)" class="bg-slate-800 border border-amber-200 rounded-lg px-2.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40" style="field-sizing: content; min-width: 8rem;">
             <option value="historico">Histórico 2025</option>
             <option value="actual" selected>Leads actuales</option>
             <option value="todos">Todos</option>
@@ -486,11 +486,11 @@
           <div class="dashboard-date-fields flex flex-wrap items-center gap-2">
             <div class="flex items-center gap-1.5">
               <label class="text-[11px] text-amber-800">Desde</label>
-              <input type="date" id="dashDesde" data-ev="change:applyFilters()" class="bg-white border border-amber-200 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40">
+              <input type="date" id="dashDesde" data-ev="change:applyFilters()" class="bg-slate-800 border border-amber-200 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40">
             </div>
             <div class="flex items-center gap-1.5">
               <label class="text-[11px] text-amber-800">Hasta</label>
-              <input type="date" id="dashHasta" data-ev="change:applyFilters()" class="bg-white border border-amber-200 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40">
+              <input type="date" id="dashHasta" data-ev="change:applyFilters()" class="bg-slate-800 border border-amber-200 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40">
             </div>
             <button data-ev="click:clearDashRange()" class="text-[11px] px-2 py-1.5 rounded-md border border-amber-300 text-amber-800 bg-amber-100 hover:bg-amber-200 cursor-pointer transition-colors">Limpiar</button>
             <span id="dashRangeScope" class="text-[11px] text-amber-800 font-semibold hidden"></span>
@@ -499,13 +499,13 @@
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-xs font-medium text-amber-900">Asesora</label>
-          <select id="filterAsesora" data-ev="change:applyFilters()" class="bg-white border border-amber-200 rounded-lg px-2.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40" style="field-sizing: content; min-width: 10rem;">
+          <select id="filterAsesora" data-ev="change:applyFilters()" class="bg-slate-800 border border-amber-200 rounded-lg px-2.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40" style="field-sizing: content; min-width: 10rem;">
             <option value="">Todas las asesoras</option>
           </select>
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-xs font-medium text-amber-900">Orden</label>
-          <select id="filterOrden" data-ev="change:applyFilters()" class="bg-white border border-amber-200 rounded-lg px-2.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40" style="field-sizing: content; min-width: 11rem;">
+          <select id="filterOrden" data-ev="change:applyFilters()" class="bg-slate-800 border border-amber-200 rounded-lg px-2.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40" style="field-sizing: content; min-width: 11rem;">
             <option value="recientes">Más recientes</option>
             <option value="urgentes">Más urgentes primero</option>
             <option value="inactivos">Más inactivos primero</option>
@@ -1121,7 +1121,7 @@
   <!-- ================= BANNER: INACTIVIDAD (solo asesoras) ================= -->
   <div id="idleBanner" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-[65] bg-amber-600 text-white rounded-xl shadow-2xl px-4 py-3 flex items-center gap-3 max-w-md" role="alert" aria-live="assertive">
     <span class="text-xs font-medium">Sesión inactiva: se cerrará en <strong id="idleCountdown">60</strong> s.</span>
-    <button type="button" data-ev="click:continueAgentSession()" class="px-2.5 py-1.5 rounded-lg bg-white/90 text-amber-700 text-[11px] font-bold shrink-0 cursor-pointer">Continuar sesión</button>
+    <button type="button" data-ev="click:continueAgentSession()" class="px-2.5 py-1.5 rounded-lg bg-slate-800/90 text-amber-700 text-[11px] font-bold shrink-0 cursor-pointer">Continuar sesión</button>
   </div>
 
   <!-- ================= MODAL: INICIO DE SESIÓN ================= -->
@@ -1504,7 +1504,7 @@
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <span id="editLeadEstadoChip" class="hidden shrink-0 rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-semibold text-slate-700"></span>
+          <span id="editLeadEstadoChip" class="hidden shrink-0 rounded-full bg-slate-800/70 px-2.5 py-1 text-[11px] font-semibold text-slate-700"></span>
           <button type="button" data-ev="click:closeEditLeadModal()" aria-label="Cerrar actualización de seguimiento" class="text-slate-600 hover:text-slate-900 p-1 rounded-lg hover:bg-[#F5D5C5] cursor-pointer">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -1666,7 +1666,7 @@
 
         </div>
         <div class="lead-form-footer bg-[#FCE8DE] border-t border-[#E8C4AF]">
-          <button type="button" data-ev="click:closeEditLeadModal()" class="px-4 py-2 rounded-lg border border-[#E8C4AF] bg-white hover:bg-[#FCE8DE] text-slate-700 font-medium cursor-pointer">Cancelar</button>
+          <button type="button" data-ev="click:closeEditLeadModal()" class="px-4 py-2 rounded-lg border border-[#E8C4AF] bg-slate-800 hover:bg-[#FCE8DE] text-slate-700 font-medium cursor-pointer">Cancelar</button>
           <button type="submit" id="btnSubmitEditLead" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center gap-2 cursor-pointer">
             <i data-lucide="save" class="w-4 h-4"></i>
             <span>Guardar cambios</span>

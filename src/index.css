@@ -52,6 +52,9 @@
     .tabular-nums { font-variant-numeric: tabular-nums; }
     .glass-card { background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(8px); }
     #viewDashboard .glass-card { background: rgba(30, 41, 59, 0.92); backdrop-filter: blur(6px); }
+    /* Modo oscuro (base): texto slate-900 legible sobre fondos oscuros.
+       En modo claro, [data-theme="light"] .text-slate-900 ya lo sobrescribe a #0f172a. */
+    .text-slate-900 { color: #f1f5f9; }
     [data-theme="light"] #viewDashboard .glass-card { background: rgba(255, 255, 255, 0.97); }
     #viewDashboard .dashboard-kpis .metric-card { border-top: 3px solid rgba(148, 163, 184, 0.35); }
     #viewDashboard .dashboard-kpis .metric-card:nth-child(1) { border-top-color: #3b82f6; }
@@ -74,7 +77,7 @@
     [data-theme="light"] .bg-slate-950, [data-theme="light"] .bg-slate-900, [data-theme="light"] .bg-slate-900\/95, [data-theme="light"] .bg-slate-900\/90 { background-color: #f8fafc; }
     [data-theme="light"] .bg-slate-950\/80, [data-theme="light"] .bg-slate-950\/95 { background-color: rgba(255, 255, 255, 0.92); }
     [data-theme="light"] .bg-slate-950\/90, [data-theme="light"] .bg-slate-900\/50 { background-color: #f1f5f9; }
-    [data-theme="light"] .bg-slate-800, [data-theme="light"] .bg-slate-800\/50, [data-theme="light"] .bg-slate-800\/60, [data-theme="light"] .bg-slate-800\/70 { background-color: #e2e8f0; }
+    [data-theme="light"] .bg-slate-800, [data-theme="light"] .bg-slate-800\/50, [data-theme="light"] .bg-slate-800\/60, [data-theme="light"] .bg-slate-800\/70, [data-theme="light"] .bg-slate-800\/90 { background-color: #e2e8f0; }
     [data-theme="light"] .bg-slate-700, [data-theme="light"] .bg-slate-700\/60 { background-color: #cbd5e1; }
     [data-theme="light"] .bg-slate-900\/60, [data-theme="light"] .bg-slate-900\/80 { background-color: #e2e8f0; }
     [data-theme="light"] .bg-slate-950\/70 { background-color: #f1f5f9; }

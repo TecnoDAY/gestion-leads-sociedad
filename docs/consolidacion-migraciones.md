@@ -22,19 +22,27 @@
 # Asegurar Docker corriendo
 sudo systemctl start docker
 
-# Extraer DDL completo del esquema public
-supabase db dump --linked --schema public -f /tmp/baseline.sql
+# Extraer DDL completo del esquema public (excluyendo tablas de backup)
+supabase db dump --linked --schema public \
+  --exclude public._bkp_lead_gestiones_20260926 \
+  --exclude public._bkp_leads_20261005 \
+  -f /tmp/baseline.sql
 
 # Verificar que se generó
 wc -l /tmp/baseline.sql
 head -20 /tmp/baseline.sql
 ```
 
+> Nota: si el dump incluye `revoke` statements para anon/authenticated,
+> son esperados (confirman que no tienen acceso). Pueden ignorarse en el diff.
+
 Esto genera el DDL completo (tablas, columnas, constraints, índices, RLS, funciones, triggers).
 
 ### 2. Revisar y limpiar el dump
 
 Abrir `/tmp/baseline.sql` y:
+
+- [ ] Verificar que contiene `CREATE EXTENSION IF NOT EXISTS "btree_gist"` (necesario para el constraint EXCLUDE USING gist de campaign_period_stats). Si no está, agregarlo manualmente al inicio.
 
 - [ ] Eliminar líneas `SET` y `SELECT pg_catalog.set_config(...)`.
 - [ ] Eliminar `CREATE EXTENSION` si ya están en el schema por defecto.

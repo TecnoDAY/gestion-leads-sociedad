@@ -54,11 +54,12 @@
     #viewDashboard .glass-card { background: rgba(30, 41, 59, 0.92); backdrop-filter: blur(6px); }
     /* Modo oscuro (base): texto slate-900 legible sobre fondos oscuros.
        En modo claro, [data-theme="light"] .text-slate-900 ya lo sobrescribe a #0f172a. */
-    .text-slate-900 { color: #f1f5f9; }
-    /* Modo oscuro (base): fondos y bordes claros hardcodeados (tema warm/peach)
-       se oscurecen para no desentonar. En modo claro se restauran los originales. */
-    .bg-\[\#EFF6FF\], .bg-\[\#F5D5C5\], .bg-\[\#FCE8DE\], .bg-\[\#FFF1E8\], .bg-\[\#FFFAF7\] { background-color: #1e293b; }
-    .border-\[\#BFDBFE\], .border-\[\#E8C4AF\], .border-\[\#F1D7C8\] { border-color: #334155; }
+    /* Modo oscuro: texto slate-900 legible sobre fondos oscuros. */
+    [data-theme="dark"] .text-slate-900 { color: #f1f5f9; }
+    /* Modo oscuro: fondos y bordes claros hardcodeados (tema warm/peach)
+       se oscurecen para no desentonar. */
+    [data-theme="dark"] .bg-\[\#EFF6FF\], [data-theme="dark"] .bg-\[\#F5D5C5\], [data-theme="dark"] .bg-\[\#FCE8DE\], [data-theme="dark"] .bg-\[\#FFF1E8\], [data-theme="dark"] .bg-\[\#FFFAF7\] { background-color: #1e293b; }
+    [data-theme="dark"] .border-\[\#BFDBFE\], [data-theme="dark"] .border-\[\#E8C4AF\], [data-theme="dark"] .border-\[\#F1D7C8\] { border-color: #334155; }
     [data-theme="light"] .bg-\[\#EFF6FF\] { background-color: #EFF6FF; }
     [data-theme="light"] .bg-\[\#F5D5C5\] { background-color: #F5D5C5; }
     [data-theme="light"] .bg-\[\#FCE8DE\] { background-color: #FCE8DE; }

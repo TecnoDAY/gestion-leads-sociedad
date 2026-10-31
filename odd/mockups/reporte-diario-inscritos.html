@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maqueta — Reporte diario con inscritos</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #172033;
+      background: #f4f6fb;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --indigo: #4138b8;
+      --border: #e1e6f0;
+      --muted: #64718a;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 28px; }
+    .page { max-width: 1440px; margin: auto; }
+    .topbar, .panel {
+      background: #fff;
+      border: 1px solid #dfe5f1;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(27, 39, 76, .045);
+    }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      padding: 20px 24px; margin-bottom: 20px;
+      background: linear-gradient(110deg, #fff 55%, #f0efff 100%);
+    }
+    .eyebrow { color: #5148ce; font-size: .7rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+    h1 { margin: 5px 0 4px; color: #2f348f; font-size: clamp(1.25rem, 2.5vw, 1.75rem); }
+    .date-note { color: var(--muted); font-size: .88rem; }
+    .controls { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; }
+    label { display: grid; gap: 5px; color: #526079; font-size: .72rem; font-weight: 700; }
+    input, select, button { min-height: 38px; border: 1px solid #d5dbea; border-radius: 9px; background: #fff; color: #202943; font: inherit; padding: 7px 10px; }
+    button { border: 0; background: #343a9a; color: #fff; font-size: .82rem; font-weight: 700; padding: 8px 14px; }
+    .panel { padding: 22px; margin-bottom: 16px; }
+    .section-title { margin: 0; color: #30378f; font-size: 1.08rem; }
+    .section-note { margin: 6px 0 16px; color: var(--muted); font-size: .8rem; }
+    .metrics { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+    .metric { min-width: 0; padding: 14px 15px 13px; border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 13px; background: #fbfcff; }
+    .metric-label { color: #56627a; font-size: .76rem; line-height: 1.3; min-height: 2em; }
+    .metric-value { display: block; margin-top: 5px; color: #202944; font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .metric.primary { background: #f0efff; border-color: #dedbff; border-top-color: #655cf3; }
+    .metric.primary .metric-value { color: #4036c3; }
+    .metric.blue { --accent: #3984ed; }
+    .metric.orange { --accent: #ef9b20; }
+    .metric.rose { --accent: #eb5961; }
+    .metric.teal { --accent: #10a984; background: #f3fcf9; border-color: #d8f1e9; }
+    .metric.teal .metric-value { color: #07815f; }
+    .advisor-list { display: grid; gap: 11px; }
+    details.advisor { overflow: hidden; border: 1px solid #dfe5f1; border-radius: 13px; background: #fff; }
+    .advisor summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 17px; background: #f2f4ff; color: #252c56; font-weight: 750; cursor: pointer; list-style: none; }
+    .advisor summary::-webkit-details-marker { display: none; }
+    .advisor summary::before { content: "▸"; color: #5148ce; transition: transform .15s ease; }
+    .advisor[open] summary::before { transform: rotate(90deg); }
+    .advisor-name { display: flex; align-items: center; gap: 9px; margin-right: auto; }
+    .count-pill { border-radius: 999px; padding: 5px 10px; color: #087c5d; background: #ddf6ed; font-size: .75rem; font-weight: 800; white-space: nowrap; }
+    .advisor-content { padding: 16px; }
+    .details-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; }
+    .detail-card { border: 1px solid var(--border); border-radius: 11px; padding: 13px 14px; }
+    .detail-card h3 { margin: 0 0 9px; color: #393c91; font-size: .87rem; }
+    .detail-row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid #edf0f6; font-size: .77rem; }
+    .detail-row:last-child { border-bottom: 0; }
+    .detail-row strong { font-variant-numeric: tabular-nums; }
+    .inscribed-row { margin: 0 -5px; padding: 9px 5px; border-radius: 7px; background: #f0fbf7; color: #087c5d; font-weight: 750; }
+    .sample-note { margin: 12px 0 0; color: #7a8498; font-size: .72rem; }
+    @media (max-width: 1050px) {
+      .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .details-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 620px) {
+      body { padding: 13px; }
+      .topbar { align-items: flex-start; flex-direction: column; padding: 17px; }
+      .controls { width: 100%; }
+      .controls label { flex: 1; min-width: 130px; }
+      .controls input, .controls select { width: 100%; }
+      .panel { padding: 16px; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+      .metric { padding: 12px; }
+      .metric-label { font-size: .7rem; }
+      .metric-value { font-size: 1.2rem; }
+      .details-grid { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">▣ Actividad del equipo</div>
+        <h1>Reporte diario de trabajo</h1>
+        <div class="date-note">Fecha: 30/10/2026 · Día: viernes</div>
+      </div>
+      <div class="controls" aria-label="Filtros del reporte">
+        <label>Fecha <input type="date" value="2026-10-30"></label>
+        <label>Asesora
+          <select><option>Todas las asesoras</option><option>Ana</option><option>Bea</option><option>Carla</option></select>
+        </label>
+        <button type="button">↓ Descargar CSV</button>
+      </div>
+    </header>
+
+    <section class="panel" aria-labelledby="summary-title">
+      <h2 id="summary-title" class="section-title">Resumen general</h2>
+      <p class="section-note">Actividad registrada para la fecha seleccionada</p>
+      <div class="metrics">
+        <article class="metric primary"><div class="metric-label">Gestiones realizadas</div><strong class="metric-value">100</strong></article>
+        <article class="metric blue"><div class="metric-label">Total llamadas</div><strong class="metric-value">63</strong></article>
+        <article class="metric orange"><div class="metric-label">Citas nuevas hoy</div><strong class="metric-value">4</strong></article>
+        <article class="metric rose"><div class="metric-label">Reprogramadas hoy</div><strong class="metric-value">1</strong></article>
+        <article class="metric" style="--accent:#10b981"><div class="metric-label">Visitas registradas</div><strong class="metric-value">2</strong></article>
+        <article class="metric teal"><div class="metric-label">Inscritos</div><strong class="metric-value">3</strong></article>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="advisor-title">
+      <h2 id="advisor-title" class="section-title">Comparativa por asesora</h2>
+      <p class="section-note">Cada asesora muestra sus resultados del día; Inscritos incluye normales y Data Dura.</p>
+      <div class="advisor-list">
+        <details class="advisor" open>
+          <summary><span class="advisor-name">Ana <span>— 23 gestiones</span></span><span class="count-pill">Inscritos: 1</span></summary>
+          <div class="advisor-content">
+            <div class="details-grid">
+              <section class="detail-card"><h3>Procedencia</h3><div class="detail-row"><span>WhatsApp</span><strong>23</strong></div><div class="detail-row"><span>Facebook/Instagram</span><strong>0</strong></div><div class="detail-row"><span>Directo o referido</span><strong>0</strong></div><div class="detail-row"><span>Otras procedencias</span><strong>0</strong></div></section>
+              <section class="detail-card"><h3>Canales</h3><div class="detail-row"><span>Llamada</span><strong>0</strong></div><div class="detail-row"><span>Llamada Data Dura</span><strong>21</strong></div><div class="detail-row"><span>WhatsApp</span><strong>2</strong></div><div class="detail-row"><span>Total</span><strong>23</strong></div></section>
+              <section class="detail-card"><h3>Detalle de gestión</h3><div class="detail-row"><span>WhatsApp nuevos hoy</span><strong>2</strong></div><div class="detail-row"><span>WhatsApp gestionados hoy</span><strong>0</strong></div><div class="detail-row"><span>Total llamadas</span><strong>21</strong></div></section>
+              <section class="detail-card"><h3>Citas y resultados</h3><div class="detail-row"><span>Citas nuevas hoy</span><strong>0</strong></div><div class="detail-row"><span>Visitas registradas</span><strong>0</strong></div><div class="detail-row inscribed-row"><span>Inscritos hoy</span><strong>1</strong></div></section>
+            </div>
+          </div>
+        </details>
+        <details class="advisor"><summary><span class="advisor-name">Bea <span>— 18 gestiones</span></span><span class="count-pill">Inscritos: 2</span></summary><div class="advisor-content"><p class="date-note">En su detalle también aparecerá la fila «Inscritos hoy», con el conteo atribuido a Bea.</p></div></details>
+        <details class="advisor"><summary><span class="advisor-name">Carla <span>— 12 gestiones</span></span><span class="count-pill">Inscritos: 0</span></summary><div class="advisor-content"><p class="date-note">Si no tiene inscripciones ese día, el indicador muestra 0.</p></div></details>
+      </div>
+      <p class="sample-note">Maqueta visual con cifras de ejemplo; no está conectada a los datos reales.</p>
+    </section>
+  </main>
+</body>
+</html>

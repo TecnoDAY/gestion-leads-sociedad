@@ -1100,3 +1100,159 @@
   border-left: 0.55rem solid currentColor;
   transform: translateY(-50%);
 }
+
+/* ===== Modo oscuro: superficies y contraste (spec odd/tasks/contraste-modo-oscuro.md) =====
+   El modo claro es el tema por defecto (<html data-theme="light">). Por eso TODA
+   regla de este bloque va bajo [data-theme="dark"]: el tema claro queda intacto.
+   Paleta: fondo #0d1526, superficie #151f33, tarjeta #1b2940, borde #33445f,
+   texto principal #edf2fa y secundario #b4c2d6. */
+[data-theme="dark"] body { background-color: #0d1526; color: #edf2fa; }
+[data-theme="dark"] header.sticky, [data-theme="dark"] body > div.sticky {
+  background-color: rgba(13, 21, 38, .94);
+  border-color: #2d3b54;
+}
+[data-theme="dark"] .glass-card { background-color: rgba(27, 41, 64, .92); border-color: #33445f; }
+
+/* Texto secundario: las utilidades slate-500..800 no tenian contraparte oscura
+   y se dibujaban casi negras sobre fondo oscuro. */
+[data-theme="dark"] .text-slate-500 { color: #9fb0c7; }
+[data-theme="dark"] .text-slate-600 { color: #b3c1d4; }
+[data-theme="dark"] .text-slate-700 { color: #cbd5e1; }
+[data-theme="dark"] .text-slate-800 { color: #e2e8f0; }
+
+/* La seccion de Reportes tambien sigue el tema oscuro; ver el bloque final. */
+
+/* Filtros de Leads: fila "Origen / Rango de gestion / Asesora / Orden".
+   Mezclaba fondo ambar claro con controles oscuros y texto oscuro ilegible. */
+[data-theme="dark"] .dashboard-filter-extra {
+  background-color: #221d13;
+  border-top-color: #4d3d1f;
+  border-radius: .5rem;
+}
+[data-theme="dark"] .dashboard-filter-extra .text-amber-900 { color: #f3d9a6; }
+[data-theme="dark"] .dashboard-filter-extra .text-amber-800 { color: #eccf9b; }
+[data-theme="dark"] .dashboard-filter-extra .text-amber-700 { color: #e0bf87; }
+[data-theme="dark"] .dashboard-filter-extra select,
+[data-theme="dark"] .dashboard-filter-extra input {
+  background-color: #14202f;
+  border-color: #6b5730;
+  color: #f1f5f9;
+}
+[data-theme="dark"] .dashboard-filter-extra button.border-amber-300 {
+  background-color: #33290f;
+  border-color: #7a6331;
+  color: #f5e0b4;
+}
+[data-theme="dark"] .dashboard-filter-extra button.border-amber-300:hover { background-color: #443516; }
+
+/* Tareas: las pestanas inactivas usaban bg #FCE8DE + text-slate-700 y un hover
+   claro que desaparecia en oscuro (src/tasks/index.js). */
+[data-theme="dark"] .tasks-scope { color: #cbd5e1; background-color: #1e293b; border: 1px solid #3b4a63; }
+[data-theme="dark"] .tasks-scope:hover { background-color: #263653; color: #f8fafc; }
+[data-theme="dark"] .hover\:bg-\[\#F5D5C5\]:hover { background-color: #263653; }
+[data-theme="dark"] .bg-\[\#FCE8DE\] { color: #cbd5e1; }
+
+/* Citas: FullCalendar solo recibia bordes oscuros; las celdas y la columna de
+   hoy seguian con las variables claras por defecto de la libreria. */
+[data-theme="dark"] .fc {
+  --fc-page-bg-color: #17243a;
+  --fc-neutral-bg-color: #111e32;
+  --fc-neutral-text-color: #cbd5e1;
+  --fc-border-color: #3a4b66;
+  --fc-today-bg-color: rgba(99, 102, 241, .18);
+  --fc-non-business-color: rgba(15, 23, 42, .45);
+  --fc-bg-event-color: #334155;
+  --fc-bg-event-opacity: 1;
+  --fc-highlight-color: rgba(99, 102, 241, .22);
+  --fc-now-indicator-color: #f43f5e;
+  color: #e2e8f0;
+}
+[data-theme="dark"] .fc-col-header-cell-cushion { color: #dbe5f3; }
+[data-theme="dark"] .fc-timegrid-axis-cushion, [data-theme="dark"] .fc-daygrid-day-number { color: #b4c2d6; }
+[data-theme="dark"] .fc-timegrid-slot-minor { border-top-color: #2a3852; }
+
+/* Tablero (kanban) y tablas: superficies y entradas legibles. */
+[data-theme="dark"] .kanban-column { background-color: #111e32; border: 1px solid #3a4b66; }
+[data-theme="dark"] .kanban-column-header { background-color: #17243a; border-color: #3a4b66; color: #e2e8f0; }
+[data-theme="dark"] .kanban-card { background-color: #20304a; border: 1px solid #526782; color: #edf2fa; }
+[data-theme="dark"] .kanban-input { background-color: #14202f; border: 1px solid #526782; color: #f1f5f9; }
+[data-theme="dark"] .kanban-input::placeholder { color: #9fb0c7; }
+[data-theme="dark"] th { color: #d7e2f1; }
+[data-theme="dark"] #leadsTableBody tr:hover { background-color: #24334c; }
+
+/* ===== Modo oscuro: seccion de Reportes =====
+   El reporte diario y el por periodo se forzaban a blanco con !important
+   (#reporteDiario y #reportePeriodo .period-card). En oscuro conservan la
+   misma jerarquia visual pero sobre las superficies del tema. */
+[data-theme="dark"] #reporteDiario { background-color: #101c35 !important; color: #edf2fa !important; }
+[data-theme="dark"] .report-viewbar,
+[data-theme="dark"] .report-content-card {
+  background-color: #17243a;
+  border-color: #33445f;
+  box-shadow: 0 8px 28px -24px #000;
+}
+[data-theme="dark"] .report-intro { background: linear-gradient(115deg, #17243a 45%, #1e2340); border-color: #33445f; }
+[data-theme="dark"] .report-intro::after { background: rgba(99, 102, 241, .16); }
+[data-theme="dark"] #reporteDiario .report-viewbar label,
+[data-theme="dark"] #reporteDiario .report-intro label { color: #d7e2f1; }
+[data-theme="dark"] #reporteDiario .text-slate-800 { color: #edf2fa; }
+[data-theme="dark"] #reporteDiario .text-indigo-900,
+[data-theme="dark"] #reporteAuto .text-indigo-900,
+[data-theme="dark"] #reportePeriodo .text-indigo-900 { color: #c7d2fe; }
+[data-theme="dark"] #reporteDiario input, [data-theme="dark"] #reporteDiario select, [data-theme="dark"] #reporteDiario textarea {
+  background-color: #14202f !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #526782 !important;
+}
+[data-theme="dark"] #reporteDiario input::placeholder, [data-theme="dark"] #reporteDiario textarea::placeholder { color: #9fb0c7 !important; }
+[data-theme="dark"] #reporteDiario .report-presets button,
+[data-theme="dark"] #reportePeriodo .period-presets button,
+[data-theme="dark"] #reportePeriodo .period-controls button { background-color: #1b2940; border-color: #526782; color: #dbe7f7; }
+[data-theme="dark"] #reporteDiario .report-presets button:hover,
+[data-theme="dark"] #reportePeriodo .period-presets button:hover { border-color: #818cf8; color: #c7d2fe; }
+[data-theme="dark"] #reporteDiario .bg-slate-200 { background-color: #2b3b55; color: #dbe7f7; }
+
+/* Reporte diario: resumen, bloques por asesora y tarjetas de detalle. */
+[data-theme="dark"] #reporteAuto .daily-summary,
+[data-theme="dark"] #reporteAuto .daily-advisor { background-color: #17243a; border-color: #33445f; box-shadow: 0 8px 28px -24px #000; }
+[data-theme="dark"] #reporteAuto .daily-loading { background-color: #17243a; border-color: #33445f; color: #cbd5e1; }
+[data-theme="dark"] #reporteAuto .daily-metric { background-color: #1b2940; border-color: #3a4b66; color: #e2e8f0; }
+[data-theme="dark"] #reporteAuto .daily-metric:first-child,
+[data-theme="dark"] #reporteAuto .daily-metric:nth-child(1) { background-color: #1f2748; border-color: #4a4a94; }
+[data-theme="dark"] #reporteAuto .daily-metric strong { color: #edf2fa; }
+[data-theme="dark"] #reporteAuto .daily-metric:first-child strong { color: #c7d2fe; }
+[data-theme="dark"] #reporteAuto .daily-metric:nth-child(2) strong { color: #93c5fd; }
+[data-theme="dark"] #reporteAuto .daily-metric:nth-child(3) strong { color: #fbbf24; }
+[data-theme="dark"] #reporteAuto .daily-metric:nth-child(4) strong { color: #fca5a5; }
+[data-theme="dark"] #reporteAuto .daily-metric:nth-child(5) strong { color: #6ee7b7; }
+[data-theme="dark"] #reporteAuto .daily-metric:nth-child(6) { background-color: #103b32; border-color: #23735e; border-top-color: #34d399; color: #bbf7e0; }
+[data-theme="dark"] #reporteAuto .daily-metric:nth-child(6) strong { color: #a7f3d0; }
+[data-theme="dark"] #reporteAuto .daily-inscritos-pill { background-color: #103b32; border: 1px solid #23735e; color: #a7f3d0; }
+[data-theme="dark"] #reporteAuto .daily-advisor summary { background-color: #17243a; color: #edf2fa; }
+[data-theme="dark"] #reporteAuto .daily-advisor[open] summary { background-color: #1f2f4a; border-bottom-color: #33445f; }
+[data-theme="dark"] #reporteAuto .daily-detail-card { background-color: #1b2940; border-color: #3a4b66; color: #e2e8f0; }
+[data-theme="dark"] #reporteAuto .daily-detail-card td { border-bottom-color: #33445f; }
+[data-theme="dark"] #reporteAuto .daily-detail-card h5, [data-theme="dark"] #reporteAuto .daily-detail-card h6 { color: #c7d2fe; }
+[data-theme="dark"] #reporteAuto .reporte-manual { background-color: #14202f; border-color: #526782; color: #f1f5f9; }
+
+/* Reporte por periodo: tarjetas, tablas y aviso. */
+[data-theme="dark"] #reportePeriodo .period-card { background-color: #1b2940; border-color: #3a4b66; box-shadow: 0 8px 24px -20px #000; }
+[data-theme="dark"] #reportePeriodo .period-metric { background-color: #1b2940; border-color: #3a4b66; }
+[data-theme="dark"] #reportePeriodo .period-metric:first-child { background-color: #1f2748; border-color: #4a4a94; }
+[data-theme="dark"] #reportePeriodo .period-metric strong { color: #edf2fa; }
+[data-theme="dark"] #reportePeriodo .period-metric:first-child strong { color: #c7d2fe; }
+[data-theme="dark"] #reportePeriodo .period-table th,
+[data-theme="dark"] #reportePeriodo .period-table td { border-bottom-color: #33445f; }
+[data-theme="dark"] #reportePeriodo .period-table thead th { background-color: #111e32; color: #dbe5f3; }
+[data-theme="dark"] #reportePeriodo .period-table tbody th { color: #cbd5e1; }
+[data-theme="dark"] #reportePeriodo .period-table tbody tr:nth-child(even) { background-color: #17243a; }
+[data-theme="dark"] #reportePeriodo .period-table tfoot { background-color: #1f2748; color: #e2e8f0; }
+[data-theme="dark"] #reportePeriodo .period-matrix th[scope="row"] { background-color: #1b2940; }
+[data-theme="dark"] #reportePeriodo .period-matrix tbody tr:nth-child(even) th[scope="row"] { background-color: #17243a; }
+[data-theme="dark"] #reportePeriodo .period-matrix tfoot th[scope="row"] { background-color: #1f2748; }
+[data-theme="dark"] #reporteDiario .bg-amber-50,
+[data-theme="dark"] #reporteDiario [class*="bg-amber-50"] { background-color: #2a2317; border-color: #6b5730; }
+[data-theme="dark"] #reporteDiario .text-amber-800 { color: #f3d9a6; }
+[data-theme="dark"] #reporteDiario .border-amber-300 { border-color: #6b5730; }
+[data-theme="dark"] #reporteDiario .border-amber-200 { border-color: #5c4a28; }
+[data-theme="dark"] #reporteDiario .periodo-tip-btn { background-color: #312e81; color: #c7d2fe; border-color: #6366f1; }

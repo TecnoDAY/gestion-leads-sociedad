@@ -104,7 +104,7 @@ const HELP_SECTIONS = [
       'En cada bloque, Problemas o bloqueos y Observaciones adicionales se guardan por asesora y fecha (zona horaria de Miami) con los botones Guardar y Eliminar.',
       'Como agente solo puedes editar tu propio bloque del día actual; en fechas anteriores tu vista es de solo lectura.',
       'Como administrador puedes editar y borrar cualquier bloque en cualquier fecha.',
-      'Pulsa "Descargar CSV" para exportar el día: resumen por asesora, total y comentarios.'
+      'Pulsa "Descargar CSV" para exportar el día: resumen por asesora, total y comentarios. Inscritos se añade al final, sin mover las columnas anteriores; un campo vacío indica que el conteo no está disponible.'
     ],
     notes: [
       'Citas nuevas cuenta la fecha de creación en Miami y excluye las creadas por reprogramación; estas se muestran por separado. El calendario muestra la fecha de la visita.',
@@ -112,7 +112,7 @@ const HELP_SECTIONS = [
       'Citas reprogramadas hoy cuenta las nuevas fechas registradas hoy; Reprogramadas indica cuándo se marcó la cita anterior con ese resultado. Visitas, No asistieron y Canceladas cuentan el día en que se registró el resultado.',
       'Llamada WhatsApp cuenta una sola vez, dentro del total de llamadas, y es una categoría distinta de Llamada.',
       'Detalle de gestión: el día del reporte lo decide la fecha de gestión (Miami) y se atribuye a quien registró el evento. Nuevo es solo un alta sin gestión anterior. Un alta atrasada registrada hoy cuenta como nueva hoy; la Fecha de llegada (ausente, inválida o futura) y la fecha automática de creación no cambian esta regla. Cualquier seguimiento, incluso del mismo día, es gestionado. WhatsApp suma WhatsApp, Instagram y Otros o sin canal (canales retirados y sin clasificar). Debajo, Llamadas muestra sus tres categorías (Llamadas del día, Llamadas Data Dura y Llamada WhatsApp) y el total de llamadas, sin desglose de nuevos y gestionados. En el grupo de WhatsApp, gestionados = total menos nuevos. El CSV mantiene el desglose de nuevas y gestionadas de ambos grupos. Cada gestión cuenta una sola vez. Conteos inválidos o nuevos mayor que total muestran aviso y bloquean el CSV. Procedencia, Canales y total general conservan todas las gestiones.',
-      'Los Inscritos Data Dura son los leads inscritos cuyo Mes de origen es distinto del mes actual.',
+      'Inscritos cuenta personas con una entrada a inscrito en la fecha seleccionada según el historial, incluyendo nuevos del mes, Data Dura y sin clase por fechas incompletas. Cada lead cuenta una vez por día, atribuido a quien registró la última entrada de ese día (no a la asesora asignada). Seguimientos y cambios entre variantes de inscrito no suman otra inscripción. Una baja posterior no borra el hecho; los archivados quedan excluidos. Si falta el nuevo conteo, se muestra No disponible, nunca un cero supuesto.',
       'Al guardar en un bloque ajeno, administración escribe en nombre de la asesora y el bloque sigue siendo de ella.'
     ]
   },
@@ -162,7 +162,7 @@ const HELP_SECTIONS = [
       'Un lead Data Dura conserva su Mes de origen: no se reasigna al mes en el que se cierra la gestión.',
       'Sus citas se reportan por la fecha de la cita, no por el mes de origen del lead.',
       'AGENDADO DATADURA sigue siendo una gestión agendada, así que permite crear y marcar citas con normalidad.',
-      'En Reporte diario, los Inscritos Data Dura son los leads con estado INSCRIT* cuyo Mes de origen es distinto del mes actual.',
+      'En Reporte diario, Inscritos reúne todas las entradas reales a inscrito de la fecha seleccionada, tanto del mes como Data Dura, según el historial; no cuenta los seguimientos en ese estado.',
       'En los filtros, usa el desplegable Gestión y selecciona el valor que contiene DATADURA para quedarte solo con esos leads.'
     ]
   },

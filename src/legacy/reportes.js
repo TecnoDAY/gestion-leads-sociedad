@@ -1101,12 +1101,17 @@ export function detalleGestionHoy(b, grupo = 'whatsapp') {
   return { nuevos, gestionados: total - nuevos, total };
 }
 
-/** Cabecera del CSV diario (35 columnas: ASESORA + 32 numericas + notas).
+/** Cabecera del CSV diario (36 columnas: las 35 originales + Inscritos al final).
  * 'Otros' de procedencia absorbe los medios retirados del negocio (p.ej.
  * CogniTalking) para que el nombre no aparezca; 'Otros o sin canal' agrega
  * los buckets retirados de pantalla (visita conservatorio + sin clasificar)
  * para que el total cuadre. */
-const DIARIO_HEADERS = ['Asesora', 'Gestiones realizadas', 'WhatsApp', 'Facebook/Instagram', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Citas nuevas hoy', 'Citas nuevas Data Dura', 'Citas nuevas Doral', 'Citas nuevas Data Dura Doral', 'Citas nuevas Weston', 'Citas nuevas Data Dura Weston', 'Total citas nuevas', 'Citas reprogramadas hoy', 'Visitas registradas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Pasados a Agendado hoy', 'Pasados a Agendado Data Dura hoy', 'WhatsApp nuevos hoy', 'WhatsApp gestionados hoy', 'Total WhatsApp', 'Llamadas nuevos hoy', 'Llamadas gestionados hoy', 'Total llamadas de gestión', 'Canal Instagram', 'Otros o sin canal', 'Total canales', 'Problemas', 'Observaciones'];
+const DIARIO_HEADERS = ['Asesora', 'Gestiones realizadas', 'WhatsApp', 'Facebook/Instagram', 'Directo o Referido', 'Otros', 'Llamadas del día', 'Llamadas Data Dura', 'Llamada WhatsApp', 'Total llamadas', 'Citas nuevas hoy', 'Citas nuevas Data Dura', 'Citas nuevas Doral', 'Citas nuevas Data Dura Doral', 'Citas nuevas Weston', 'Citas nuevas Data Dura Weston', 'Total citas nuevas', 'Citas reprogramadas hoy', 'Visitas registradas', 'No asistieron', 'Canceladas', 'Reprogramadas', 'Pasados a Agendado hoy', 'Pasados a Agendado Data Dura hoy', 'WhatsApp nuevos hoy', 'WhatsApp gestionados hoy', 'Total WhatsApp', 'Llamadas nuevos hoy', 'Llamadas gestionados hoy', 'Total llamadas de gestión', 'Canal Instagram', 'Otros o sin canal', 'Total canales', 'Problemas', 'Observaciones', 'Inscritos'];
+
+// El campo legado inscritos.total cuenta seguimientos, NO altas reales.
+// Ausente/invalido significa desconocido; nunca convertirlo a cero.
+const conteoInscritos = b => Number.isSafeInteger(b?.inscripciones_realizadas) && b.inscripciones_realizadas >= 0 ? b.inscripciones_realizadas : null;
+const inscritosTexto = b => conteoInscritos(b) ?? 'No disponible';
 
 /**
  * Resuelve la nota asociada a un bloque del reporte diario con la regla
@@ -1141,11 +1146,11 @@ export function diarioCsvLines(fecha, filtro, generado, bloques, notasResueltas)
     const values = [Number(b.gestionados) || 0, p.WhatsApp ?? p.Whatsapp, p['Facebook/Instagram'], p['Directo o Referido'], (Number(p.CogniTalking) || 0) + (Number(p.Otros) || 0), l.del_dia, l.data_dura, l.llamada_whatsapp, (Number(l.del_dia) || 0) + (Number(l.data_dura) || 0) + (Number(l.llamada_whatsapp) || 0), c.agendados_dia, c.agendados_data_dura, c.agendados_doral, c.agendados_doral_data_dura, c.agendados_weston, c.agendados_weston_data_dura, c.total_agendados, c.citas_reprogramadas_hoy, c.visitas, c.no_asistieron, c.canceladas, c.reprogramadas, c.agendados_gestionados_dia, c.agendados_gestionados_data_dura, detalle.nuevos, detalle.gestionados, detalle.total, llamadas.nuevos, llamadas.gestionados, llamadas.total, (b.canales || {}).instagram, numCanalesOtros(b.canales), totalCanalesVisibles(b.canales)].map(v => Number(v) || 0);
     values.forEach((v, n) => { sumas[DIARIO_KEYS[n]] += v; });
     const nota = notasResueltas[i] || {};
-    lineas.push([b.autor_name ?? b.advisor, ...values, nota.problemas ?? '', nota.observaciones ?? ''].map(csvReporteField).join(','));
+    lineas.push([b.autor_name ?? b.advisor, ...values, nota.problemas ?? '', nota.observaciones ?? '', conteoInscritos(b)].map(csvReporteField).join(','));
   });
   detalleGestionHoy({ canales: { whatsapp: sumas.detalleTotal }, whatsapp: { nuevos: sumas.whatsappNuevos } });
   detalleGestionHoy({ canales: { llamada: sumas.llamadasDetalleTotal }, llamadas: { nuevos: sumas.llamadasNuevos } }, 'llamadas');
-  lineas.push(['TOTAL', ...DIARIO_KEYS.map(k => sumas[k]), '', ''].map(csvReporteField).join(','));
+  lineas.push(['TOTAL', ...DIARIO_KEYS.map(k => sumas[k]), '', '', totalDiario(bloques).i].map(csvReporteField).join(','));
   return lineas;
 }
 
@@ -1168,6 +1173,8 @@ export function totalDiario(bloques) {
   const num = (o, k) => Number(o?.[k]) || 0;
   return (bloques || []).reduce((a, b) => {
     a.g += num(b, 'gestionados');
+    const inscritos = conteoInscritos(b);
+    a.i = a.i === null || inscritos === null || !Number.isSafeInteger(a.i + inscritos) ? null : a.i + inscritos;
     // "Total llamadas" = el grupo Llamadas (llamada + llamada Data Dura +
     // llamada WhatsApp), el mismo que muestra el detalle por asesora y la
     // columna del CSV. El grupo de WhatsApp lleva lo demas, asi que el
@@ -1177,14 +1184,14 @@ export function totalDiario(bloques) {
     a.r += Number(b.citas?.citas_reprogramadas_hoy) || 0;
     a.v += Number(b.citas?.visitas) || 0;
     return a;
-  }, { g: 0, l: 0, c: 0, r: 0, v: 0 });
+  }, { g: 0, l: 0, c: 0, r: 0, v: 0, i: bloques?.length ? 0 : null });
 }
 
 const celdaDiago = (label, value) => `<div class="daily-metric"><div class="text-xs text-slate-500">${label}</div><strong class="text-lg text-indigo-900">${value}</strong></div>`;
 const filasDetalle = rows => `<table class="text-sm"><tbody>${rows.map(([l, v]) => `<tr><td>${l}</td><td class="font-semibold">${v}</td></tr>`).join('')}</tbody></table>`;
 const tablaDetalle = (title, rows, extra = '') => `<div class="daily-detail-card"><h5 class="font-semibold text-indigo-900">${title}</h5>${filasDetalle(rows)}${extra}</div>`;
 
-/** Las cuatro tablas de detalle de una asesora (pantalla coherencia fase 16). */
+/** Las cinco tablas de detalle de una asesora; altas separadas de seguimientos. */
 export function detallesBloqueHtml(b) {
   const num = (o, k) => Number(o?.[k]) || 0;
   let detalle;
@@ -1199,7 +1206,9 @@ export function detallesBloqueHtml(b) {
   const p = b.procedencia || {}, c = b.citas || {};
   const pt = Object.values(p).reduce((a, v) => a + (Number(v) || 0), 0);
   return tablaDetalle('Procedencia', [['WhatsApp', num(p, 'WhatsApp')], ['Facebook/Instagram', num(p, 'Facebook/Instagram')], ['Directo o Referido', num(p, 'Directo o Referido')], ['Otras procedencias', num(p, 'CogniTalking') + num(p, 'Otros')], ['Total', pt]])
+    + '<div class="daily-channel-stack">'
     + tablaDetalle('Canales', [['Llamada', num(b.canales, 'llamada')], ['Llamada Data Dura', num(b.canales, 'data_dura')], ['Llamada WhatsApp', num(b.canales, 'llamada_whatsapp')], ['WhatsApp', num(b.canales, 'whatsapp')], ['Instagram', num(b.canales, 'instagram')], ['Otros o sin canal', num(b.canales, 'visita') + num(b.canales, 'sin_clasificar')], ['Total', totalCanalesVisibles(b.canales)]])
+    + tablaDetalle('Inscritos', [['Inscritos hoy', inscritosTexto(b)]]) + '</div>'
     + detalle
     + tablaDetalle('Citas creadas y resultados registrados hoy', [['Citas nuevas Doral', num(c, 'agendados_doral')], ['Citas nuevas Data Dura Doral', num(c, 'agendados_doral_data_dura')], ['Citas nuevas Weston', num(c, 'agendados_weston')], ['Citas nuevas Data Dura Weston', num(c, 'agendados_weston_data_dura')], ['Citas nuevas hoy', num(c, 'total_agendados')], ['Citas reprogramadas hoy', num(c, 'citas_reprogramadas_hoy')], ['Visitas registradas', num(c, 'visitas')], ['No asistieron', num(c, 'no_asistieron')], ['Canceladas', num(c, 'canceladas')], ['Reprogramadas', num(c, 'reprogramadas')]]);
 }
@@ -1213,16 +1222,16 @@ export function manualBloqueHtml(i, nota, editable) {
 /** Bloque de una asesora con su resumen de detail + manuales. */
 export function bloqueDiaHtml(b, i, manualHtml) {
   const num = (o, k) => Number(o?.[k]) || 0;
-  return `<details class="daily-advisor"><summary class="cursor-pointer font-bold text-indigo-900">${escapeHtml(b.autor_name || b.advisor || 'Sin asesora')} — ${num(b, 'gestionados')} gestiones</summary><div class="daily-advisor-body"><div class="grid md:grid-cols-2 xl:grid-cols-4 gap-3">${detallesBloqueHtml(b)}</div><div class="mt-4 space-y-2"><h4 class="text-sm font-semibold text-slate-700">Problemas y observaciones</h4>${manualHtml}</div></div></details>`;
+  return `<details class="daily-advisor"><summary class="cursor-pointer font-bold text-indigo-900">${escapeHtml(b.autor_name || b.advisor || 'Sin asesora')} — ${num(b, 'gestionados')} gestiones<span class="daily-inscritos-pill">Inscritos: ${inscritosTexto(b)}</span></summary><div class="daily-advisor-body"><div class="grid md:grid-cols-2 xl:grid-cols-4 gap-3">${detallesBloqueHtml(b)}</div><div class="mt-4 space-y-2"><h4 class="text-sm font-semibold text-slate-700">Problemas y observaciones</h4>${manualHtml}</div></div></details>`;
 }
 
 /** Shell del panel diario con el aviso de notas y el Resumen general. */
 export function cuerpoReporteDiario(notasOk, total, bloquesHtml, equipoHtml = '') {
-  return `${notasOk ? '' : '<div class="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">No se pudieron cargar las notas guardadas. La edicion esta desactivada para no sobrescribir datos: recarga la pagina o intentalo mas tarde.</div>'}<section class="daily-summary space-y-3"><h3 class="font-bold text-lg text-indigo-900">Resumen general</h3><div class="grid grid-cols-2 sm:grid-cols-5 gap-3">${celdaDiago('Gestiones realizadas', total.g)}${celdaDiago('Total llamadas', total.l)}${celdaDiago('Citas nuevas hoy', total.c)}${celdaDiago('Reprogramadas hoy', total.r)}${celdaDiago('Visitas registradas', total.v)}</div></section>${equipoHtml}<section class="space-y-3"><h3 class="font-bold text-lg text-indigo-900">Comparativa por asesora</h3>${bloquesHtml || '<p class="text-slate-500">Sin gestiones para esta fecha.</p>'}</section>`;
+  return `${notasOk ? '' : '<div class="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">No se pudieron cargar las notas guardadas. La edicion esta desactivada para no sobrescribir datos: recarga la pagina o intentalo mas tarde.</div>'}<section class="daily-summary space-y-3"><h3 class="font-bold text-lg text-indigo-900">Resumen general</h3><div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">${celdaDiago('Gestiones realizadas', total.g)}${celdaDiago('Total llamadas', total.l)}${celdaDiago('Citas nuevas hoy', total.c)}${celdaDiago('Reprogramadas hoy', total.r)}${celdaDiago('Visitas registradas', total.v)}${celdaDiago('Inscritos', total.i ?? 'No disponible')}</div></section>${equipoHtml}<section class="space-y-3"><h3 class="font-bold text-lg text-indigo-900">Comparativa por asesora</h3>${bloquesHtml || '<p class="text-slate-500">Sin gestiones para esta fecha.</p>'}</section>`;
 }
 
 /** Totales del dia de todas las asesoras (bloque 'equipo' del RPC): las
- * mismas cuatro tarjetas del detalle por asesora, siempre del equipo
+ * mismas cinco tarjetas del detalle por asesora, siempre del equipo
  * completo de la fecha y ajenas al filtro individual. El servidor decide
  * quien cuenta como asesora; sin bloque, no se inventa la seccion. */
 export function equipoDiarioHtml(equipo) {

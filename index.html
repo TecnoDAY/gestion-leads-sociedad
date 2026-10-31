@@ -6962,6 +6962,8 @@ async function deleteLeadAppointment(id) {
       // aqui solo permisos, lecturas de DOM y composicion.
       const indice = indiceNotas(notas);
       const total = totalDiario(bloques);
+      // Sin filas, solo un bloque de equipo con el nuevo contrato confirma el cero.
+      if (!bloques.length && Number.isSafeInteger(equipo?.inscripciones_realizadas) && equipo.inscripciones_realizadas >= 0) total.i = 0;
       // La nota pertenece por user_id; el nombre es solo el respaldo para
       // filas antiguas guardadas sin user_id.
       const fechaHoy = document.getElementById('reporteFecha')?.value === miamiToday();

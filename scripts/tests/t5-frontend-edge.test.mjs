@@ -2758,13 +2758,20 @@ test('reporte diario: totales del equipo con las cuatro tarjetas, ajenos al filt
   assert.doesNotMatch(viejo.element('reporteAuto').innerHTML, /Totales de las asesoras/);
 });
 test('CSV del reporte v2 exporta columnas nuevas y totaliza los bloques visibles', async () => {
-  const a = { ...advisor('Ana', 'a', 2), procedencia: { WhatsApp: 1, 'Facebook/Instagram': 2, CogniTalking: 3, 'Directo o Referido': 4, Otros: 5 }, llamadas: { del_dia: 1, data_dura: 2, llamada_whatsapp: 3, total: 6 }, citas: { agendados_dia: 1, agendados_data_dura: 2, total_agendados: 3, visitas: 4, no_asistieron: 5, canceladas: 6, reprogramadas: 7 }, inscritos: { del_dia: 1, data_dura: 2, total: 3 } };
+  const a = { ...advisor('Ana', 'a', 2), procedencia: { WhatsApp: 1, 'Facebook/Instagram': 2, CogniTalking: 3, 'Directo o Referido': 4, Otros: 5 }, llamadas: { del_dia: 1, data_dura: 2, llamada_whatsapp: 3, total: 6 }, citas: { agendados_dia: 1, agendados_data_dura: 2, total_agendados: 3, visitas: 4, no_asistieron: 5, canceladas: 6, reprogramadas: 7 }, inscritos: { del_dia: 1, data_dura: 2, total: 300 }, inscripciones_realizadas: 3 };
   const f = reportFixture({ asesoras: [a, { ...a, autor_name: 'Bea', autor_user_id: 'b' }] }); await f.context.loadReporteDiario(); f.context.exportReporteDiarioCSV();
   const text = new TextDecoder().decode(await f.downloads[0].blob.arrayBuffer()); const rows = decodeCSV(text.slice(1));
   assert.deepEqual(rows[4].slice(0, 3), ['Asesora', 'Gestiones realizadas', 'WhatsApp']); assert.ok(rows[4].includes('Problemas')); assert.deepEqual(rows.at(-1).slice(0, 3), ['TOTAL', '4', '2']);
+  assert.equal(rows[4].at(-1), 'Inscritos');
+  assert.equal(rows.at(-1).at(-1), '6');
+  assert.match(f.element('reporteAuto').innerHTML, /Inscritos: 3/);
 });
 test('reporte RPC vacío, cargando y error muestran estado sin romper', async () => {
   const empty = reportFixture({ asesoras: [] }); await empty.context.loadReporteDiario(); assert.match(empty.element('reporteAuto').innerHTML, /Sin gestiones/);
+  assert.match(empty.element('reporteAuto').innerHTML, /Inscritos[\s\S]*No disponible/);
+  const nuevo = reportFixture({ asesoras: [], equipo: { inscripciones_realizadas: 0 } });
+  await nuevo.context.loadReporteDiario();
+  assert.match(nuevo.element('reporteAuto').innerHTML, /Inscritos<\/div><strong[^>]*>0<\/strong>/);
   const failed = reportFixture(null); failed.db.rpc = async () => ({ data: null, error: { message: 'rpc failed' } }); await failed.context.loadReporteDiario(); assert.match(failed.element('reporteAuto').innerHTML, /No se pudo cargar/);
 });
 
@@ -2791,12 +2798,13 @@ test('CSV reporte: separa citas nuevas y reprogramadas y suma las columnas visib
   const rows = decodeCSV(new TextDecoder().decode(await f.downloads[0].blob.arrayBuffer()).slice(1));
   const headers = rows[4], total = rows.at(-1), col = n => Number(total[headers.indexOf(n)]);
   // Detalle: nuevos y resto son una particion del total.
-  assert.equal(headers.length, 35); assert.equal(total.length, 35);
+  assert.equal(headers.length, 36); assert.equal(total.length, 36);
   assert.equal(headers.includes('CogniTalking'), false, 'medio retirado sin columna propia');
   assert.equal(col('Otros'), 4, 'Otros absorbe CogniTalking (1+1 por asesora)');
   assert.equal(col('Gestiones realizadas'), 2); assert.equal(col('Citas nuevas Doral'), 2); assert.equal(col('Citas nuevas Data Dura Weston'), 2);
   assert.equal(col('Total citas nuevas'), 4); assert.equal(col('Citas reprogramadas hoy'), 6); assert.equal(col('Reprogramadas'), 2);
-  assert.equal(headers.includes('Inscritos del día'), false, 'inscripciones fuera del CSV diario');
+  assert.equal(headers.at(-1), 'Inscritos', 'altas al final, columnas previas intactas');
+  assert.equal(total.at(-1), '', 'RPC antiguo: desconocido, no cero');
   assert.equal(col('Pasados a Agendado hoy'), 4); assert.equal(col('Pasados a Agendado Data Dura hoy'), 2);
   assert.equal(col('WhatsApp nuevos hoy'), 2); assert.equal(col('WhatsApp gestionados hoy'), 2); assert.equal(col('Total WhatsApp'), 4);
   assert.equal(col('Llamadas nuevos hoy'), 0); assert.equal(col('Llamadas gestionados hoy'), 6); assert.equal(col('Total llamadas de gestión'), 6);
@@ -3240,7 +3248,7 @@ test('migraciones de cita unica: indice parcial y RPC admin sin privilege escala
   assert.match(rpc, /revoke all on function public\.delete_lead_appointment\(bigint\) from public, anon/);
 });
 
-test('reporte diario: canales e inscripciones retirados de pantalla y CSV', () => {
+test('reporte diario: canales retirados siguen agrupados y altas tienen quinta tarjeta', () => {
   const c = { ...frontend({}).context };
   // totalCanalesVisibles = TODOS los buckets del RPC; los retirados
   // (visita/sin_clasificar) viajan juntos en la fila 'Otros o sin canal' y
@@ -3248,7 +3256,7 @@ test('reporte diario: canales e inscripciones retirados de pantalla y CSV', () =
   assert.equal(c.totalCanalesVisibles({ llamada: 1, data_dura: 1, llamada_whatsapp: 1, whatsapp: 2, instagram: 0, visita: 3, sin_clasificar: 4, total: 99 }), 12);
   for (const vacio of [undefined, null, {}]) assert.equal(c.totalCanalesVisibles(vacio), 0);
 
-  // El HTML del reporte ya no ofrece las cinco metricas retiradas.
+  // Las etiquetas retiradas no vuelven al agregar el total de altas reales.
   const f = frontend({});
   const html = f.context.renderReporteV2(
     [{ autor_name: 'Ana', autor_user_id: 'a', gestionados: 1,
@@ -3261,7 +3269,7 @@ test('reporte diario: canales e inscripciones retirados de pantalla y CSV', () =
   for (const text of ['Inscripciones', 'Total inscritos', 'Visita Conservatorio', 'Sin clasificar']) assert.doesNotMatch(html, new RegExp(text));
   assert.doesNotMatch(html, /<td class="py-1">Del día<\/td>/);
   assert.doesNotMatch(html, /<td class="py-1">Data Dura<\/td>/);
-  assert.equal((html.match(new RegExp('<h5 class="font-semibold text-indigo-900">', 'g')) || []).length, 4, 'cuatro tablas por asesora');
+  assert.equal((html.match(new RegExp('<h5 class="font-semibold text-indigo-900">', 'g')) || []).length, 5, 'cinco tablas por asesora');
   for (const text of ['Procedencia', 'Canales', 'Detalle de gestión', 'Citas creadas y resultados registrados hoy', 'Gestiones realizadas', 'Total llamadas', 'Visitas registradas']) assert.match(html, new RegExp(text));
   assert.match(html, /Citas nuevas hoy/);
 });

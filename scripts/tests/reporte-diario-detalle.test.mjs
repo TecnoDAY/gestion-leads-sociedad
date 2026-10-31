@@ -95,5 +95,5 @@ test('canales ausentes/null/vacios y valores numericos serializados; no fallback
   }
   assert.equal(totalGrupoWhatsapp({ whatsapp: '21', llamada_whatsapp: '5', instagram: '0', visita: '1', sin_clasificar: '2', total: 999, llamada: 999, data_dura: 999 }), 24);
   const lines = diarioCsvLines('2026-10-16', '', '2026-10-16', [], []);
-  assert.ok(fields(lines.at(-1)).slice(1, -2).every(v => v === '0'));
+  assert.ok(fields(lines.at(-1)).slice(1, -3).every(v => v === '0'));
 });

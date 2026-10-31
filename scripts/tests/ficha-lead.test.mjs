@@ -1,7 +1,18 @@
 // Caracterizacion de notas y gestiones de la ficha (fase 26).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { gestionesLeadHtml, notasLeadHtml } from '../../src/legacy/leads.js';
+import { fichaLeadHtml, gestionesLeadHtml, notasLeadHtml } from '../../src/legacy/leads.js';
+
+test('ficha con teléfono muestra la llamada para leads actuales e históricos', () => {
+  for (const finalOrigin of ['actual', 'historico']) {
+    const html = fichaLeadHtml(
+      { id: 7, Nombre: 'Prueba', Telefono: '3055551234' },
+      { finalOrigin, alcanceCompleto: true, firstEntryHtml: '', repetidosHtml: '' },
+    );
+    assert.match(html, /lead-detail-hero/);
+    assert.ok(html.includes("llamarLead('7','3055551234')"));
+  }
+});
 
 test('notasLeadHtml: vacio, autor por defecto y fecha', () => {
   assert.equal(notasLeadHtml([], { isAdmin: false, editingNoteId: null }), '<p class="text-[11px] text-slate-500">Sin notas registradas.</p>');

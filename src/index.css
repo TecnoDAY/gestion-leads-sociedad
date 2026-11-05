@@ -1256,3 +1256,121 @@
 [data-theme="dark"] #reporteDiario .border-amber-300 { border-color: #6b5730; }
 [data-theme="dark"] #reporteDiario .border-amber-200 { border-color: #5c4a28; }
 [data-theme="dark"] #reporteDiario .periodo-tip-btn { background-color: #312e81; color: #c7d2fe; border-color: #6366f1; }
+
+
+/* Approved balanced leads table: local palette from design/system.md.
+   Keep status semantics and the existing mobile-card breakpoint intact. */
+#leadsResultsPanel {
+  --leads-accent: #4338ca;
+  --leads-positive: #047857;
+  --leads-pending: #92400e;
+  --leads-negative: #be123c;
+  --leads-on-color: #ffffff;
+  border-radius: 1rem;
+}
+#leadsResultsPanel > div:first-child { padding: 1.15rem 1rem; }
+#leadsResultsPanel #leadsTableCount { padding: .25rem .5rem; border-radius: .5rem; color: var(--leads-accent); background: #f1f5f9; font-weight: 700; }
+#leadsResultsPanel .leads-table-toolbar > button { padding: .5rem .75rem; border-radius: .5rem; background: var(--leads-accent); color: var(--leads-on-color); border-color: var(--leads-accent); }
+#leadsResultsPanel .leads-table-toolbar > button:hover { filter: brightness(.92); }
+#leadsResultsPanel .leads-pagination { padding: 1rem; }
+#leadsResultsPanel #paginationControls [aria-current="page"] { background: var(--leads-accent); color: var(--leads-on-color); border-color: var(--leads-accent); }
+#leadsResultsPanel #leadsTableBody :is([class*="bg-emerald-500"], [class*="bg-green-500"]) { background: var(--leads-positive); color: var(--leads-on-color); border-color: var(--leads-positive); }
+#leadsResultsPanel #leadsTableBody [class*="bg-amber-500"] { background: var(--leads-pending); color: var(--leads-on-color); border-color: var(--leads-pending); }
+#leadsResultsPanel #leadsTableBody [class*="bg-rose-500"] { background: var(--leads-negative); color: var(--leads-on-color); border-color: var(--leads-negative); }
+#leadsResultsPanel #leadsTableBody [class*="bg-blue-500"] { background: var(--leads-accent); color: var(--leads-on-color); border-color: var(--leads-accent); }
+#leadsResultsPanel #leadsTableBody td:nth-child(9) button { color: var(--leads-accent); background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: .5rem; }
+#leadsResultsPanel #leadsTableBody td:nth-child(9) button[title="Archivar"] { color: var(--leads-pending); }
+#leadsResultsPanel #leadsTableBody td:nth-child(9) button:hover { color: var(--leads-on-color); background: var(--leads-accent); border-color: var(--leads-accent); }
+#leadsResultsPanel #leadsTableBody td:nth-child(9) button[title="Archivar"]:hover { background: var(--leads-pending); border-color: var(--leads-pending); }
+@media (min-width: 768px) {
+  #leadsTableViewport { overflow-x: auto; }
+  #leadsTable { table-layout: fixed; min-width: 1170px; }
+  #leadsTable thead { background: var(--leads-accent); color: var(--leads-on-color); }
+  #leadsTable th { padding: .85rem .75rem; font-size: .65rem; letter-spacing: .045em; white-space: normal; vertical-align: middle; }
+  #leadsTableBody td:not([colspan]) { height: 56px; padding: .75rem; vertical-align: middle; }
+  #leadsTable :is(th, td):is(:nth-child(1), :nth-child(2), :nth-child(7), :nth-child(8), :nth-child(9)) { text-align: center; }
+  #leadsTableBody td:nth-child(3) > div { flex-direction: row; align-items: center; gap: .5rem; min-width: 0; }
+  #leadsTableBody td:nth-child(3) button { min-width: 0; max-width: 100%; }
+  #leadsTableBody td:nth-child(3) span { flex-shrink: 0; }
+  #leadsTableBody td:nth-child(4) > div { white-space: nowrap; }
+  #leadsTableBody td:nth-child(4) a { font-size: .68rem; }
+  #leadsTableBody td:nth-child(7) > div { justify-content: center; }
+  #leadsTableBody td:nth-child(8) { font-size: .75rem; font-weight: 600; overflow-wrap: anywhere; }
+  #leadsTableBody td:nth-child(9) { padding-inline: .5rem; }
+  #leadsTableBody td:nth-child(9) > div { justify-content: center; gap: .25rem; }
+  #leadsTableBody td:nth-child(9) button { width: 30px; height: 30px; padding: 0; display: inline-grid; place-items: center; flex-shrink: 0; }
+  #leadsResultsPanel .leads-table-toolbar select { padding: .5rem; border-radius: .5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #leadsResultsPanel #leadsTableBody tr, #leadsResultsPanel #leadsTableBody button { transition: none; }
+}
+
+
+/* Global vibrant palette — approved extension of the leads-table colors.
+   Color-only overrides: preserve layout, state classes, data and permissions. */
+:root {
+  --app-accent: #4338ca;
+  --app-positive: #047857;
+  --app-pending: #92400e;
+  --app-negative: #be123c;
+  --app-on-color: #ffffff;
+  --app-link: #4338ca;
+  --app-accent-soft: #e0e7ff;
+}
+[data-theme="dark"] { --app-link: #a5b4fc; }
+html[data-theme] :is(.bg-indigo-500, .bg-indigo-600, .bg-blue-600) { background-color: var(--app-accent); color: var(--app-on-color); }
+html[data-theme] :is(.bg-emerald-500, .bg-emerald-600, .bg-green-600) { background-color: var(--app-positive); color: var(--app-on-color); }
+html[data-theme] :is(.bg-amber-500, .bg-amber-600) { background-color: var(--app-pending); color: var(--app-on-color); }
+html[data-theme] :is(.bg-rose-500, .bg-rose-600, .bg-red-600) { background-color: var(--app-negative); color: var(--app-on-color); }
+html[data-theme] button:not(:disabled):hover:is(.bg-indigo-500, .bg-indigo-600, .bg-blue-600) { background-color: var(--app-accent); color: var(--app-on-color); filter: brightness(.92); }
+html[data-theme] button:not(:disabled):hover:is(.bg-emerald-500, .bg-emerald-600) { background-color: var(--app-positive); color: var(--app-on-color); filter: brightness(.92); }
+html[data-theme] button:not(:disabled):hover:is(.bg-rose-500, .bg-rose-600, .bg-red-600) { background-color: var(--app-negative); color: var(--app-on-color); filter: brightness(.92); }
+
+/* Shared status chips, including mobile cards, lead history and task lists.
+   Exact class tokens avoid recoloring containers or hover-only utilities. */
+html[data-theme] span:is([class~="bg-emerald-500/15"], [class~="bg-emerald-500/20"], [class~="bg-green-500/20"]) { background-color: var(--app-positive); color: var(--app-on-color); border-color: var(--app-positive); }
+html[data-theme] span:is([class~="bg-amber-500/15"], [class~="bg-amber-500/20"]) { background-color: var(--app-pending); color: var(--app-on-color); border-color: var(--app-pending); }
+html[data-theme] span:is([class~="bg-rose-500/15"], [class~="bg-rose-500/20"]) { background-color: var(--app-negative); color: var(--app-on-color); border-color: var(--app-negative); }
+html[data-theme] span:is([class~="bg-blue-500/15"], [class~="bg-indigo-500/15"]) { background-color: var(--app-accent); color: var(--app-on-color); border-color: var(--app-accent); }
+
+/* Navigation keeps active/inactive states visibly distinct. */
+html[data-theme] .app-sidebar { background: linear-gradient(180deg, var(--app-accent), #312e81); }
+html[data-theme] .app-sidebar .sidebar-nav-button,
+html[data-theme] .app-sidebar .text-slate-400,
+html[data-theme] .app-sidebar .text-slate-500,
+html[data-theme] .app-sidebar .text-slate-600 { color: var(--app-accent-soft); }
+html[data-theme] .app-sidebar .sidebar-nav-button.is-active { background: var(--app-on-color); color: var(--app-accent); border-color: var(--app-on-color); }
+html[data-theme] .app-sidebar .sidebar-nav-button:not(.is-active):hover { background: #312e81; color: var(--app-on-color); }
+html[data-theme] .app-sidebar button:focus-visible { outline-color: var(--app-on-color) !important; }
+html[data-theme] .bottom-nav-button.is-active { background: var(--app-accent); color: var(--app-on-color); }
+html[data-theme] :is(.dashboard-section-title, .historical-summary-header h3, .campaigns-summary > div:first-child strong) { color: var(--app-link); }
+html[data-theme] :is(.dashboard-intro, .historical-intro, .appointments-intro, .campaigns-intro, .report-intro, .lead-form-header, .lead-detail-header) { border-top: 3px solid var(--app-accent); }
+html[data-theme] .dashboard-eyebrow { background: var(--app-accent); color: var(--app-on-color); }
+
+/* Dashboard accents remain semantic without turning card surfaces into fills. */
+html[data-theme] #viewDashboard .metric-card .metric-icon { background: var(--app-accent); color: var(--app-on-color); }
+html[data-theme] #viewDashboard .metric-card:nth-child(2) .metric-icon { background: var(--app-pending); }
+html[data-theme] #viewDashboard .metric-card:nth-child(3) .metric-icon { background: var(--app-positive); }
+html[data-theme] #viewDashboard .metric-card:nth-child(1) { border-top-color: var(--app-accent); }
+html[data-theme] #viewDashboard .metric-card:nth-child(2) { border-top-color: var(--app-pending); }
+html[data-theme] #viewDashboard .metric-card:nth-child(3) { border-top-color: var(--app-positive); }
+html[data-theme] #viewDashboard .metric-card:nth-child(4) { border-top-color: var(--app-accent); }
+
+/* Data headers and export actions across the existing report/table surfaces.
+   Matrix heatmap cells and chart category/advisor colors remain untouched. */
+html[data-theme] :is(#viewLeads, #viewHistorico, #viewCampanas, #viewCitas, #reporteDiario) table:not(.period-matrix) > thead > tr > th { background: var(--app-accent); color: var(--app-on-color); }
+html[data-theme] :is(#viewLeads, #viewHistorico, #viewCampanas, #viewCitas, #reporteDiario) button[data-ev^="click:export"] { background: var(--app-accent); color: var(--app-on-color); border-color: var(--app-accent); }
+html[data-theme] :is(#reporteDiario, #reportePeriodo) :is(.report-presets, .period-presets) button { border-color: var(--app-link); color: var(--app-link); }
+html[data-theme] :is(.daily-summary, .daily-advisor, .period-card) { border-top-color: var(--app-accent); }
+
+/* Replace the task module's legacy peach with theme-aware neutral/indigo tints. */
+html[data-theme="light"] :is([class~="bg-[#FFFAF7]"], [class~="bg-[#FFF1E8]"]) { background-color: #ffffff; }
+html[data-theme="light"] :is([class~="bg-[#FCE8DE]"], [class~="bg-[#F5D5C5]"]) { background-color: var(--app-accent-soft); }
+html[data-theme="light"] :is([class~="border-[#E8C4AF]"], [class~="border-[#F1D7C8]"]) { border-color: #cbd5e1; }
+html[data-theme] .tasks-scope.bg-indigo-600 { background: var(--app-accent); color: var(--app-on-color); border-color: var(--app-accent); }
+html[data-theme] .fc .fc-button-primary { background-color: var(--app-accent); border-color: var(--app-accent); color: var(--app-on-color); }
+html[data-theme] .fc .fc-button-primary:not(:disabled):hover { background-color: #312e81; border-color: #312e81; }
+html[data-theme] .fc .fc-button-primary:not(:disabled).fc-button-active { background-color: #312e81; border-color: var(--app-on-color); }
+html[data-theme] .kanban-column-header { border-top: 3px solid var(--app-accent); }
+html[data-theme] .kanban-counter { background-color: var(--app-accent); color: var(--app-on-color); border-color: var(--app-accent); }
+html[data-theme] .campaign-metrics-panel :is(#cmpSubmit, #cmpModeBadge) { background-color: var(--app-accent); color: var(--app-on-color); border-color: var(--app-accent); }

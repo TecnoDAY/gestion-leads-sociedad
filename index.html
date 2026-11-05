@@ -512,7 +512,7 @@
           </select>
         </div>
       </div>
-      <p class="mt-1 text-[11px] text-slate-500">El rango busca leads gestionados en esas fechas; «Estatus actual» muestra cómo están hoy. Las citas creadas por día se consultan en el reporte diario.</p>
+      <p class="mt-1 text-[11px] text-slate-500">El rango busca leads gestionados en esas fechas. Con rango activo, «Asesora» y «Gestionado por» corresponden a quien realizó la última gestión dentro del rango, sin cambiar la asesora principal; si falta el autor, se muestra «Sin autor registrado». «Estatus actual» muestra cómo están hoy. Las citas creadas por día se consultan en el reporte diario.</p>
       <p id="inscripcionFilterScope" role="status" class="text-xs text-indigo-300 hidden"></p>
     </section>
 
@@ -552,7 +552,7 @@
     </section>
 
     <!-- TABLA PRINCIPAL DE LEADS -->
-    <section class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden flex flex-col">
+    <section id="leadsResultsPanel" class="glass-card rounded-xl border border-slate-700/80 shadow-sm overflow-hidden flex flex-col">
       
       <!-- Table Header & Controls -->
       <div class="p-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -583,19 +583,20 @@
       </div>
 
       <!-- Data Table -->
-      <div id="leadsTableViewport" class="overflow-x-auto min-h-[380px] hidden md:block">
+      <div id="leadsTableViewport" class="overflow-x-auto min-h-[380px] hidden md:block" tabindex="0" role="region" aria-label="Leads y próximas acciones, tabla desplazable horizontalmente">
         <table id="leadsTable" class="w-full text-left text-xs border-collapse">
+          <colgroup><col style="width: 5%"><col style="width: 10%"><col style="width: 17%"><col style="width: 16%"><col style="width: 11%"><col style="width: 10%"><col style="width: 11%"><col style="width: 10%"><col style="width: 10%"></colgroup>
           <thead class="bg-slate-950/70 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800 sticky top-0 z-10">
             <tr>
-              <th class="px-3.5 py-2.5 font-semibold">ID</th>
-              <th class="px-3.5 py-2.5 font-semibold">Ingreso del lead / Mes</th>
-              <th class="px-3.5 py-2.5 font-semibold">Nombre del Lead</th>
-              <th class="px-3.5 py-2.5 font-semibold">Teléfono / WhatsApp</th>
-              <th class="px-3.5 py-2.5 font-semibold">Campaña</th>
-              <th class="px-3.5 py-2.5 font-semibold">Medio</th>
-              <th class="px-3.5 py-2.5 font-semibold">Gestión (Estatus)</th>
-              <th class="px-3.5 py-2.5 font-semibold">Agente</th>
-              <th class="px-3.5 py-2.5 font-semibold text-right">Acciones</th>
+              <th scope="col" class="px-3.5 py-2.5 font-semibold">ID</th>
+              <th scope="col" class="px-3.5 py-2.5 font-semibold">Ingreso / Mes</th>
+              <th scope="col" class="px-3.5 py-2.5 font-semibold">Nombre del Lead</th>
+              <th scope="col" class="px-3.5 py-2.5 font-semibold">Teléfono / WhatsApp</th>
+              <th scope="col" class="px-3.5 py-2.5 font-semibold">Campaña</th>
+              <th scope="col" class="px-3.5 py-2.5 font-semibold">Medio</th>
+              <th scope="col" class="px-3.5 py-2.5 font-semibold">Gestión (Estatus)</th>
+              <th scope="col" id="leadsAgentHeading" class="px-3.5 py-2.5 font-semibold">Agente</th>
+              <th scope="col" class="px-3.5 py-2.5 font-semibold text-right">Acciones</th>
             </tr>
           </thead>
           <tbody id="leadsTableBody" class="divide-y divide-slate-800/80 font-normal">
@@ -4040,18 +4041,28 @@
       // Comparar fechas planas YYYY-MM-DD; el navegador no decide la fecha
       const { data, error } = await fetchPagedResult(() => supabaseClient
         .from('lead_gestiones')
-        .select('id,lead_id')
+        .select('id,lead_id,fecha_gestion,created_at,autor_name')
         .gte('fecha_gestion', desde)
         .lte('fecha_gestion', hasta));
       if (!valid()) return null;
       if (error) throw error;
+      // Same chronology as the lead timeline: day, timestamp, then event id.
+      const latest = new Map();
+      const chronological = [...(data || [])].sort((a, b) =>
+        String(a.fecha_gestion || '').localeCompare(String(b.fecha_gestion || '')) ||
+        String(a.created_at || '').localeCompare(String(b.created_at || '')) || Number(a.id) - Number(b.id));
+      for (const event of chronological) {
+        if (event.lead_id) latest.set(String(event.lead_id), event);
+      }
       const ids = [...new Set((data || []).map(r => r.lead_id).filter(Boolean))];
       let leads = [];
       if (ids.length) {
         const res = await fetchRowsByIds('leads', '*', ids, { excludeArchived: true });
         if (!valid()) return null;
         if (res.error) throw res.error;
-        leads = consolidateLeadsById(res.data || []);
+        leads = consolidateLeadsById(res.data || []).map(lead => ({ ...lead,
+          __gestionEnRango: { autor: String(latest.get(String(lead.id))?.autor_name || '').trim() }
+        }));
       }
       gestionRangeKey = key;
       gestionRangeLeads = leads;
@@ -4196,8 +4207,9 @@
           mesBase = await loadLeadsByInscripcionRange(...rango);
           if (!valid() || mesBase === null) return;
           if (gestionBase !== null) {
-            const gestionIds = new Set(gestionBase.map(l => String(l.id)));
-            mesBase = mesBase.filter(l => gestionIds.has(String(l.id)));
+            const gestiones = new Map(gestionBase.map(l => [String(l.id), l.__gestionEnRango]));
+            mesBase = mesBase.filter(l => gestiones.has(String(l.id)))
+              .map(l => ({ ...l, __gestionEnRango: gestiones.get(String(l.id)) }));
             gestionBase = null;
           }
         } catch (error) {
@@ -4256,7 +4268,7 @@
           const claseBuscada = gestion.toUpperCase().includes('DATA') ? 'DATA_DURA' : 'NORMAL';
           if (!esInscritoGestion(getField(lead, 'GESTION')) || clase !== claseBuscada) return false;
         } else if (gestion && getField(lead, 'GESTION').trim().toLowerCase() !== gestion.toLowerCase()) return false;
-        const agenteLead = getField(lead, 'Agente ').trim() || getField(lead, 'Agente').trim();
+        const agenteLead = lead.__gestionEnRango ? lead.__gestionEnRango.autor : (getField(lead, 'Agente ').trim() || getField(lead, 'Agente').trim());
         if (asesora && agenteLead !== asesora) return false;
         return true;
       });
@@ -4683,6 +4695,8 @@
     function renderTable() {
       const tbody = document.getElementById('leadsTableBody');
       if (!tbody) return;
+      const agentHeading = document.getElementById('leadsAgentHeading');
+      if (agentHeading) agentHeading.textContent = document.getElementById('dashDesde')?.value && document.getElementById('dashHasta')?.value ? 'Gestionado por' : 'Agente';
       if (typeof renderQuickLeads === 'function') renderQuickLeads();
 
       const totalItems = filteredLeads.length;

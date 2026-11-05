@@ -402,7 +402,7 @@ export function filaLeadHtml(lead, { leadId, origin, isAdmin }) {
   const campana = getField(lead, 'Campaña');
   const medio = medioVisible(getField(lead, 'Medio'));
   const gestion = getField(lead, 'GESTION') || 'Información';
-  const agente = getField(lead, 'Agente ') || getField(lead, 'Agente') || '-';
+  const agente = lead.__gestionEnRango ? (lead.__gestionEnRango.autor || 'Sin autor registrado') : (getField(lead, 'Agente ') || getField(lead, 'Agente') || '-');
   const badgeHtml = badgeGestionHtml(gestion);
   const cleanPhone = telefono.replace(/\D/g, '');
   return `<tr class="hover:bg-slate-800/80 transition-colors group" data-lead-id="${escapeAttr(String(leadId))}">
@@ -604,7 +604,7 @@ export function tarjetaLeadMovilHtml(lead, { leadId, origin, isAdmin }) {
   const badgeHtml = badgeGestionHtml(gestion);
   const campana = getField(lead, 'Campaña') || '-';
   const medio = medioVisible(getField(lead, 'Medio')) || '-';
-  const agente = getField(lead, 'Agente ') || getField(lead, 'Agente') || '-';
+  const agente = lead.__gestionEnRango ? (lead.__gestionEnRango.autor || 'Sin autor registrado') : (getField(lead, 'Agente ') || getField(lead, 'Agente') || '-');
   const fecha = getField(lead, 'Fecha') || '-';
   const mes = getField(lead, 'Mes') || '';
   return `<article class="mobile-lead-card" data-lead-id="${escapeAttr(leadId)}" data-lead-origin="${escapeAttr(origin)}">

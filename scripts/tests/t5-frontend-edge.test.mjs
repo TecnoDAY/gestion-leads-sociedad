@@ -3333,3 +3333,52 @@ test('parse-all data-ev: plantillas dinamicas cumplen la gramatica (sin eval)', 
 
 function stub() { return () => {}; }
 function stubEvento() { return { type: 'click', stopPropagation() {} }; }
+
+
+test('rango atribuye a la última gestión dentro de las fechas sin cambiar la asignación', async () => {
+  const lead = { id: 5297, AGENTE: 'Ana', 'ULTIMO AGENTE': 'Otra', GESTION: 'No contesta' };
+  const db = database({ leads: [lead], lead_gestiones: [
+    { id: 1, lead_id: 5297, fecha_gestion: '2026-11-05', created_at: '2026-11-05T12:00:00Z', autor_name: 'Ana' },
+    { id: 2, lead_id: 5297, fecha_gestion: '2026-11-05', created_at: '2026-11-05T14:00:00Z', autor_name: 'Jessica' },
+    { id: 3, lead_id: 5297, fecha_gestion: '2026-11-06', created_at: '2026-11-06T14:00:00Z', autor_name: 'Otra' },
+  ] });
+  const f = frontend({ supabaseClient: db, allLeads: [lead] });
+  f.element('dashDesde').value = '2026-11-05'; f.element('dashHasta').value = '2026-11-05';
+  f.element('filterAsesora').value = 'Jessica';
+  await f.context.applyFilters();
+  assert.equal(f.context.filteredLeads.length, 1);
+  const result = f.context.filteredLeads[0];
+  assert.equal(result.__gestionEnRango.autor, 'Jessica');
+  assert.equal(result.AGENTE, 'Ana');
+  assert.equal(lead.__gestionEnRango, undefined);
+  for (const render of [leadsMod.filaLeadHtml, leadsMod.tarjetaLeadMovilHtml]) {
+    const markup = render(result, { leadId: 5297, origin: 'actual', isAdmin: false });
+    assert.match(markup, /Jessica/); assert.doesNotMatch(markup, />Ana</);
+  }
+  f.element('filterAsesora').value = 'Ana';
+  await f.context.applyFilters();
+  assert.equal(f.context.filteredLeads.length, 0);
+  f.element('dashDesde').value = ''; f.element('dashHasta').value = '';
+  await f.context.applyFilters();
+  assert.equal(f.context.filteredLeads.length, 1);
+  assert.equal(f.context.filteredLeads[0].__gestionEnRango, undefined);
+  assert.match(leadsMod.filaLeadHtml(lead, { leadId: 5297, origin: 'actual', isAdmin: false }), />Ana</);
+});
+
+test('rango desempata por fecha, hora e id y no inventa autor si falta', async () => {
+  const f = frontend({ supabaseClient: database({ leads: [{ id: 1, AGENTE: 'Ana' }, { id: 2, AGENTE: 'Ana' }], lead_gestiones: [
+    { id: 9, lead_id: 1, fecha_gestion: '2026-11-04', created_at: '2026-11-06T15:00:00Z', autor_name: 'Ana' },
+    { id: 7, lead_id: 1, fecha_gestion: '2026-11-05', created_at: '2026-11-05T14:00:00Z', autor_name: 'Jessica' },
+    { id: 6, lead_id: 1, fecha_gestion: '2026-11-05', created_at: '2026-11-05T14:00:00Z', autor_name: 'Ana' },
+    { id: 8, lead_id: 2, fecha_gestion: '2026-11-05', created_at: '2026-11-05T14:00:00Z', autor_name: null },
+  ] }) });
+  f.element('dashDesde').value = '2026-11-04'; f.element('dashHasta').value = '2026-11-05';
+  await f.context.applyFilters();
+  assert.equal(f.context.filteredLeads.find(l => l.id === 1).__gestionEnRango.autor, 'Jessica');
+  const unknown = f.context.filteredLeads.find(l => l.id === 2);
+  for (const render of [leadsMod.filaLeadHtml, leadsMod.tarjetaLeadMovilHtml]) {
+    assert.match(render(unknown, { leadId: 2, origin: 'actual', isAdmin: false }), /Sin autor registrado/);
+  }
+  f.element('filterAsesora').value = 'Ana'; await f.context.applyFilters();
+  assert.equal(f.context.filteredLeads.length, 0);
+});

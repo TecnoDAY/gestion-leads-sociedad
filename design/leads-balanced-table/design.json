@@ -1,0 +1,13 @@
+{
+  "title": "Tabla de leads · Distribución equilibrada",
+  "brief": "Maqueta previa, sin implementar en producción: equilibrar y centrar selectivamente la tabla existente, conservando columnas, estilo claro y lógica de gestión. Datos ficticios.",
+  "artboards": [
+    {
+      "file": "01-balanced.html",
+      "title": "Alineación selectiva · Recomendada",
+      "tradeoff": "Conserva las nueve columnas y facilita comparar filas; en pantallas estrechas requiere desplazamiento horizontal. Filas uniformes y etiqueta Nuevo junto al nombre.",
+      "width": 1504,
+      "height": 1200
+    }
+  ]
+}

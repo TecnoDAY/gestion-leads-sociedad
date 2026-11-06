@@ -11,7 +11,7 @@ import { csvFields } from './csv-fields.mjs';
 // Importar funciones puras desde el módulo legacy (extraídas del monolito)
 const legacyMod = await import('../../src/legacy/helpers.js');
 const { getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel, miamiToday,
-  compareLeadIdsDescending, consolidateLeadsById } = legacyMod;
+  compareLeadIdsDescending, consolidateLeadsById, getLeadInterest } = legacyMod;
 // Funciones puras del area Citas extraidas a src/legacy/citas.js
 const citasMod = await import('../../src/legacy/citas.js');
 const { appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc, unirCitasConLeads, citasKpiHtml, citasLeadHtml, filaCitaHtml } = citasMod;
@@ -143,7 +143,7 @@ function frontend(extra = {}) {
     isAgendadoGestion: value => value.startsWith('AGENDAD'),
     // Funciones puras importadas desde src/legacy/helpers.js (extraídas del monolito)
     getField, escapeHtml, escapeAttr, compareAlphaEs, sortAlphaEs, miamiDayBounds, catalogLabel,
-    compareLeadIdsDescending, consolidateLeadsById,
+    compareLeadIdsDescending, consolidateLeadsById, getLeadInterest,
     // Helpers del area Citas extraidos a src/legacy/citas.js
     appointmentDate, appointmentInputISO, appointmentLocal, ordenarCitasDesc, unirCitasConLeads, citasKpiHtml, citasLeadHtml,
     // Helpers de Reportes/Historico/Campanas extraidos a src/legacy/reportes.js

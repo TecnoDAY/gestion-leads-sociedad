@@ -1902,7 +1902,7 @@
         id: lead.id,
         nombre: lead?.Nombre || lead?.nombre || `Lead #${lead.id}`,
         telefono: lead?.Telefono || lead?.telefono || '',
-        interesadoEn: lead?.['INTERESADO EN'] || lead?.interesadoEn || '',
+        interesadoEn: getLeadInterest(lead),
       }));
     }
     window.searchLeadsForTask = searchLeadsForTask;
@@ -4971,7 +4971,7 @@
              if (typeof notifyLeadChange === 'function') notifyLeadChange('created', data.id);
              const createTaskAfter = !!document.getElementById('newCreateTaskAfterSave')?.checked;
              closeNewLeadModal(true);
-             if (createTaskAfter && window.tasksModuleApi) window.tasksModuleApi.openCreateTaskModal(data.id, newLeadData?.Nombre || null, newLeadData?.Telefono || null, newLeadData?.['INTERESADO EN'] || null);
+             if (createTaskAfter && window.tasksModuleApi) window.tasksModuleApi.openCreateTaskModal(data.id, newLeadData?.Nombre || null, newLeadData?.Telefono || null, getLeadInterest(newLeadData) || null);
             populateFilterOptions();
             applyFilters();
           }
@@ -5572,7 +5572,7 @@
         setProgramaInscripcionValue('edit', programaGuardado);
         editProgramaInscripcionPrevio = programaGuardado;
         // Interesado en: el que tiene guardado el lead (dato informativo).
-        const interesadoGuardado = String(getField(lead, 'INTERESADO EN') || '').trim();
+        const interesadoGuardado = getLeadInterest(lead).trim();
         setInteresadoEn('edit', interesadoGuardado);
         editInteresadoEnPrevio = interesadoGuardado;
         const selectPrograma = document.getElementById('editProgramaInscripcion');

@@ -57,6 +57,16 @@ export function getField(lead, key) {
   return "";
 }
 
+/**
+ * Lee solo la columna actual de interes, sin alias ni recuperacion historica.
+ * null, undefined o ausencia significan vacio, aunque exista "Interesado en ".
+ * @param {object|null|undefined} lead
+ * @returns {string}
+ */
+export function getLeadInterest(lead) {
+  return String(lead?.['INTERESADO EN'] ?? '');
+}
+
 // --- catalogLabel ------------------------------------------------------------
 /**
  * Etiqueta visible de una opcion de catalogo (Mes, Campana, Medio, Gestion, Agente):
@@ -160,6 +170,7 @@ if (typeof window !== "undefined") {
   window.escapeHtml = escapeHtml;
   window.escapeAttr = escapeAttr;
   window.getField = getField;
+  window.getLeadInterest = getLeadInterest;
   window.catalogLabel = catalogLabel;
   window.compareAlphaEs = compareAlphaEs;
   window.sortAlphaEs = sortAlphaEs;

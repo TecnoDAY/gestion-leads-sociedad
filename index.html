@@ -1043,7 +1043,7 @@
 
     <div id="viewCampanas" class="hidden space-y-5">
       <div class="campaigns-intro">
-        <div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="megaphone" class="w-3.5 h-3.5"></i> Análisis de campañas</span><h2 class="mt-3 text-2xl font-bold text-white">Campañas</h2><p class="mt-1 text-sm text-slate-400">Compara la inversión de Meta con los resultados registrados en el CRM.</p></div>
+        <div class="relative z-10"><span class="dashboard-eyebrow"><i data-lucide="megaphone" class="w-3.5 h-3.5"></i> Análisis de campañas</span><h2 class="mt-3 text-2xl font-bold text-white">Campañas</h2><p class="mt-1 text-sm text-slate-400">Desde noviembre 2026 registra importe y coste por rango: resultados ≈ importe ÷ coste. Compara con leads Meta reportados (opcionales) y CRM mensual, sin sumarlos. Los meses anteriores son de solo lectura.</p></div>
       </div>
       <div class="campaigns-controls flex flex-wrap items-end justify-between gap-3">
         <div class="flex flex-wrap items-end gap-3">
@@ -1060,7 +1060,7 @@
       <div id="campanasSummary" class="campaigns-summary hidden grid grid-cols-2 lg:grid-cols-4 gap-3" aria-live="polite"></div>
       <div class="campaigns-table">
         <table class="w-full min-w-[1100px] text-xs">
-          <thead><tr><th class="p-3 text-left">Campaña</th><th class="p-3 text-left">Estado</th><th class="p-3 text-right">Alcance</th><th class="p-3 text-right">Gasto (USD)</th><th class="p-3 text-right">Resultados Meta</th><th class="p-3 text-right">Coste/Resultado</th><th class="p-3 text-right">Leads Nuevos</th><th class="p-3 text-right">Agendados</th><th class="p-3 text-right">Asistieron</th><th class="p-3 text-right">Inscritos</th><th class="p-3 text-right">Agendados Meses Ant.</th><th class="p-3 text-right">Pendientes</th><th class="p-3"></th></tr></thead>
+          <thead><tr><th class="p-3 text-left">Campaña</th><th class="p-3 text-left">Estado</th><th class="p-3 text-right">Gasto (USD)</th><th class="p-3 text-right">Resultados (≈ desde noviembre)</th><th class="p-3 text-right">CPL ponderado</th><th class="p-3 text-right">Leads Nuevos</th><th class="p-3 text-right">Agendados</th><th class="p-3 text-right">Asistieron</th><th class="p-3 text-right">Inscritos</th><th class="p-3 text-right">Agendados Meses Ant.</th><th class="p-3 text-right">Pendientes</th><th class="p-3"></th></tr></thead>
           <tbody id="campanasTableBody" class="divide-y divide-slate-800"></tbody>
         </table>
       </div>
@@ -1916,6 +1916,7 @@
       idleLastTouchSent = 0;
       window.currentUser = null;
       window.currentAccess = null;
+      if (!window.isCampaignDemo) window.closeCampaignMetricsPanel?.();
       if (window.tasksModuleApi?.onSessionCleared) window.tasksModuleApi.onSessionCleared();
       authValidationPromise = null;
       sessionInitializationPromise = null;
@@ -7140,14 +7141,15 @@ async function deleteLeadAppointment(id) {
     }
 
     // -------------------------------------------------------------
-    // CAMPAÑAS: informe mensual de Meta por campaña (rollup CRM via RPC).
-    // Coste/resultado NO se guarda: se calcula en UI (gasto/resultados).
-    // -------------------------------------------------------------
-    // CAMPAÑAS: informe mensual de Meta por campaña (rollup CRM via RPC) y
-    // desglose por PERÍODOS de fechas (campaign_period_stats). Coste/resultado
-    // NO se guarda: se calcula en UI (gasto/resultados), nunca sumando promedios.
+    // CAMPAÑAS: desde noviembre, importe/coste por rangos e historial vigente.
+    // Antes de noviembre, fuentes antiguas de solo lectura, sin backfill.
+    // CRM automático sigue mensual; nunca se atribuye a rangos arbitrarios.
     // campaignCosteResultado y campaignTotals viven en src/legacy/reportes.js.
     // -------------------------------------------------------------
+    window.addEventListener('campaign-metrics-changed', () => {
+      if (currentMainTab === 'campanas') loadCampanas();
+    });
+
     function campanasVistaPeriodo() {
       return document.getElementById('campaignVistaSel')?.value === 'periodo';
     }
@@ -7195,7 +7197,38 @@ async function deleteLeadAppointment(id) {
         if (desdeInput && !desdeInput.value) desdeInput.value = primero;
         if (hastaInput && !hastaInput.value) hastaInput.value = ultimo;
       }
+      if (periodo) {
+        Object.assign(periodo, campanasPeriodoSeleccionado());
+        campanasContextPeriodo = `${periodo.desde}|${periodo.hasta}`;
+      }
       const valid = () => token === campanasRequestGeneration && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo && currentMainTab === 'campanas' && document.getElementById('campaignMesSel')?.value === monthStr && (campanasVistaPeriodo() ? `${campanasPeriodoSeleccionado().desde}|${campanasPeriodoSeleccionado().hasta}` : '') === campanasContextPeriodo;
+      if (monthStr >= '2026-11' || window.isCampaignDemo) {
+        const from = esPeriodo ? periodo.desde : `${monthStr}-01`;
+        const to = esPeriodo ? periodo.hasta : `${monthStr}-${String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, '0')}`;
+        try {
+          const rollup = window.isCampaignDemo ? { data: [] } : await supabaseClient.rpc('campaign_monthly_rollup', { p_anio: y, p_mes: mesNombre });
+          if (rollup.error) throw rollup.error;
+          const rows = await window.campaignMetricReport(activeCatalogValues('campana'), rollup.data || [], from, to, esPeriodo);
+          if (!valid()) return;
+          campanasData = rows;
+          campaignStatsMap = new Map(); campaignPeriodRows = []; campaignPeriodosFailed = false;
+          const aviso = document.getElementById('campanasAviso');
+          if (aviso) aviso.textContent = `${window.isCampaignDemo ? 'DEMO LOCAL · DATOS FICTICIOS. ' : ''}Importe ÷ coste = resultados aproximados; CPL mensual ponderado. Leads Meta reportados separados. ${esPeriodo ? 'CRM no disponible por rango: consulta el mes.' : 'CRM automático del mes, sin sumarlo a Meta.'}`;
+          campanasLoading = false;
+          if (loadingStatus) loadingStatus.textContent = '';
+          renderCampanas(rows, campaignTotals(rows), `${mesNombre} ${y}${esPeriodo ? ' · ' + etiquetaPeriodo(periodo) : ''}`, canEditCampaigns(), monthStr, false, periodo);
+        } catch (error) {
+          if (!valid()) return;
+          console.warn('No se pudieron cargar métricas por rango:', error);
+          campanasData = []; campaignPeriodRows = []; campaignStatsMap = new Map();
+          campanasLoading = false;
+          if (loadingStatus) loadingStatus.textContent = '';
+          const aviso = document.getElementById('campanasAviso');
+          if (aviso) aviso.textContent = 'Métricas no disponibles. La migración 202610300004 debe estar aplicada; no se usan datos antiguos como reemplazo.';
+          renderCampanas([], campaignTotals([]), `${mesNombre} ${y}`, false, monthStr, true, periodo);
+        }
+        return;
+      }
       const [rollupRes, statsRes, periodosRes] = await Promise.allSettled([
         // RPC escalar JSONB: devuelve el agregado completo, no filas truncables.
         supabaseClient.rpc('campaign_monthly_rollup', { p_anio: y, p_mes: mesNombre }),
@@ -7232,7 +7265,7 @@ async function deleteLeadAppointment(id) {
       campanasData = campanasDeFuentes(activeCatalogValues('campana'), rollupRows, statRows, campaignPeriodRows, esPeriodo ? campanasPeriodoSeleccionado() : null, !periodosFailed);
       if (aviso) aviso.textContent = periodosFailed
         ? 'No se pudo cargar el desglose por períodos; el informe mensual se muestra sin desglose.'
-        : (esPeriodo ? 'Vista por períodos: registra inversión de Meta (alcance, gasto y resultados) del rango elegido. Las métricas del CRM se consolidan en la vista mensual.' : '');
+        : (esPeriodo ? 'Vista por períodos: consulta inversión y resultados de Meta del rango elegido. Las métricas del CRM se consolidan en la vista mensual.' : '');
       if (token === campanasRequestGeneration) campanasLoading = false;
       const periodoLabel = esPeriodo ? etiquetaPeriodo(campanasPeriodoSeleccionado()) : '';
       const mesLabel = periodoLabel ? `${mesNombre} ${y} · ${periodoLabel}` : `${mesNombre} ${y}`;
@@ -7251,7 +7284,7 @@ async function deleteLeadAppointment(id) {
       if (!tbody) return;
       const esPeriodo = Boolean(periodo && periodo.desde && periodo.hasta);
       // Fila sin fila manual y sin períodos disponibles: Meta no calculable.
-      const datosIncompletos = rows.some(r => r.alcance == null);
+      const datosIncompletos = rows.some(r => r.gasto == null || r.resultados == null);
       const summary = document.getElementById('campanasSummary');
       if (summary) {
         summary.classList.toggle('hidden', !rows.length);
@@ -7569,6 +7602,7 @@ async function deleteLeadAppointment(id) {
     }
 
     function exportCampanasCSV() {
+      if (campanasLoading || campanasContextMonth !== document.getElementById('campaignMesSel')?.value || campanasContextPeriodo !== (campanasVistaPeriodo() ? `${campanasPeriodoSeleccionado().desde}|${campanasPeriodoSeleccionado().hasta}` : '')) { showToast('Espera a que cargue el filtro seleccionado', 'warning'); return; }
       if (!campanasData.length) { showToast('No hay datos para exportar', 'warning'); return; }
       const monthStr = document.getElementById('campaignMesSel')?.value || miamiToday().slice(0, 7);
       const periodoLabel = campanasVistaPeriodo() ? etiquetaPeriodo(campanasPeriodoSeleccionado()) : '';
@@ -7807,6 +7841,7 @@ async function deleteLeadAppointment(id) {
   <script type="module" src="/src/legacy/helpers.js"></script>
   <script type="module" src="/src/legacy/citas.js"></script>
   <script type="module" src="/src/legacy/reportes.js"></script>
+  <script type="module" src="/src/legacy/campaign-metrics.js"></script>
   <script type="module" src="/src/legacy/inscripciones.js"></script>
   <script type="module" src="/src/legacy/leads.js"></script>
   <script type="module" src="/src/legacy/help.js"></script>

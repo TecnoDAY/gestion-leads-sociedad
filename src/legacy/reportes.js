@@ -265,6 +265,10 @@ export function campaignCosteResultado(gasto, resultados) {
 export function campaignTotals(rows) {
   const totals = { alcance: 0, gasto: 0, resultados: 0, leads_nuevos: 0, agendados: 0, asistieron: 0, inscritos: 0, agendados_previos: 0, pendientes: 0 };
   rows.forEach(r => Object.keys(totals).forEach(k => { totals[k] += Number(r[k]) || 0; }));
+  if (rows.length && rows.every(r => r.metrics_source)) {
+    if (rows.some(r => r.alcance == null)) totals.alcance = null;
+    totals.meta_leads = rows.some(r => r.meta_leads == null) ? null : rows.reduce((sum, r) => sum + Number(r.meta_leads), 0);
+  }
   return totals;
 }
 
@@ -1358,7 +1362,6 @@ export function resumenCampanasHtml(rows, totals, esPeriodo = false, datosIncomp
     ? [
         ['Inversión Meta', `$${totals.gasto.toFixed(2)}`, true],
         ['Resultados Meta', totals.resultados, true],
-        ['Alcance', totals.alcance, true],
         ['Coste/Resultado', campaignCosteResultado(totals.gasto, totals.resultados), true],
       ]
     : [
@@ -1367,87 +1370,52 @@ export function resumenCampanasHtml(rows, totals, esPeriodo = false, datosIncomp
         ['Leads nuevos', totals.leads_nuevos, false],
         ['Inscritos', totals.inscritos, false],
       ];
-  return tarjetas.map(([label, value, esMeta]) => `<div><span class="text-[11px] text-slate-400">${label}</span><strong>${datosIncompletos && esMeta ? 'No disponible' : escapeHtml(String(value))}</strong></div>`).join('');
+  const nuevo = rows.some(r => r.metrics_source);
+  if (nuevo) {
+    tarjetas.push(['CPL ponderado', campaignCosteResultado(totals.gasto, totals.resultados), true]);
+    tarjetas.push(['Leads Meta reportados (separados)', totals.meta_leads ?? '—', false]);
+  }
+  return tarjetas.map(([label, value, esMeta]) => `<div><span class="text-[11px] text-slate-400">${nuevo && label === 'Resultados Meta' ? 'Resultados ≈ importe / coste' : label}</span><strong>${datosIncompletos && esMeta ? 'No disponible' : escapeHtml(String(value ?? '—'))}</strong></div>`).join('');
 }
 
 /** Estado vacio de la tabla (carga fallida o sin campanas del mes). */
 export function estadoVacioCampanasHtml(loadFailed, mesLabel) {
   return loadFailed
-    ? '<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">No se pudo cargar el informe.</p><p class="mt-1 text-xs">Revisa el aviso anterior e inténtalo de nuevo.</p><button type="button" class="campaigns-retry" data-ev="click:loadCampanas()">Reintentar</button></td></tr>'
-    : `<tr><td colspan="13" class="campaigns-empty"><p class="text-sm font-semibold">Sin campañas para ${escapeHtml(mesLabel)}.</p><p class="mt-1 text-xs">Selecciona otro mes para consultar sus resultados.</p></td></tr>`;
+    ? '<tr><td colspan="12" class="campaigns-empty"><p class="text-sm font-semibold">No se pudo cargar el informe.</p><p class="mt-1 text-xs">Revisa el aviso anterior e inténtalo de nuevo.</p><button type="button" class="campaigns-retry" data-ev="click:loadCampanas()">Reintentar</button></td></tr>'
+    : `<tr><td colspan="12" class="campaigns-empty"><p class="text-sm font-semibold">Sin campañas para ${escapeHtml(mesLabel)}.</p><p class="mt-1 text-xs">Selecciona otro mes para consultar sus resultados.</p></td></tr>`;
 }
 
-/** Fila de campana. Vista período: inputs siempre (es la via habitual de
-  * captura). Vista mes: LECTURA por defecto; "Ajustar mensual" habilita SOLO
-  * esa fila (editandoMensual = nombre), con Guardar ajuste/Cancelar. Sin
-  * períodos disponibles y sin fila manual, el mes no es calculable: '—'. */
+/** Read-only report row. New-source history is accessible to all active roles;
+  * editors register/correct through the range panel, never monthly overrides. */
 export function filaCampanaHtml(r, { esEditor, isAdmin, monthStr, periodo = null, editandoMensual = null, periodosDisponibles = true } = {}) {
   const esPeriodo = Boolean(periodo && periodo.desde && periodo.hasta);
   const periodoAttrs = esPeriodo ? ` data-desde="${escapeAttr(periodo.desde)}" data-hasta="${escapeAttr(periodo.hasta)}"` : '';
-  const editandoMes = !esPeriodo && esEditor && editandoMensual === r.name;
-  const estadoOptions = sel => ['activa', 'finalizada', 'pausada'].map(e => `<option value="${e}"${e === sel ? ' selected' : ''}>${e.charAt(0).toUpperCase() + e.slice(1)}</option>`).join('');
-  const fmtNum = val => (val == null ? '—' : val);
-  const numCell = (field, val) => ((esEditor && esPeriodo) || editandoMes)
-    ? `<input type="number" min="0" step="0.01" data-field="${field}" value="${val == null ? 0 : val}" data-ev="input:recalcCampaignRow(this)" class="w-24 rounded border border-slate-600 bg-slate-800 px-2 py-1 text-right text-slate-100">`
-    : `<span class="font-mono">${fmtNum(val)}</span>`;
-  const estadoCell = (esPeriodo || !editandoMes)
-    ? escapeHtml(r.estado)
-    : `<select data-field="estado" class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-slate-100">${estadoOptions(r.estado)}</select>`;
-  const btnSave = esPeriodo
-    ? (esEditor
-      ? `<button type="button" data-ev="click:saveCampaignPeriodStatFromData('${encodeURIComponent(r.name)}','${escapeAttr(periodo.desde)}','${escapeAttr(periodo.hasta)}')" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Guardar</button>`
-      : '')
-    : (editandoMes
-      ? `<button type="button" data-ev="click:saveCampaignStatFromData('${encodeURIComponent(r.name)}','${escapeAttr(monthStr)}',${r.stat_id == null ? 'null' : Number(r.stat_id)})" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer">Guardar ajuste</button>`
-        + `<button type="button" data-ev="click:cancelarAjusteMensual()" class="px-2 py-1 rounded border border-slate-500 text-slate-200 hover:bg-slate-700 font-semibold cursor-pointer">Cancelar</button>`
-      : (esEditor && r.alcance != null
-        ? `<button type="button" data-ev="click:iniciarAjusteMensualFromData('${encodeURIComponent(r.name)}')" class="px-2 py-1 rounded border border-indigo-500 text-indigo-300 hover:bg-indigo-950 font-semibold cursor-pointer">Ajustar mensual</button>`
-        : ''));
-  const btnDelete = isAdmin && !editandoMes && (esPeriodo ? r.period_id != null : r.stat_id != null)
-    ? (esPeriodo
-      ? `<button type="button" data-ev="click:deleteCampaignPeriodStat(${Number(r.period_id)},'${escapeAttr(periodo.desde)}','${escapeAttr(periodo.hasta)}')" class="px-2 py-1 rounded border border-rose-700 text-rose-300 hover:bg-rose-950 font-semibold cursor-pointer">Eliminar</button>`
-      : `<button type="button" data-ev="click:deleteCampaignStat(${Number(r.stat_id)},'${escapeAttr(monthStr)}')" class="px-2 py-1 rounded border border-rose-700 text-rose-300 hover:bg-rose-950 font-semibold cursor-pointer">Eliminar</button>`)
-    : '';
-  // Volver al automático: solo en vista mes, con corrección manual y fuera del modo ajuste.
-  const btnAuto = esEditor && !esPeriodo && !editandoMes && r.stat_id != null
-    ? `<button type="button" data-ev="click:resetCampaignStatAutoFromData('${encodeURIComponent(r.name)}','${escapeAttr(monthStr)}')" class="px-2 py-1 rounded border border-slate-500 text-slate-200 hover:bg-slate-700 font-semibold cursor-pointer">Volver al automático</button>`
-    : '';
-  const crmCell = val => `<td class="p-3 text-right font-mono">${val == null ? '—' : val}</td>`;
-  // Pista del desglose por períodos en vista mes: suma registrada, para que la
-  // divergencia con el mes ajustado a mano quede a la vista.
-  const hintPeriodos = !esPeriodo && r.periodos_count > 0
-    ? `<span class="block text-[10px] font-normal text-slate-400">Períodos (${r.periodos_count}): ${r.periodos_alcance} · $${Number(r.periodos_gasto).toFixed(2)} · ${r.periodos_resultados} res.</span>`
-    : '';
-  // Aviso de que el mes fue corregido a mano (excepción al cálculo automático).
-  const chipAjustado = !esPeriodo && !editandoMes && r.stat_id != null
-    ? '<span class="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">Mensual ajustado</span>'
-    : '';
-  return `<tr id="campaign_row_${escapeAttr(r.name)}" data-month="${escapeAttr(monthStr)}"${periodoAttrs} data-stat-id="${r.stat_id == null ? '' : Number(r.stat_id)}" class="hover:bg-slate-800/50">
-          <td class="p-3 text-left text-slate-200">${escapeHtml(r.name)}${chipAjustado}${hintPeriodos}</td>
-          <td class="p-3 text-left">${estadoCell}</td>
-          <td class="p-3 text-right">${numCell('alcance', r.alcance)}</td>
-          <td class="p-3 text-right">${numCell('gasto', r.gasto)}</td>
-          <td class="p-3 text-right">${numCell('resultados', r.resultados)}</td>
-          <td class="p-3 text-right font-mono" data-field="coste">${campaignCosteResultado(r.gasto, r.resultados)}</td>
-          ${crmCell(r.leads_nuevos)}
-          ${crmCell(r.agendados)}
-          ${crmCell(r.asistieron)}
-          ${crmCell(r.inscritos)}
-          ${crmCell(r.agendados_previos)}
-          ${crmCell(r.pendientes)}
-          <td class="p-3 text-right whitespace-nowrap space-x-1">${btnSave}${btnAuto}${btnDelete}</td>
-        </tr>`;
+  // Old monthly/period sources are historical, always read-only. All new writes
+  // go through the range panel, including readers' history access.
+  const cell = value => `<td class="p-3 text-right font-mono">${escapeHtml(String(value ?? '—'))}</td>`;
+  const metricsAttrs = `data-campaign-metrics="${encodeURIComponent(r.name).replace(/'/g, '%27')}"`;
+  const action = r.metrics_source
+    ? `<button type="button" ${metricsAttrs} class="campaigns-retry">${esEditor ? 'Registrar métricas / historial' : 'Ver historial'}</button>`
+    : '<span class="text-xs text-slate-400">Histórico · solo lectura</span>';
+  const hint = r.metrics_source
+    ? `Resultados ≈ importe / coste · Meta reportados: ${r.meta_leads == null ? '—' : Number(r.meta_leads)}${r.estimated ? ' · estimado (prorrateado)' : ''}`
+    : 'Histórico sin migración';
+  return `<tr id="campaign_row_${escapeAttr(r.name)}" data-month="${escapeAttr(monthStr)}"${periodoAttrs}>
+    <td class="p-3 text-left">${escapeHtml(r.name)}<small class="block">${escapeHtml(hint)}</small></td>
+    <td class="p-3 text-left">${escapeHtml(r.estado || '')}</td>
+    ${cell(r.gasto)}${cell(r.resultados)}${cell(campaignCosteResultado(r.gasto, r.resultados))}
+    ${cell(r.leads_nuevos)}${cell(r.agendados)}${cell(r.asistieron)}${cell(r.inscritos)}${cell(r.agendados_previos)}${cell(r.pendientes)}
+    <td class="p-3 text-right">${action}</td></tr>`;
 }
 
 /** Fila TOTAL de la tabla de campanas. En vista período el CRM no aplica.
   * Con datosIncompletos las columnas Meta muestran guion (suma no fiable). */
 export function totalCampanasHtml(totals, mesLabel, esPeriodo = false, datosIncompletos = false) {
   const crm = val => esPeriodo ? '—' : val;
-  const meta = val => datosIncompletos ? '—' : val;
+  const meta = val => datosIncompletos ? '—' : (val ?? '—');
   return `<tr class="campaigns-total-row font-semibold text-slate-100 border-t-2 border-indigo-600">
         <td class="p-3 text-left">TOTAL · ${escapeHtml(mesLabel)}</td>
         <td class="p-3"></td>
-        <td class="p-3 text-right font-mono">${meta(totals.alcance)}</td>
         <td class="p-3 text-right font-mono">${meta(totals.gasto.toFixed(2))}</td>
         <td class="p-3 text-right font-mono">${meta(totals.resultados)}</td>
         <td class="p-3 text-right font-mono">${datosIncompletos ? '—' : campaignCosteResultado(totals.gasto, totals.resultados)}</td>
@@ -1467,13 +1435,15 @@ export function totalCampanasHtml(totals, mesLabel, esPeriodo = false, datosInco
 export function campanasCsvLines(rows, monthStr, generado, periodoLabel = '') {
   const esPeriodo = periodoLabel !== '';
   const titulo = esPeriodo ? `Campañas · ${monthStr} · ${periodoLabel}` : `Campañas · ${monthStr}`;
-  const headers = ['Campaña', 'Estado', 'Alcance', 'Gasto (USD)', 'Resultados Meta', 'Coste/Resultado', 'Leads Nuevos', 'Agendados', 'Asistieron', 'Inscritos', 'Agendados Meses Anteriores', 'Pendientes'];
+  const headers = ['Campaña', 'Estado', 'Gasto (USD)', 'Resultados Meta', 'Coste/Resultado', 'Leads Nuevos', 'Agendados', 'Asistieron', 'Inscritos', 'Agendados Meses Anteriores', 'Pendientes'];
+  const nuevo = rows.some(r => r.metrics_source);
+  if (nuevo) headers.push('Leads Meta reportados (separados)', 'Prorrateado', 'Fuente');
   const lineas = [titulo, `Generado: ${generado} Miami`, '', headers.join(',')];
   for (const r of rows || []) {
-    lineas.push([csvReporteField(r.name), csvReporteField(r.estado), csvReporteField(r.alcance), csvReporteField(r.gasto), csvReporteField(r.resultados), csvReporteField(campaignCosteResultado(r.gasto, r.resultados)), csvReporteField(r.leads_nuevos), csvReporteField(r.agendados), csvReporteField(r.asistieron), csvReporteField(r.inscritos), csvReporteField(r.agendados_previos), csvReporteField(r.pendientes)].join(','));
+    lineas.push([csvReporteField(r.name), csvReporteField(r.estado), csvReporteField(r.gasto), csvReporteField(r.resultados), csvReporteField(campaignCosteResultado(r.gasto, r.resultados)), csvReporteField(r.leads_nuevos), csvReporteField(r.agendados), csvReporteField(r.asistieron), csvReporteField(r.inscritos), csvReporteField(r.agendados_previos), csvReporteField(r.pendientes), ...(nuevo ? [csvReporteField(r.meta_leads), csvReporteField(r.estimated ? 'Sí' : 'No'), csvReporteField(r.estado === 'DEMO FICTICIO' ? 'DEMO FICTICIO' : 'Importe / coste · resultados aproximados')] : [])].join(','));
   }
   const t = campaignTotals((rows || []).map(r => (esPeriodo ? { ...r, leads_nuevos: 0, agendados: 0, asistieron: 0, inscritos: 0, agendados_previos: 0, pendientes: 0 } : r)));
-  lineas.push([csvReporteField('TOTAL'), csvReporteField(''), csvReporteField(t.alcance), csvReporteField(t.gasto.toFixed(2)), csvReporteField(t.resultados), csvReporteField(campaignCosteResultado(t.gasto, t.resultados)), csvReporteField(esPeriodo ? '' : t.leads_nuevos), csvReporteField(esPeriodo ? '' : t.agendados), csvReporteField(esPeriodo ? '' : t.asistieron), csvReporteField(esPeriodo ? '' : t.inscritos), csvReporteField(esPeriodo ? '' : t.agendados_previos), csvReporteField(esPeriodo ? '' : t.pendientes)].join(','));
+  lineas.push([csvReporteField('TOTAL'), csvReporteField(''), csvReporteField(t.gasto.toFixed(2)), csvReporteField(t.resultados), csvReporteField(campaignCosteResultado(t.gasto, t.resultados)), csvReporteField(esPeriodo ? '' : t.leads_nuevos), csvReporteField(esPeriodo ? '' : t.agendados), csvReporteField(esPeriodo ? '' : t.asistieron), csvReporteField(esPeriodo ? '' : t.inscritos), csvReporteField(esPeriodo ? '' : t.agendados_previos), csvReporteField(esPeriodo ? '' : t.pendientes), ...(nuevo ? [csvReporteField(t.meta_leads), csvReporteField(rows.some(r => r.estimated) ? 'Sí' : 'No'), csvReporteField('Importe / coste · resultados aproximados')] : [])].join(','));
   return lineas;
 }
 

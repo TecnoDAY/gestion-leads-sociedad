@@ -26,6 +26,16 @@ function darkDecl(selector, prop) {
   return valor;
 }
 
+function themeDecl(theme, selector, prop) {
+  const busca = `html[data-theme="${theme}"] ${selector}`;
+  for (const { sel, body } of rules) {
+    if (sel !== busca) continue;
+    const m = new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`).exec(body);
+    if (m) return m[1].trim();
+  }
+  return null;
+}
+
 const hex = (valor, contexto) => {
   const m = /#([0-9a-fA-F]{6})\b/.exec(valor || '');
   assert.ok(m, `${contexto}: se esperaba un color hex en «${valor}»`);
@@ -47,6 +57,22 @@ const ratio = (texto, fondo, contexto) => contraste(hex(texto, contexto), hex(fo
 
 const SUPERFICIE = '#1e293b';
 const BLANCO = '#ffffff';
+
+test('el badge Agendado de la ficha conserva contraste en tema claro', () => {
+  const selector = '.lead-detail-content span:is([class~="bg-amber-500/15"], [class~="bg-amber-500/20"])';
+  const color = themeDecl('light', selector, 'color');
+  assert.ok(color, 'falta color claro de alto contraste en el badge ámbar de la ficha');
+  assert.ok(ratio(color, '#92400e', 'badge Agendado en tema claro') >= 4.5, 'el badge Agendado no alcanza AA sobre el fondo ámbar');
+});
+
+test('el boton Ver leads del dashboard tiene contraste en tema oscuro', () => {
+  const selector = '#viewDashboard .primary-action';
+  const fondo = themeDecl('dark', selector, 'background-color') || themeDecl('dark', selector, 'background');
+  const texto = themeDecl('dark', selector, 'color');
+  assert.ok(fondo, 'falta fondo oscuro para la acción Ver leads');
+  assert.ok(texto, 'falta color legible para Ver leads en tema oscuro');
+  assert.ok(ratio(texto, fondo, 'Ver leads en tema oscuro') >= 4.5, 'Ver leads no alcanza AA en tema oscuro');
+});
 
 test('el fondo de pagina oscuro es oscuro y su texto principal contrasta', () => {
   const fondo = darkDecl('body', 'background-color');

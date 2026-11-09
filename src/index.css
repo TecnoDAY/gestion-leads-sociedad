@@ -1444,3 +1444,10 @@ html[data-theme] .kanban-column-header { border-top: 3px solid var(--app-accent)
 html[data-theme] .kanban-counter { background-color: var(--app-accent); color: var(--app-on-color); border-color: var(--app-accent); }
 html[data-theme] .campaign-metrics-panel :is(#cmpSubmit, #cmpModeBadge) { background-color: var(--app-accent); color: var(--app-on-color); border-color: var(--app-accent); }
 
+/* Restore foreground contrast where semantic badge colors become solid in theme mode. */
+html[data-theme="light"] .lead-detail-content span:is([class~="bg-amber-500/15"], [class~="bg-amber-500/20"]) { color: #ffffff; }
+
+/* The shared primary-action base is white; keep the dashboard action readable in dark mode. */
+html[data-theme="dark"] #viewDashboard .primary-action { background-color: #1e293b; border-color: #475569; color: #f1f5f9; }
+html[data-theme="dark"] #viewDashboard .primary-action:hover { background-color: #334155; }
+

@@ -28,7 +28,7 @@ const USER = { id: 'user-1', email: 'agente@example.test' };
 function loadEdge(slug, {
   access = { activo: true, role: 'agente' }, lead = { id: 7, Telefono: '+34 600 111 222', GESTION: 'Agendado' },
   leadError = null, subs = [{ id: 1, endpoint: 'https://push.example.test/1', p256dh: 'k', auth: 'a' }],
-  aircallUsers = [{ id: 99, email: USER.email }],
+  aircallUsers = [{ id: 99, email: USER.email }], vapid = { data: 'synthetic-vapid', error: null },
 } = {}) {
   let handler;
   const queries = [], fetches = [], pushes = [];
@@ -55,7 +55,7 @@ function loadEdge(slug, {
   const service = {
     auth: { getUser: async token => (token === 'valid' ? { data: { user: USER }, error: null } : { data: null, error: { message: 'bad jwt' } }) },
     from: builder,
-    rpc: async name => { queries.push({ rpc: name }); return { data: true, error: null }; },
+    rpc: async name => { queries.push({ rpc: name }); return name === 'get_vapid_private_key' ? vapid : { data: true, error: null }; },
   };
   const env = { SUPABASE_URL: 'https://example.test', SUPABASE_SERVICE_ROLE_KEY: 'synthetic', AIRCALL_API_ID: 'id', AIRCALL_API_TOKEN: 'tok' };
   const code = transformSync(source(`supabase/functions/${slug}/index.ts`).replace(/^import .*;\s*$/gm, ''), { loader: 'ts', target: 'es2022' }).code;
@@ -199,4 +199,30 @@ test('S2/S3: roles CRM, proyecciones y fallo de lectura del lead', async () => {
     assert.deepEqual(await e.request(payload), { status: 500, body: { error: 'lead_lookup_failed' } });
     assert.equal(e.fetches.length + e.pushes.length, 0);
   }
+});
+
+test('S7 notify-lead-change: lee la clave VAPID por RPC service_role, no por la tabla vault via PostgREST', async () => {
+  const e = loadEdge('notify-lead-change');
+  assert.equal((await e.request({ eventType: 'updated', leadId: 7 })).status, 200);
+  assert.ok(e.queries.some(q => q.rpc === 'get_vapid_private_key'));
+  assert.ok(!e.queries.some(q => String(q.table || '').includes('vault')));
+  assert.doesNotMatch(source('supabase/functions/notify-lead-change/index.ts'), /from\('vault\./);
+});
+
+test('S7 notify-lead-change: sin clave VAPID o con error de RPC -> 500 sin enviar', async () => {
+  for (const vapid of [{ data: null, error: null }, { data: null, error: { code: 'PGRST202' } }, { data: '', error: null }]) {
+    const e = loadEdge('notify-lead-change', { vapid });
+    assert.deepEqual(await e.request({ eventType: 'updated', leadId: 7 }), { status: 500, body: { error: 'vapid_secret_unavailable' } });
+    assert.equal(e.pushes.length, 0);
+  }
+});
+
+test('S7: RPC get_vapid_private_key solo para service_role, definer con search_path vacio', () => {
+  const sql = source('supabase/migrations/202611010002_vapid_private_key_rpc.sql');
+  assert.match(sql, /create or replace function public\.get_vapid_private_key\(\)\s+returns text/);
+  assert.match(sql, /security definer\s+set search_path = ''/);
+  assert.match(sql, /from vault\.decrypted_secrets\s+where name = 'vapid_private_key'/);
+  assert.match(sql, /revoke all on function public\.get_vapid_private_key\(\) from public, anon, authenticated;/);
+  assert.match(sql, /grant execute on function public\.get_vapid_private_key\(\) to service_role;/);
+  assert.doesNotMatch(sql, /grant execute[^;]*to (anon|authenticated)/);
 });

@@ -87,17 +87,15 @@ Deno.serve(async (request) => {
   if (leadError) return json(500, { error: 'lead_lookup_failed' });
   if (!lead) return json(404, { error: 'lead_not_found' });
 
-  const { data: secretRow, error: secretError } = await adminClient
-    .from('vault.decrypted_secrets')
-    .select('decrypted_secret')
-    .eq('name', 'vapid_private_key')
-    .single();
-  if (secretError || !secretRow?.decrypted_secret) {
-    console.error('No se pudo leer la clave VAPID:', secretError);
+  // PostgREST no expone el esquema vault: la clave se lee con una RPC que
+  // solo service_role puede ejecutar (migracion 202611010002).
+  const { data: vapidPrivateKey, error: secretError } = await adminClient.rpc('get_vapid_private_key');
+  if (secretError || typeof vapidPrivateKey !== 'string' || !vapidPrivateKey) {
+    console.error('No se pudo leer la clave VAPID:', secretError?.code || 'empty');
     return json(500, { error: 'vapid_secret_unavailable' });
   }
 
-  webpush.setVapidDetails('mailto:admin@sociedadactoral.com', VAPID_PUBLIC_KEY, secretRow.decrypted_secret);
+  webpush.setVapidDetails('mailto:admin@sociedadactoral.com', VAPID_PUBLIC_KEY, vapidPrivateKey);
 
   const status = lead.GESTION || '';
   const title = 'Gestión de Leads';

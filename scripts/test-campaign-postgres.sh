@@ -51,7 +51,7 @@ create table public.local_historical_snapshot as
 select 'monthly' as source,to_jsonb(s) as snapshot from public.campaign_stats s
 union all select 'period',to_jsonb(s) from public.campaign_period_stats s;
 SQL
-for migration in supabase/migrations/20261030000{1,2,3,4,5}_*.sql; do
+for migration in supabase/migrations/20261030000{1,2,3,4,5}_*.sql supabase/migrations/202611010001_*.sql; do
   printf 'Local migration: %s\n' "$migration"
   local_psql -q < "$migration"
 done

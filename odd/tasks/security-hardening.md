@@ -8,16 +8,16 @@ Order by verified real risk; one commit per task; push/deploy/migrations in prod
 - S1 Retire `kanban.html` (404 in production, not linked, stored-XSS in its renderer): remove the file and its Vite build input; `/kanban.html` redirects to `/`.
 - S2 `aircall-dial`: authorize with the verified user's own id (active CRM user in `user_access`: admin/agente/supervisor), not `rpc('is_active_user')` on the service-role client (auth.uid() is null there). Dial the lead's stored `Telefono` resolved server-side; ignore client-supplied `phone`. Unknown lead -> 404.
 - S3 `notify-lead-change`: require an active CRM user (role admin/agente/supervisor); `eventType` must be `created` or `updated` (else 400); lead must exist (else 404). No rate limiting (YAGNI). Same request contract as `index.html` already sends.
-- S4 Revoke `EXECUTE` on unused legacy RPC `list_campaign_metrics(text)` from `authenticated` (SECURITY DEFINER without active-user guard). v2 untouched.
+- S4 Legacy RPC `list_campaign_metrics(text)` (SECURITY DEFINER without active-user guard) must reject inactive users with 42501 `active_user_required`, like the rest of the v1 module. Signature, rows and grants unchanged; v2 untouched. (Changed from REVOKE: revoking breaks `campaign_metrics_test.sql`, which calls v1 as `authenticated`.)
 - S5 Patch-level dependency updates; move `vite` and `@tailwindcss/vite` to devDependencies; run `scripts/test-campaign-postgres.sh` in CI.
 - S6 (optional) Revoke `TRUNCATE, TRIGGER, REFERENCES, MAINTAIN` from `anon, authenticated` + default privileges.
 
 ## Tasks
 
-- T1 S1 inline — commit: pending
-- T2 S2 inline — commit: pending
-- T3 S3 inline — commit: pending
-- T4 S4 inline — commit: pending
+- T1 S1 inline — commit: fca6c5e
+- T2 S2 inline — commit: 7948f81
+- T3 S3 inline — commit: 5e93754
+- T4 S4 inline — commit: this slice (SQL runtime unverified locally: no Docker)
 - T5 S5 inline — commit: pending
 - T6 S6 — pending decision (no local Docker to verify DB changes)
 
@@ -25,3 +25,4 @@ Order by verified real risk; one commit per task; push/deploy/migrations in prod
 
 - L1 User: "ejecuta el plan si encuentras errores corrigelos" (plan: paso 0 + pasos 1-6 from the improved plan).
 - L2 Paso 0: production `/kanban.html` -> 404 (XSS not exposed); `/index.html` -> 200. Supabase logs unavailable (no MCP). Docker daemon unavailable locally: SQL migrations only statically verified.
+- L3 T4 approach changed from REVOKE to an active-user guard (REVOKE breaks the v1 SQL regression test). New SQL check added to campaign_metrics_test.sql; runs only via scripts/test-campaign-postgres.sh (Docker).

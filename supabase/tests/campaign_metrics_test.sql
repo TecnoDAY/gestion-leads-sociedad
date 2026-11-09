@@ -45,5 +45,16 @@ begin
     raise exception 'Legacy correction/aggregate changed: %',j;
   end if;
 end $$;
+-- Inactive users can no longer list v1 history through the definer RPC.
+reset role;
+update public.user_access set activo=false where user_id='00000000-0000-4000-8000-000000000009';
+set local role authenticated;
+do $$
+begin
+  perform * from public.list_campaign_metrics('LOCAL_LEGACY');
+  raise exception 'Inactive user listed legacy metrics';
+exception when sqlstate '42501' then
+  if sqlerrm<>'active_user_required' then raise; end if;
+end $$;
 rollback;
 \echo 'PASS: legacy v1 RPC regression assertions; transaction rolled back.'

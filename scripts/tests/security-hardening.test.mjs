@@ -150,3 +150,14 @@ test('S3 notify-lead-change: se conserva 401 sin token valido y 400 con leadId i
   e = loadEdge('notify-lead-change');
   assert.deepEqual(await e.request({ eventType: 'updated', leadId: 0 }), { status: 400, body: { error: 'invalid_lead_id' } });
 });
+
+test('S4: list_campaign_metrics v1 exige usuario activo sin cambiar firma ni grants', () => {
+  const sql = source('supabase/migrations/202611010001_list_campaign_metrics_active_guard.sql');
+  assert.match(sql, /create or replace function public\.list_campaign_metrics\(p_campaign_name text\)\s+returns setof public\.campaign_metrics_history/);
+  assert.match(sql, /security definer\s+set search_path = public/);
+  assert.match(sql, /if not public\.is_active_user\(\) then\s+raise exception using errcode = '42501', message = 'active_user_required';/);
+  assert.match(sql, /revoke all on function public\.list_campaign_metrics\(text\) from public, anon;/);
+  assert.match(sql, /grant execute on function public\.list_campaign_metrics\(text\) to authenticated;/);
+  assert.match(source('scripts/test-campaign-postgres.sh'), /202611010001_\*\.sql/);
+  assert.match(source('supabase/tests/campaign_metrics_test.sql'), /Inactive user listed legacy metrics/);
+});

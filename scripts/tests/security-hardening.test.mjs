@@ -18,3 +18,101 @@ test('S1: /kanban.html redirige a / en Vercel', () => {
   const vercel = JSON.parse(source('vercel.json'));
   assert.deepEqual(vercel.redirects, [{ source: '/kanban.html', destination: '/', permanent: true }]);
 });
+
+// --- Harness Edge: ejecuta el handler real con Supabase, fetch y web-push sinteticos ---
+import vm from 'node:vm';
+import { transformSync } from 'esbuild';
+
+const USER = { id: 'user-1', email: 'agente@example.test' };
+
+function loadEdge(slug, {
+  access = { activo: true, role: 'agente' }, lead = { id: 7, Telefono: '+34 600 111 222', GESTION: 'Agendado' },
+  leadError = null, subs = [{ id: 1, endpoint: 'https://push.example.test/1', p256dh: 'k', auth: 'a' }],
+  aircallUsers = [{ id: 99, email: USER.email }],
+} = {}) {
+  let handler;
+  const queries = [], fetches = [], pushes = [];
+  const builder = table => {
+    const q = { table, eqs: [] };
+    queries.push(q);
+    const result = () => {
+      if (table === 'user_access') return { data: access, error: null };
+      if (table === 'leads') return { data: lead, error: leadError };
+      if (table === 'vault.decrypted_secrets') return { data: { decrypted_secret: 'synthetic' }, error: null };
+      if (table === 'push_subscriptions') return { data: subs, error: null };
+      return { data: null, error: null };
+    };
+    const api = {
+      select(cols) { q.select = cols; return api; },
+      eq(col, val) { q.eqs.push([col, val]); return api; },
+      delete() { q.delete = true; return api; },
+      maybeSingle: async () => result(),
+      single: async () => result(),
+      then: (resolve, reject) => Promise.resolve(result()).then(resolve, reject),
+    };
+    return api;
+  };
+  const service = {
+    auth: { getUser: async token => (token === 'valid' ? { data: { user: USER }, error: null } : { data: null, error: { message: 'bad jwt' } }) },
+    from: builder,
+    rpc: async name => { queries.push({ rpc: name }); return { data: true, error: null }; },
+  };
+  const env = { SUPABASE_URL: 'https://example.test', SUPABASE_SERVICE_ROLE_KEY: 'synthetic', AIRCALL_API_ID: 'id', AIRCALL_API_TOKEN: 'tok' };
+  const code = transformSync(source(`supabase/functions/${slug}/index.ts`).replace(/^import .*;\s*$/gm, ''), { loader: 'ts', target: 'es2022' }).code;
+  vm.runInNewContext(code, {
+    Deno: { env: { get: name => env[name] }, serve: fn => { handler = fn; }, readTextFileSync() { throw new Error('no file'); } },
+    createClient: () => service, Response, Request, URL, btoa, JSON,
+    console: { log() {}, warn() {}, error() {} },
+    webpush: { setVapidDetails() {}, sendNotification: async (sub, body) => { pushes.push({ endpoint: sub.endpoint, body: JSON.parse(body) }); } },
+    fetch: async (url, init = {}) => {
+      fetches.push({ url, body: init.body ? JSON.parse(init.body) : undefined });
+      if (String(url).includes('/users?')) return new Response(JSON.stringify({ users: aircallUsers }), { status: 200 });
+      return new Response('{}', { status: 200 });
+    },
+  });
+  const request = async (payload, token = 'valid') => {
+    const res = await handler(new Request('https://example.test', {
+      method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    }));
+    return { status: res.status, body: await res.json() };
+  };
+  return { request, queries, fetches, pushes };
+}
+
+const accessQuery = e => e.queries.find(q => q.table === 'user_access');
+
+test('S2 aircall-dial: usuario CRM activo marca el telefono guardado del lead, ignora el del cliente', async () => {
+  const e = loadEdge('aircall-dial');
+  const r = await e.request({ leadId: 7, phone: '000999888777' });
+  assert.deepEqual(r, { status: 200, body: { ok: true } });
+  assert.deepEqual(accessQuery(e).eqs, [['user_id', USER.id]]);
+  assert.ok(!e.queries.some(q => q.rpc === 'is_active_user'));
+  assert.deepEqual(e.queries.find(q => q.table === 'leads').eqs, [['id', 7]]);
+  const dial = e.fetches.find(f => f.url.endsWith('/users/99/dial'));
+  assert.deepEqual(dial.body, { number: '34600111222' });
+});
+
+test('S2 aircall-dial: inactivo, sin acceso o rol trafficker -> 403 sin llamar a Aircall', async () => {
+  for (const access of [{ activo: false, role: 'agente' }, null, { activo: true, role: 'trafficker' }]) {
+    const e = loadEdge('aircall-dial', { access });
+    assert.deepEqual(await e.request({ leadId: 7 }), { status: 403, body: { error: 'forbidden' } });
+    assert.equal(e.fetches.length, 0);
+  }
+});
+
+test('S2 aircall-dial: lead inexistente -> 404; lead sin telefono -> 400; sin marcar', async () => {
+  let e = loadEdge('aircall-dial', { lead: null });
+  assert.deepEqual(await e.request({ leadId: 7 }), { status: 404, body: { error: 'lead_not_found' } });
+  assert.equal(e.fetches.length, 0);
+  e = loadEdge('aircall-dial', { lead: { id: 7, Telefono: '' } });
+  assert.deepEqual(await e.request({ leadId: 7 }), { status: 400, body: { error: 'invalid_phone' } });
+  assert.equal(e.fetches.length, 0);
+});
+
+test('S2 aircall-dial: se conserva 401 sin token valido y 400 con leadId invalido', async () => {
+  let e = loadEdge('aircall-dial');
+  assert.deepEqual(await e.request({ leadId: 7 }, 'bad'), { status: 401, body: { error: 'unauthorized' } });
+  e = loadEdge('aircall-dial');
+  assert.deepEqual(await e.request({ leadId: 'x' }), { status: 400, body: { error: 'invalid_lead_id' } });
+  assert.equal(e.fetches.length, 0);
+});

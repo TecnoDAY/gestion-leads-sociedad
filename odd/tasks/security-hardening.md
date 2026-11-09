@@ -6,7 +6,7 @@ Order by verified real risk; one commit per task; push/deploy/migrations in prod
 ## Specs
 
 - S1 Retire `kanban.html` (404 in production, not linked, stored-XSS in its renderer): remove the file and its Vite build input; `/kanban.html` redirects to `/`.
-- S2 `aircall-dial`: authorize with the verified user's own id (active user in `user_access`), not `rpc('is_active_user')` on the service-role client (auth.uid() is null there). Dial the lead's stored `Telefono` resolved server-side; ignore client-supplied `phone`. Unknown lead -> 404.
+- S2 `aircall-dial`: authorize with the verified user's own id (active CRM user in `user_access`: admin/agente/supervisor), not `rpc('is_active_user')` on the service-role client (auth.uid() is null there). Dial the lead's stored `Telefono` resolved server-side; ignore client-supplied `phone`. Unknown lead -> 404.
 - S3 `notify-lead-change`: require an active CRM user (role admin/agente/supervisor); `eventType` must be `created` or `updated` (else 400); lead must exist (else 404). No rate limiting (YAGNI). Same request contract as `index.html` already sends.
 - S4 Revoke `EXECUTE` on unused legacy RPC `list_campaign_metrics(text)` from `authenticated` (SECURITY DEFINER without active-user guard). v2 untouched.
 - S5 Patch-level dependency updates; move `vite` and `@tailwindcss/vite` to devDependencies; run `scripts/test-campaign-postgres.sh` in CI.

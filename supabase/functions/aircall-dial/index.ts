@@ -23,6 +23,8 @@ const origenPermitido = (origen) => {
   return permitidos.has(origen) ? origen : null;
 };
 
+const CRM_ROLES = new Set(['admin', 'agente', 'supervisor']);
+
 const json = (cors, status, body) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
@@ -54,15 +56,32 @@ Deno.serve(async (request) => {
   const { data: userData, error: userError } = await adminClient.auth.getUser(bearerToken);
   if (userError || !userData?.user) return json(cors, 401, { error: 'unauthorized' });
 
-  const { data: isActive, error: activeError } = await adminClient.rpc('is_active_user');
-  if (activeError || isActive !== true) return json(cors, 403, { error: 'forbidden' });
+  // El cliente service-role no lleva el JWT del usuario (auth.uid() seria null en
+  // is_active_user), asi que el acceso se comprueba con el id ya verificado.
+  const { data: access, error: accessError } = await adminClient
+    .from('user_access')
+    .select('activo, role')
+    .eq('user_id', userData.user.id)
+    .maybeSingle();
+  if (accessError || access?.activo !== true || !CRM_ROLES.has(access?.role)) {
+    return json(cors, 403, { error: 'forbidden' });
+  }
 
   let payload;
   try { payload = await request.json(); } catch { return json(cors, 400, { error: 'invalid_request' }); }
 
-  const leadId = Number(payload.leadId);
-  const phone = String(payload.phone || '').replace(/\D/g, '');
+  const leadId = Number(payload?.leadId);
   if (!Number.isInteger(leadId) || leadId <= 0) return json(cors, 400, { error: 'invalid_lead_id' });
+
+  // El numero sale del lead guardado; nunca del cuerpo de la peticion.
+  const { data: lead, error: leadError } = await adminClient
+    .from('leads')
+    .select('id, "Telefono"')
+    .eq('id', leadId)
+    .maybeSingle();
+  if (leadError) return json(cors, 500, { error: 'lead_lookup_failed' });
+  if (!lead) return json(cors, 404, { error: 'lead_not_found' });
+  const phone = String(lead.Telefono || '').replace(/\D/g, '');
   if (phone.length < 7) return json(cors, 400, { error: 'invalid_phone' });
 
   const email = userData.user.email;

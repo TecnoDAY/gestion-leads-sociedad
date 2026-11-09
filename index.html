@@ -127,11 +127,6 @@
           <span id="tasksBellCount" class="hidden absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">0</span>
         </button>
 
-        <!-- Refresh Button -->
-        <button id="btnRefresh" data-ev="click:refreshLeadsData()" title="Refrescar datos de Supabase" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer">
-          <i data-lucide="refresh-cw" id="refreshIcon" class="w-4 h-4"></i>
-        </button>
-
         <!-- View Security / RLS Schema -->
         <button data-ev="click:openRlsModal()" title="Ver políticas de seguridad y esquema SQL" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
           <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
@@ -6190,16 +6185,6 @@ async function deleteLeadAppointment(id) {
     }
 
 
-
-    async function refreshLeadsData() {
-      const icon = document.getElementById('refreshIcon');
-      if (icon) icon.classList.add('animate-spin');
-      const loadedSuccessfully = await loadLeadsData();
-      setTimeout(() => {
-        if (icon) icon.classList.remove('animate-spin');
-        if (loadedSuccessfully) showToast("Datos sincronizados con Supabase", "success");
-      }, 600);
-    }
 
     function exportCurrentLeadsCSV() {
       if (filteredLeads.length === 0) {

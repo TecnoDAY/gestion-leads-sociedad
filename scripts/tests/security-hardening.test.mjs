@@ -226,3 +226,11 @@ test('S7: RPC get_vapid_private_key solo para service_role, definer con search_p
   assert.match(sql, /grant execute on function public\.get_vapid_private_key\(\) to service_role;/);
   assert.doesNotMatch(sql, /grant execute[^;]*to (anon|authenticated)/);
 });
+
+test('S8: el encabezado no tiene boton de refresco manual (realtime mantiene los datos)', () => {
+  const html = source('index.html');
+  assert.doesNotMatch(html, /id="btnRefresh"/);
+  assert.doesNotMatch(html, /refreshLeadsData/);
+  assert.doesNotMatch(source('src/legacy/actions.js'), /'refreshLeadsData'/);
+  assert.match(html, /\.channel\('public:leads:realtime'\)/);
+});

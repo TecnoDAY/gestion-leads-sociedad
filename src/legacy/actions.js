@@ -39,7 +39,7 @@ export const HANDLERS = new Set([
   'loadReporteDiario', 'loadReportePeriodo', 'openCatalogsModal', 'openChangeEmail',
   'openDashboardAppointmentsDetail', 'openEditLeadFromView', 'openEditLeadModal', 'openHelpModal',
   'closeMoreMenu', 'openAppModal', 'openLeadFromView', 'openMoreMenu', 'openNewLeadModal', 'openRlsModal', 'openViewLeadModal', 'queueNewPhoneCheck',
-  'recalcCampaignRow', 'refreshLeadsData', 'renameCatalogValue', 'renderAuthorizedUsers',
+  'recalcCampaignRow', 'renameCatalogValue', 'renderAuthorizedUsers',
   'renderCatalogList', 'renderHelpContent', 'renderHistoricalAnalytics', 'rescheduleLeadAppointment',
   'resetAllFilters', 'resetCampaignStatAutoFromData', 'resetCitasFilters', 'returnToRecentLeads',
   'saveCampaignPeriodStatFromData', 'saveCampaignStatFromData', 'saveLeadNoteInline',

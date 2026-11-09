@@ -22,7 +22,7 @@ Order by verified real risk; one commit per task; push/deploy/migrations in prod
 - T5 S5 inline — commit: 27e3a60 (CI Postgres step verified only on first push)
 - T6 S6 — dropped (postponed by recommendation)
 - T7 CI image pull retry + Docker Hub fallback — commit: 0a5a115
-- T8 S7 inline — commit: this slice
+- T8 S7 inline — commit: see git log (pushed, CI green)
 - T10 apply migrations 202611010001/0002 + deploy notify-lead-change — blocked: Supabase MCP is read-only (supabase_read_only_user), no Supabase CLI
 
 ## Log
@@ -36,3 +36,4 @@ Order by verified real risk; one commit per task; push/deploy/migrations in prod
 - L7 User: "si ocultalo hasta que lo conectemos" -> AIRCALL_ENABLED=false in src/legacy/leads.js hides the lead-sheet call button; tel: link kept; flip to true to connect.
 - L8 Push of main paused: origin/main..main has 12 commits with 7 migrations; production DB probe shows campaign v2 RPCs may be missing and production frontend lacks the campaign WIP code. Vercel git auto-deploy unknown.
 - L9 Supabase MCP (read-only) evidence: prod applied migrations stop at 202610300001; campaign 0002-0005 (and v2 RPCs) NOT applied -> pushing main would break campaigns if Vercel auto-deploys. Tasks module applied. Edge logs: notify-lead-change v1 deployed, 121 calls/24h, logs 'No se pudo leer la clave VAPID: PGRST205 public.vault.decrypted_secrets' -> push broken in prod (confirmed). vault secret vapid_private_key exists; push_subscriptions=0 rows. First CI run failed at docker pull: ECR 'toomanyrequests'.
+- L10 CI run 2 (fix/security-hardening) green: all steps incl. Postgres suite; legacy v1 RPC regression (with new inactive-user guard 202611010001) PASS; three race tests PASS.

@@ -116,3 +116,37 @@ test('S2 aircall-dial: se conserva 401 sin token valido y 400 con leadId invalid
   assert.deepEqual(await e.request({ leadId: 'x' }), { status: 400, body: { error: 'invalid_lead_id' } });
   assert.equal(e.fetches.length, 0);
 });
+
+test('S3 notify-lead-change: usuario CRM activo notifica created/updated como antes', async () => {
+  let e = loadEdge('notify-lead-change');
+  assert.deepEqual(await e.request({ eventType: 'updated', leadId: 7 }), { status: 200, body: { ok: true, sent: 1, removed: 0 } });
+  assert.deepEqual(accessQuery(e).eqs, [['user_id', USER.id]]);
+  assert.deepEqual(e.pushes, [{ endpoint: 'https://push.example.test/1', body: { title: 'Gestión de Leads', body: 'Un lead cambió a Agendado.', url: '/?lead=7', tag: 'lead-7' } }]);
+  e = loadEdge('notify-lead-change');
+  assert.equal((await e.request({ eventType: 'created', leadId: 7 })).status, 200);
+  assert.equal(e.pushes[0].body.body, 'Se registró un nuevo lead.');
+});
+
+test('S3 notify-lead-change: inactivo, sin acceso o trafficker -> 403 sin enviar', async () => {
+  for (const access of [{ activo: false, role: 'admin' }, null, { activo: true, role: 'trafficker' }]) {
+    const e = loadEdge('notify-lead-change', { access });
+    assert.deepEqual(await e.request({ eventType: 'updated', leadId: 7 }), { status: 403, body: { error: 'forbidden' } });
+    assert.equal(e.pushes.length, 0);
+  }
+});
+
+test('S3 notify-lead-change: eventType desconocido -> 400 y lead inexistente -> 404, sin enviar', async () => {
+  let e = loadEdge('notify-lead-change');
+  assert.deepEqual(await e.request({ eventType: 'deleted', leadId: 7 }), { status: 400, body: { error: 'invalid_event_type' } });
+  assert.equal(e.pushes.length, 0);
+  e = loadEdge('notify-lead-change', { lead: null });
+  assert.deepEqual(await e.request({ eventType: 'updated', leadId: 7 }), { status: 404, body: { error: 'lead_not_found' } });
+  assert.equal(e.pushes.length, 0);
+});
+
+test('S3 notify-lead-change: se conserva 401 sin token valido y 400 con leadId invalido', async () => {
+  let e = loadEdge('notify-lead-change');
+  assert.deepEqual(await e.request({ eventType: 'updated', leadId: 7 }, 'bad'), { status: 401, body: { error: 'unauthorized' } });
+  e = loadEdge('notify-lead-change');
+  assert.deepEqual(await e.request({ eventType: 'updated', leadId: 0 }), { status: 400, body: { error: 'invalid_lead_id' } });
+});

@@ -24,6 +24,8 @@ const origenPermitido = (origen) => {
   return permitidos.has(origen) ? origen : null;
 };
 
+const CRM_ROLES = new Set(['admin', 'agente', 'supervisor']);
+
 const VAPID_PUBLIC_KEY = 'BEFR2BUOlY-qv8HBzxxGq08AgYy5o2AHSQAB4QDff0ioy-YJ_E6ZrxJcBqNZla0579UC1Lzy-8Bi9_3wRqZnGjU';
 
 function getServiceRoleKey() {
@@ -62,12 +64,28 @@ Deno.serve(async (request) => {
   const { data: userData, error: userError } = await adminClient.auth.getUser(bearerToken);
   if (userError || !userData?.user) return json(401, { error: 'unauthorized' });
 
+  // Solo usuarios CRM activos pueden disparar el broadcast (el cliente
+  // service-role no lleva su JWT: se comprueba con el id ya verificado).
+  const { data: access, error: accessError } = await adminClient
+    .from('user_access')
+    .select('activo, role')
+    .eq('user_id', userData.user.id)
+    .maybeSingle();
+  if (accessError || access?.activo !== true || !CRM_ROLES.has(access?.role)) {
+    return json(403, { error: 'forbidden' });
+  }
+
   let payload;
   try { payload = await request.json(); } catch { return json(400, { error: 'invalid_request' }); }
 
-  const eventType = payload.eventType === 'created' ? 'created' : 'updated';
-  const leadId = Number(payload.leadId);
+  const eventType = payload?.eventType;
+  if (eventType !== 'created' && eventType !== 'updated') return json(400, { error: 'invalid_event_type' });
+  const leadId = Number(payload?.leadId);
   if (!Number.isInteger(leadId) || leadId <= 0) return json(400, { error: 'invalid_lead_id' });
+
+  const { data: lead, error: leadError } = await adminClient.from('leads').select('id, "GESTION"').eq('id', leadId).maybeSingle();
+  if (leadError) return json(500, { error: 'lead_lookup_failed' });
+  if (!lead) return json(404, { error: 'lead_not_found' });
 
   const { data: secretRow, error: secretError } = await adminClient
     .from('vault.decrypted_secrets')
@@ -81,8 +99,7 @@ Deno.serve(async (request) => {
 
   webpush.setVapidDetails('mailto:admin@sociedadactoral.com', VAPID_PUBLIC_KEY, secretRow.decrypted_secret);
 
-  const { data: lead } = await adminClient.from('leads').select('id, "GESTION"').eq('id', leadId).maybeSingle();
-  const status = lead?.GESTION || '';
+  const status = lead.GESTION || '';
   const title = 'Gestión de Leads';
   const bodyText = eventType === 'created'
     ? 'Se registró un nuevo lead.'

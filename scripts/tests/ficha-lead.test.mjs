@@ -1,17 +1,28 @@
 // Caracterizacion de notas y gestiones de la ficha (fase 26).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { fichaLeadHtml, gestionesLeadHtml, notasLeadHtml } from '../../src/legacy/leads.js';
+import { AIRCALL_ENABLED, fichaLeadHtml, gestionesLeadHtml, notasLeadHtml } from '../../src/legacy/leads.js';
 
 test('ficha con teléfono muestra la llamada para leads actuales e históricos', () => {
   for (const finalOrigin of ['actual', 'historico']) {
     const html = fichaLeadHtml(
       { id: 7, Nombre: 'Prueba', Telefono: '3055551234' },
-      { finalOrigin, alcanceCompleto: true, firstEntryHtml: '', repetidosHtml: '' },
+      { finalOrigin, alcanceCompleto: true, firstEntryHtml: '', repetidosHtml: '', aircallEnabled: true },
     );
     assert.match(html, /lead-detail-hero/);
     assert.ok(html.includes("llamarLead('7','3055551234')"));
   }
+});
+
+test('Aircall desconectado: la ficha oculta el boton Llamar pero conserva el enlace tel:', () => {
+  const html = fichaLeadHtml(
+    { id: 7, Nombre: 'Prueba', Telefono: '3055551234' },
+    { finalOrigin: 'actual', alcanceCompleto: true, firstEntryHtml: '', repetidosHtml: '' },
+  );
+  assert.equal(AIRCALL_ENABLED, false);
+  assert.ok(!html.includes('llamarLead'));
+  assert.ok(!html.includes('Llamar con Aircall'));
+  assert.ok(html.includes('tel:+3055551234'));
 });
 
 test('notasLeadHtml: vacio, autor por defecto y fecha', () => {

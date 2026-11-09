@@ -141,7 +141,7 @@ for (const s of SOURCES) {
     // El golden de HEAD no tenia estos elementos; se verifica la estructura nueva.
     if (getField(findLead(s, s.leadId, s.origin), 'Telefono').replace(/\D/g, '')) {
       assert.ok(nuevo.includes('tel:+'), 'telefono como enlace tel:');
-      assert.ok(nuevo.includes('llamarLead'), 'boton Llamar presente');
+      assert.ok(!nuevo.includes('llamarLead'), 'boton Llamar oculto mientras Aircall no este conectado');
     } else {
       assert.equal(nuevo, golden, 'sin telefono el marcado no cambia');
     }

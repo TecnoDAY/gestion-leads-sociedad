@@ -984,6 +984,10 @@ export function repetidosYBannerHtml(lead, fuentes, finalOrigin) {
  * @param {{finalOrigin: string, alcanceCompleto: boolean, firstEntryHtml: string, repetidosHtml: string}} ctx
  * @returns {string}
  */
+// Aircall aun no esta conectado: el boton "Llamar con Aircall" queda oculto.
+// Para activarlo, poner true (la Edge function aircall-dial ya esta lista).
+export const AIRCALL_ENABLED = false;
+
 export function fichaLeadHtml(lead, ctx) {
   ctx = ctx || {};
   const finalOrigin = ctx.finalOrigin;
@@ -992,6 +996,7 @@ export function fichaLeadHtml(lead, ctx) {
   const telRaw = getField(lead, 'Telefono');
   const telefonoFmt = formatPhone(telRaw);
   const cleanPhone = telRaw.replace(/\D/g, '');
+  const aircallOn = ctx.aircallEnabled ?? AIRCALL_ENABLED;
   const duplicateScopeHtml = ctx.alcanceCompleto ? '' : `
         <p class="text-[11px] text-slate-500">Las coincidencias telefónicas se revisan sobre los datos cargados. Selecciona el origen “Todos” para comprobar la base completa.</p>`;
   return `
@@ -1019,7 +1024,7 @@ export function fichaLeadHtml(lead, ctx) {
             <div class="flex items-center gap-1.5 mt-0.5">
               ${cleanPhone ? `<button type="button" disabled title="Disponible cuando se conecte la API de WhatsApp" aria-label="WhatsApp deshabilitado hasta conectar la API" class="text-slate-400 opacity-60 cursor-not-allowed"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></button>` : ''}
               ${cleanPhone ? `<a href="tel:+${escapeAttr(cleanPhone)}" class="lead-detail-value font-mono hover:text-indigo-300">${escapeHtml(telefonoFmt || 'S/N')}</a>` : `<span class="lead-detail-value font-mono">${escapeHtml(telefonoFmt || 'S/N')}</span>`}
-              ${cleanPhone ? `<button type="button" data-ev="click:llamarLead('${escapeAttr(lead.id)}','${escapeAttr(cleanPhone)}')" title="Llamar con Aircall" class="p-1 rounded bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/40 cursor-pointer"><i data-lucide="phone" class="w-3.5 h-3.5"></i></button>` : ''}
+              ${aircallOn && cleanPhone ? `<button type="button" data-ev="click:llamarLead('${escapeAttr(lead.id)}','${escapeAttr(cleanPhone)}')" title="Llamar con Aircall" class="p-1 rounded bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/40 cursor-pointer"><i data-lucide="phone" class="w-3.5 h-3.5"></i></button>` : ''}
             </div>
           </div>
 

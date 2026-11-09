@@ -18,7 +18,7 @@ Order by verified real risk; one commit per task; push/deploy/migrations in prod
 - T2 S2 inline — commit: 7948f81
 - T3 S3 inline — commit: 5e93754
 - T4 S4 inline — commit: 326f3b4 (SQL runtime unverified locally: no Docker)
-- T5 S5 inline — commit: this slice (CI Postgres step verified only on first push)
+- T5 S5 inline — commit: 27e3a60 (CI Postgres step verified only on first push)
 - T6 S6 — pending decision (no local Docker to verify DB changes)
 
 ## Log
@@ -28,3 +28,4 @@ Order by verified real risk; one commit per task; push/deploy/migrations in prod
 - L3 T4 approach changed from REVOKE to an active-user guard (REVOKE breaks the v1 SQL regression test). New SQL check added to campaign_metrics_test.sql; runs only via scripts/test-campaign-postgres.sh (Docker).
 - L4 User: "no quiero que agregues aircall por ahora no lo necesitamos solo podemos dejarlo listo para cuando tengamos que conectarlo" -> T2 code stays (ready), aircall-dial is NOT deployed; pending question: hide the existing "Llamar con Aircall" UI button.
 - L5 T5: lockfile regenerated with pnpm 11.28.5 (CI version); frozen install OK. Pre-existing unmet peer: vite wants esbuild ^0.27||^0.28, repo pins esbuild ^0.25 (tests only) -> separate upgrade.
+- L6 Independent verify (gentle-ai-verify): S1 PASS, S2 PASS, S3 PASS, S4 static PASS / runtime UNVERIFIED (no Docker), S5 PASS static+build. Added verifier's role/projection/lookup-error test. Pre-existing finding (not caused here): notify-lead-change reads VAPID key with .from('vault.decrypted_secrets'), which PostgREST does not resolve to the vault schema; no migration exposes it -> push notifications likely fail with 500 vapid_secret_unavailable. Needs production evidence and a user decision.

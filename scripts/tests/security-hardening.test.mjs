@@ -181,3 +181,19 @@ test('S5: CI ejecuta las pruebas PostgreSQL de campañas con la imagen fijada', 
   assert.ok(ci.includes(`docker pull ${image}`));
   assert.match(ci, /run: bash scripts\/test-campaign-postgres\.sh/);
 });
+
+test('S2/S3: roles CRM, proyecciones y fallo de lectura del lead', async () => {
+  for (const slug of ['aircall-dial', 'notify-lead-change']) {
+    const payload = { leadId: 7, eventType: 'updated' };
+    for (const role of ['admin', 'agente', 'supervisor']) {
+      const e = loadEdge(slug, { access: { activo: true, role } });
+      assert.equal((await e.request(payload)).status, 200);
+      assert.equal(accessQuery(e).select, 'activo, role');
+      assert.deepEqual(accessQuery(e).eqs, [['user_id', USER.id]]);
+      assert.equal(e.queries.find(q => q.table === 'leads').select, slug === 'aircall-dial' ? 'id, "Telefono"' : 'id, "GESTION"');
+    }
+    const e = loadEdge(slug, { leadError: { code: 'database_error' } });
+    assert.deepEqual(await e.request(payload), { status: 500, body: { error: 'lead_lookup_failed' } });
+    assert.equal(e.fetches.length + e.pushes.length, 0);
+  }
+});

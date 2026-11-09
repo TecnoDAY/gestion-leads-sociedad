@@ -178,7 +178,10 @@ test('S5: herramientas de build en devDependencies y parches aplicados', () => {
 test('S5: CI ejecuta las pruebas PostgreSQL de campañas con la imagen fijada', () => {
   const ci = source('.github/workflows/ci.yml');
   const image = source('scripts/test-campaign-postgres.sh').match(/public\.ecr\.aws\/supabase\/postgres:[\w.]+/)[0];
-  assert.ok(ci.includes(`docker pull ${image}`));
+  const [, tag] = image.split(':');
+  assert.ok(ci.includes(`image=${image}`) && ci.includes('docker pull $image'), 'pull de la imagen fijada');
+  assert.ok(ci.includes(`docker tag supabase/postgres:${tag} $image`), 'fallback Docker Hub con la misma etiqueta');
+  assert.ok(ci.indexOf('docker pull $image') < ci.indexOf('run: bash scripts/test-campaign-postgres.sh'), 'pull antes del script');
   assert.match(ci, /run: bash scripts\/test-campaign-postgres\.sh/);
 });
 

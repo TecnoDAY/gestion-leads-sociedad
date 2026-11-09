@@ -45,8 +45,17 @@ jobs:
 
       # El script usa --pull=never (sin red dentro del contenedor): la imagen
       # fijada se descarga antes en un paso propio.
+      # ECR publico limita las descargas anonimas (toomanyrequests): reintento
+      # con espera y, si sigue fallando, la misma etiqueta desde Docker Hub.
       - name: Imagen PostgreSQL de pruebas
-        run: docker pull public.ecr.aws/supabase/postgres:17.6.1.166
+        run: |
+          image=public.ecr.aws/supabase/postgres:17.6.1.166
+          for attempt in 1 2 3; do
+            docker pull $image && exit 0
+            sleep $((attempt * 15))
+          done
+          docker pull supabase/postgres:17.6.1.166
+          docker tag supabase/postgres:17.6.1.166 $image
 
       - name: Pruebas PostgreSQL de campañas (contenedor desechable)
         run: bash scripts/test-campaign-postgres.sh

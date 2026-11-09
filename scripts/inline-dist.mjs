@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Convierte dist/index.html y dist/kanban.html en archivos estaticos autocontenidos.
+// Convierte dist/index.html en un archivo estatico autocontenido.
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { cspPaginaEstatica, insertarMetaCsp, insertarMetaCspNonce, problemasCsp } from './csp-utils.mjs';

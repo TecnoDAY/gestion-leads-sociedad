@@ -37,7 +37,6 @@ export default defineConfig(() => {
       rollupOptions: {
         input: {
           main: 'index.html',
-          kanban: 'kanban.html',
         },
         output: {
           // codeSplitting debe estar activo con varias entradas.

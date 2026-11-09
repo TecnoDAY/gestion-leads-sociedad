@@ -17,8 +17,8 @@ Order by verified real risk; one commit per task; push/deploy/migrations in prod
 - T1 S1 inline — commit: fca6c5e
 - T2 S2 inline — commit: 7948f81
 - T3 S3 inline — commit: 5e93754
-- T4 S4 inline — commit: this slice (SQL runtime unverified locally: no Docker)
-- T5 S5 inline — commit: pending
+- T4 S4 inline — commit: 326f3b4 (SQL runtime unverified locally: no Docker)
+- T5 S5 inline — commit: this slice (CI Postgres step verified only on first push)
 - T6 S6 — pending decision (no local Docker to verify DB changes)
 
 ## Log
@@ -26,3 +26,5 @@ Order by verified real risk; one commit per task; push/deploy/migrations in prod
 - L1 User: "ejecuta el plan si encuentras errores corrigelos" (plan: paso 0 + pasos 1-6 from the improved plan).
 - L2 Paso 0: production `/kanban.html` -> 404 (XSS not exposed); `/index.html` -> 200. Supabase logs unavailable (no MCP). Docker daemon unavailable locally: SQL migrations only statically verified.
 - L3 T4 approach changed from REVOKE to an active-user guard (REVOKE breaks the v1 SQL regression test). New SQL check added to campaign_metrics_test.sql; runs only via scripts/test-campaign-postgres.sh (Docker).
+- L4 User: "no quiero que agregues aircall por ahora no lo necesitamos solo podemos dejarlo listo para cuando tengamos que conectarlo" -> T2 code stays (ready), aircall-dial is NOT deployed; pending question: hide the existing "Llamar con Aircall" UI button.
+- L5 T5: lockfile regenerated with pnpm 11.28.5 (CI version); frozen install OK. Pre-existing unmet peer: vite wants esbuild ^0.27||^0.28, repo pins esbuild ^0.25 (tests only) -> separate upgrade.

@@ -42,3 +42,11 @@ jobs:
 
       - name: Build
         run: pnpm run build
+
+      # El script usa --pull=never (sin red dentro del contenedor): la imagen
+      # fijada se descarga antes en un paso propio.
+      - name: Imagen PostgreSQL de pruebas
+        run: docker pull public.ecr.aws/supabase/postgres:17.6.1.166
+
+      - name: Pruebas PostgreSQL de campañas (contenedor desechable)
+        run: bash scripts/test-campaign-postgres.sh

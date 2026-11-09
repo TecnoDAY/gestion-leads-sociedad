@@ -13,16 +13,16 @@
     "test": "node --test scripts/tests/*.test.mjs && python3 -m unittest scripts/tests/test_reconcile_leads.py"
   },
   "dependencies": {
-    "@fullcalendar/core": "6.1.21",
-    "@fullcalendar/daygrid": "6.1.21",
-    "@fullcalendar/timegrid": "6.1.21",
-    "@tailwindcss/vite": "^4.3.3",
-    "vite": "^8.3.0"
+    "@fullcalendar/core": "6.1.22",
+    "@fullcalendar/daygrid": "6.1.22",
+    "@fullcalendar/timegrid": "6.1.22"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^22.14.0",
     "esbuild": "^0.25.0",
-    "tailwindcss": "^4.3.3",
-    "typescript": "^7.0.2"
+    "tailwindcss": "^4.3.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
   }
 }

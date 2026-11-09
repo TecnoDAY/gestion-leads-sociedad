@@ -161,3 +161,23 @@ test('S4: list_campaign_metrics v1 exige usuario activo sin cambiar firma ni gra
   assert.match(source('scripts/test-campaign-postgres.sh'), /202611010001_\*\.sql/);
   assert.match(source('supabase/tests/campaign_metrics_test.sql'), /Inactive user listed legacy metrics/);
 });
+
+test('S5: herramientas de build en devDependencies y parches aplicados', () => {
+  const pkg = JSON.parse(source('package.json'));
+  for (const dep of ['vite', '@tailwindcss/vite']) {
+    assert.equal(pkg.dependencies?.[dep], undefined, `${dep} no es dependencia de runtime`);
+    assert.ok(pkg.devDependencies[dep], `${dep} en devDependencies`);
+  }
+  assert.deepEqual(Object.keys(pkg.dependencies).sort(), ['@fullcalendar/core', '@fullcalendar/daygrid', '@fullcalendar/timegrid']);
+  const lock = source('pnpm-lock.yaml');
+  for (const [name, version] of [['vite', '8.3.6'], ['tailwindcss', '4.3.5'], ['@fullcalendar/daygrid', '6.1.22'], ['@fullcalendar/timegrid', '6.1.22']]) {
+    assert.match(lock, new RegExp(`\\n  '?${name.replace('/', '\\/')}@${version.replace(/\./g, '\\.')}'?:`), `${name}@${version} en lockfile`);
+  }
+});
+
+test('S5: CI ejecuta las pruebas PostgreSQL de campañas con la imagen fijada', () => {
+  const ci = source('.github/workflows/ci.yml');
+  const image = source('scripts/test-campaign-postgres.sh').match(/public\.ecr\.aws\/supabase\/postgres:[\w.]+/)[0];
+  assert.ok(ci.includes(`docker pull ${image}`));
+  assert.match(ci, /run: bash scripts\/test-campaign-postgres\.sh/);
+});

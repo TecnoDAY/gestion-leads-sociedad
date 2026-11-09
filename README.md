@@ -93,7 +93,7 @@ La protección real está en Supabase (RLS y funciones RPC); la interfaz solo oc
 | `Campaña` | `TEXT` | Programa de interés / campaña de origen |
 | `Medio` | `TEXT` | Canal de entrada (Instagram, Whatsapp, Referidos…) |
 | `GESTION` | `TEXT` | Estatus comercial (INSCRITO, Agendado, Información, Data Dura…) |
-| `Interesado en ` | `TEXT` | Programa en el que el lead está interesado (solo informativo) |
+| `Interesado en ` | `TEXT` | Columna antigua de interés; la app no la lee ni la escribe |
 | `Ciudad` | `TEXT` | Ciudad o zona (Coral Gables, Doral, Weston…) |
 | `AGENTE` | `TEXT` | Asesor asignado (Nina, Jessi, Loli, Ana…) |
 | `Odoo` | `TEXT` | Registro en CRM Odoo (SI N., SI J., No…) |
@@ -110,6 +110,14 @@ La protección real está en Supabase (RLS y funciones RPC); la interfaz solo oc
 | `created_at` | `TIMESTAMPTZ` | Fecha de creación (default `now()`) |
 | `updated_at` | `TIMESTAMPTZ` | Última actualización |
 | `archived_at` / `archived_by` | `TIMESTAMPTZ` / `UUID` | Archivado (soft delete) |
+
+**Contrato de interés:** la aplicación lee y escribe exclusivamente `INTERESADO EN`.
+Si el campo actual es nulo, vacío o no existe, se muestra sin interés: nunca se
+recupera `Interesado en ` ni otro alias. Ambas columnas describen el mismo propósito
+informativo, pero el esquema local las define como columnas físicas distintas;
+no se renombran ni se copian o eliminan datos antiguos. Al editar, omitir la clave
+conserva el valor y enviar `''` lo borra. Esta corrección se verifica solo en local,
+sin comprobar ni modificar los datos remotos.
 
 ### Tablas relacionadas
 

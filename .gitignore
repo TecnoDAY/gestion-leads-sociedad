@@ -18,6 +18,10 @@ supabase/.temp/
 
 # Artefactos de herramientas y cachés locales
 __pycache__/
+
+# Scratch local de validacion (se conserva en local, no en el repositorio)
+.pi/*
+!.pi/mcp.json
 *.pyc
 deno.lock
 .vercel

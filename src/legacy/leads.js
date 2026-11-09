@@ -5,7 +5,7 @@
  * sigue resolviendolos via window.* (registro al final de este modulo).
  */
 
-import { compareAlphaEs, compareLeadIdsDescending, consolidateLeadsById, diasDesdeUltimaGestion, escapeAttr, escapeHtml, estadoSeguimiento, getField, miamiToday, sortAlphaEs } from './helpers.js';
+import { compareAlphaEs, compareLeadIdsDescending, consolidateLeadsById, diasDesdeUltimaGestion, escapeAttr, escapeHtml, estadoSeguimiento, getField, getLeadInterest, miamiToday, sortAlphaEs } from './helpers.js';
 import { programaRequiereDetalle } from './inscripciones.js';
 import { programaPorId } from './inscripciones.js';
 import { MONTH_CHRONO, medioVisible, parseFechaLead } from './reportes.js';
@@ -69,7 +69,7 @@ export function nuevoBadge(lead) {
  * @returns {string}
  */
 export function interesadoBadge(lead) {
-  const programa = getField(lead, 'INTERESADO EN').trim();
+  const programa = getLeadInterest(lead).trim();
   if (!programa) return '';
   // inline-block + truncate: la etiqueta se ajusta al texto y, si el programa
   // es largo, se recorta con puntos suspensivos (el texto completo esta en

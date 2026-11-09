@@ -63,48 +63,40 @@ test('campanasDeFuentes (vista período): valores de ESE rango y CRM en null', (
   assert.ok(campanasDeFuentes([], [], [], periodos, p1).some(r => r.name === 'Kids'));
 });
 
-test('filaCampanaHtml (vista período): guarda período, estado en texto y CRM con guion', () => {
+test('filaCampanaHtml (vista período): histórico de solo lectura con fechas y CRM no disponible', () => {
   const filaPeriodo = { name: 'Kids', stat_id: 7, period_id: 32, estado: 'pausada', alcance: 400, gasto: 100.5, resultados: 3, leads_nuevos: null, agendados: null, asistieron: null, inscritos: null, agendados_previos: null, pendientes: null };
-  const html = filaCampanaHtml(filaPeriodo, { esEditor: true, isAdmin: true, monthStr: '2026-10', periodo: p2 });
-  assert.match(html, /data-ev="click:saveCampaignPeriodStatFromData\('Kids','2026-10-08','2026-10-14'\)"/);
-  assert.match(html, /data-desde="2026-10-08" data-hasta="2026-10-14"/);
-  assert.match(html, /data-ev="click:deleteCampaignPeriodStat\(32,'2026-10-08','2026-10-14'\)"/, 'admin puede eliminar el período');
-  assert.doesNotMatch(html, /data-field="estado"/, 'el estado es mensual, no del período');
-  assert.doesNotMatch(html, /resetCampaignStatAutoFromData/, 'el reajuste es de la vista mes');
-  assert.match(html, /pausada/);
-  assert.match(html, /<td class="p-3 text-right font-mono">—<\/td>/, 'metricas CRM con guion');
-  assert.doesNotMatch(html, /deleteCampaignStat\(/, 'no mezcla el borrado mensual');
-  // Sin period_id el admin no puede eliminar una fila inexistente.
-  const sinFila = filaCampanaHtml({ ...filaPeriodo, period_id: null }, { esEditor: true, isAdmin: true, monthStr: '2026-10', periodo: p2 });
-  assert.doesNotMatch(sinFila, /deleteCampaignPeriodStat/);
-  // Lector: sin botones.
-  const lector = filaCampanaHtml(filaPeriodo, { esEditor: false, isAdmin: false, monthStr: '2026-10', periodo: p2 });
-  assert.doesNotMatch(lector, /saveCampaignPeriodStatFromData|deleteCampaignPeriodStat|recalcCampaignRow/);
+  const original = structuredClone(filaPeriodo);
+  for (const role of [{ esEditor: true, isAdmin: true }, { esEditor: true, isAdmin: false }, { esEditor: false, isAdmin: false }]) {
+    const html = filaCampanaHtml(filaPeriodo, { ...role, monthStr: '2026-10', periodo: p2 });
+    assert.match(html, /data-month="2026-10" data-desde="2026-10-08" data-hasta="2026-10-14"/);
+    assert.match(html, /Histórico · solo lectura/);
+    assert.match(html, />pausada</);
+    assert.match(html, />100\.5<.*>3<.*>33\.50</s);
+    assert.equal((html.match(/<td class="p-3 text-right font-mono">—<\/td>/g) || []).length, 6, 'las seis métricas CRM siguen sin fuente por rango');
+    assert.equal((html.match(/<td\b/g) || []).length, 12);
+    assert.doesNotMatch(html, /<button|<input|<select|data-campaign-metrics|saveCampaignPeriodStat|deleteCampaignPeriodStat|deleteCampaignStat|resetCampaignStat|recalcCampaignRow/);
+  }
+  assert.deepEqual(filaPeriodo, original);
 });
 
-test('filaCampanaHtml (vista mes): pista de períodos, chip y ajuste por fila', () => {
-  const fila = { name: 'Kids', stat_id: 7, estado: 'pausada', alcance: 1000, gasto: 250.5, resultados: 5, periodos_alcance: 700, periodos_gasto: 180.5, periodos_resultados: 5, periodos_count: 2, leads_nuevos: 10, agendados: 4, asistieron: 3, inscritos: 2, agendados_previos: 1, pendientes: 5 };
-  // Lectura por defecto: pista + chip + Ajustar mensual; sin inputs.
-  const conPeriodos = filaCampanaHtml(fila, { esEditor: true, isAdmin: false, monthStr: '2026-10' });
-  assert.match(conPeriodos, /Períodos \(2\): 700 · \$180\.50 · 5 res\./);
-  assert.match(conPeriodos, /Mensual ajustado/);
-  assert.match(conPeriodos, /data-ev="click:iniciarAjusteMensualFromData\('Kids'\)"/);
-  assert.match(conPeriodos, /data-ev="click:resetCampaignStatAutoFromData\('Kids','2026-10'\)"/);
-  assert.doesNotMatch(conPeriodos, /data-field="estado"|recalcCampaignRow|saveCampaignStatFromData/);
-  // Modo ajuste de ESA fila: inputs + Guardar ajuste; sin chip ni reajuste.
-  // La pista de la suma de períodos se conserva: ayuda a corregir con contexto.
-  const ajuste = filaCampanaHtml(fila, { esEditor: true, isAdmin: false, monthStr: '2026-10', editandoMensual: 'Kids' });
-  assert.match(ajuste, /data-ev="click:saveCampaignStatFromData\('Kids','2026-10',7\)"/);
-  assert.match(ajuste, /Guardar ajuste/);
-  assert.match(ajuste, /data-ev="click:cancelarAjusteMensual\(\)"/);
-  assert.match(ajuste, /Períodos \(2\): 700 · \$180\.50 · 5 res\./);
-  assert.doesNotMatch(ajuste, /Mensual ajustado|iniciarAjusteMensualFromData|resetCampaignStatAutoFromData/);
-  // Sin fila manual: sin chip y sin reajuste; el ajuste crea la fila.
-  const sinStat = filaCampanaHtml({ ...fila, stat_id: null }, { esEditor: true, isAdmin: false, monthStr: '2026-10' });
-  assert.doesNotMatch(sinStat, /Mensual ajustado|resetCampaignStatAutoFromData/);
-  // Sin períodos: sin pista.
-  const sinPeriodos = filaCampanaHtml({ ...fila, periodos_count: 0 }, { esEditor: true, isAdmin: false, monthStr: '2026-10' });
-  assert.doesNotMatch(sinPeriodos, /Períodos \(/);
+test('filaCampanaHtml: la nueva fuente abre registro o historial, nunca ajuste mensual', () => {
+  const fila = { name: 'Kids & "Sala"', metrics_source: true, estado: 'activa', gasto: 300, resultados: 50, meta_leads: 45, estimated: false, leads_nuevos: 42 };
+  const original = structuredClone(fila);
+  for (const periodo of [null, { desde: '2026-11-01', hasta: '2026-11-07' }]) {
+    for (const esEditor of [true, false]) {
+      const html = filaCampanaHtml(fila, { esEditor, isAdmin: esEditor, monthStr: '2026-11', periodo, editandoMensual: fila.name });
+      assert.match(html, /data-campaign-metrics="Kids%20%26%20%22Sala%22"/);
+      assert.ok(html.includes(esEditor ? 'Registrar métricas / historial' : 'Ver historial'));
+      assert.match(html, /Resultados ≈ importe \/ coste · Meta reportados: 45/);
+      assert.match(html, />300<.*>50<.*>6\.00</s);
+      assert.equal((html.match(/<button\b/g) || []).length, 1, 'único acceso al panel por rangos');
+      assert.doesNotMatch(html, /<input|<select|saveCampaignStat|saveCampaignPeriodStat|deleteCampaignStat|deleteCampaignPeriodStat|resetCampaignStat|iniciarAjusteMensual|✏️|Histórico · solo lectura/);
+      if (periodo) assert.match(html, /data-desde="2026-11-01" data-hasta="2026-11-07"/);
+    }
+  }
+  const sinMeta = filaCampanaHtml({ ...fila, meta_leads: null, estimated: true }, { esEditor: false, monthStr: '2026-11' });
+  assert.match(sinMeta, /Meta reportados: — · estimado \(prorrateado\)/);
+  assert.deepEqual(fila, original);
 });
 
 test('campanasDeFuentes: sin períodos disponibles, el mes sin fila manual no es calculable', () => {
@@ -152,12 +144,12 @@ test('total, resumen y CSV de la vista período', () => {
   assert.match(total, /<td class="p-3 text-right font-mono">—<\/td>/, 'totales CRM con guion');
   const resumen = resumenCampanasHtml(rows, totals, true);
   assert.match(resumen, /Inversión Meta/);
-  assert.match(resumen, /Alcance/);
+  assert.doesNotMatch(resumen, /Alcance/);
   assert.match(resumen, /Coste\/Resultado/);
   assert.doesNotMatch(resumen, /Leads nuevos/, 'en período no se muestran metricas CRM');
   const lineas = campanasCsvLines(rows, '2026-10', '2026-11-01', '08/10 al 14/10');
   assert.equal(lineas[0], 'Campañas · 2026-10 · 08/10 al 14/10');
-  assert.equal(lineas.at(-1).split(',').slice(6).join(','), ['""', '""', '""', '""', '""', '""'].join(','), 'total CRM vacío en período');
+  assert.equal(lineas.at(-1).split(',').slice(5).join(','), ['""', '""', '""', '""', '""', '""'].join(','), 'total CRM vacío en período');
   // El CSV mensual no cambia.
   const lineasMes = campanasCsvLines(campanasDeFuentes([], rollup, stats), '2026-10', '2026-11-01');
   assert.equal(lineasMes[0], 'Campañas · 2026-10');
@@ -204,7 +196,8 @@ test('index.html: vista períodos con Desde/Hasta, guardado y contexto por rango
   assert.match(html, /editandoMensual: esPeriodo \? null : campaignEditMonth/);
   assert.match(html, /periodosDisponibles: !campaignPeriodosFailed/);
   assert.match(html, /campanasDeFuentes\(activeCatalogValues\('campana'\), rollupRows, statRows, campaignPeriodRows, esPeriodo \? campanasPeriodoSeleccionado\(\) : null, !periodosFailed\)/);
-  assert.match(html, /const datosIncompletos = rows\.some\(r => r\.alcance == null\)/);
+  assert.match(html, /const datosIncompletos = rows\.some\(r => r\.gasto == null \|\| r\.resultados == null\)/);
+  assert.doesNotMatch(html, /const datosIncompletos = rows\.some\(r => r\.alcance == null\)/, 'la disponibilidad ya no depende del alcance retirado');
   assert.match(html, /resumenCampanasHtml\(rows, totals, esPeriodo, datosIncompletos\)/);
   assert.match(html, /totalCampanasHtml\(totals, mesLabel, esPeriodo, datosIncompletos\)/);
   // Sin restos del diseño por semanas descartado.

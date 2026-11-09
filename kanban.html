@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tablero Kanban de Leads</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="/src/kanban/kanban.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="h-full text-slate-100 flex flex-col font-sans overflow-hidden bg-slate-950 select-none">
+
+  <header class="h-16 border-b border-slate-800/80 bg-slate-900/90 px-6 flex items-center justify-between backdrop-blur-md z-10 flex-shrink-0">
+    <div class="flex items-center space-x-4">
+      <a href="./index.html" class="h-9 w-9 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20" title="Volver al CRM">
+        <i data-lucide="layout-dashboard" class="w-5 h-5 text-white"></i>
+      </a>
+      <div>
+        <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+          Tablero Kanban de Leads <span class="text-xs font-normal text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">CRM</span>
+        </h1>
+        <p class="text-xs text-slate-400">Vista por estado de gestión</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-3">
+      <div class="relative w-64">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+        <input id="searchInput" type="text" placeholder="Buscar prospecto o teléfono..." class="w-full pl-9 pr-4 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded-lg text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors">
+      </div>
+      <select id="filterMes" class="bg-slate-800/80 border border-slate-700/60 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+        <option value="">Todos los meses</option>
+      </select>
+      <input id="dashDesde" type="date" class="bg-slate-800/80 border border-slate-700/60 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+      <input id="dashHasta" type="date" class="bg-slate-800/80 border border-slate-700/60 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+      <button onclick="openNewLead()" class="flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-all shadow-md shadow-blue-600/20">
+        <i data-lucide="plus" class="w-4 h-4"></i><span>Nuevo Lead</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="bg-slate-900/40 border-b border-slate-800/50 px-6 py-2 flex items-center justify-between text-xs text-slate-400 flex-shrink-0">
+    <div class="flex items-center space-x-6">
+      <span>Total Leads: <strong id="statTotal" class="text-slate-200">0</strong></span>
+      <span>Inscritos: <strong id="statInscritos" class="text-emerald-400">0</strong></span>
+      <span>No Contesta: <strong id="statNoContesta" class="text-rose-400">0</strong></span>
+      <span id="rangeScope" class="hidden text-slate-500"></span>
+    </div>
+    <div class="text-slate-500 text-[11px] flex items-center gap-1">
+      <i data-lucide="info" class="w-3 h-3"></i> Arrastra las tarjetas entre columnas para actualizar el estado
+    </div>
+  </div>
+
+  <main class="flex-1 overflow-x-auto p-6 bg-slate-950">
+    <div id="boardContainer" class="flex gap-5 h-full items-start min-w-max"></div>
+  </main>
+
+  <!-- Modal ficha lead -->
+  <div id="leadModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+        <h3 class="text-base font-semibold text-white" id="modalTitle">Lead</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div id="modalBody" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://hkkuyomlcqyxtzblowle.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_bcFmG6jsAW6lo2WJn3L7BA_BKtiIsmR";
+    let supabaseClient = null;
+    let currentUser = null;
+    let currentAccess = null;
+    let isAdmin = false;
+    let leads = [];
+    let draggedLeadId = null;
+
+    const COLUMNS = [
+      { id: 'INFORMACIÓN', title: 'Información', color: 'border-blue-500', badgeBg: 'bg-blue-500/10', textClr: 'text-blue-400', dotBg: 'bg-blue-500' },
+      { id: 'AGENDADO', title: 'Agendados', color: 'border-amber-500', badgeBg: 'bg-amber-500/10', textClr: 'text-amber-400', dotBg: 'bg-amber-500' },
+      { id: 'NO CONTESTA', title: 'No Contesta', color: 'border-rose-500', badgeBg: 'bg-rose-500/10', textClr: 'text-rose-400', dotBg: 'bg-rose-500' },
+      { id: 'INSCRITO', title: 'Inscritos', color: 'border-emerald-500', badgeBg: 'bg-emerald-500/10', textClr: 'text-emerald-400', dotBg: 'bg-emerald-500' },
+    ];
+
+    async function init() {
+      if (window.supabase && window.supabase.createClient) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+      const { data } = await supabaseClient.auth.getSession();
+      if (!data?.session) { window.location.href = './index.html'; return; }
+      currentUser = data.session.user;
+      // verificar acceso
+      try {
+        const { data: acc } = await supabaseClient.rpc('is_active_user');
+        if (!acc) { window.location.href = './index.html'; return; }
+      } catch (e) { /* continuar */ }
+      try {
+        const { data: a } = await supabaseClient.from('user_access').select('*').eq('user_id', currentUser.id).single();
+        currentAccess = a;
+        isAdmin = !!(a && a.rol === 'admin');
+      } catch (e) { /* continuar */ }
+      populateMonths();
+      await loadLeads();
+      renderBoard();
+      updateStats();
+      lucide.createIcons();
+      document.getElementById('searchInput').addEventListener('input', () => renderBoard());
+      document.getElementById('filterMes').addEventListener('change', () => loadAndRender());
+      document.getElementById('dashDesde').addEventListener('change', () => loadAndRender());
+      document.getElementById('dashHasta').addEventListener('change', () => loadAndRender());
+    }
+
+    function populateMonths() {
+      const sel = document.getElementById('filterMes');
+      const months = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+      months.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m.charAt(0)+m.slice(1).toLowerCase(); sel.appendChild(o); });
+    }
+
+    async function loadLeads() {
+      const mes = document.getElementById('filterMes').value;
+      const desde = document.getElementById('dashDesde').value;
+      const hasta = document.getElementById('dashHasta').value;
+      let base = null;
+      if (desde && hasta && desde <= hasta) {
+        const { data } = await supabaseClient.from('lead_gestiones').select('lead_id').gte('fecha_gestion', desde).lte('fecha_gestion', hasta);
+        const ids = [...new Set((data||[]).map(r=>r.lead_id).filter(Boolean))];
+        if (ids.length) {
+          const { data: rows } = await supabaseClient.from('leads').select('*').in('id', ids).is('archived_at', null);
+          base = rows || [];
+        } else base = [];
+      } else if (mes) {
+        const { data } = await supabaseClient.from('leads').select('*').eq('Mes', mes).is('archived_at', null);
+        base = data || [];
+      } else {
+        const { data } = await supabaseClient.from('leads').select('*').is('archived_at', null).limit(2000);
+        base = data || [];
+      }
+      leads = base;
+    }
+
+    async function loadAndRender() {
+      await loadLeads();
+      renderBoard();
+      updateStats();
+    }
+
+    function getField(lead, key) { return lead?.[key] ?? lead?.[key.trim()] ?? ''; }
+    function getGestion(lead) { return String(getField(lead,'GESTION')||'').trim().toUpperCase(); }
+
+    function matches(lead, q) {
+      if (!q) return true;
+      const n = (getField(lead,'Nombre')+' '+getField(lead,'Apellido')).toLowerCase();
+      const t = String(getField(lead,'Telefono')||'').toLowerCase();
+      return n.includes(q) || t.includes(q);
+    }
+
+    function renderBoard() {
+      const container = document.getElementById('boardContainer');
+      container.innerHTML = '';
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      COLUMNS.forEach(col => {
+        const colLeads = leads.filter(l => getGestion(l) === col.id && matches(l, q));
+        const colEl = document.createElement('div');
+        colEl.className = 'flex flex-col bg-slate-900/70 border border-slate-800/90 rounded-xl w-80 min-w-[320px] max-h-full overflow-hidden transition-all duration-200';
+        colEl.innerHTML = `
+          <div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/80">
+            <div class="flex items-center space-x-2.5">
+              <span class="w-2.5 h-2.5 rounded-full ${col.dotBg}"></span>
+              <h2 class="font-semibold text-xs text-slate-200 tracking-wide uppercase">${col.title}</h2>
+              <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/50">${colLeads.length}</span>
+            </div>
+          </div>
+          <div class="cards-dropzone flex-1 overflow-y-auto p-3 space-y-3 min-h-[150px]" data-column-id="${col.id}"
+               ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event,'${col.id}')">
+            ${colLeads.map(l => cardHtml(l,col)).join('')}
+          </div>`;
+        container.appendChild(colEl);
+      });
+      lucide.createIcons();
+    }
+
+    function cardHtml(lead, col) {
+      const name = getField(lead,'Nombre') + (getField(lead,'Apellido')?' '+getField(lead,'Apellido'):'');
+      const phone = getField(lead,'Telefono');
+      const mes = getField(lead,'Mes');
+      return `
+        <div id="card-${lead.id}" draggable="true" ondragstart="handleDragStart(event,'${lead.id}')" ondragend="handleDragEnd(event)"
+             onclick="openLead('${lead.id}')" class="bg-slate-800/90 hover:bg-slate-800 border border-slate-700/70 hover:border-slate-600 rounded-lg p-3.5 shadow-sm transition-all duration-150 cursor-grab active:cursor-grabbing group">
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded ${col.badgeBg} ${col.textClr} border border-slate-700/40">${mes||'-'}</span>
+          </div>
+          <h3 class="text-xs font-semibold text-slate-100 group-hover:text-blue-400 transition-colors mb-1">${name||'Sin nombre'}</h3>
+          ${phone ? `<div class="flex items-center gap-1.5 text-[11px] text-slate-400 mb-2"><i data-lucide="phone" class="w-3 h-3 text-slate-500"></i><span>${phone}</span></div>` : ''}
+          <div class="flex items-center justify-between text-[10px] text-slate-500 pt-2 border-t border-slate-700/40">
+            <span>#${lead.id}</span>
+          </div>
+        </div>`;
+    }
+
+    function handleDragStart(e, id) { draggedLeadId = id; e.dataTransfer.setData('text/plain', id); setTimeout(()=>{const c=document.getElementById('card-'+id); if(c) c.classList.add('card-ghost');},0); }
+    function handleDragEnd(e) { const c=document.getElementById('card-'+draggedLeadId); if(c) c.classList.remove('card-ghost'); draggedLeadId=null; document.querySelectorAll('.cards-dropzone').forEach(z=>z.classList.remove('column-drag-over')); }
+    function handleDragOver(e){ e.preventDefault(); e.currentTarget.classList.add('column-drag-over'); }
+    function handleDragLeave(e){ e.currentTarget.classList.remove('column-drag-over'); }
+    async function handleDrop(e, targetStatus) {
+      e.preventDefault(); e.currentTarget.classList.remove('column-drag-over');
+      if (!draggedLeadId) return;
+      const lead = leads.find(l => String(l.id) === String(draggedLeadId));
+      if (!lead) return;
+      if (targetStatus === 'AGENDADO' && getGestion(lead) !== 'AGENDADO') {
+        // abrir modal para cita
+        openScheduleModal(lead, targetStatus);
+        return;
+      }
+      await updateStatus(lead, targetStatus);
+    }
+
+    async function updateStatus(lead, newStatus) {
+      const isAdminUser = isAdmin;
+      const fields = { GESTION: newStatus };
+      let error;
+      if (isAdminUser) {
+        ({ error } = await supabaseClient.rpc('update_lead_full', { p_id: lead.id, p_lead: fields }));
+      } else {
+        ({ error } = await supabaseClient.rpc('update_lead_followup', { p_id: lead.id, p_fields: fields }));
+      }
+      if (error) { alert('No se pudo actualizar: ' + (error.message||'')); return; }
+      lead.GESTION = newStatus; // local field name may vary
+      if (lead['GESTION']) lead['GESTION'] = newStatus;
+      await loadAndRender();
+    }
+
+    function openLead(id) {
+      const lead = leads.find(l => String(l.id) === String(id));
+      if (!lead) return;
+      document.getElementById('modalTitle').textContent = getField(lead,'Nombre')+' '+getField(lead,'Apellido');
+      document.getElementById('modalBody').innerHTML = `<pre class="text-xs text-slate-300 whitespace-pre-wrap">${JSON.stringify(lead,null,2)}</pre>`;
+      document.getElementById('leadModal').classList.remove('hidden');
+      document.getElementById('leadModal').classList.add('flex');
+    }
+    function closeModal() { document.getElementById('leadModal').classList.add('hidden'); document.getElementById('leadModal').classList.remove('flex'); }
+
+    function openScheduleModal(lead, targetStatus) {
+      // Minimal: prompt for date/time; full citation form would reuse CRM. Keep simple.
+      const dt = prompt('Fecha y hora de la cita (YYYY-MM-DDTHH:MM):');
+      if (!dt) return;
+      (async () => {
+        const { error } = await supabaseClient.rpc('update_lead_with_appointment', {
+          p_id: Number(lead.id), p_fields: { GESTION: targetStatus }, p_scheduled_at: new Date(dt).toISOString(),
+          p_notes: '', p_advisor_user_id: null, p_details: {}, p_campus: 'DORAL'
+        });
+        if (error) { alert('No se pudo agendar: ' + (error.message||'')); return; }
+        await loadAndRender();
+      })();
+    }
+
+    function openNewLead() { window.location.href = './index.html'; }
+
+    function updateStats() {
+      document.getElementById('statTotal').innerText = leads.length;
+      document.getElementById('statInscritos').innerText = leads.filter(l => getGestion(l)==='INSCRITO').length;
+      document.getElementById('statNoContesta').innerText = leads.filter(l => getGestion(l)==='NO CONTESTA').length;
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

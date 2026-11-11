@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Convierte dist/index.html en un archivo estatico autocontenido.
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { cspPaginaEstatica, insertarMetaCsp, insertarMetaCspNonce, problemasCsp } from './csp-utils.mjs';
 import { randomBytes } from 'node:crypto';
 
@@ -24,7 +24,17 @@ function inlinePagina(nombre) {
     /<script\s+type="module"[^>]*src="\.?\/?(assets\/[^"]+\.js)"[^>]*><\/script>/i,
     (_, ruta) => {
       const codigo = readFileSync(join(dist.pathname, ruta), 'utf8').replace(/<\/script/gi, '<\\/script');
-      return `<script type="module">${codigo}</script>`;
+      // Al incrustar el modulo, su base pasa de assets/ a la del documento.
+      // El mapa conserva import() y los preloads de Vite sin tocar codigo ni
+      // cadenas de usuario. Las URLs relativas tambien admiten subdirectorios.
+      const directorio = dirname(ruta);
+      const imports = Object.fromEntries(
+        readdirSync(join(dist.pathname, directorio), { withFileTypes: true })
+          .filter(archivo => archivo.isFile() && archivo.name.endsWith('.js'))
+          .map(archivo => [`./${archivo.name}`, `./${directorio}/${archivo.name}`]),
+      );
+      const mapa = JSON.stringify({ imports }).replace(/</g, '\\u003c');
+      return `<script type="importmap">${mapa}</script>\n<script type="module">${codigo}</script>`;
     },
   );
   // 3. Preloads y rutas absolutas locales.

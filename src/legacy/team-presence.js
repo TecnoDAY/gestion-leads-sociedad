@@ -55,9 +55,9 @@ export function presenceCounter(person, state, now) {
   const start = Date.parse((state === 'online' ? person.current_period_started_at : person.last_seen_at) || '');
   if (!Number.isFinite(start)) return 'Inicio del periodo sin registrar';
   const elapsed = Math.max(0, now - start);
-  const long = elapsed >= 86400000;
-  const duration = long ? presenceDuration(Math.floor(elapsed / 86400000) * 86400) : presenceDuration(elapsed / 1000);
-  return `desde ${long ? miamiDate.format(start) : miamiClock.format(start)} · ${duration}`;
+  // Over a day the start date is added, but the clock and the minute counter are kept.
+  const since = elapsed >= 86400000 ? `${miamiDate.format(start)}, ${miamiClock.format(start)}` : miamiClock.format(start);
+  return `desde ${since} · ${presenceDuration(elapsed / 1000)}`;
 }
 
 export function canViewPresenceHistory(access) {

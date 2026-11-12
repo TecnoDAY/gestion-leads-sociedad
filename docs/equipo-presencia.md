@@ -14,7 +14,7 @@ Toda persona con acceso habilitado puede consultar **Usuarios → Equipo**, incl
 | Ausente | Señal de hace más de 3 minutos. «Ausente · desde 13:40 · 45 min» cuenta desde la última señal y conserva «Última vez hace …». No confirma una desconexión. |
 | Sin datos | No hay señal registrada; no demuestra que la cuenta esté desconectada. |
 
-Las horas se muestran en **America/New_York (Miami)**. Para duraciones de un día o más se muestra fecha y días completos, por ejemplo «desde 3 nov · 9 días». Los contadores se recalculan localmente cada **30 s**, sin solicitudes de red. El reloj del dispositivo puede afectar la clasificación y el contador; nunca se muestran edades negativas.
+Las horas se muestran en **America/New_York (Miami)**. Para duraciones de un día o más se agrega la fecha y el contador conserva horas y minutos, por ejemplo «desde 12 nov, 05:30 · 1 día 1 h 30 min». Los contadores se recalculan localmente cada **30 s**, sin solicitudes de red. El reloj del dispositivo puede afectar la clasificación y el contador; nunca se muestran edades negativas.
 
 **En línea = CRM abierto; no indica trabajo.** La presencia no reemplaza el estado de acceso habilitado. Equipo no recibe correos ni acciones de cuenta; nombres y roles se escapan al renderizar.
 

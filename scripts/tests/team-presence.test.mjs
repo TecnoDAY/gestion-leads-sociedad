@@ -245,7 +245,11 @@ test('presence counters: minutes, hours, days, invalid values and clock skew', a
   assert.equal(presenceCounter(person, 'online', now), 'desde 04:45 · 2 h 15 min');
   assert.equal(presenceCounter(person, 'online', now + 60000), 'desde 04:45 · 2 h 16 min');
   assert.equal(presenceCounter({ last_seen_at: ago(2700000) }, 'away', now), 'desde 06:15 · 45 min');
-  assert.equal(presenceCounter({ last_seen_at: ago(9 * 86400000) }, 'away', now), 'desde 4 nov · 9 días');
+  assert.equal(presenceCounter({ last_seen_at: ago(9 * 86400000) }, 'away', now), 'desde 4 nov, 07:00 · 9 días');
+  // Más de 24 h: conserva la hora de inicio y el contador sigue avanzando por minuto.
+  const longAway = { last_seen_at: ago(25.5 * 3600000) };
+  assert.equal(presenceCounter(longAway, 'away', now), 'desde 12 nov, 05:30 · 1 día 1 h 30 min');
+  assert.equal(presenceCounter(longAway, 'away', now + 3600000), 'desde 12 nov, 05:30 · 1 día 2 h 30 min');
   assert.equal(presenceCounter({ last_seen_at: ago(1) }, 'online', now), 'Inicio del periodo sin registrar');
   assert.equal(presenceCounter({ current_period_started_at: ago(-60000) }, 'online', now), 'desde 07:01 · 0 min');
   assert.equal(presenceCounter({}, 'unknown', now), '');

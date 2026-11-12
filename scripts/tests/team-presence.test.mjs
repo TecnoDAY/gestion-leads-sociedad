@@ -108,6 +108,7 @@ test('Usuarios tabs: Equipo default; Accesos admin only, with unchanged guarded 
   for (const name of ['loadAuthorizedUsers', 'loadAgentSessionsReport', 'setUserActive', 'setIdleTimeout', 'openChangeEmail', 'handleChangeEmail', 'handleAuthorizeUser']) assert.match(handler(name), /!isAdmin/);
 });
 
+let presentationApi;
 function teamUi(admin = false) {
   const nodes = new Map();
   function element(id) {
@@ -116,11 +117,13 @@ function teamUi(admin = false) {
       setAttribute(name, value) { this.attributes[name] = value; },
       replaceChildren() { this.textContent = this.innerHTML = ''; },
       remove() { nodes.delete(id); },
+      focus() { context.document.activeElement = this; },
+      dataset: {},
     };
     nodes.set(id, el);
     return el;
   }
-  for (const id of ['usersTeamTab', 'usersTeamPanel', 'usersTabs', 'teamPresenceStatus', 'teamPresenceRefresh', 'teamPresenceUpdated', 'teamPresenceSummary', 'teamPresenceGroups']) element(id);
+  for (const id of ['usersTeamTab', 'usersTeamPanel', 'usersTabs', 'teamPresenceStatus', 'teamPresenceRefresh', 'teamPresenceUpdated', 'teamPresenceSummary', 'teamPresenceGroups', 'teamPresenceHistory', 'teamPresenceHistoryBody', 'teamPresenceHistoryTitle']) element(id);
   const shell = { append: () => { element('usersAccessPanel'); } };
   element('usersTabs').append = () => { element('usersAccessTab'); };
   for (const id of ['usersAccessTabTemplate', 'usersAccessTemplate']) element(id).content = { cloneNode: () => ({}) };
@@ -130,6 +133,10 @@ function teamUi(admin = false) {
     currentUser: { id: 'user' }, currentAccess: { activo: true, updated_at: 'v1' }, isAdmin: admin,
     sessionGeneration: 1, teamPresenceRequest: 0, teamPresenceRows: null, teamPresenceUpdatedAt: null,
     teamPresenceTimer: null, usersReturnFocus: null, clearInterval() {},
+    presenceHistoryRequest: 0, presenceHistoryUserId: null,
+    window: { teamPresenceApi: presentationApi },
+    closePresenceHistory() {},
+    renderPresenceHistory() {},
     supabaseClient: { rpc: name => { calls.push(name); return Promise.resolve({ data: [], error: null }); } },
     renderTeamPresence() {}, loadAuthorizedUsers: () => calls.push('admin_manage_user_access'),
     loadAgentSessionsReport: () => calls.push('admin_agent_sessions_report'),
@@ -211,6 +218,195 @@ test('presence loading, success, retryable error and session fencing use only th
   await stale;
   assert.equal(context.teamPresenceRows, null);
   assert.equal(context.teamPresenceUpdatedAt, null);
+  assert.equal(nodes.get('teamPresenceRefresh').disabled, false, 'reset releases the previous loading state');
   assert.equal(nodes.get('teamPresenceGroups').innerHTML, '');
   assert.deepEqual(calls, ['list_team_presence', 'list_team_presence', 'list_team_presence']);
+});
+
+test('T1: changing access while loading never leaves Actualizar disabled', async () => {
+  const { context, nodes } = teamUi();
+  let finish;
+  context.supabaseClient.rpc = () => new Promise(resolve => { finish = resolve; });
+  const pending = context.loadTeamPresence();
+  context.currentAccess.updated_at = 'v2';
+  finish({ data: [{ nombre: 'Stale' }], error: null });
+  await pending;
+  assert.equal(context.teamPresenceRows, null, 'stale result stays discarded');
+  assert.equal(nodes.get('teamPresenceRefresh').disabled, false);
+  assert.equal(nodes.get('teamPresenceStatus').textContent, 'El acceso cambió. Pulsa Actualizar para volver a cargar el equipo.');
+});
+
+test('presence counters: minutes, hours, days, invalid values and clock skew', async () => {
+  const { presenceDuration, presenceCounter } = await logic();
+  for (const [seconds, text] of [[0, '0 min'], [59, '0 min'], [60, '1 min'], [8100, '2 h 15 min'], [86400, '1 día'], [9 * 86400, '9 días'], [-5, '0 min'], [NaN, '0 min']]) {
+    assert.equal(presenceDuration(seconds), text);
+  }
+  const person = { last_seen_at: ago(1000), current_period_started_at: ago(8100000) };
+  assert.equal(presenceCounter(person, 'online', now), 'desde 04:45 · 2 h 15 min');
+  assert.equal(presenceCounter(person, 'online', now + 60000), 'desde 04:45 · 2 h 16 min');
+  assert.equal(presenceCounter({ last_seen_at: ago(2700000) }, 'away', now), 'desde 06:15 · 45 min');
+  assert.equal(presenceCounter({ last_seen_at: ago(9 * 86400000) }, 'away', now), 'desde 4 nov · 9 días');
+  assert.equal(presenceCounter({ last_seen_at: ago(1) }, 'online', now), 'Inicio del periodo sin registrar');
+  assert.equal(presenceCounter({ current_period_started_at: ago(-60000) }, 'online', now), 'desde 07:01 · 0 min');
+  assert.equal(presenceCounter({}, 'unknown', now), '');
+  assert.equal(presenceDuration(86400 + 8100), '1 día 2 h 15 min');
+});
+
+test('history cards: active admin/supervisor only, safe attributes and expanded state', async () => {
+  const { canViewPresenceHistory, teamPresenceHtml, groupPresence } = await logic();
+  const rows = [{ user_id: 'u', nombre: 'Ana', last_seen_at: ago(1), current_period_started_at: ago(8100000) }];
+  for (const role of ['admin', 'supervisor', 'agente', 'trafficker']) {
+    assert.equal(canViewPresenceHistory({ role, activo: true }), ['admin', 'supervisor'].includes(role));
+    const html = teamPresenceHtml(groupPresence(rows, now), now, { role, activo: true }, 'u');
+    assert.equal(html.includes('<button'), ['admin', 'supervisor'].includes(role));
+    if (role === 'admin' || role === 'supervisor') {
+      assert.match(html, /aria-expanded="true" aria-controls="teamPresenceHistory"/);
+      assert.match(html, /data-ev="click:togglePresenceHistory\(this\)"/);
+    }
+    assert.match(html, /En línea · desde 04:45 · 2 h 15 min/);
+  }
+  assert.equal(canViewPresenceHistory({ role: 'admin', activo: false }), false);
+  assert.equal(canViewPresenceHistory(null), false);
+});
+
+test('history rendering: Hoy/Ayer, Miami times, ongoing, weekly labels, empty and escaped data', async () => {
+  const { presenceHistoryHtml } = await logic();
+  const data = {
+    days: [
+      { date: '2026-11-13', periods: [{ state: 'online', started_at: '2026-11-13T14:12:00Z', ended_at: '2026-11-13T16:27:00Z', seconds: 8100, ongoing: true }] },
+      { date: '2026-11-12', periods: [{ state: 'away', started_at: '2026-11-12T18:00:00Z', ended_at: '2026-11-12T18:45:00Z', seconds: 2700 }] },
+    ],
+    weeks: Array.from({ length: 4 }, () => ({ start_date: '2026-11-09', end_date: '2026-11-15', online_seconds: 8100, away_seconds: 2700 })),
+  };
+  const html = presenceHistoryHtml(data);
+  for (const text of ['Hoy', 'Ayer', '09:12 – ahora', '13:00 – 13:45', 'En línea', 'Ausente', '2 h 15 min', '45 min', 'Resumen semanal', 'Esta semana', 'Semana anterior', 'Hace 2 semanas', 'Hace 3 semanas', '9 nov', '15 nov', 'Ausente = tiempo entre la primera conexión y la última desconexión del día. En línea = CRM abierto; no indica trabajo. Historial desde que se activó el registro.']) assert.ok(html.includes(text), text);
+  assert.match(presenceHistoryHtml({ days: [], weeks: [] }), /Aún no hay historial registrado/);
+  assert.match(presenceHistoryHtml({ ...data, days: [{ date: '<img src=x>', periods: [] }] }), /&lt;img src=x&gt;/);
+  assert.doesNotMatch(presenceHistoryHtml({ ...data, days: [{ date: '<img src=x>', periods: [] }] }), /<img/);
+});
+
+async function historyUi(role = 'admin') {
+  presentationApi = await logic();
+  const ui = teamUi(role === 'admin');
+  Object.assign(ui.context.currentAccess, { role });
+  ui.context.teamPresenceRows = [{ user_id: 'target', nombre: '<Ana>' }];
+  for (const name of ['renderPresenceHistory', 'closePresenceHistory', 'togglePresenceHistory', 'usersPanelKeydown']) vm.runInContext(handler(name), ui.context);
+  const button = ui.element('team-person-target');
+  button.dataset.userId = 'target';
+  return { ...ui, button };
+}
+
+test('history public handler: roles gate RPC; loading, success, Escape focus and error/empty states', async () => {
+  for (const role of ['agente', 'trafficker']) {
+    const { context, button, calls } = await historyUi(role);
+    await context.togglePresenceHistory(button);
+    assert.deepEqual(calls, []);
+    assert.equal(context.presenceHistoryUserId, null);
+  }
+  for (const role of ['admin', 'supervisor']) {
+    const { context, button, nodes, calls } = await historyUi(role);
+    let finish;
+    context.supabaseClient.rpc = (name, args) => { calls.push([name, args.p_user_id]); return new Promise(resolve => { finish = resolve; }); };
+    const pending = context.togglePresenceHistory(button);
+    assert.equal(nodes.get('teamPresenceHistory').hidden, false);
+    assert.equal(nodes.get('teamPresenceHistoryBody').textContent, 'Cargando historial…');
+    assert.equal(nodes.get('teamPresenceHistoryTitle').textContent, 'Historial de <Ana>');
+    finish({ data: { days: [], weeks: [] }, error: null });
+    await pending;
+    assert.match(nodes.get('teamPresenceHistoryBody').innerHTML, /Aún no hay historial registrado/);
+    assert.deepEqual(calls, [['get_presence_history', 'target']]);
+    context.usersPanelKeydown({ key: 'Escape', preventDefault() {} });
+    assert.equal(nodes.get('teamPresenceHistory').hidden, true);
+    assert.equal(context.document.activeElement, button);
+    assert.equal(context.presenceHistoryUserId, null);
+    const failure = context.togglePresenceHistory(button);
+    finish({ data: null, error: { code: '42501' } });
+    await failure;
+    assert.match(nodes.get('teamPresenceHistoryBody').textContent, /No se pudo cargar el historial/);
+    assert.equal(nodes.get('teamPresenceHistoryBody').attributes.role, 'alert');
+  }
+});
+
+test('history: close/session switch/live downgrade fence late RPC responses', async () => {
+  for (const reason of ['close', 'session', 'downgrade']) {
+    const { context, button, nodes } = await historyUi();
+    let finish;
+    context.supabaseClient.rpc = () => new Promise(resolve => { finish = resolve; });
+    const pending = context.togglePresenceHistory(button);
+    if (reason === 'close') context.closePresenceHistory(false);
+    if (reason === 'session') { context.sessionGeneration++; context.resetTeamPresence(); }
+    if (reason === 'downgrade') { context.currentAccess.role = 'agente'; context.closePresenceHistory(false); }
+    finish({ data: { days: [], weeks: [] }, error: null });
+    await pending;
+    assert.equal(nodes.get('teamPresenceHistory').hidden, true);
+    assert.equal(nodes.get('teamPresenceHistoryBody').innerHTML, '');
+  }
+});
+
+test('history: inactive callers and unknown cards never request history', async () => {
+  const { context, button, calls } = await historyUi();
+  context.currentAccess.activo = false;
+  await context.togglePresenceHistory(button);
+  context.currentAccess.activo = true;
+  button.dataset.userId = 'not-in-list';
+  await context.togglePresenceHistory(button);
+  assert.deepEqual(calls, []);
+  assert.equal(context.presenceHistoryUserId, null);
+});
+
+test('history: real live supervisor downgrade clears an open history immediately', async () => {
+  const { context, button, nodes } = await historyUi('supervisor');
+  await context.togglePresenceHistory(button);
+  assert.equal(nodes.get('teamPresenceHistory').hidden, false);
+  context.window.closePresenceHistory = context.closePresenceHistory;
+  context.window.renderTeamPresence = context.renderTeamPresence;
+  context.document.querySelectorAll = () => [];
+  for (const node of nodes.values()) node.classList = { toggle() {} };
+  vm.runInContext(handler('setAppAuthenticated'), context);
+  context.setAppAuthenticated({ id: 'user' }, { role: 'agente', activo: true });
+  assert.equal(nodes.get('teamPresenceHistory').hidden, true);
+  assert.equal(nodes.get('teamPresenceHistoryBody').innerHTML, '');
+});
+
+test('presence: counter re-renders preserve focused cards and never request data', async () => {
+  const { context, button, nodes, calls } = await historyUi();
+  context.teamPresenceUpdatedAt = new Date(now).toISOString();
+  context.teamPresenceRows[0].last_seen_at = ago(240000);
+  button.focus();
+  vm.runInContext(handler('renderTeamPresence'), context);
+  context.renderTeamPresence();
+  context.renderTeamPresence();
+  assert.equal(context.document.activeElement, button);
+  assert.deepEqual(calls, []);
+  assert.match(nodes.get('teamPresenceGroups').innerHTML, /aria-expanded="false"/);
+  assert.match(handler('toggleAdminUsers'), /setInterval\(renderTeamPresence, 30000\)/);
+});
+
+test('periods migration: secured RPC-only table, preserved heartbeat, serialized merge and retention', () => {
+  const sql = read('supabase/migrations/202611140001_presence_periods.sql');
+  assert.match(sql, /^.*\bbegin;/is);
+  assert.match(sql, /commit;\s*$/i);
+  for (const re of [/create table if not exists public\.crm_presence_periods/i, /id bigserial primary key/i, /user_id uuid not null references auth\.users\(id\) on delete cascade/i, /started_at timestamptz not null/i, /last_seen_at timestamptz not null/i, /\(user_id, last_seen_at desc\)/i, /\(last_seen_at\)/i, /enable row level security/i, /revoke all on public\.crm_presence_periods from public, anon, authenticated/i]) assert.match(sql, re);
+  assert.doesNotMatch(sql, /create policy|40001|40P01|\bemail\b/i);
+  const heartbeat = sql.match(/create or replace function public\.crm_task_heartbeat\(\)[\s\S]*?\$\$;/i)?.[0];
+  assert.ok(heartbeat);
+  for (const re of [/returns void/i, /security definer/i, /set search_path = public/i, /ua\.role in \('agente', 'supervisor', 'admin'\)/i, /crm_access_required/i, /pg_advisory_xact_lock\(hashtextextended\('crm_task_presence:'/i, /insert into public\.crm_task_presence/i, /on conflict \(user_id\) do update set last_seen_at = excluded.last_seen_at/i, /interval '5 minutes'/i, /update public\.crm_presence_periods/i, /insert into public\.crm_presence_periods/i, /delete from public\.crm_presence_periods[\s\S]*auth\.uid\(\)[\s\S]*interval '35 days'/i]) assert.match(heartbeat, re);
+  assert.ok(heartbeat.indexOf('pg_advisory_xact_lock') < heartbeat.indexOf('insert into public.crm_task_presence'));
+  for (const name of ['crm_task_heartbeat()', 'list_team_presence()', 'get_presence_history(uuid)']) {
+    assert.ok(sql.includes(`revoke all on function public.${name} from public, anon`), name);
+    assert.ok(sql.includes(`grant execute on function public.${name} to authenticated`), name);
+  }
+  const history = sql.match(/create or replace function public\.get_presence_history[\s\S]*?\$\$;/i)?.[0];
+  assert.ok(history);
+  for (const re of [/security definer/i, /\bstable\b/i, /set search_path = public/i, /ua\.user_id = auth\.uid\(\)/i, /ua\.activo = true/i, /ua\.role in \('admin', 'supervisor'\)/i, /errcode = '42501'/i, /America\/New_York/, /date_trunc\('week'/i, /interval '3 minutes'/i, /online_seconds/, /away_seconds/, /greatest\(/i, /least\(/i]) assert.match(history, re);
+  assert.match(sql, /drop function if exists public\.list_team_presence\(\)/i);
+  assert.match(sql, /current_period_started_at timestamptz/i);
+  assert.match(sql, /if not public\.is_active_user\(\)/i);
+  assert.match(history, /generate_series\(0, 3\)/i, 'four weeks');
+  assert.match(history, /monday - n \* 7/i, 'weekly date boundaries, not fixed-duration intervals');
+  assert.match(history, /greatest\(p\.started_at, d\.day_start\)/i);
+  assert.match(history, /least\(p\.ended_at, d\.day_end\)/i);
+  assert.match(history, /max\(ended_at\) - min\(started_at\)/i, 'away excludes time outside the daily span');
+  assert.match(history, /lag\(ended_at\) over \(partition by day/i, 'daily internal gaps only');
+  assert.match(history, /d\.day >= clock\.today - 1/i, 'Hoy and Ayer');
 });

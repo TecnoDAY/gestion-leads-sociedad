@@ -1188,7 +1188,11 @@
         <p id="teamPresenceSummary" class="team-summary"></p>
         <p id="teamPresenceStatus" role="status" aria-live="polite"></p>
         <div id="teamPresenceGroups"></div>
-        <details class="team-help"><summary>¿Qué significa cada estado?</summary><p><strong>En línea:</strong> señal del CRM en los últimos 3 min. <strong>Ausente:</strong> hubo señal antes, pero no recientemente; no confirma una desconexión. <strong>Sin datos:</strong> aún no hay señal registrada.</p><p>No indica si alguien está trabajando. Se calcula con el reloj de este dispositivo. Actualizar consulta nuevas señales; no hay actualización automática del servidor.</p></details>
+        <section id="teamPresenceHistory" class="team-history" role="region" aria-labelledby="teamPresenceHistoryTitle" tabindex="-1" hidden>
+          <div class="team-overview"><h3 id="teamPresenceHistoryTitle"></h3><button type="button" data-ev="click:closePresenceHistory()">Volver al equipo</button></div>
+          <div id="teamPresenceHistoryBody" role="status" aria-live="polite"></div>
+        </section>
+        <details class="team-help"><summary>¿Qué significa cada estado?</summary><p><strong>En línea:</strong> señal del CRM en los últimos 3 min. <strong>Ausente:</strong> hubo señal antes, pero no recientemente; no confirma una desconexión. <strong>Sin datos:</strong> aún no hay señal registrada.</p><p>En línea = CRM abierto; no indica trabajo. Los contadores avanzan localmente cada 30 s con el reloj de este dispositivo; horas en Miami. Ausente cuenta desde la última señal, una desconexión estimada. Actualizar consulta nuevas señales; no hay actualización automática del servidor.</p><p>Admin y supervisor pueden tocar una persona para ver Hoy, Ayer y cuatro semanas (lunes–domingo, Miami). Historial desde la activación del registro, con retención de 35 días al volver a enviar señal. Cortes de hasta 5 min se fusionan; Ausente semanal solo suma huecos entre la primera conexión y la última desconexión de cada día.</p></details>
       </section>
       <template id="usersAccessTabTemplate"><button type="button" id="usersAccessTab" role="tab" aria-controls="usersAccessPanel" aria-selected="false" tabindex="-1" data-ev="click:selectUsersTab('access')">Accesos <span class="team-role">Solo admin</span></button></template>
       <template id="usersAccessTemplate">
@@ -2148,8 +2152,10 @@
       isAdmin = access?.role === 'admin' && access?.activo === true;
       isTrafficker = access?.role === 'trafficker' && access?.activo === true;
       isSupervisor = access?.role === 'supervisor' && access?.activo === true;
-      // A live role downgrade must also remove an already mounted admin view.
+      // A live role downgrade must also remove already mounted restricted views.
+      if (!isAdmin && !isSupervisor) window.closePresenceHistory?.(false);
       if (!isAdmin && document.getElementById('usersAccessTab')) configureUsersTabs();
+      window.renderTeamPresence?.();
       const badge = document.getElementById('userBadge');
       const signOut = document.getElementById('btnSignOut');
       const adminButton = document.getElementById('btnAdminUsers');
@@ -7630,8 +7636,11 @@ async function deleteLeadAppointment(id) {
     let teamPresenceRequest = 0;
     let teamPresenceTimer = null;
     let usersReturnFocus = null;
+    let presenceHistoryUserId = null;
+    let presenceHistoryRequest = 0;
 
     function resetTeamPresence() {
+      closePresenceHistory(false);
       teamPresenceRequest += 1;
       clearInterval(teamPresenceTimer);
       teamPresenceTimer = null;
@@ -7641,6 +7650,8 @@ async function deleteLeadAppointment(id) {
       ['teamPresenceSummary', 'teamPresenceStatus', 'teamPresenceGroups'].forEach(id => document.getElementById(id)?.replaceChildren());
       const updated = document.getElementById('teamPresenceUpdated');
       if (updated) updated.textContent = 'Sin actualizar';
+      const refresh = document.getElementById('teamPresenceRefresh');
+      if (refresh) refresh.disabled = false;
     }
 
     function renderTeamPresence() {
@@ -7649,7 +7660,10 @@ async function deleteLeadAppointment(id) {
       const now = Date.now(), api = window.teamPresenceApi;
       const groups = api.groupPresence(teamPresenceRows, now);
       document.getElementById('teamPresenceSummary').textContent = api.presenceSummary(groups);
-      document.getElementById('teamPresenceGroups').innerHTML = api.teamPresenceHtml(groups, now);
+      // Replacing cards must not lose keyboard focus on a local counter tick.
+      const focusedUserId = document.activeElement?.dataset?.userId;
+      document.getElementById('teamPresenceGroups').innerHTML = api.teamPresenceHtml(groups, now, currentAccess, presenceHistoryUserId);
+      if (focusedUserId) document.getElementById(`team-person-${focusedUserId}`)?.focus();
       document.getElementById('teamPresenceUpdated').textContent = `Actualizado ${api.presenceRelativeTime(teamPresenceUpdatedAt, now)}`;
     }
 
@@ -7677,7 +7691,62 @@ async function deleteLeadAppointment(id) {
         status.setAttribute('role', 'alert');
         status.textContent = 'No se pudo cargar el equipo. Pulsa Actualizar para reintentar.';
       } finally {
-        if (valid()) button.disabled = false;
+        // A live access update invalidates data, not the user's ability to retry.
+        if (request === teamPresenceRequest && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.activo) {
+          button.disabled = false;
+          if (!valid()) {
+            status.setAttribute('role', 'status');
+            status.textContent = 'El acceso cambió. Pulsa Actualizar para volver a cargar el equipo.';
+          }
+        }
+      }
+    }
+
+    function renderPresenceHistory(data) {
+      document.getElementById('teamPresenceHistoryBody').innerHTML = window.teamPresenceApi.presenceHistoryHtml(data);
+    }
+
+    function closePresenceHistory(restoreFocus = true) {
+      const userId = presenceHistoryUserId;
+      presenceHistoryUserId = null;
+      presenceHistoryRequest += 1;
+      const panel = document.getElementById('teamPresenceHistory');
+      if (panel) panel.hidden = true;
+      document.getElementById('teamPresenceHistoryBody')?.replaceChildren();
+      document.getElementById('teamPresenceHistoryTitle')?.replaceChildren();
+      renderTeamPresence();
+      if (restoreFocus && userId) document.getElementById(`team-person-${userId}`)?.focus();
+    }
+
+    async function togglePresenceHistory(button) {
+      const api = window.teamPresenceApi;
+      if (!supabaseClient || !currentUser || !api.canViewPresenceHistory(currentAccess)) return;
+      const person = teamPresenceRows?.find(row => row.user_id === button.dataset.userId);
+      if (!person) return;
+      if (presenceHistoryUserId === person.user_id) { closePresenceHistory(); return; }
+      const generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at;
+      const request = ++presenceHistoryRequest;
+      presenceHistoryUserId = person.user_id;
+      const valid = () => request === presenceHistoryRequest && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && api.canViewPresenceHistory(currentAccess);
+      const panel = document.getElementById('teamPresenceHistory');
+      const body = document.getElementById('teamPresenceHistoryBody');
+      document.getElementById('teamPresenceHistoryTitle').textContent = `Historial de ${String(person.nombre || '').trim() || 'Sin nombre'}`;
+      body.replaceChildren();
+      body.setAttribute('role', 'status');
+      body.textContent = 'Cargando historial…';
+      panel.hidden = false;
+      renderTeamPresence();
+      panel.focus();
+      try {
+        const { data, error } = await supabaseClient.rpc('get_presence_history', { p_user_id: person.user_id });
+        if (!valid()) return;
+        if (error) throw error;
+        renderPresenceHistory(data);
+      } catch (error) {
+        if (!valid()) return;
+        console.warn('No se pudo cargar el historial de presencia:', error);
+        body.setAttribute('role', 'alert');
+        body.textContent = 'No se pudo cargar el historial. Vuelve al equipo y abre la persona para reintentar.';
       }
     }
 
@@ -7697,6 +7766,7 @@ async function deleteLeadAppointment(id) {
     function selectUsersTab(tab) {
       if (!currentUser || !currentAccess?.activo || (tab === 'access' && !isAdmin)) return;
       const access = tab === 'access';
+      if (access) closePresenceHistory(false);
       [['usersTeamTab', 'usersTeamPanel', !access], ['usersAccessTab', 'usersAccessPanel', access]].forEach(([tabId, panelId, selected]) => {
         const button = document.getElementById(tabId), panel = document.getElementById(panelId);
         if (!button || !panel) return;
@@ -7709,7 +7779,12 @@ async function deleteLeadAppointment(id) {
     }
 
     function usersPanelKeydown(event) {
-      if (event.key === 'Escape') { event.preventDefault(); toggleAdminUsers(false); return; }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        if (presenceHistoryUserId) closePresenceHistory();
+        else toggleAdminUsers(false);
+        return;
+      }
       const panel = document.getElementById('panelAdminUsers');
       const tabs = [...panel.querySelectorAll('[role="tab"]')];
       if (tabs.includes(event.target) && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
@@ -7742,7 +7817,7 @@ async function deleteLeadAppointment(id) {
         document.getElementById('usersTeamTab')?.focus();
         loadTeamPresence();
         // Local age/status rendering only: never sends requests or heartbeats.
-        teamPresenceTimer = setInterval(renderTeamPresence, 15000);
+        teamPresenceTimer = setInterval(renderTeamPresence, 30000);
       } else {
         panel.classList.remove('flex');
         panel.classList.add('hidden');

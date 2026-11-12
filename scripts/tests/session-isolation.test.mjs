@@ -30,7 +30,7 @@ function extractFunction(name) {
   throw new Error(`No se pudo extraer ${name}`);
 }
 // Funciones que siguen en el script clásico (no extraídas a legacy)
-const names = ['clearSessionState', 'resetTeamPresence', 'resetDashboardInscripciones', 'closeInvalidSession', 'validateCurrentSession', 'loadCurrentAccess',
+const names = ['clearSessionState', 'resetTeamPresence', 'closePresenceHistory', 'renderTeamPresence', 'resetDashboardInscripciones', 'closeInvalidSession', 'validateCurrentSession', 'loadCurrentAccess',
   'setAppAuthenticated', 'enterAuthenticatedSession', 'handleSignOut', 'setDashboardTabState', 'switchTab', 'prepareHistoricalAnalytics',
   'ensureChartJs',
   'closeViewLeadModal', 'openViewLeadModal', 'findLeadByOrigin',
@@ -119,6 +119,7 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     setTimeout: fn => timers.push(fn), supabaseClient: client,
     sessionGeneration: 0, viewLeadGeneration: 0, authValidationPromise: null, sessionInitializationPromise: null,
     teamPresenceRequest: 0, teamPresenceTimer: null, teamPresenceRows: null, teamPresenceUpdatedAt: null, usersReturnFocus: null, clearInterval() {},
+    presenceHistoryUserId: null, presenceHistoryRequest: 0,
     currentUser: null, currentAccess: null, isAdmin: false, isTrafficker: false, isSupervisor: false, isSupabaseLive: false,
     LEADS_BATCH_SIZE: 2000, pendingPasswordSetup: false, realtimeChannel: null, realtimeSetupPromise: null, allLeads: [],
     completeCurrentLeads: [], completeCurrentLoaded: false, completeCurrentLoadPromise: null, olderLeadsLoadPromise: null,
@@ -186,7 +187,13 @@ test('período: cierre real de sesión limpia controles y estado cargado; B part
   f.element('periodoDesde').value = '2026-10-01'; f.element('periodoHasta').value = '2026-10-07';
   await c.loadReportePeriodo();
   assert.equal(c.periodoData.total, 1); assert.equal(c.periodoLoadedKey, '2026-10-01|2026-10-07');
+  c.presenceHistoryUserId = 'A';
+  f.element('teamPresenceHistory').hidden = false;
+  f.element('teamPresenceHistoryBody').innerHTML = 'Previous account history';
   c.clearSessionState();
+  assert.equal(c.presenceHistoryUserId, null);
+  assert.equal(f.element('teamPresenceHistory').hidden, true);
+  assert.equal(f.element('teamPresenceHistoryBody').innerHTML, '');
   assert.equal(c.periodoData, null); assert.equal(c.periodoLoadedKey, ''); assert.equal(c.reporteVistaActiva, 'diario');
   assert.equal(f.element('reporteVista').value, 'diario'); assert.equal(f.element('periodoDesde').value, '');
   assert.equal(f.element('periodoHasta').value, ''); assert.equal(f.element('periodoAviso').textContent, '');

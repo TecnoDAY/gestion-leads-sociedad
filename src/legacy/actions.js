@@ -47,7 +47,7 @@ export const HANDLERS = new Set([
   'setCitasViewMode', 'setDashboardPriority', 'setDataSource', 'setHistRangePreset',
   'setIdleTimeout', 'setLeadAppointmentStatus', 'setPeriodoPreset', 'setReporteVista',
   'setUserActive', 'stopPropagationEvent', 'switchTab', 'syncNewLeadMes', 'syncNewUltimaGestion', 'selectUsersTab',
-  'toggleAdminUsers', 'toggleCatalogValue', 'toggleEditAppointmentFields', 'toggleLoginPassword',
+  'toggleAdminUsers', 'togglePresenceHistory', 'closePresenceHistory', 'toggleCatalogValue', 'toggleEditAppointmentFields', 'toggleLoginPassword',
   'toggleMatrixPanel', 'toggleNewAppointmentFields', 'updateEditSubmitState',
 ]);
 

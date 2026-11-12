@@ -743,6 +743,68 @@
     [data-theme="dark"] .users-session-list { border-color: #334155; }
     [data-theme="dark"] .users-session-row span:first-child { color: #e2e8f0; }
     [data-theme="dark"] .users-row-actions button { color: #e2e8f0; border-color: #475569; }
+    /* Equipo reuses the Users shell, global palette and existing surface tones. */
+    #panelAdminUsers [hidden] { display: none !important; }
+    .users-tabs { display: flex; flex: none; gap: .25rem; padding: .5rem; margin: .75rem 1.5rem; border: 1px solid #e4e7ec; border-radius: .9rem; background: #f7f8fc; }
+    .users-tabs button { flex: 1; min-height: 2.75rem; padding: .5rem; border-radius: .6rem; color: #475569; font-size: .85rem; font-weight: 700; cursor: pointer; }
+    .users-tabs button:hover { background: var(--app-accent-soft); color: var(--app-accent); }
+    .users-tabs button[aria-selected="true"] { background: var(--app-accent); color: var(--app-on-color); }
+    .team-body { color: #17203b; }
+    .team-overview, .team-fresh, .team-person-heading { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+    .team-overview { justify-content: space-between; gap: .75rem; }
+    .team-overview h3 { font-weight: 700; }
+    .team-fresh { color: #526174; font-size: .75rem; }
+    .team-fresh button { min-height: 2.75rem; padding: .5rem .75rem; border: 1px solid var(--app-link); border-radius: .6rem; color: var(--app-link); font-weight: 600; cursor: pointer; }
+    .team-fresh button:hover { background: var(--app-accent-soft); color: var(--app-accent); }
+    .team-fresh button:disabled { opacity: .6; cursor: wait; }
+    .team-summary { margin-top: .75rem; padding: .65rem .8rem; border: 1px solid #e4e7ec; border-radius: .75rem; background: #fff; color: #475569; font-size: .8rem; font-variant-numeric: tabular-nums; }
+    #teamPresenceStatus { margin-top: .5rem; color: #526174; font-size: .8rem; }
+    #teamPresenceStatus[role="alert"] { color: var(--app-negative); }
+    .team-group { margin-top: 1rem; }
+    .team-group h3 { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; font-size: .8rem; font-weight: 700; }
+    .team-group h3::after { content: ''; flex: 1; height: 1px; background: #e4e7ec; }
+    .team-group h3 small { font-weight: 400; }
+    .team-group ul { display: grid; gap: .5rem; list-style: none; padding: 0; }
+    .team-person { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: .75rem; padding: .75rem; border: 1px solid #e4e7ec; border-radius: .9rem; background: #fff; box-shadow: 0 8px 24px -20px rgba(15,23,42,.55); }
+    .team-avatar { position: relative; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 2px solid currentColor; border-radius: 50%; background: var(--app-accent-soft); font-size: .8rem; font-weight: 700; }
+    .team-avatar::after { content: ''; position: absolute; right: -2px; bottom: -2px; width: .75rem; height: .75rem; border: 2px solid #fff; border-radius: 50%; background: currentColor; }
+    .team-online { color: var(--app-positive); }
+    .team-away { color: var(--app-pending); }
+    .team-unknown { color: #526174; }
+    .team-avatar.team-unknown { border-style: dashed; background: #f1f5f9; }
+    .team-avatar.team-unknown::after { background: #fff; border-color: currentColor; }
+    .team-person-info { min-width: 0; overflow-wrap: anywhere; }
+    .team-person strong { font-size: .85rem; font-weight: 600; }
+    .team-person small { display: block; margin-top: .25rem; color: #526174; font-size: .75rem; }
+    .team-role { display: inline-block; padding: .15rem .5rem; border-radius: .5rem; background: var(--app-accent-soft); color: var(--app-accent); font-size: .7rem; font-weight: 500; }
+    .team-state { font-size: .75rem; font-weight: 600; }
+    .team-empty { margin-top: 1rem; font-size: .85rem; }
+    .team-help { margin-top: 1rem; border-top: 1px solid #e4e7ec; color: #526174; font-size: .8rem; }
+    .team-help summary { min-height: 2.75rem; padding: .65rem .25rem; color: var(--app-link); cursor: pointer; border-radius: .5rem; }
+    .team-help p { padding: 0 .25rem .75rem; }
+    [data-theme="dark"] .users-tabs, [data-theme="dark"] .team-person, [data-theme="dark"] .team-summary { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .users-tabs button { color: #cbd5e1; }
+    [data-theme="dark"] .users-tabs button:hover { background: #312e81; color: #e0e7ff; }
+    [data-theme="dark"] .users-tabs button[aria-selected="true"] { background: var(--app-accent); color: var(--app-on-color); }
+    [data-theme="dark"] .team-body { color: #f8fafc; }
+    [data-theme="dark"] :is(.team-fresh, .team-summary, .team-person small, .team-help, .team-unknown, #teamPresenceStatus) { color: #cbd5e1; }
+    [data-theme="dark"] #teamPresenceStatus[role="alert"] { color: #fda4af; }
+    [data-theme="dark"] .team-online { color: #6ee7b7; }
+    [data-theme="dark"] .team-away { color: #fcd34d; }
+    [data-theme="dark"] .team-avatar { background: #0f172a; }
+    [data-theme="dark"] .team-avatar::after { border-color: #1e293b; }
+    [data-theme="dark"] .team-avatar.team-unknown::after { background: #1e293b; border-color: currentColor; }
+    [data-theme="dark"] .team-group h3::after { background: #334155; }
+    [data-theme="dark"] .team-help { border-color: #334155; }
+    @media (max-width: 480px) {
+      .users-tabs { margin: .5rem 1rem; }
+      .users-tabs button { font-size: .8rem; }
+      .team-person { grid-template-columns: auto minmax(0,1fr); gap: .25rem .75rem; }
+      .team-avatar { grid-row: 1 / 3; }
+      .team-state { grid-column: 2; }
+      .team-fresh { width: 100%; justify-content: space-between; }
+      #panelAdminUsers .users-body { padding: 1rem; }
+    }
     #modalCatalogs { background: rgba(10,20,42,.78); }
     .catalog-shell { width: min(100%, 35rem); max-height: min(92dvh, 48rem); overflow: hidden; border: 1px solid #e4e7ec; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 80px -25px rgba(3,9,24,.5); }
     .catalog-header { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.2rem 1.5rem; border-bottom: 1px solid #e4e7ec; background: linear-gradient(115deg,#fff 45%,#f0efff); }

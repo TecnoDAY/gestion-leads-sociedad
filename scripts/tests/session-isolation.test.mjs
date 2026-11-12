@@ -30,7 +30,7 @@ function extractFunction(name) {
   throw new Error(`No se pudo extraer ${name}`);
 }
 // Funciones que siguen en el script clásico (no extraídas a legacy)
-const names = ['clearSessionState', 'resetDashboardInscripciones', 'closeInvalidSession', 'validateCurrentSession', 'loadCurrentAccess',
+const names = ['clearSessionState', 'resetTeamPresence', 'resetDashboardInscripciones', 'closeInvalidSession', 'validateCurrentSession', 'loadCurrentAccess',
   'setAppAuthenticated', 'enterAuthenticatedSession', 'handleSignOut', 'setDashboardTabState', 'switchTab', 'prepareHistoricalAnalytics',
   'ensureChartJs',
   'closeViewLeadModal', 'openViewLeadModal', 'findLeadByOrigin',
@@ -67,6 +67,7 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     if (elements.has(id)) return elements.get(id);
     const el = { className: '', innerHTML: '', textContent: '', value: '', reset() {},
       querySelector: () => null, querySelectorAll: () => [],
+      remove() { elements.delete(id); },
       replaceChildren() { this.innerHTML = ''; this.textContent = ''; } };
     el.classList = {
       contains: name => el.className.split(/\s+/).includes(name),
@@ -117,6 +118,7 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
       createElement: () => ({ setAttribute() {}, addEventListener() {} }), head: { appendChild() {} } },
     setTimeout: fn => timers.push(fn), supabaseClient: client,
     sessionGeneration: 0, viewLeadGeneration: 0, authValidationPromise: null, sessionInitializationPromise: null,
+    teamPresenceRequest: 0, teamPresenceTimer: null, teamPresenceRows: null, teamPresenceUpdatedAt: null, usersReturnFocus: null, clearInterval() {},
     currentUser: null, currentAccess: null, isAdmin: false, isTrafficker: false, isSupervisor: false, isSupabaseLive: false,
     LEADS_BATCH_SIZE: 2000, pendingPasswordSetup: false, realtimeChannel: null, realtimeSetupPromise: null, allLeads: [],
     completeCurrentLeads: [], completeCurrentLoaded: false, completeCurrentLoadPromise: null, olderLeadsLoadPromise: null,
@@ -135,7 +137,7 @@ function frontend({ realSessionCaches = false, controlledLeadIO = false } = {}) 
     agentSessionId: null, idleWarnTimer: null, idleTickTimer: null, idleListenersOn: false, idleLastTouchSent: 0,
     localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     campanasRequestGeneration: 0, campanasData: [], campaignStatsMap: new Map(), currentMainTab: 'dashboard',
-    helpReturnFocus: null, histCharts: {}, resetCitasPanel() {}, miamiToday: () => '2026-09-30',
+    helpReturnFocus: null, histCharts: {}, resetCitasPanel() {}, configureUsersTabs() {}, miamiToday: () => '2026-09-30',
     setupRealtimeListener: async () => true, loadLeadsData: async () => true, loadCompleteCurrentData: async () => true, refreshCatalogs: async () => {},
     initCampanas() {}, initReporteDiario() {}, initCitasPanel() {}, renderHistoricalAnalytics() {}, openSetPassword() {},
     formatPhone: value => value, normalizePhone: value => value, renderGestionBadge: () => '', isAgendadoGestion: () => false,

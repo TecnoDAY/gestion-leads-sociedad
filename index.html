@@ -1176,11 +1176,24 @@
     </div>
   </div>
 
-  <!-- ================= PANEL: ADMINISTRACIÓN DE ACCESOS ================= -->
+  <!-- ================= PANEL: USUARIOS (EQUIPO + ACCESOS ADMIN) ================= -->
   <div id="panelAdminUsers" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm items-center justify-center p-4">
     <div class="users-shell flex flex-col" role="dialog" aria-modal="true" aria-labelledby="usersTitle">
-      <div class="users-header"><div class="flex items-center gap-3"><span class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400"><i data-lucide="users-round" class="w-5 h-5"></i></span><div><h2 id="usersTitle" class="font-bold text-base">Gestión de accesos</h2><p class="text-xs">Invitaciones, usuarios y actividad del equipo.</p></div></div><button type="button" data-ev="click:toggleAdminUsers(false)" aria-label="Cerrar gestión de accesos" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-      <div class="users-body space-y-4">
+      <div class="users-header"><div class="flex items-center gap-3"><span class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400"><i data-lucide="users-round" class="w-5 h-5"></i></span><div><h2 id="usersTitle" class="font-bold text-base">Usuarios</h2><p class="text-xs">Presencia del equipo · Accesos solo para admin.</p></div></div><button type="button" data-ev="click:toggleAdminUsers(false)" aria-label="Cerrar Usuarios" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+      <div id="usersTabs" class="users-tabs" role="tablist" aria-label="Secciones de Usuarios">
+        <button type="button" id="usersTeamTab" role="tab" aria-controls="usersTeamPanel" aria-selected="true" data-ev="click:selectUsersTab('team')">Equipo</button>
+      </div>
+      <section id="usersTeamPanel" class="users-body team-body" role="tabpanel" aria-labelledby="usersTeamTab" tabindex="0">
+        <div class="team-overview"><h3>Tu equipo</h3><div class="team-fresh"><span id="teamPresenceUpdated">Sin actualizar</span><button type="button" id="teamPresenceRefresh" data-ev="click:loadTeamPresence()">Actualizar</button></div></div>
+        <p id="teamPresenceSummary" class="team-summary"></p>
+        <p id="teamPresenceStatus" role="status" aria-live="polite"></p>
+        <div id="teamPresenceGroups"></div>
+        <details class="team-help"><summary>¿Qué significa cada estado?</summary><p><strong>En línea:</strong> señal del CRM en los últimos 3 min. <strong>Ausente:</strong> hubo señal antes, pero no recientemente; no confirma una desconexión. <strong>Sin datos:</strong> aún no hay señal registrada.</p><p>No indica si alguien está trabajando. Se calcula con el reloj de este dispositivo. Actualizar consulta nuevas señales; no hay actualización automática del servidor.</p></details>
+      </section>
+      <template id="usersAccessTabTemplate"><button type="button" id="usersAccessTab" role="tab" aria-controls="usersAccessPanel" aria-selected="false" tabindex="-1" data-ev="click:selectUsersTab('access')">Accesos <span class="team-role">Solo admin</span></button></template>
+      <template id="usersAccessTemplate">
+      <section id="usersAccessPanel" class="users-body space-y-4" role="tabpanel" aria-labelledby="usersAccessTab" tabindex="0" hidden>
+        <h3 class="font-bold text-base">Gestión de accesos</h3>
         <section class="users-section space-y-3"><div><h3 class="text-sm font-bold">Invitar usuario</h3><p class="text-xs text-slate-500">Envía una invitación para acceder al panel.</p></div>
           <form id="formAuthorizeUser" data-ev="submit:handleAuthorizeUser(event)" class="grid sm:grid-cols-2 gap-3 text-xs">
             <div><label for="authorizeEmail">Correo electrónico</label><input id="authorizeEmail" type="email" required placeholder="correo@ejemplo.com" class="w-full"></div>
@@ -1209,7 +1222,8 @@
           </form>
           <p class="text-[11px] text-slate-500">Se envían confirmaciones a ambos correos. La cuenta, el rol y el historial se conservan.</p>
         </section>
-      </div>
+      </section>
+      </template>
     </div>
   </div>
 
@@ -1778,7 +1792,7 @@
         <button type="button" data-ev="click:switchTab('historico')" class="more-menu-button"><i data-lucide="line-chart" class="w-4 h-4"></i><span>Análisis histórico</span></button>
         <button type="button" data-ev="click:openAppModal()" class="more-menu-button"><i data-lucide="smartphone" class="w-4 h-4"></i><span>App y notificaciones</span></button>
         <button type="button" data-ev="click:openHelpModal()" class="more-menu-button"><i data-lucide="circle-help" class="w-4 h-4"></i><span>Centro de ayuda</span></button>
-        <button type="button" id="btnMoreAdminUsers" data-admin-only data-ev="click:toggleAdminUsers(true)" class="more-menu-button hidden"><i data-lucide="users" class="w-4 h-4"></i><span>Usuarios</span></button>
+        <button type="button" id="btnMoreAdminUsers" data-ev="click:toggleAdminUsers(true)" class="more-menu-button hidden"><i data-lucide="users" class="w-4 h-4"></i><span>Usuarios</span></button>
         <button type="button" id="btnMoreCatalogs" data-admin-only data-ev="click:openCatalogsModal()" class="more-menu-button hidden"><i data-lucide="list" class="w-4 h-4"></i><span>Catálogos</span></button>
         <button type="button" data-ev="click:cycleTheme()" class="more-menu-button"><i data-lucide="moon" class="w-4 h-4"></i><span>Cambiar tema</span></button>
         <button type="button" data-ev="click:handleSignOut()" class="more-menu-button text-rose-300"><i data-lucide="log-out" class="w-4 h-4"></i><span>Salir</span></button>
@@ -1904,6 +1918,9 @@
 
     function clearSessionState() {
       sessionGeneration += 1;
+      resetTeamPresence();
+      document.getElementById('usersAccessTab')?.remove();
+      document.getElementById('usersAccessPanel')?.remove();
       window.crmResetKanban?.();
       stopIdleTracking();
       try { localStorage.removeItem('idle_last_activity_ts'); } catch (_) { /* cierre best-effort: no bloquea el flujo */ }
@@ -1987,6 +2004,7 @@
       document.getElementById('userBadge')?.replaceChildren();
       document.getElementById('btnSignOut')?.classList.add('hidden');
       document.getElementById('btnAdminUsers')?.classList.add('hidden');
+      document.getElementById('btnMoreAdminUsers')?.classList.add('hidden');
       document.getElementById('btnCatalogs')?.classList.add('hidden');
       document.getElementById('btnHelp')?.classList.add('hidden');
       helpReturnFocus = null;
@@ -2130,6 +2148,8 @@
       isAdmin = access?.role === 'admin' && access?.activo === true;
       isTrafficker = access?.role === 'trafficker' && access?.activo === true;
       isSupervisor = access?.role === 'supervisor' && access?.activo === true;
+      // A live role downgrade must also remove an already mounted admin view.
+      if (!isAdmin && document.getElementById('usersAccessTab')) configureUsersTabs();
       const badge = document.getElementById('userBadge');
       const signOut = document.getElementById('btnSignOut');
       const adminButton = document.getElementById('btnAdminUsers');
@@ -2137,7 +2157,8 @@
       const greetingName = document.getElementById('dashboardGreetingName');
       if (badge) badge.textContent = `${access?.nombre || user.email} · ${isAdmin ? 'Admin' : (isSupervisor ? 'Supervisor' : (isTrafficker ? 'Trafficker' : 'Agente'))}`;
       if (signOut) signOut.classList.toggle('hidden', false);
-      if (adminButton) adminButton.classList.toggle('hidden', !isAdmin);
+      if (adminButton) adminButton.classList.toggle('hidden', !user || access?.activo !== true);
+      document.getElementById('btnMoreAdminUsers')?.classList.toggle('hidden', !user || access?.activo !== true);
       if (catalogsButton) catalogsButton.classList.toggle('hidden', !isAdmin);
       if (greetingName) greetingName.textContent = (access?.nombre || user.email || 'equipo').trim().split(/\s+/)[0];
       const helpButton = document.getElementById('btnHelp');
@@ -2617,6 +2638,7 @@
 
     async function handleAuthorizeUser(event) {
       event.preventDefault();
+      if (!isAdmin) return;
       const btn = event.target.querySelector('button[type="submit"]');
       const email = document.getElementById('authorizeEmail').value.trim().toLowerCase();
       const nombre = document.getElementById('authorizeName').value.trim();
@@ -7603,14 +7625,132 @@ async function deleteLeadAppointment(id) {
     function formatPhoneField(el) { el.value = formatPhone(el.value); }
     function formatPhoneFieldAndCheck(el) { el.value = formatPhone(el.value); checkNewPhoneDuplicate(); }
     function cycleTheme() { applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'); }
+    let teamPresenceRows = null;
+    let teamPresenceUpdatedAt = null;
+    let teamPresenceRequest = 0;
+    let teamPresenceTimer = null;
+    let usersReturnFocus = null;
+
+    function resetTeamPresence() {
+      teamPresenceRequest += 1;
+      clearInterval(teamPresenceTimer);
+      teamPresenceTimer = null;
+      teamPresenceRows = null;
+      teamPresenceUpdatedAt = null;
+      usersReturnFocus = null;
+      ['teamPresenceSummary', 'teamPresenceStatus', 'teamPresenceGroups'].forEach(id => document.getElementById(id)?.replaceChildren());
+      const updated = document.getElementById('teamPresenceUpdated');
+      if (updated) updated.textContent = 'Sin actualizar';
+    }
+
+    function renderTeamPresence() {
+      if (!teamPresenceRows || !currentUser || !currentAccess?.activo) return;
+      // The RPC returns server timestamps, not server now: use one client clock.
+      const now = Date.now(), api = window.teamPresenceApi;
+      const groups = api.groupPresence(teamPresenceRows, now);
+      document.getElementById('teamPresenceSummary').textContent = api.presenceSummary(groups);
+      document.getElementById('teamPresenceGroups').innerHTML = api.teamPresenceHtml(groups, now);
+      document.getElementById('teamPresenceUpdated').textContent = `Actualizado ${api.presenceRelativeTime(teamPresenceUpdatedAt, now)}`;
+    }
+
+    async function loadTeamPresence() {
+      if (!supabaseClient || !currentUser || !currentAccess?.activo) return;
+      const generation = sessionGeneration, userId = currentUser.id, accessUpdatedAt = currentAccess.updated_at;
+      const request = ++teamPresenceRequest;
+      const valid = () => request === teamPresenceRequest && generation === sessionGeneration && currentUser?.id === userId && currentAccess?.updated_at === accessUpdatedAt && currentAccess?.activo;
+      const status = document.getElementById('teamPresenceStatus');
+      const button = document.getElementById('teamPresenceRefresh');
+      status.setAttribute('role', 'status');
+      status.textContent = 'Cargando equipo…';
+      button.disabled = true;
+      try {
+        const { data, error } = await supabaseClient.rpc('list_team_presence');
+        if (!valid()) return;
+        if (error) throw error;
+        teamPresenceRows = Array.isArray(data) ? data : [];
+        teamPresenceUpdatedAt = new Date().toISOString();
+        renderTeamPresence();
+        status.textContent = teamPresenceRows.length ? 'Equipo actualizado.' : 'Equipo actualizado. No hay personas activas.';
+      } catch (error) {
+        if (!valid()) return;
+        console.warn('No se pudo cargar el equipo:', error);
+        status.setAttribute('role', 'alert');
+        status.textContent = 'No se pudo cargar el equipo. Pulsa Actualizar para reintentar.';
+      } finally {
+        if (valid()) button.disabled = false;
+      }
+    }
+
+    function configureUsersTabs() {
+      if (isAdmin) {
+        if (!document.getElementById('usersAccessTab')) {
+          document.getElementById('usersTabs').append(document.getElementById('usersAccessTabTemplate').content.cloneNode(true));
+          document.querySelector('#panelAdminUsers .users-shell').append(document.getElementById('usersAccessTemplate').content.cloneNode(true));
+        }
+      } else {
+        document.getElementById('usersAccessTab')?.remove();
+        document.getElementById('usersAccessPanel')?.remove();
+      }
+      selectUsersTab('team');
+    }
+
+    function selectUsersTab(tab) {
+      if (!currentUser || !currentAccess?.activo || (tab === 'access' && !isAdmin)) return;
+      const access = tab === 'access';
+      [['usersTeamTab', 'usersTeamPanel', !access], ['usersAccessTab', 'usersAccessPanel', access]].forEach(([tabId, panelId, selected]) => {
+        const button = document.getElementById(tabId), panel = document.getElementById(panelId);
+        if (!button || !panel) return;
+        button.setAttribute('aria-selected', String(selected));
+        button.tabIndex = selected ? 0 : -1;
+        panel.hidden = !selected;
+      });
+      if (access) { loadAuthorizedUsers(); loadAgentSessionsReport(); }
+      else renderTeamPresence();
+    }
+
+    function usersPanelKeydown(event) {
+      if (event.key === 'Escape') { event.preventDefault(); toggleAdminUsers(false); return; }
+      const panel = document.getElementById('panelAdminUsers');
+      const tabs = [...panel.querySelectorAll('[role="tab"]')];
+      if (tabs.includes(event.target) && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+        event.preventDefault();
+        const index = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (tabs.indexOf(event.target) + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        selectUsersTab(tabs[index].id === 'usersAccessTab' ? 'access' : 'team');
+        tabs[index].focus();
+      }
+      if (event.key === 'Tab') {
+        const focusable = [...panel.querySelectorAll('button, input, select, summary, [tabindex="0"]')].filter(el => !el.disabled && el.tabIndex >= 0 && el.getClientRects().length);
+        const first = focusable[0], last = focusable[focusable.length - 1];
+        if (event.shiftKey && event.target === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && event.target === last) { event.preventDefault(); first?.focus(); }
+      }
+    }
+
     function toggleAdminUsers(abrir) {
       const panel = document.getElementById('panelAdminUsers');
       if (!panel) return;
-      // Al abrir: visible como overlay centrado (flex). Al cerrar: hidden de
-      // verdad; quitar solo 'flex' dejaba el fixed/inset-0 como bloque opaco
-      // (regresion reportada: el formulario "cambiaba de posicion").
-      if (abrir) { panel.classList.remove('hidden'); panel.classList.add('flex'); loadAuthorizedUsers(); loadAgentSessionsReport(); }
-      else { panel.classList.remove('flex'); panel.classList.add('hidden'); }
+      if (abrir) {
+        if (!currentUser || !currentAccess?.activo) return;
+        const returnFocus = document.activeElement;
+        resetTeamPresence();
+        usersReturnFocus = returnFocus;
+        closeMoreMenu();
+        configureUsersTabs();
+        panel.classList.remove('hidden');
+        panel.classList.add('flex');
+        panel.onkeydown = usersPanelKeydown;
+        document.getElementById('usersTeamTab')?.focus();
+        loadTeamPresence();
+        // Local age/status rendering only: never sends requests or heartbeats.
+        teamPresenceTimer = setInterval(renderTeamPresence, 15000);
+      } else {
+        panel.classList.remove('flex');
+        panel.classList.add('hidden');
+        const returnFocus = usersReturnFocus;
+        resetTeamPresence();
+        if (returnFocus?.getClientRects().length) returnFocus.focus();
+        else document.getElementById('bottomNav')?.querySelector('[data-bottom-tab="more"]')?.focus();
+      }
     }
     function openLeadFromView(origin, id) { closeViewLeadModal(); openLeadModal(origin, id); }
     function openEditLeadFromView(id, origin) { closeViewLeadModal(); openEditLeadModal(id, origin); }
@@ -7832,6 +7972,7 @@ async function deleteLeadAppointment(id) {
   <script type="module" src="/src/legacy/help.js"></script>
   <script type="module" src="/src/legacy/catalogos.js"></script>
   <script type="module" src="/src/legacy/admin.js"></script>
+  <script type="module" src="/src/legacy/team-presence.js"></script>
 <script type="module" src="/src/kanban/kanban.js"></script>
 </body>
 </html>

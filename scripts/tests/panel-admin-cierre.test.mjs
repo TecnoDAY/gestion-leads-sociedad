@@ -45,7 +45,7 @@ const headBuggyFn = `function toggleAdminUsers(abrir) {
 const CLASES_BASE = 'hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm items-center justify-center p-4';
 
 function sandbox({ panel = true } = {}) {
-  const calls = { usuarios: 0, sesiones: 0 };
+  const calls = { usuarios: 0, sesiones: 0, equipo: 0, tabs: 0 };
   const el = { className: CLASES_BASE };
   const clases = () => el.className.split(/\s+/).filter(Boolean);
   el.classList = {
@@ -55,6 +55,10 @@ function sandbox({ panel = true } = {}) {
   };
   const ctx = {
     document: { getElementById: id => (id === 'panelAdminUsers' && panel ? el : null) },
+    currentUser: { id: 'admin' }, currentAccess: { activo: true },
+    resetTeamPresence() {}, closeMoreMenu() {}, usersPanelKeydown() {}, renderTeamPresence() {},
+    configureUsersTabs() { calls.tabs += 1; },
+    loadTeamPresence() { calls.equipo += 1; }, setInterval() { return 1; },
     loadAuthorizedUsers() { calls.usuarios += 1; },
     loadAgentSessionsReport() { calls.sesiones += 1; },
   };
@@ -62,14 +66,16 @@ function sandbox({ panel = true } = {}) {
   return { ctx, el, calls, clases };
 }
 
-test('tree: abrir muestra el overlay centrado y dispara ambas cargas', () => {
+test('tree: abrir conserva overlay centrado; Equipo carga y Accesos espera selección', () => {
   const { ctx, calls, clases } = sandbox();
   vm.runInContext(`(${treeFn})`, ctx)(true);
   const s = clases();
   assert.ok(!s.includes('hidden'), 'al abrir no debe quedar hidden');
   assert.ok(s.includes('flex'), 'al abrir debe estar en flex (centrado)');
-  assert.equal(calls.usuarios, 1);
-  assert.equal(calls.sesiones, 1);
+  assert.equal(calls.equipo, 1);
+  assert.equal(calls.tabs, 1);
+  assert.equal(calls.usuarios, 0);
+  assert.equal(calls.sesiones, 0);
 });
 
 test('tree: cerrar oculta de verdad (hidden presente, flex ausente) y no recarga', () => {

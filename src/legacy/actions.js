@@ -35,7 +35,7 @@ export const HANDLERS = new Set([
   'goToPage', 'handleAuthorizeUser', 'handleChangeEmail', 'handleCreateLead', 'handleLogin',
   'handlePasswordReset', 'handleSetPassword', 'handleSignOut', 'handleUpdateLead',
   'disablePushNotifications', 'enablePushNotifications', 'iniciarAjusteMensualFromData', 'installApp', 'loadAgentSessionsReport', 'loadAuthorizedUsers',
-  'loadCampanas', 'loadCitas', 'loadDashboardAppointments', 'loadLeadNotes', 'llamarLead', 'loadOlderLeads',
+  'loadCampanas', 'loadCitas', 'loadDashboardAppointments', 'loadLeadNotes', 'llamarLead', 'loadOlderLeads', 'loadTeamPresence',
   'loadReporteDiario', 'loadReportePeriodo', 'openCatalogsModal', 'openChangeEmail',
   'openDashboardAppointmentsDetail', 'openEditLeadFromView', 'openEditLeadModal', 'openHelpModal',
   'closeMoreMenu', 'openAppModal', 'openLeadFromView', 'openMoreMenu', 'openNewLeadModal', 'openRlsModal', 'openViewLeadModal', 'queueNewPhoneCheck',
@@ -46,7 +46,7 @@ export const HANDLERS = new Set([
   'saveReporteNota', 'scheduleApplyFilters', 'scrollHelpToTop', 'setCampanasPeriodo',
   'setCitasViewMode', 'setDashboardPriority', 'setDataSource', 'setHistRangePreset',
   'setIdleTimeout', 'setLeadAppointmentStatus', 'setPeriodoPreset', 'setReporteVista',
-  'setUserActive', 'stopPropagationEvent', 'switchTab', 'syncNewLeadMes', 'syncNewUltimaGestion',
+  'setUserActive', 'stopPropagationEvent', 'switchTab', 'syncNewLeadMes', 'syncNewUltimaGestion', 'selectUsersTab',
   'toggleAdminUsers', 'toggleCatalogValue', 'toggleEditAppointmentFields', 'toggleLoginPassword',
   'toggleMatrixPanel', 'toggleNewAppointmentFields', 'updateEditSubmitState',
 ]);

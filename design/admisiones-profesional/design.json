@@ -1,0 +1,76 @@
+{
+  "title": "Admisiones · Diez propuestas profesionales",
+  "brief": "Diez composiciones offline para el CRM de admisiones de Sociedad Actoral. Las propuestas 01–03 se conservan sin cambios como historial visual; sus categorías no definen el contrato de 04–06. Las propuestas 04–06 distinguen resultados GESTION no secuenciales, captación, interés opcional, seguimiento y citas. Corte ficticio del equipo de tres asesores: 9 nov 2026, 09:00 EST, America/New_York; 18 asignados, 3 seguimientos vencidos, 5 para hoy y 2 citas PROGRAMADA (10:30 Sofía Ríos con Valentina Ruiz; 16:00 Emma Castillo con Ana Beltrán). Los 4 inscritos del 1 al 9 de noviembre se miden aparte. Todos los nombres, valores y notas son demo. Interacciones locales sin conexión ni guardado. Layout y exposición conceptual de campos existentes no implican nuevas funciones del producto. Colores y fuente fallback proceden de design/system.md. Las alternativas 07–10 añaden superficies vibrantes, radios generosos y composiciones diferenciadas: mosaico, tablero de disposiciones, bitácora y módulo de campañas. Conservan el corte ficticio del equipo; 10 separa estimaciones derivadas de valores Meta manuales y cifras CRM, con versiones sustituidas excluidas del agregado.",
+  "artboards": [
+    {
+      "file": "01-claridad-ejecutiva.html",
+      "title": "01 / Claridad ejecutiva",
+      "tradeoff": "Control ejecutivo claro: navegación blanca, indicadores compactos, tabla de prioridades filtrable y agenda lateral. Favorece la comparación y el contexto global; el detalle de cada ficha queda fuera de esta propuesta. En móvil la tabla se reorganiza en registros etiquetados.",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "02-estudio-editorial.html",
+      "title": "02 / Estudio editorial",
+      "tradeoff": "Oficina de admisiones serena: navegación horizontal, jerarquía tipográfica, reglas finas y tres conversaciones priorizadas con contexto seleccionable. Más foco y espacio que una tabla completa; muestra menos contactos simultáneamente y no ofrece un inspector extenso.",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "03-centro-de-operaciones.html",
+      "title": "03 / Centro de operaciones",
+      "tradeoff": "Herramienta CRM oscura: cola filtrable e inspector maestro-detalle con selección real de seis perfiles ficticios, siguiente paso y cronología. Más contexto para trabajar un contacto sin perder la agenda; mayor densidad y menor visión comparativa que la tabla. En móvil las regiones se apilan.",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "04-flujo-de-etapas.html",
+      "title": "04 / Flujo de etapas",
+      "tradeoff": "Triaje por resultados reales de GESTION, no por etapas: tabla de seis contactos demo con campaña/medio, asesor y seguimiento con fecha; filtro local de vencidos o datos ausentes y agenda separada. Valores de gestión de ejemplo sujetos al catálogo real. Favorece contexto operativo y no sugiere conversión; muestra solo un subconjunto y se apila en móvil.",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "05-resumen-de-equipo.html",
+      "title": "05 / Resumen de equipo",
+      "tradeoff": "Supervisión por carga: cartera 8+6+4=18, seguimientos vencidos 2+1+0=3, para hoy 2+2+1=5 y citas 1+1+0=2 por asesor. Los 4 inscritos mensuales son un KPI separado. Tabla demo filtrable sin ranking; totales, excepciones y agenda conservan el alcance del equipo completo. Facilita comparar carga, no rendimiento; ofrece menos detalle de caso y apila filas etiquetadas en móvil.",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "06-ficha-y-cola.html",
+      "title": "06 / Ficha y cola",
+      "tradeoff": "Ficha demo de Camila Torres DEMO-1042: No Contesta, Valentina Ruiz, captación separada del interés opcional, teléfono enmascarado, observaciones, última gestión y notas con autor y hora. Retomar interés venció el 6 nov; sin cita asociada. Cola contextual estática, enlaces internos y nota desplegable local, sin consentimiento estructurado ni documentos inventados. Prioriza trazabilidad sobre comparación; solo Camila tiene ficha y las regiones se apilan en móvil.",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "07-mosaico-vibrante.html",
+      "title": "07 / Mosaico vibrante",
+      "tradeoff": "Bento asimétrico con hero índigo, inscripción verde, vencidos rosa, tareas ámbar y agenda profunda. Prioriza reconocimiento visual y foco diario sobre comparación exhaustiva; muestras parciales de equipo, sin acciones CRM. Se apila en móvil.",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "08-tablero-de-gestion.html",
+      "title": "08 / Tablero de gestión",
+      "tradeoff": "Tablero oscuro con cabeceras saturadas y tarjetas tintadas por disposiciones reales de GESTION, nunca etapas. Expone captación, asesor y próxima acción; desplazamiento horizontal contenido en escritorio y columnas apiladas en móvil. Solo cuatro muestras: no representa todo el catálogo ni la cartera y no ofrece arrastre.",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "09-panel-de-actividad.html",
+      "title": "09 / Panel de actividad",
+      "tradeoff": "Bitácora cronológica sobre fondo ámbar con cabecera verde, marcadores de autor y compromisos rosa e índigo. Favorece ritmo y contexto temporal sin mosaico de KPI ni inspector; muestra actividad parcial, no todas las gestiones. Reorganización vertical en móvil.",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "10-campanas-y-resultados.html",
+      "title": "10 / Campañas y resultados",
+      "tradeoff": "Módulo de campañas con rail índigo, agregado profundo, campañas verde/ámbar y cifras CRM separadas. Explica estimaciones aproximadas, CPL ponderado y versiones corregidas; prioriza trazabilidad sobre densidad y no atribuye resultados Meta a personas CRM. Historial desplegable local, sin guardado; bloques apilados en móvil.",
+      "width": 1440,
+      "height": 1000
+    }
+  ]
+}

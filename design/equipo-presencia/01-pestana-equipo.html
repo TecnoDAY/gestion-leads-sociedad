@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>01 · Equipo dentro de Usuarios</title>
+<style>
+/* Paleta, radios y sombra: design/system.md, contrastados con src/index.css.
+   Composición local de maqueta; solo fuentes de sistema, sin recursos externos. */
+:root{--app-accent:#4338ca;--app-positive:#047857;--app-pending:#92400e;--app-on-color:#ffffff;--app-accent-soft:#e0e7ff;--ink:#0f172a;--muted:#475569;--line:#e2e8f0;--page:#f6f7fb;--panel:#f8fafc;--green-bg:#d1fae5;--amber-bg:#fef3c7;--shadow:0 8px 24px -20px rgba(15,23,42,.55);font-family:system-ui,sans-serif;color:var(--ink);background:var(--page);color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;font-size:1rem;line-height:1.5}
+button{font:inherit;cursor:pointer;min-height:2.75rem;min-width:2.75rem;border:1px solid var(--muted);border-radius:.65rem;padding:.5rem .75rem;background:var(--app-on-color);color:var(--muted);transition:background-color .15s,border-color .15s}
+button:hover{background:var(--app-accent-soft);border-color:var(--app-accent);color:var(--app-accent)}
+:focus-visible{outline:2px solid #6366f1;outline-offset:2px}
+button.primary{background:var(--app-accent);border-color:var(--app-accent);color:var(--app-on-color)}
+button.primary:hover{background:#312e81}
+[hidden]{display:none!important}
+h1,h2,h3,p{margin:0}
+h1{font-size:1.5rem}h2{font-size:1.25rem}h3{font-size:.85rem}
+.muted,small{color:var(--muted)}small{font-size:.8rem}
+.direction{padding:1rem 1.5rem;background:var(--app-on-color);border-bottom:1px solid var(--line);display:flex;gap:1rem;align-items:center}
+.direction strong{color:var(--app-accent)}.direction span{color:var(--muted);font-size:.85rem}
+.app{display:grid;grid-template-columns:14rem minmax(0,1fr);min-height:calc(100vh - 4rem)}
+.rail{padding:1.5rem 1rem;background:linear-gradient(180deg,#4338ca,#312e81);color:var(--app-on-color)}
+.brand{font-weight:800;font-size:1.25rem;line-height:1.3;margin-bottom:2rem}
+.rail nav{display:grid;gap:.5rem}.rail nav span{padding:.75rem;border-radius:.8rem;color:var(--app-accent-soft)}
+.rail nav .selected{background:var(--app-on-color);color:var(--app-accent);font-weight:700}
+.workspace{min-width:0}.topbar{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 1.5rem;background:var(--app-on-color);border-bottom:1px solid var(--line)}
+main{padding:1.5rem}.intro{padding:1.5rem;border:1px solid var(--line);border-top:3px solid var(--app-accent);border-radius:1rem;background:var(--app-on-color)}
+.context{margin-top:1.5rem;padding:1.5rem;border:1px solid var(--line);border-radius:1rem;background:var(--app-on-color)}
+.context p{padding:.75rem 0;border-bottom:1px solid var(--line)}.note{margin-top:1.5rem;color:var(--muted);font-size:.85rem;max-width:53rem}
+dialog{padding:0;width:min(46rem,calc(100% - 1rem));max-height:calc(100dvh - 2rem);overflow-y:auto;border:1px solid var(--line);border-radius:1.25rem;box-shadow:var(--shadow);color:var(--ink);background:var(--app-on-color)}
+dialog::backdrop{background:rgba(15,23,42,.55)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.25rem 1.5rem;background:linear-gradient(115deg,var(--app-on-color) 45%,var(--app-accent-soft))}
+.heading{display:flex;align-items:center;gap:.75rem;min-width:0}
+.heading-mark{display:grid;place-items:center;flex:none;width:2.75rem;height:2.75rem;border-radius:1rem;background:var(--app-accent-soft);color:var(--app-accent)}
+.icon{width:1.15rem;height:1.15rem;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.modal-header h2{letter-spacing:-.015em}.modal-header p{font-size:.8rem;color:var(--muted);margin-top:.25rem}
+#close{padding:.5rem;flex:none;background:var(--app-on-color)}#close:hover{background:var(--app-accent-soft)}
+.tab-bar{padding:0 1.5rem 1rem;border-bottom:1px solid var(--line)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:.25rem;padding:.25rem;background:var(--panel);border:1px solid var(--line);border-radius:1rem}
+.tabs button{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:.5rem;border-color:transparent;border-radius:.8rem;background:transparent;font-size:.85rem;font-weight:600}
+.tabs button:hover{color:var(--app-accent);background:var(--app-accent-soft)}
+.tabs [aria-selected=true]{background:var(--app-accent);color:var(--app-on-color);border-color:var(--app-accent);box-shadow:var(--shadow)}
+.tabs [aria-selected=true]:hover{background:#312e81;color:var(--app-on-color)}
+.lock-badge{display:inline-flex;align-items:center;gap:.25rem;padding:.25rem .5rem;border-radius:9999px;font-size:.75rem;font-weight:400;background:var(--line);color:var(--muted)}
+.lock-badge .icon{width:.85rem;height:.85rem}
+[aria-selected=true] .lock-badge{background:var(--app-on-color);color:var(--app-accent)}
+.body{padding:1rem 1.5rem 1.25rem;background:var(--panel)}
+.team-overview{display:flex;justify-content:space-between;gap:.75rem;align-items:center;flex-wrap:wrap}
+.team-overview h3{font-size:1rem}.team-overview h3 small{font-weight:400;margin-left:.5rem}
+.fresh{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+#refresh{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-size:.8rem;color:var(--app-accent);border-color:var(--app-accent)}
+#refresh .icon{width:1rem;height:1rem}
+.summary{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;margin-top:.75rem;font-size:.8rem;color:var(--muted)}
+.stat{display:inline-flex;align-items:center;gap:.25rem;padding:.25rem .75rem;border-radius:9999px;background:var(--line);color:var(--muted)}
+.stat strong{font-size:1rem;font-variant-numeric:tabular-nums}.stat.online{background:var(--green-bg)}.stat.away{background:var(--amber-bg)}
+.group{margin-top:1rem}.group h3{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem}.group h3 small{font-size:.75rem;font-weight:400}
+.group h3::after{content:'';height:1px;flex:1;background:var(--line);margin-left:.25rem}
+ul{list-style:none;padding:0;margin:0}.group ul{display:grid;gap:.5rem}
+.row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:.75rem;padding:.65rem .75rem;border:1px solid var(--line);border-radius:.8rem;background:var(--app-on-color);box-shadow:var(--shadow);transition:background-color .15s,border-color .15s}
+.row:hover{background:var(--panel);border-color:#cbd5e1}
+.avatar{position:relative;display:grid;place-items:center;flex:none;width:2.5rem;height:2.5rem;border:2px solid currentColor;border-radius:9999px;background:var(--app-accent-soft);color:var(--app-accent);font-weight:700;font-size:.85rem}
+.avatar::after{content:'';position:absolute;right:-2px;bottom:-2px;width:.75rem;height:.75rem;border:2px solid var(--app-on-color);border-radius:9999px;background:var(--muted)}
+.avatar.online{border-color:var(--app-positive)}.avatar.online::after{background:var(--app-positive)}
+.avatar.away{border-color:var(--app-pending);background:var(--amber-bg);color:var(--app-pending)}.avatar.away::after{background:var(--app-pending)}
+.avatar.unknown{border-style:dashed;border-color:var(--muted);background:var(--line);color:var(--muted)}.avatar.unknown::after{background:var(--app-on-color);border-color:var(--muted)}
+.person{min-width:0;overflow-wrap:anywhere}.person-heading{display:flex;align-items:center;flex-wrap:wrap;gap:.25rem .5rem}
+.person strong{font-size:.85rem;font-weight:600}.person small{display:block;font-size:.75rem;margin-top:.25rem}
+.role{display:inline-flex;padding:0 .5rem;border-radius:.5rem;background:var(--panel);color:var(--muted);font-size:.75rem}
+.role.supervisor,.role.admin{background:var(--app-accent-soft);color:var(--app-accent)}
+.state{font-size:.75rem;font-weight:600;color:var(--muted);display:flex;gap:.35rem;align-items:center}
+.online{color:var(--app-positive)}.away{color:var(--app-pending)}.symbol{font-size:1rem;line-height:1}
+.presence-help{margin-top:1rem;border-top:1px solid var(--line);font-size:.8rem;color:var(--muted)}
+.presence-help summary{min-height:2.75rem;padding:.65rem .25rem;cursor:pointer;color:var(--app-accent);border-radius:.5rem}
+.presence-help summary:hover{background:var(--app-accent-soft)}
+.presence-help p{padding:0 .25rem .75rem;max-width:62ch}.presence-help strong{color:var(--ink)}
+.modal-footer{padding:.75rem 1.5rem;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;font-size:.75rem;color:var(--muted)}
+.admin-only{border-left:3px solid var(--app-accent);padding:1rem;background:var(--app-on-color);border-radius:.5rem}.admin-only h3{font-size:1rem}.admin-only p{margin:.5rem 0}.admin-only dl{margin:.75rem 0;display:grid;grid-template-columns:1fr 1fr;gap:.5rem}.admin-only dd{margin:0}.admin-only .examples{display:flex;flex-wrap:wrap;gap:.5rem}
+.static-action{border:1px solid #cbd5e1;padding:.35rem .6rem;border-radius:.5rem;color:var(--muted);font-size:.8rem}
+.demo-message{margin-top:.75rem;padding:.75rem;border-radius:.65rem;background:var(--amber-bg);font-size:.8rem;color:var(--app-pending)}.demo-message:empty{display:none}
+@media(max-width:767px){
+  .app{grid-template-columns:minmax(0,1fr)}.rail{display:none}.direction{align-items:flex-start;flex-direction:column;gap:.25rem}.topbar{flex-wrap:wrap}main{padding:1rem}
+  .modal-header,.body,.modal-footer{padding:1rem}.tab-bar{padding:0 1rem .75rem}.heading-mark{display:none}
+  .tabs button{gap:.25rem;padding:.5rem}.team-overview{align-items:flex-start}.fresh{width:100%;justify-content:space-between}
+  .row{grid-template-columns:auto minmax(0,1fr);gap:.25rem .75rem}.avatar{grid-row:1 / 3}.row .state{grid-column:2}
+  .person-heading{align-items:flex-start}.summary{gap:.25rem}.stat{padding:.25rem .5rem}
+  .admin-only dl{grid-template-columns:1fr}dialog{max-height:calc(100dvh - 1rem);border-radius:1rem}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="direction"><strong>01 / Pestaña Equipo</strong><span>Mínimo cambio de navegación · Hay que abrir Usuarios para consultar la presencia.</span></header>
+<div class="app"><aside class="rail" aria-label="Contexto de la aplicación"><div class="brand">Sociedad<br>Actoral</div><nav aria-label="Navegación de contexto, no interactiva"><span class="selected">Inicio</span><span>Leads</span><span>Citas</span><span>Tareas</span><span>Reportes</span></nav></aside><div class="workspace"><header class="topbar"><strong>Admisiones / Inicio</strong><button id="open" class="primary">Usuarios · Equipo</button></header><main><section class="intro"><small>SOCIEDAD ACTORAL · ADMISIONES</small><h1>Tu espacio de admisiones</h1><p class="muted">Presencia del equipo, separada de la gestión de cuentas.</p></section><section class="context" aria-label="Contexto del inicio"><h2>Agenda de hoy</h2><p>14:00 · Visita de Actuación</p><p>16:30 · Orientación de Teatro Musical</p></section><p class="note">En móvil, el modal ocupa casi toda la pantalla y las filas se apilan sin ocultar el estado. Maqueta con datos de ejemplo; no consulta el CRM.</p></main></div></div>
+<dialog id="team" aria-labelledby="modal-title" aria-describedby="modal-description">
+  <header class="modal-header">
+    <div class="heading">
+      <span class="heading-mark" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3 20v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6M21 20v-2a6 6 0 0 0-3-5"></path></svg></span>
+      <div><h2 id="modal-title">Usuarios</h2><p id="modal-description">Vista admin · Equipo para todos · Accesos solo admin</p></div>
+    </div>
+    <button id="close" aria-label="Cerrar Usuarios">✕</button>
+  </header>
+  <div class="tab-bar"><div class="tabs" role="tablist" aria-label="Secciones de Usuarios">
+    <button role="tab" id="team-tab" aria-controls="team-content" aria-selected="true">Equipo</button>
+    <button role="tab" id="access-tab" aria-controls="access-content" aria-selected="false" tabindex="-1">Accesos <span class="lock-badge"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"></rect><path d="M8 10V6a4 4 0 0 1 8 0v4M12 14v3"></path></svg>Solo admin</span></button>
+  </div></div>
+  <section class="body" id="team-content" role="tabpanel" aria-labelledby="team-tab" tabindex="0">
+    <div class="team-overview"><h3>Tu equipo <small>6 personas</small></h3><div class="fresh"><span>Actualizado hace 20 s</span><button id="refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1"></path></svg>Actualizar</button></div></div>
+    <p class="summary"><span class="stat online"><strong>3</strong> en línea</span> · <span class="stat away"><strong>2</strong> ausentes</span> · <span class="stat"><strong>1</strong> sin datos</span></p>
+    <p class="demo-message" id="feedback" role="status"></p>
+    <section class="group" aria-labelledby="online-title">
+      <h3 id="online-title" class="online">En línea <small>3 personas</small></h3>
+      <ul>
+        <li class="row"><span class="avatar online" aria-hidden="true">A</span><div class="person"><div class="person-heading"><strong>Ana</strong><span class="role">Agente</span></div></div><span class="state online"><span class="symbol" aria-hidden="true">●</span> En línea</span></li>
+        <li class="row"><span class="avatar online" aria-hidden="true">L</span><div class="person"><div class="person-heading"><strong>Loli</strong><span class="role">Agente</span></div></div><span class="state online"><span class="symbol" aria-hidden="true">●</span> En línea</span></li>
+        <li class="row"><span class="avatar online" aria-hidden="true">JM</span><div class="person"><div class="person-heading"><strong>Jessica Monterrosa</strong><span class="role supervisor">Supervisor</span></div></div><span class="state online"><span class="symbol" aria-hidden="true">●</span> En línea</span></li>
+      </ul>
+    </section>
+    <section class="group" aria-labelledby="away-title">
+      <h3 id="away-title" class="away">Ausentes <small>2 personas · Sin señal reciente</small></h3>
+      <ul>
+        <li class="row"><span class="avatar away" aria-hidden="true">J</span><div class="person"><div class="person-heading"><strong>Jessica</strong><span class="role">Agente</span></div><small>Última vez 12:12 (hace 48 min)</small></div><span class="state away"><span class="symbol" aria-hidden="true">◷</span> Sin señal reciente</span></li>
+        <li class="row"><span class="avatar away" aria-hidden="true">M</span><div class="person"><div class="person-heading"><strong>Miguel</strong><span class="role admin">Admin</span></div><small>Última vez hace 2 h</small></div><span class="state away"><span class="symbol" aria-hidden="true">◷</span> Ausente</span></li>
+      </ul>
+    </section>
+    <section class="group" aria-labelledby="unknown-title">
+      <h3 id="unknown-title">Sin datos <small>1 persona</small></h3>
+      <ul><li class="row"><span class="avatar unknown" aria-hidden="true">T</span><div class="person"><div class="person-heading"><strong>Tecnología</strong><span class="role admin">Admin</span></div><small>Aún no hay señal registrada</small></div><span class="state"><span class="symbol" aria-hidden="true">○</span> Sin datos</span></li></ul>
+    </section>
+    <details class="presence-help"><summary>Cómo se interpreta la presencia</summary><p><strong>En línea:</strong> CRM abierto y respondiendo en los últimos 3 min. <strong>Ausente:</strong> falta de señal reciente, no una desconexión confirmada. <strong>Sin datos:</strong> aún no hay señal registrada.</p><p>La presencia no indica si el acceso está habilitado. Esa gestión está separada en Accesos, solo para admin.</p></details>
+  </section>
+  <section class="body" id="access-content" role="tabpanel" aria-labelledby="access-tab" tabindex="0" hidden><div class="admin-only"><small>ÁREA SEPARADA · SOLO ADMIN</small><h3>Gestión de accesos</h3><p>Esta pestaña y su contenido no se muestran a agentes ni supervisores. Equipo sí está disponible para los tres roles.</p><dl><dt>Ana · Agente</dt><dd><strong>Activo</strong> = acceso habilitado</dd></dl><div class="examples" aria-label="Ejemplos de controles administrativos, no interactivos"><span class="static-action">Cambiar correo</span><span class="static-action">Desactivar cuenta</span><span class="static-action">Cierre automático</span></div><p class="muted">El acceso habilitado no indica presencia. Contexto visual; no hay acciones sobre cuentas en esta maqueta.</p></div></section>
+  <footer class="modal-footer"><span>Solo presencia · Visible para agente, supervisor y admin</span><span>Datos de ejemplo · 13:00</span></footer>
+</dialog>
+<script>
+const modal=document.getElementById('team'),trigger=document.getElementById('open');
+trigger.addEventListener('click',()=>modal.showModal());document.getElementById('close').addEventListener('click',()=>modal.close());modal.addEventListener('close',()=>trigger.focus());
+const tabs=[...document.querySelectorAll('[role="tab"]')];function selectTab(tab){tabs.forEach(t=>{const active=t===tab;t.setAttribute('aria-selected',String(active));t.tabIndex=active?0:-1;document.getElementById(t.getAttribute('aria-controls')).hidden=!active});tab.focus()}
+tabs.forEach((tab,i)=>{tab.addEventListener('click',()=>selectTab(tab));tab.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();selectTab(tabs[e.key==='Home'?0:e.key==='End'?1:1-i])}})});
+document.getElementById('refresh').addEventListener('click',()=>{document.getElementById('feedback').textContent='Maqueta: no se consultó el servidor. Se conserva la muestra y su antigüedad de 20 s.'});modal.showModal();
+</script>
+</body></html>

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "chosen": "01-pestana-equipo.html",
+  "handoffs": {
+    "01-pestana-equipo.html": {
+      "status": "implemented",
+      "queued": false,
+      "sentAt": "2026-11-12T21:44:01.055Z",
+      "startedAt": "2026-11-12T21:44:16.307Z",
+      "implementedAt": "2026-11-12T21:58:02.270Z",
+      "note": "Implementado en feat/equipo-presencia (73fa1dd). Falta aplicar la migración list_team_presence en Supabase para ver datos reales."
+    }
+  }
+}

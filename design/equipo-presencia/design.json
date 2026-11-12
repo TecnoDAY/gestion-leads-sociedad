@@ -1,0 +1,34 @@
+{
+  "title": "Equipo · Cuatro formas de ver la presencia",
+  "brief": "Explorar la ubicación de una vista de presencia para Sociedad Actoral. Agente, supervisor y admin ven quién tiene señal reciente en el CRM; solo admin ve la gestión de accesos, separada y contextualizada únicamente en la propuesta 01. Datos de ejemplo a las 13:00: 3 en línea, 2 ausentes y 1 sin datos. En línea significa CRM abierto y respondiendo en los últimos 3 minutos; ausencia de señal no confirma desconexión. Artboards independientes, no código de producción.",
+  "artboards": [
+    {
+      "file": "01-pestana-equipo.html",
+      "title": "Equipo como primera pestaña de Usuarios",
+      "tradeoff": "Mínimo cambio de navegación y separación de Accesos (solo admin); requiere abrir el modal para consultar la presencia.",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "02-presencia-cabecera.html",
+      "title": "Indicador permanente en la cabecera",
+      "tradeoff": "Siempre visible para todos los roles; la lista desplegable ofrece menos detalle y puede cubrir parte de la vista actual.",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "03-tarjeta-inicio.html",
+      "title": "Equipo ahora en el dashboard",
+      "tradeoff": "Las seis personas se ven de un vistazo, sin abrir otra vista; ocupa espacio del dashboard y solo aparece en Inicio.",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "04-panel-lateral.html",
+      "title": "Panel plegable Quién está",
+      "tradeoff": "Permite buscar, filtrar por rol y consultar la última señal sin salir de la vista; requiere más interfaz y ancho, y se apila en móvil.",
+      "width": 1440,
+      "height": 1100
+    }
+  ]
+}
